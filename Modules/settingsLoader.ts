@@ -21,6 +21,7 @@ export const DEFAULT_GAME_SETTINGS: GameSettings = {
     autoSaveInterval: 30,
     diceMin: 1,
     diceMax: 6,
+    defaultLanguage: "English",
     defaultDropFixture: "FLOOR",
     defaultDropObject: "FLOOR",
     defaultRoomIconURL: "",
@@ -111,6 +112,7 @@ export function loadGameSettings(): [GameSettings, string[]] {
         diceMax = DEFAULT_GAME_SETTINGS.diceMax;
     }
 
+    const defaultLanguage = process.env.DEFAULT_LANGUAGE ?? DEFAULT_GAME_SETTINGS.defaultLanguage;
     const defaultDropFixture = process.env.DEFAULT_DROP_FIXTURE ?? DEFAULT_GAME_SETTINGS.defaultDropFixture;
     const defaultRoomIconUrl = process.env.DEFAULT_ROOM_ICON_URL ?? DEFAULT_GAME_SETTINGS.defaultRoomIconURL;
     const defaultConcealedIconUrl = process.env.DEFAULT_CONCEALED_ICON_URL ?? DEFAULT_GAME_SETTINGS.defaultConcealedIconURL;
@@ -185,6 +187,7 @@ export function loadGameSettings(): [GameSettings, string[]] {
         autoSaveInterval,
         diceMin,
         diceMax,
+        defaultLanguage,
         defaultDropFixture,
         defaultRoomIconUrl,
         defaultConcealedIconUrl,

@@ -48,6 +48,11 @@ export default class GameSettings {
 	 * @type {number}
 	 */
 	diceMax;
+    /**
+     * The default language all players will be assumed to be speaking, unless otherwise specified.
+     * @type {string}
+     */
+    defaultLanguage;
 	/**
 	 * The name of the Object in each Room that Players will drop Items in if they don't specify one. Deprecated. Use defaultDropFixture instead.
 	 * @deprecated
@@ -136,7 +141,8 @@ export default class GameSettings {
 	 * @param {number} autoSaveInterval - How often, in seconds, the bot will save game data to the spreadsheet.
 	 * @param {number} diceMin - The lowest possible number for a standard Die roll.
 	 * @param {number} diceMax - The highest possible number for a standard Die roll.
-	 * @param {string} defaultDropObject - The name of the Object in each Room that Players will drop Items in if they don't specify one.
+     * @param {string} defaultLanguage - The default language all players will be assumed to be speaking, unless otherwise specified.
+	 * @param {string} defaultDropFixture - The name of the Object in each Room that Players will drop Items in if they don't specify one.
 	 * @param {string} defaultRoomIconURL - The URL of an image that will be displayed when a Player enters a Room if that Room does not have an icon URL of its own.
 	 * @param {string} defaultConcealedIconURL - The URL of an image that will be used as the display icon of a player with the `concealed` behavior attribute if a custom one isn't set.
 	 * @param {string} hiddenIconURL - The URL of an image that will be used as the display icon when a player with the `hidden` behavior attribute speaks in the room.
@@ -161,7 +167,8 @@ export default class GameSettings {
 		autoSaveInterval,
 		diceMin,
 		diceMax,
-		defaultDropObject,
+        defaultLanguage,
+		defaultDropFixture,
 		defaultRoomIconURL,
 		defaultConcealedIconURL,
 		hiddenIconURL,
@@ -185,7 +192,8 @@ export default class GameSettings {
 		this.autoSaveInterval = autoSaveInterval;
 		this.diceMin = diceMin;
 		this.diceMax = diceMax;
-		this.defaultDropFixture = defaultDropObject;
+        this.defaultLanguage = defaultLanguage;
+		this.defaultDropFixture = defaultDropFixture;
 		this.defaultRoomIconURL = defaultRoomIconURL;
 		this.defaultConcealedIconURL = defaultConcealedIconURL;
 		this.hiddenIconURL = hiddenIconURL;
