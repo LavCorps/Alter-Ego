@@ -20,6 +20,7 @@ import { MessageDisplayType } from '../Modules/enums.js';
 import * as itemManager from '../Modules/itemManager.js';
 import { itemIdentifierMatches } from '../Modules/matchers.js';
 import { Collection } from 'discord.js';
+import { capitalizeFirstLetter } from "../Modules/helpers.ts";
 
 /** @import Interactable from '../Classes/Interactables/Interactable.ts' */
 /** @import Action from './Action.ts' */
@@ -250,6 +251,11 @@ export default class Player extends RecipeProcessor {
 	 * @type {number}
 	 */
 	carryWeight;
+    /**
+     * The language the player is currently speaking by default.
+     * @type {string}
+     */
+    currentLanguage;
 	/**
 	 * Whether the player is currently moving or not.
 	 * @type {boolean}
@@ -365,6 +371,7 @@ export default class Player extends RecipeProcessor {
 		this.status = new Collection();
 		this.statusDisplays = statusDisplays;
 		this.statusString = "";
+        this.currentLanguage = this.getGame().settings.defaultLanguage;
 		this.inventory = inventory;
 		this.notificationChannel = notificationChannel;
 		this.spectateChannel = spectateChannel;
@@ -471,6 +478,29 @@ export default class Player extends RecipeProcessor {
 			}
 		}
 	}
+
+    /**
+     * Sets the player's default language.
+     * If they have the `cannot speak ${game.settings.defaultLanguage}` behavior attribute, finds the first language they can speak.
+     * If none is found, uses the defaultLanguage as defined in the game settings.
+     */
+    setDefaultLanguage() {
+        let language = this.getGame().settings.defaultLanguage;
+        if (this.hasBehaviorAttribute(`cannot speak ${this.getGame().settings.defaultLanguage}`)) {
+            let foundLanguage = false;
+            for (const status of this.status.values()) {
+                for (const behaviorAttribute of status.behaviorAttributes) {
+                    if (behaviorAttribute.startsWith(`speaks `) && behaviorAttribute !== `speaks ${language}`) {
+                        language = behaviorAttribute.substring(`speaks `.length).trim();
+                        foundLanguage = true;
+                        break;
+                    }
+                }
+                if (foundLanguage) break;
+            }
+        }
+        this.currentLanguage = language;
+    }
 
 	/** Gets the entity's location. */
 	getLocation() {
@@ -879,6 +909,32 @@ export default class Player extends RecipeProcessor {
 	canHear() {
 		return !this.hasBehaviorAttribute("no hearing");
 	}
+
+    /**
+     * Returns true if the player has the `speaks ${language}` behavior attribute.
+     * @param {string} language - The language to speak. The first letter will be capitalized.
+     */
+    canSpeak(language) {
+        language = capitalizeFirstLetter(language);
+        return !this.hasBehaviorAttribute(`cannot speak ${language}`) && this.hasBehaviorAttribute(`speaks ${language}`);
+    }
+
+    /**
+     * Returns true if the player has the `understands ${language}` behavior attribute.
+     * @param {string} language - The language being heard. The first letter will be capitalized.
+     */
+    canUnderstand(language) {
+        language = capitalizeFirstLetter(language);
+        return !this.hasBehaviorAttribute(`cannot speak ${language}`) && this.hasBehaviorAttribute(`understands ${language}`);
+    }
+
+    /**
+     * Returns true if the player has the `reads ${language}` behavior attribute.
+     * @param {string} language - The language being read. The first letter will be capitalized.
+     */
+    canRead(language) {
+        return this.hasBehaviorAttribute(`reads ${capitalizeFirstLetter(language)}`);
+    }
 
 	/**
 	 * Returns true if the player has the `knows ${playerName}` behavior attribute.

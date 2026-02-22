@@ -1879,6 +1879,7 @@ export default class GameEntityLoader extends GameEntityManager {
 							if (invalidStatusFound) continue;
 						}
 					}
+                    player.setDefaultLanguage();
 					this.game.livingPlayers.set(Game.generateValidEntityName(player.name), player);
 				}
 				else
