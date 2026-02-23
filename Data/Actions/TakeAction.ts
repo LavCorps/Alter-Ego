@@ -1,11 +1,11 @@
-import Action from "../Action.ts";
-import AttemptAction from "./AttemptAction.ts";
-import Fixture from "../Fixture.js";
-import InventorySlot from "../InventorySlot.ts";
-import Puzzle from "../Puzzle.js";
-import RoomItem from "../RoomItem.js";
 import { getSortedItemsString } from "../../Modules/helpers.ts";
-import type EquipmentSlot from "../EquipmentSlot.js";
+import Action from "../Action.ts";
+import type EquipmentSlot from "../EquipmentSlot.ts";
+import Fixture from "../Fixture.ts";
+import InventorySlot from "../InventorySlot.ts";
+import Puzzle from "../Puzzle.ts";
+import RoomItem from "../RoomItem.ts";
+import AttemptAction from "./AttemptAction.ts";
 
 /**
  * Represents a take action.

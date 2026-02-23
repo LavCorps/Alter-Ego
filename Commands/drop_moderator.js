@@ -1,12 +1,12 @@
 ﻿import DropAction from '../Data/Actions/DropAction.ts';
-import Fixture from "../Data/Fixture.js";
-import RoomItem from "../Data/RoomItem.js";
-import Puzzle from "../Data/Puzzle.js";
+import Fixture from "../Data/Fixture.ts";
+import RoomItem from "../Data/RoomItem.ts";
+import Puzzle from "../Data/Puzzle.ts";
 
 /** @import GameSettings from '../Classes/GameSettings.js' */
-/** @import EquipmentSlot from '../Data/EquipmentSlot.js' */
-/** @import Game from '../Data/Game.js' */
-/** @import InventoryItem from '../Data/InventoryItem.js' */
+/** @import EquipmentSlot from '../Data/EquipmentSlot.ts' */
+/** @import Game from '../Data/Game.ts' */
+/** @import InventoryItem from '../Data/InventoryItem.ts' */
 
 /** @type {CommandConfig} */
 export const config = {

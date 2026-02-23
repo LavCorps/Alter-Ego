@@ -1,33 +1,33 @@
-import Description from "../Data/Description.js";
-import Fixture from "../Data/Fixture.js";
-import InventoryItem from "../Data/InventoryItem.js";
-import Narration from "../Data/Narration.js";
-import Room from "../Data/Room.js";
-import RoomItem from "../Data/RoomItem.js";
+import Description from "../Data/Description.ts";
+import Fixture from "../Data/Fixture.ts";
+import InventoryItem from "../Data/InventoryItem.ts";
+import Narration from "../Data/Narration.ts";
+import Room from "../Data/Room.ts";
+import RoomItem from "../Data/RoomItem.ts";
 import DieAction from "../Data/Actions/DieAction.ts";
 import NarrateAction from "../Data/Actions/NarrateAction.ts";
 import { MessageDisplayType } from "../Modules/enums.js";
 import { parseDescription } from "../Modules/parser.js";
 import { capitalizeFirstLetter, generateListString } from "../Modules/helpers.ts";
 import { Collection } from "discord.js";
-import Notification from "../Data/Notification.js";
+import Notification from "../Data/Notification.ts";
 
 /** @import Interactable from "./Interactables/Interactable.ts" */
 /** @import Action from "../Data/Action.ts" */
-/** @import Dialog from "../Data/Dialog.js" */
+/** @import Dialog from "../Data/Dialog.ts" */
 /** @import Exit from "../Data/Exit.js" */
-/** @import Game from "../Data/Game.js" */
-/** @import Gesture from "../Data/Gesture.js" */
-/** @import Player from "../Data/Player.js" */
-/** @import Puzzle from "../Data/Puzzle.js" */
-/** @import Prefab from "../Data/Prefab.js" */
-/** @import Recipe from "../Data/Recipe.js" */
-/** @import Event from "../Data/Event.js" */
-/** @import HidingSpot from "../Data/HidingSpot.js" */
+/** @import Game from "../Data/Game.ts" */
+/** @import Gesture from "../Data/Gesture.ts" */
+/** @import Player from "../Data/Player.ts" */
+/** @import Puzzle from "../Data/Puzzle.ts" */
+/** @import Prefab from "../Data/Prefab.ts" */
+/** @import Recipe from "../Data/Recipe.ts" */
+/** @import Event from "../Data/Event.ts" */
+/** @import HidingSpot from "../Data/HidingSpot.ts" */
 /** @import InventorySlot from "../Data/InventorySlot.ts" */
 /** @import ItemInstance from "../Data/ItemInstance.ts" */
-/** @import Status from "../Data/Status.js" */
-/** @import Whisper from "../Data/Whisper.js" */
+/** @import Status from "../Data/Status.ts" */
+/** @import Whisper from "../Data/Whisper.ts" */
 /** @import { Attachment, Embed, GuildMember } from "discord.js" */
 
 /**

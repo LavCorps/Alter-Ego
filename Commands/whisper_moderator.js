@@ -1,11 +1,11 @@
-import Dialog from '../Data/Dialog.js';
-import Whisper from '../Data/Whisper.js';
+import Dialog from '../Data/Dialog.ts';
+import Whisper from '../Data/Whisper.ts';
 import SayAction from '../Data/Actions/SayAction.ts';
 import WhisperAction from '../Data/Actions/WhisperAction.ts';
 
 /** @import GameSettings from '../Classes/GameSettings.js' */
-/** @import Game from '../Data/Game.js' */
-/** @import Player from '../Data/Player.js' */
+/** @import Game from '../Data/Game.ts' */
+/** @import Player from '../Data/Player.ts' */
 
 /** @type {CommandConfig} */
 export const config = {

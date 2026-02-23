@@ -1,10 +1,10 @@
-import Player from '../Data/Player.js';
+import Player from '../Data/Player.ts';
 import { appendRowsToSheet } from '../Modules/sheets.js';
 import { Collection } from 'discord.js';
 import {loadPlayerDefaults} from "../Modules/settingsLoader.ts";
 
 /** @import GameSettings from '../Classes/GameSettings.js' */
-/** @import Game from '../Data/Game.js' */
+/** @import Game from '../Data/Game.ts' */
 
 /** @type {CommandConfig} */
 export const config = {

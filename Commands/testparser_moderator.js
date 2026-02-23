@@ -1,12 +1,12 @@
 ﻿import fs from 'fs';
-import Player from '../Data/Player.js';
+import Player from '../Data/Player.ts';
 import { parseDescriptionWithErrors } from '../Modules/parser.js';
 import { EOL } from 'os';
 import { Collection } from 'discord.js';
 import {loadPlayerDefaults} from "../Modules/settingsLoader.ts";
 
 /** @import GameSettings from '../Classes/GameSettings.js' */
-/** @import Game from '../Data/Game.js' */
+/** @import Game from '../Data/Game.ts' */
 
 /** @type {CommandConfig} */
 export const config = {
@@ -73,7 +73,7 @@ export async function execute(game, message, command, args) {
         player.setPronouns(player.originalPronouns, player.pronounString);
         player.setPronouns(player.pronouns, player.pronounString);
     }
-    
+
     const result = await testparse(game, file, player);
     let warnings = [];
     for (let i = 0; i < result.warnings.length; i++) {

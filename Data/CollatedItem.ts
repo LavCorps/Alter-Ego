@@ -1,17 +1,18 @@
-import RoomItem from './RoomItem.js';
-import DestroyAction from './Actions/DestroyAction.ts';
-import InstantiateAction from './Actions/InstantiateAction.ts';
-import { getSortedItems } from '../Modules/helpers.ts';
-import { getChildItems } from '../Modules/itemManager.js';
-import ItemInstance from './ItemInstance.ts';
+import { getSortedItems } from "../Modules/helpers.ts";
+import { getChildItems } from "../Modules/itemManager.js";
+import DestroyAction from "./Actions/DestroyAction.ts";
+import InstantiateAction from "./Actions/InstantiateAction.ts";
 
-import Fixture from './Fixture.js';
-import type Prefab from './Prefab.js';
-import Puzzle from './Puzzle.js';
-import type RecipeItem from './RecipeItem.js';
-import type Room from './Room.js';
-import InventoryItem from './InventoryItem.js';
-import type Player from './Player.js';
+import Fixture from "./Fixture.ts";
+import InventoryItem from "./InventoryItem.ts";
+import ItemInstance from "./ItemInstance.ts";
+import type Player from "./Player.ts";
+import type Prefab from "./Prefab.ts";
+import Puzzle from "./Puzzle.ts";
+import type RecipeItem from "./RecipeItem.ts";
+import type Room from "./Room.ts";
+import RoomItem from "./RoomItem.ts";
+
 type ContainerOf<T extends RoomItem | InventoryItem> = T extends RoomItem ? RoomItemContainer : InventoryItem;
 
 /**

@@ -1,11 +1,11 @@
-﻿import Dialog from '../Data/Dialog.js';
+﻿import Dialog from '../Data/Dialog.ts';
 import NarrateAction from '../Data/Actions/NarrateAction.ts';
 import SayAction from '../Data/Actions/SayAction.ts';
 import { MessageDisplayType } from '../Modules/enums.js';
 import { ChannelType } from 'discord.js';
 
 /** @import GameSettings from '../Classes/GameSettings.js' */
-/** @import Game from '../Data/Game.js' */
+/** @import Game from '../Data/Game.ts' */
 
 /** @type {CommandConfig} */
 export const config = {

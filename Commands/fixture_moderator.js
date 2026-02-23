@@ -1,9 +1,9 @@
 import ActivateAction from '../Data/Actions/ActivateAction.ts';
 import DeactivateAction from '../Data/Actions/DeactivateAction.ts';
-import Room from '../Data/Room.js';
+import Room from '../Data/Room.ts';
 
 /** @import GameSettings from '../Classes/GameSettings.js' */
-/** @import Game from '../Data/Game.js' */
+/** @import Game from '../Data/Game.ts' */
 
 /** @type {CommandConfig} */
 export const config = {

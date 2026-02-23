@@ -1,5 +1,5 @@
 import discord from "../__mocks__/libs/discord.js";
-import * as DialogClass from "../../Data/Dialog.js";
+import * as DialogClass from "../../Data/Dialog.ts";
 import AnnounceAction from "../../Data/Actions/AnnounceAction.ts";
 import SayAction from "../../Data/Actions/SayAction.ts";
 import SolveAction from "../../Data/Actions/SolveAction.ts";
@@ -7,11 +7,11 @@ import * as messageHandler from "../../Modules/messageHandler.js";
 import { instantiateInventoryItem, destroyInventoryItem } from "../../Modules/itemManager.js";
 
 /**
- * @import HidingSpot from "../../Data/HidingSpot.js"
- * @import Player from "../../Data/Player.js"
- * @import Room from "../../Data/Room.js"
- * @import Status from "../../Data/Status.js"
- * @import Whisper from "../../Data/Whisper.js"
+ * @import HidingSpot from "../../Data/HidingSpot.ts"
+ * @import Player from "../../Data/Player.ts"
+ * @import Room from "../../Data/Room.ts"
+ * @import Status from "../../Data/Status.ts"
+ * @import Whisper from "../../Data/Whisper.ts"
  * @import { Message, TextChannel } from "discord.js"
  */
 
