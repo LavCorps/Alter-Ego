@@ -45,7 +45,7 @@ export async function execute(game, message, command, args, player) {
 
     const input = args.join(" ");
     if (!input.startsWith("(")) {
-        const dialog = new Dialog(game, message, player, player.location, input, false);
+        const dialog = new Dialog(game, message, player, player.location, input, player.currentLanguage, false);
         const dialogMessage = await game.communicationHandler.sendDialogAsWebhook(player.location.channel, dialog, dialog.getDisplayNameForWebhook(false), dialog.getDisplayIconForWebhook(false));
         const sayAction = new SayAction(game, dialogMessage, player, player.location, false);
         sayAction.performSay(dialog);

@@ -23,6 +23,7 @@ describe('Dialog test', () => {
             channel: kyra.location.channel
         });
         const dialog = new Dialog(game, message, kyra, kyra.location);
+        expect(dialog.language).toBe("English");
         expect(dialog.isAnnouncement).toBe(false);
         expect(dialog.whisper).toBe(null);
         expect(dialog.attachments.size).toBe(0);
@@ -53,6 +54,7 @@ describe('Dialog test', () => {
             });
             const dialog = new Dialog(game, message, kyra, kyra.location);
             expect(dialog.isShouted).toBe(true);
+            expect(dialog.language).toBe("English");
         });
 
         test('shouted dialog insufficient length', () => {
@@ -75,8 +77,9 @@ describe('Dialog test', () => {
                 author: astrid.member.user,
                 channel: astrid.location.channel
             });
-            const dialog = new Dialog(game, message, astrid, astrid.location);
+            const dialog = new Dialog(game, message, astrid, astrid.location, message.content, "French");
             expect(dialog.isShouted).toBe(true);
+            expect(dialog.language).toBe("French");
         });
 
         test('shouted dialog is emoji', () => {

@@ -25,6 +25,10 @@ export default class Dialog extends GameConstruct {
 	 * The room the dialog occurred in.
 	 */
 	location: Room;
+    /**
+     * The language this dialog is spoken in.
+     */
+    language: string;
 	/**
 	 * Whether or not the dialog was made by a player in the announcement channel.
 	 */
@@ -134,17 +138,19 @@ export default class Dialog extends GameConstruct {
 	 * @param player - The player who spoke the dialog.
 	 * @param location - The room the dialog occurred in.
 	 * @param content - The content of the dialog. Optional.
+     * @param language - The language this dialog is spoken in. Defaults to the player's current language.
 	 * @param isAnnouncement - Whether or not the dialog was made by a player in the announcement channel. Defaults to false.
 	 * @param whisper - The whisper the dialog occurred in. Defaults to null.
 	 * @param cleanContent - The clean content of the dialog. Optional.
 	 */
 	constructor(game: Game, message: UserMessage, player: Player, location: Room, content: string = message.content,
-        isAnnouncement: boolean = false, whisper: Whisper = null, cleanContent: string = content) {
+        language: string = player.currentLanguage, isAnnouncement: boolean = false, whisper: Whisper = null, cleanContent: string = content) {
 		super(game);
 		this.message = message;
 		this.speaker = player;
 		this.location = location;
 		this.isAnnouncement = isAnnouncement;
+        this.language = language;
 		this.whisper = whisper;
 		this.content = content;
 		this.cleanContent = cleanContent;

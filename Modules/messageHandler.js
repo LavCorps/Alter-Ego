@@ -41,7 +41,7 @@ export function processIncomingMessage(game, message) {
             return;
         }
         const location = isInAnnouncementChannel || isInWhisperChannel ? player.location : room;
-        const dialog = new Dialog(game, message, player, location, message.content, isInAnnouncementChannel, whisper, message.cleanContent);
+        const dialog = new Dialog(game, message, player, location, message.content, player.currentLanguage, isInAnnouncementChannel, whisper, message.cleanContent);
         if (dialog.isAnnouncement) {
             const announceAction = new AnnounceAction(game, message, dialog.speaker, dialog.location, false, dialog.whisper);
             announceAction.performAnnounce(dialog);
