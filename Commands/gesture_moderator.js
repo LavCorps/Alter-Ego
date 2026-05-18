@@ -1,202 +1,146 @@
-const settings = include('Configs/settings.json');
-const discord = require('discord.js');
+import GestureAction from '../Data/Actions/GestureAction.ts';
 
-module.exports.config = {
+/** @import Moderator from '../Data/Moderator.ts' */
+/** @import GameSettings from '../Classes/GameSettings.js' */
+/** @import Game from '../Data/Game.ts' */
+
+/** @type {CommandConfig} */
+export const config = {
     name: "gesture_moderator",
     description: "Performs a gesture for the given player.",
-    details: `Makes the given player perform one of a set of predefined gestures. Everybody in the room with them will see them do this gesture. `
-        + `Certain gestures may require a target to perform them. For example, a gesture might require you specify an Exit, an Object, another Player, etc. `
-        + `A gesture can only be performed with one target at a time. Gestures can be made impossible if the given player is inflicted with certain Status Effects. `
-        + `For example, if they are concealed, they cannot smile, frown, etc. as nobody would be able to see it. `
-        + `To see a list of all possible gestures, send \`${settings.commandPrefix}gesture list\`.`,
-    usage: `${settings.commandPrefix}gesture astrid smile\n`
-        + `${settings.commandPrefix}gesture akira point at door 1\n`
-        + `${settings.commandPrefix}gesture holly wave johnny`,
+    details: `Makes the given player perform one of a set of pre-defined gestures. Everybody in the room with them will `
+        + `see them do this gesture. This allows them to communicate non-verbally, though they cannot perform a gesture `
+        + `if they have one of the gesture's disabled statuses. To see a list of all of the gestures they can currently `
+        + `perform, send the \`gesture\` command followed by "list" and the name of the player. Omitting the name of a `
+        + `player after "list" will simply list all gestures on the sheet.\n\n`
+        + `Certain gestures may require a target to perform them. To specify a target, enter the identifier of the `
+        + `target directly after the ID of the gesture. For a room item or inventory item, this must be its `
+        + `container identifier or prefab ID. For any other type of target, it should be its name. `
+        + `Note that a gesture can only be performed with one target at a time.\n\n`
+        + `This command supports NPC latching. For more information, see the help details for the \`latch\` command.`,
     usableBy: "Moderator",
-    aliases: ["gesture"],
+    aliases: ["gesture", "g"],
     requiresGame: true
 };
 
-module.exports.run = async (bot, game, message, command, args) => {
-    var input = args.join(" ").toLowerCase().replace(/\'/g, "");
+/**
+ * @param {GameSettings} settings
+ * @returns {string}
+ */
+export function usage(settings) {
+    return `${settings.commandPrefix}gesture Astrid smile\n`
+        + `${settings.commandPrefix}g Ezekiel point at DOOR 1\n`
+        + `${settings.commandPrefix}gesture Holly wave Johnny\n`
+        + `${settings.commandPrefix}g Dexter sit CHAIR\n`
+        + `${settings.commandPrefix}gesture list\n`
+        + `${settings.commandPrefix}g list Kyra`;
+}
 
-    if (input === "list") {
-        var fields = [];
-        var pages = [];
-        var page = 0;
+/**
+ * @param {Game} game - The game in which the command is being executed.
+ * @param {UserMessage} message - The message in which the command was issued.
+ * @param {string} command - The command alias that was used.
+ * @param {string[]} args - A list of arguments passed to the command as individual words.
+ * @param {Moderator} moderator - The moderator who issued the command.
+ */
+export async function execute(game, message, command, args, moderator) {
+    let showList = false;
+    if (args[0] === "list") {
+        showList = true;
+        args.splice(0, 1);
+    }
+    const sentMessageInLatchChannel = moderator?.sentMessageInLatchChannel(message) ?? false;
+    if (!showList && !sentMessageInLatchChannel && args.length < 2)
+        return game.communicationHandler.reply(message, `You need to specify a player and a gesture. Usage:\n${usage(game.settings)}`);
+    if (!showList && sentMessageInLatchChannel && args.length < 1)
+        return game.communicationHandler.reply(message, `You need to specify a gesture. Usage:\n${usage(game.settings)}`);
 
-        for (let i = 0; i < game.gestures.length; i++)
-            fields.push(game.gestures[i]);
+    const playerName = args[0] ?? '';
+    let player = game.entityFinder.getLivingPlayer(playerName);
+    if (player) args.splice(0, 1);
+    if (!player && sentMessageInLatchChannel)
+        player = moderator.getLatch();
 
-        // Divide the fields into pages.
-        for (let i = 0, pageNo = 0; i < fields.length; i++) {
-            // Divide the menu into groups of 10.
-            if (i % 15 === 0) {
-                pages.push([]);
-                if (i !== 0) pageNo++;
-            }
-            pages[pageNo].push(fields[i]);
-        }
-
-        let embed = createEmbed(game, page, pages);
-        message.channel.send({ embeds: [embed] }).then(msg => {
-            msg.react('⏪').then(() => {
-                msg.react('⏩');
-
-                const backwardsFilter = (reaction, user) => reaction.emoji.name === '⏪' && user.id === message.author.id;
-                const forwardsFilter = (reaction, user) => reaction.emoji.name === '⏩' && user.id === message.author.id;
-
-                const backwards = msg.createReactionCollector({ filter: backwardsFilter, time: 300000 });
-                const forwards = msg.createReactionCollector({ filter: forwardsFilter, time: 300000 });
-
-                backwards.on("collect", () => {
-                    const reaction = msg.reactions.cache.find(reaction => reaction.emoji.name === '⏪');
-                    if (reaction) reaction.users.cache.forEach(user => { if (user.id !== bot.user.id) reaction.users.remove(user.id); });
-                    if (page === 0) return;
-                    page--;
-                    embed = createEmbed(game, page, pages);
-                    msg.edit({ embeds: [embed] });
-                });
-
-                forwards.on("collect", () => {
-                    const reaction = msg.reactions.cache.find(reaction => reaction.emoji.name === '⏩');
-                    if (reaction) reaction.users.cache.forEach(user => { if (user.id !== bot.user.id) reaction.users.remove(user.id); });
-                    if (page === pages.length - 1) return;
-                    page++;
-                    embed = createEmbed(game, page, pages);
-                    msg.edit({ embeds: [embed] });
-                });
-            });
-        });
+    if (showList) {
+        const action = new GestureAction(game, message, player, player?.location, true);
+        action.performGestureList();
     }
     else {
-        if (args.length < 2)
-            return game.messageHandler.addReply(message, `You need to specify a player and a gesture. Usage:\n${exports.config.usage}`);
+        if (player === undefined) return game.communicationHandler.reply(message, `Player "${playerName}" not found.`);
+        let input = args.join(" ").toLowerCase().replace(/\'/g, "");
 
-        var player = null;
-        for (let i = 0; i < game.players_alive.length; i++) {
-            if (game.players_alive[i].name.toLowerCase() === args[0].toLowerCase()) {
-                player = game.players_alive[i];
-                args.splice(0, 1);
-                input = args.join(" ").toLowerCase().replace(/\'/g, "");
+        let gesture;
+        let targetType = "";
+        let target = null;
+        for (let index = args.length; index >= 0; index--) {
+            gesture = game.entityFinder.getGesture(args.slice(0, index).join(" "));
+            if (gesture) {
+                args = args.slice(index);
                 break;
             }
         }
-        if (player === null) return game.messageHandler.addReply(message, `Player "${args[0]}" not found.`);
-
-        var gesture = null;
-        var targetType = "";
-        var target = null;
-        for (let i = 0; i < game.gestures.length; i++) {
-            if (game.gestures[i].name.toLowerCase().replace(/\'/g, "") === input) {
-                if (game.gestures[i].requires.length > 0)
-                    return game.messageHandler.addReply(message, `You need to specify a target for that gesture.`);
-                gesture = game.gestures[i];
-                break;
-            }
-            else if (input.startsWith(game.gestures[i].name.toLowerCase().replace(/\'/g, "") + ' ')) {
-                gesture = game.gestures[i];
-                let input2 = input.substring(game.gestures[i].name.toLowerCase().replace(/\'/g, "").length).trim();
-
-                if (input2 !== "") {
-                    for (let j = 0; j < gesture.requires.length; j++) {
-                        if (gesture.requires[j] === "Exit") {
-                            for (let k = 0; k < player.location.exit.length; k++) {
-                                if (player.location.exit[k].name.toLowerCase() === input2) {
-                                    targetType = "Exit";
-                                    target = player.location.exit[k];
-                                    break;
-                                }
-                            }
+        if (gesture === undefined)
+            return game.communicationHandler.reply(message,  `Couldn't find gesture "${input}". For a list of gestures, send \`${game.settings.commandPrefix}gesture list\`.`);
+        else if (args.length === 0 && gesture.requires.length > 0)
+            return game.communicationHandler.reply(message, `You need to specify a target for that gesture.`);
+        else if (args.length > 0 && gesture.requires.length === 0)
+            return game.communicationHandler.reply(message, `That gesture doesn't take a target.`);
+        else if (args.length > 0 && gesture.requires.length > 0) {
+            const input2 = args.join(" ").toLowerCase().replace(/\'/g, "");
+            for (const requireType of gesture.requires) {
+                if (requireType === "Exit") {
+                    target = game.entityFinder.getExit(player.location, input2);
+                    if (target) targetType = "Exit";
+                    else target = null;
+                } else if (requireType === "Fixture" || requireType === "Object") {
+                    target = game.entityFinder.getFixtures(input2, player.location.id, true)[0];
+                    if (target) targetType = "Fixture";
+                    else target = null;
+                } else if (requireType === "RoomItem" || requireType == "Item") {
+                    target = game.entityFinder.getRoomItems(input2, player.location.id, true)[0];
+                    if (target) targetType = "RoomItem";
+                    else target = null;
+                } else if (requireType === "Player") {
+                    const hiddenStatus = player.getBehaviorAttributeStatusEffects("hidden");
+                    for (const occupant of player.location.occupants) {
+                        if (
+                            occupant.name.toLowerCase().replace(/\'/g, "") === input2 &&
+                            ((hiddenStatus.length === 0 && !occupant.isHidden()) ||
+                                occupant.hidingSpot === player.hidingSpot)
+                        ) {
+                            if (occupant.name === player.name)
+                                return game.communicationHandler.reply(message, `${player.name} can't gesture toward ${player.originalPronouns.ref}.`);
+                            targetType = "Player";
+                            target = occupant;
+                            break;
                         }
-                        else if (gesture.requires[j] === "Object") {
-                            const objects = game.objects.filter(object => object.location.name === player.location.name && object.accessible);
-                            for (let k = 0; k < objects.length; k++) {
-                                if (objects[k].name.toLowerCase() === input2) {
-                                    targetType = "Object";
-                                    target = objects[k];
-                                    break;
-                                }
-                            }
-                        }
-                        else if (gesture.requires[j] === "Item") {
-                            const items = game.items.filter(item => item.location.name === player.location.name && item.accessible && (item.quantity > 0 || isNaN(item.quantity)));
-                            for (let k = 0; k < items.length; k++) {
-                                if (items[k].prefab.id.toLowerCase() === input2 || items[k].name.toLowerCase() === input2) {
-                                    targetType = "Item";
-                                    target = items[k];
-                                    break;
-                                }
-                            }
-                        }
-                        else if (gesture.requires[j] === "Player") {
-                            const hiddenStatus = player.getAttributeStatusEffects("hidden");
-                            for (let k = 0; k < player.location.occupants.length; k++) {
-                                let occupant = player.location.occupants[k];
-                                if (occupant.name.toLowerCase().replace(/\'/g, "") === input2 && (hiddenStatus.length === 0 && !occupant.hasAttribute("hidden") || occupant.hidingSpot === player.hidingSpot)) {
-                                    // Player cannot gesture toward themselves.
-                                    if (occupant.name === player.name) return game.messageHandler.addReply(message, `${player.name} can't gesture toward ${player.originalPronouns.ref}.`);
-                                    targetType = "Player";
-                                    target = occupant;
-                                    break;
-                                }
-                            }
-                        }
-                        else if (gesture.requires[j] === "Inventory Item") {
-                            for (let slot = 0; slot < player.inventory.length; slot++) {
-                                if ((player.inventory[slot].name === "RIGHT HAND" || player.inventory[slot].name === "LEFT HAND")
-                                    && player.inventory[slot].equippedItem !== null
-									&& (player.inventory[slot].equippedItem.prefab.id.toLowerCase() === input2 || player.inventory[slot].equippedItem.name.toLowerCase() === input2)) {
-                                    targetType = "Inventory Item";
-                                    target = player.inventory[slot].equippedItem;
-                                    break;
-                                }
-                            }
-                        }
-                        if (target !== null) break;
                     }
-                    if (gesture !== null && target !== null)
-                        break;
+                } else if (requireType === "InventoryItem") {
+                    for (const hand of game.entityFinder.getPlayerHands(player)) {
+                        if (
+                            hand.equippedItem !== null &&
+                            (hand.equippedItem.identifier !== "" && hand.equippedItem.identifier.toLowerCase() === input2 ||
+                                hand.equippedItem.prefab.id.toLowerCase() === input2)
+                        ) {
+                            targetType = "InventoryItem";
+                            target = hand.equippedItem;
+                            break;
+                        }
+                    }
                 }
+                if (target !== null) break;
             }
         }
-        if (gesture === null) return game.messageHandler.addReply(message, `Couldn't find gesture "${input}". For a list of gestures, send \`${settings.commandPrefix}gesture list\`.`);
-        input = input.substring(gesture.name.toLowerCase().replace(/\'/g, "").length).trim();
-        if (input !== "" && gesture.requires.length === 0)
-            return game.messageHandler.addReply(message, `That gesture doesn't take a target.`);
+        input = input.substring(gesture.id.toLowerCase().replace(/\'/g, "").length).trim();
         if (target === null && gesture.requires.length > 0)
-            return game.messageHandler.addReply(message, `Couldn't find target "${input}" in the room with ${player.name}.`);
+            return game.communicationHandler.reply(message, `Couldn't find target "${input}" in the room with ${player.name}.`);
         for (let i = 0; i < gesture.disabledStatuses.length; i++) {
-            if (player.statusString.includes(gesture.disabledStatuses[i].name))
-                return game.messageHandler.addReply(message, `${player.name} cannot do that gesture because ${player.originalPronouns.sbj} ` + (player.originalPronouns.plural ? "are" : "is") + ` **${gesture.disabledStatuses[i].name}**.`);
+            if (player.status.has(gesture.disabledStatuses[i].id))
+                return game.communicationHandler.reply(message, `${player.name} cannot do that gesture because ${player.originalPronouns.sbj} ${player.originalPronouns.plural ? "are" : "is"} **${gesture.disabledStatuses[i].id}**.`);
         }
 
-        player.gesture(game, gesture, targetType, target);
-        // Post log message. Message should vary based on target type.
-        const time = new Date().toLocaleTimeString();
-        if (targetType === "")
-            game.messageHandler.addLogMessage(game.logChannel, `${time} - ${player.name} forcibly did gesture ${gesture.name} in ${player.location.channel}`);
-        else if (targetType === "Exit" || targetType === "Object" || targetType === "Player")
-            game.messageHandler.addLogMessage(game.logChannel, `${time} - ${player.name} forcibly did gesture ${gesture.name} to ${target.name} in ${player.location.channel}`);
-        else if (targetType === "Item" || targetType === "Inventory Item")
-            game.messageHandler.addLogMessage(game.logChannel, `${time} - ${player.name} forcibly did gesture ${gesture.name} to ${target.identifier ? target.identifier : target.prefab.id} in ${player.location.channel}`);
+        const action = new GestureAction(game, message, player, player.location, true);
+        action.performGesture(gesture, targetType, target);
+        action.sendSuccessMessageToCommandChannel();
     }
-
-    return;
-};
-
-function createEmbed(game, page, pages) {
-    let embed = new discord.EmbedBuilder()
-        .setColor('1F8B4C')
-        .setAuthor({ name: `Gestures List`, iconURL: game.guild.iconURL() })
-        .setDescription(`These are the available gestures.\nFor more information on the gesture command, send \`${settings.commandPrefix}help gesture\`.`)
-        .setFooter({ text: `Page ${page + 1}/${pages.length}` });
-
-    let fields = [];
-    // Now add the fields of the first page.
-    for (let i = 0; i < pages[page].length; i++)
-        fields.push({ name: pages[page][i].name, value: pages[page][i].description })
-    embed.addFields(fields);
-
-    return embed;
 }

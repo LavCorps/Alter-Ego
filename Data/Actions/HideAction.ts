@@ -1,0 +1,32 @@
+import Action from "../Action.ts";
+import type HidingSpot from "../HidingSpot.ts";
+import InflictAction from "./InflictAction.ts";
+
+/**
+ * Represents a hide action.
+ *
+ * @see https://msvblank.github.io/Alter-Ego/reference/data_structures/action.html#hide-action
+ */
+export default class HideAction extends Action {
+	/**
+	 * Performs a hide action.
+     *
+	 * @param hidingSpot - The hiding spot to hide in.
+	 */
+	performHide(hidingSpot: HidingSpot): void {
+		if (this.performed) return;
+		super.perform();
+		this.getGame().narrationHandler.narrateHide(this, hidingSpot, this.player);
+		let successful = false;
+		if (hidingSpot.occupants.length + 1 <= hidingSpot.capacity || this.forced) {
+			hidingSpot.addPlayer(this.player);
+			const hiddenStatus = this.getGame().entityFinder.getStatusEffect("hidden");
+			const hiddenStatusAction = new InflictAction(this.getGame(), undefined, this.player, this.player.location, false);
+			hiddenStatusAction.performInflict(hiddenStatus, true, false, true);
+			this.location.setOccupantsString(this.location.generateOccupantsStringExcluding(this.player));
+			successful = true;
+		}
+		this.getGame().logHandler.logHide(hidingSpot, this.player, successful, this.forced);
+        this.successMessage = `Successfully hid ${this.player.name} in ${hidingSpot.getFixture().getContainingPhrase()}.`;
+	}
+}

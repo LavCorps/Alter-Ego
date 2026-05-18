@@ -1,28 +1,41 @@
-const settings = include('Configs/settings.json');
-const constants = include('Configs/constants.json');
-const saver = include(`${constants.modulesDir}/saver.js`);
+/** @import Moderator from '../Data/Moderator.ts' */
+/** @import GameSettings from '../Classes/GameSettings.js' */
+/** @import Game from '../Data/Game.ts' */
 
-module.exports.config = {
+/** @type {CommandConfig} */
+export const config = {
     name: "save_moderator",
     description: "Saves the game data to the spreadsheet.",
-    details: "Manually saves the game data to the spreadsheet. Ordinarily, game data is automatically saved "
-        + `to the spreadsheet every ${settings.autoSaveInterval} seconds, as defined in the settings file. `
-        + "However, this command allows you to save at any time, even when edit mode is enabled.",
-    usage: `${settings.commandPrefix}save`,
+    details: `Manually saves the game data to the spreadsheet. Ordinarily, game data is automatically saved `
+        + `to the spreadsheet periodically, as defined by the \`AUTOSAVE_INTERVAL\` in your \`.env\` file. `
+        + `However, this command allows you to save at any time, even when edit mode is enabled.`,
     usableBy: "Moderator",
     aliases: ["save"],
     requiresGame: true
 };
 
-module.exports.run = async (bot, game, message, command, args) => {
+/**
+ * @param {GameSettings} settings
+ * @returns {string}
+ */
+export function usage(settings) {
+    return `${settings.commandPrefix}save`;
+}
+
+/**
+ * @param {Game} game - The game in which the command is being executed.
+ * @param {UserMessage} message - The message in which the command was issued.
+ * @param {string} command - The command alias that was used.
+ * @param {string[]} args - A list of arguments passed to the command as individual words.
+ * @param {Moderator} moderator - The moderator who issued the command.
+ */
+export async function execute(game, message, command, args, moderator) {
     try {
-        await saver.saveGame();
-        game.messageHandler.addGameMechanicMessage(message.channel, "Successfully saved game data to the spreadsheet.");
+        await game.entitySaver.saveGame();
+        game.communicationHandler.sendToCommandChannel("Successfully saved game data to the spreadsheet.");
     }
     catch (err) {
         console.log(err);
-        game.messageHandler.addGameMechanicMessage(message.channel, "There was an error saving data to the spreadsheet. Error:\n```" + err + "```");
+        game.communicationHandler.sendToCommandChannel("There was an error saving data to the spreadsheet. Error:\n```" + err + "```");
     }
-
-    return;
-};
+}

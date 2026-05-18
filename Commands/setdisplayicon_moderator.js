@@ -1,45 +1,64 @@
-const settings = include('Configs/settings.json');
+/** @import Moderator from '../Data/Moderator.ts' */
+/** @import GameSettings from '../Classes/GameSettings.js' */
+/** @import Game from '../Data/Game.ts' */
 
-module.exports.config = {
+/** @type {CommandConfig} */
+export const config = {
     name: "setdisplayicon_moderator",
     description: "Sets a player's display icon.",
-    details: "Sets the icon that will display when the given player's dialog appears in spectator channels. It will also appear in Room channels when the "
-        + "player uses the say command. The icon given must be a URL with a .jpg or .png extension. When player data is reloaded, their display icon will "
-        + "be reverted to their Discord avatar. Note that if the player is inflicted  with or cured of a status effect with the concealed attribute, "
-        + "their display icon will be updated, thus overwriting one that was set manually. However, this command can be used to overwrite their new "
-        + "display icon afterwards as well. Note that this command will not change the player's avatar when they send messages to Room channels normally. "
-        + "To reset a player's display icon to their Discord avatar, simply do not specify a new display icon.",
-    usage: `${settings.commandPrefix}setdisplayicon kyra https://cdn.discordapp.com/attachments/697623260736651335/912103115241697301/mm.png\n`
-        + `${settings.commandPrefix}setdisplayicon kyra`,
+    details: `Sets the icon that will appear as the given player's avatar when their communications are mirrored as `
+        + `webhook messages. Webhook messages are primarily sent in spectate channels to reflect a player's dialog, `
+        + `narrations, and monologs. However, webhook messages are also sent in room and whisper channels when a player `
+        + `uses the \`say\`, \`gesture\`, and \`narrate\` commands. Because NPCs don't have Discord accounts, *all* of `
+        + `their communications are sent as webhook messages.\n\n`
+        + `To set a player's display icon, you must provide an image URL with an extension of `
+        + `.jpg, .jpeg, .png, .webp, or .avif. To reset a player's display icon to their default display icon, `
+        + `simply specify the player without providing an image URL.\n\n`
+        + `When player data is reloaded, all players will have their display icon reverted to their default display `
+        + `icon. For standard players, this is their server avatar, or their account avatar if they don't have one set. `
+        + `For NPCs, this is the display icon given for them on the sheet in lieu of a Discord user ID.\n\n`
+        + `Note that if the player is inflicted with a status effect with the \`concealed\` behavior attribute, their `
+        + `display icon will be updated to the image URL set in the \`DEFAULT_CONCEALED_ICON_URL\` setting in your `
+        + `\`.env\` file, thus overwriting one that was set manually. However, this command can be used to update their `
+        + `display icon again afterwards. When the status is cured, it will be reset to their default display icon.\n\n`
+        + `This command will not change the player's avatar when they send messages to room channels normally.`,
     usableBy: "Moderator",
-    aliases: ["setdisplayicon"],
+    aliases: ["setdisplayicon", "sdi"],
     requiresGame: true
 };
 
-module.exports.run = async (bot, game, message, command, args) => {
+/**
+ * @param {GameSettings} settings
+ * @returns {string}
+ */
+export function usage(settings) {
+    return `${settings.commandPrefix}setdisplayicon kyra https://cdn.discordapp.com/attachments/697623260736651335/912103115241697301/mm.png\n`
+        + `${settings.commandPrefix}setdisplayicon kyra`;
+}
+
+/**
+ * @param {Game} game - The game in which the command is being executed.
+ * @param {UserMessage} message - The message in which the command was issued.
+ * @param {string} command - The command alias that was used.
+ * @param {string[]} args - A list of arguments passed to the command as individual words.
+ * @param {Moderator} moderator - The moderator who issued the command.
+ */
+export async function execute(game, message, command, args, moderator) {
     if (args.length === 0)
-        return game.messageHandler.addReply(message, `You need to specify a player. Usage:\n${exports.config.usage}`);
+        return game.communicationHandler.reply(message, `You need to specify a player. Usage:\n${usage(game.settings)}`);
 
-    var player = null;
-    for (let i = 0; i < game.players_alive.length; i++) {
-        if (game.players_alive[i].name.toLowerCase() === args[0].toLowerCase()) {
-            player = game.players_alive[i];
-            args.splice(0, 1);
-            break;
-        }
-    }
-    if (player === null) return game.messageHandler.addReply(message, `Player "${args[0]}" not found.`);
+    const player = game.entityFinder.getLivingPlayer(args[0]);
+    if (player === undefined) return game.communicationHandler.reply(message, `Player "${args[0]}" not found.`);
+    args.splice(0, 1);
 
-    const iconURLSyntax = RegExp('(http(s?)://.*?.(jpg|png))$');
-    var input = args.join(" ");
+    const iconURLSyntax = /(http(s?):\/\/.*?\.(jpg|jpeg|png|webp|avif))(\?[^\s]*)?$/;
+    let input = args.join(" ");
     if (input === "") {
-        if (player.talent === "NPC") input = player.id;
+        if (player.isNPC) input = player.id;
         else input = null;
     }
-    else if (!iconURLSyntax.test(input)) return game.messageHandler.addReply(message, `The display icon must be a URL with a .jpg or .png extension.`);
+    else if (!iconURLSyntax.test(input)) return game.communicationHandler.reply(message, `The display icon must be a URL with an extension of .jpg, .jpeg, .png, .webp, or .avif.`);
 
     player.displayIcon = input;
-    game.messageHandler.addGameMechanicMessage(message.channel, `Successfully updated ${player.name}'s display icon.`);
-
-    return;
-};
+    game.communicationHandler.sendToCommandChannel(`Successfully updated ${player.name}'s display icon.`);
+}

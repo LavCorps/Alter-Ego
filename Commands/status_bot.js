@@ -1,32 +1,60 @@
-﻿const serverconfig = include('Configs/serverconfig.json');
+import CureAction from "../Data/Actions/CureAction.ts";
+import InflictAction from '../Data/Actions/InflictAction.ts';
+import InventoryItem from "../Data/InventoryItem.ts";
 
-module.exports.config = {
+/** @import Status from "../Data/Status.ts" */
+/** @import GameSettings from '../Classes/GameSettings.js' */
+/** @import Game from '../Data/Game.ts' */
+/** @import Player from '../Data/Player.ts' */
+
+/** @type {CommandConfig} */
+export const config = {
     name: "status_bot",
-    description: "Deals with status effects on players.",
-    details: 'Deals with status effects on players.\n'
-        + '-**add**/**inflict**: Inflicts the specified player with the given status effect. '
-        + 'If the "player" argument is used in place of a name, then the player who triggered '
-        + 'the command will be inflicted. If the "all" argument is used instead, then all living '
-        + 'players will be inflicted. If the "room" argument is used in place of a name, '
-        + 'then all players in the same room as the player who solved it will be inflicted.\n'
-        + '-**remove**/**cure**: Cures the specified player of the given status effect. '
-        + 'If the "player" argument is used in place of a name, then the player who triggered '
-        + 'the command will be cured. If the "all" argument is used instead, then all living '
-        + 'players will be cured. If the "room" argument is used in place of a name, '
-        + 'then all players in the same room as the player who solved it will be cured.',
-    usage: `status add player heated\n`
-        + `status add room safe\n`
-        + `inflict all deaf\n`
-        + `inflict diego heated\n`
-        + `status remove player injured\n`
-        + `status remove room restricted\n`
-        + `cure antoine injured\n`
-        + `cure all deaf`,
+    description: "Inflict or cure status effects on a player.",
+    details: `This command has two sub-commands:\n\n`
+        + `- **add**/**inflict**: Inflicts the specified player with the given status effect. `
+        + `The player will receive the "Description When Inflicted" message for the specified status effect. `
+        + `If they already have that status effect and there is a status listed in the "When Duplicated" column, `
+        + `they will be cured of the given status effect and inflicted with that instead. If the inflicted status `
+        + `has a timer, the player will be cured and then inflicted with the status effect in the "Develops Into" `
+        + `column when the timer reaches 0, if there is one. If the status effect is fatal, `
+        + `they will simply die when the timer reaches 0 instead.\n`
+        + `- **remove**/**cure**: Cures the specified player of the given status effect. `
+        + `The player will receive the "Description When Cured" message for the specified status effect. If there `
+        + `is a status listed in the "When Cured" column, they will then be inflicted with that status effect.\n\n`
+        + `If instead of providing the name of a player, you enter "all" or "living", all living players will be `
+        + `inflicted/cured of the given status effect, except for NPCs and players with the Free Movement role. `
+        + `However, if you instead use "player", the player who caused this command to be executed will be `
+        + `inflicted/cured. If "room" is used instead, then all players in the room with the initiating player will be `
+        + `inflicted/cured, including NPCs and players with the Free Movement role.`,
     usableBy: "Bot",
-    aliases: ["status", "inflict", "cure"]
+    aliases: ["status", "inflict", "cure"],
+    requiresGame: true
 };
 
-module.exports.run = async (bot, game, command, args, player, data) => {
+/**
+ * @param {GameSettings} settings
+ * @returns {string}
+ */
+export function usage(settings) {
+    return `status add player heated\n`
+        + `status add room safe\n`
+        + `inflict all deafened\n`
+        + `inflict Diego heated\n`
+        + `status remove player injured\n`
+        + `status remove room restricted\n`
+        + `cure Flint injured\n`
+        + `cure all deafened`;
+}
+
+/**
+ * @param {Game} game - The game in which the command is being executed.
+ * @param {string} command - The command alias that was used.
+ * @param {string[]} args - A list of arguments passed to the command as individual words.
+ * @param {Player} [player] - The player who caused the command to be executed, if applicable.
+ * @param {Callee} [callee] - The in-game entity that caused the command to be executed, if applicable.
+ */
+export async function execute(game, command, args, player, callee) {
     const cmdString = command + " " + args.join(" ");
     if (command === "status") {
         if (args[0] === "add" || args[0] === "inflict") command = "inflict";
@@ -35,42 +63,44 @@ module.exports.run = async (bot, game, command, args, player, data) => {
     }
 
     if (args.length === 0) {
-        game.messageHandler.addGameMechanicMessage(game.commandChannel, `Error: Couldn't execute command "${cmdString}". Insufficient arguments.`);
+        game.communicationHandler.sendToCommandChannel(`Error: Couldn't execute command "${cmdString}". Insufficient arguments.`);
         return;
     }
 
     // Determine which player(s) are being inflicted/cured with a status effect.
-    var players = new Array();
+    /**
+     * @type {Player[]}
+     */
+    let players = [];
     if (args[0].toLowerCase() === "player" && player !== null)
         players.push(player);
     else if (args[0].toLowerCase() === "room" && player !== null)
         players = player.location.occupants;
-    else if (args[0].toLowerCase() === "all") {
-        for (let i = 0; i < game.players_alive.length; i++) {
-            if (game.players_alive[i].talent !== "NPC" && !game.players_alive[i].member.roles.cache.find(role => role.id === serverconfig.headmasterRole))
-                players.push(game.players_alive[i]);
-        }
+    else if (args[0].toLowerCase() === "all" || args[0].toLowerCase() === "living") {
+        players = game.entityFinder.getLivingPlayers(undefined, false).filter(player => !game.guildContext.hasFreeMovementRole(player.member));
     }
     else {
-        player = null;
-        for (let i = 0; i < game.players_alive.length; i++) {
-            if (game.players_alive[i].name.toLowerCase() === args[0].toLowerCase()) {
-                player = game.players_alive[i];
-                break;
-            }
-        }
-        if (player === null) return game.messageHandler.addGameMechanicMessage(game.commandChannel, `Error: Couldn't execute command "${cmdString}". Couldn't find player "${args[0]}".`);
+        player = game.entityFinder.getLivingPlayer(args[0]);
+        if (player === undefined) return game.communicationHandler.sendToCommandChannel(`Error: Couldn't execute command "${cmdString}". Couldn't find player "${args[0]}".`);
         players.push(player);
     }
     args.splice(0, 1);
 
-    var statusName = args.join(" ").toLowerCase();
-    for (let i = 0; i < players.length; i++) {
-        if (command === "inflict")
-            players[i].inflict(game, statusName, true, true, true, data);
-        else if (command === "cure")
-            players[i].cure(game, statusName, true, true, true, data);
-    }
+    const statusId = args.join(" ");
+    /** @type {Status} */
+    const status = game.entityFinder.getStatusEffect(statusId);
+    if (!status) return game.communicationHandler.sendToCommandChannel(`Error: Couldn't execute command "${cmdString}". Couldn't find status effect "${statusId}".`);
+    if (status.id === "hidden") return game.communicationHandler.sendToCommandChannel(`Error: Couldn't execute command "${cmdString}". Can't inflict or cure "hidden".`);
 
-    return;
-};
+    const item = callee instanceof InventoryItem ? callee : undefined;
+    for (let i = 0; i < players.length; i++) {
+        if (command === "inflict") {
+            const action = new InflictAction(game, undefined, players[i], players[i].location, true);
+            action.performInflict(status, true, true, true, item);
+        }
+        else if (command === "cure") {
+            const action = new CureAction(game, undefined, players[i], players[i].location, true);
+            action.performCure(status, true, true, true, item);
+        }
+    }
+}

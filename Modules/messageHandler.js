@@ -1,210 +1,518 @@
-const settings = include('Configs/settings.json');
-const constants = include('Configs/constants.json');
-const serverconfig = include('Configs/serverconfig.json');
-const discord = require('discord.js');
-const QueuedMessage = include(`${constants.dataDir}/QueuedMessage.js`);
+import Dialog from '../Data/Dialog.ts';
+import AnnounceAction from '../Data/Actions/AnnounceAction.ts';
+import NarrateAction from '../Data/Actions/NarrateAction.ts';
+import SayAction from '../Data/Actions/SayAction.ts';
+import * as discordUtils from './discordUtils.js';
+import { MessageDisplayType } from './enums.js';
+import { capitalizeFirstLetter } from './helpers.ts';
+import { Message, MessageFlags, ChannelType, Attachment, Collection, TextChannel, Embed, Webhook, ComponentType, EmbedBuilder } from 'discord.js';
 
-module.exports.queue = [];
-module.exports.cache = [];
-module.exports.clientID = null;
+/** @import Command from '../Classes/Command.ts' */
+/** @import Interactable from '../Classes/Interactables/Interactable.ts' */
+/** @import Game from '../Data/Game.ts' */
+/** @import Narration from '../Data/Narration.ts' */
+/** @import Player from '../Data/Player.ts' */
+/** @import Room from '../Data/Room.ts' */
+/** @import Whisper from '../Data/Whisper.ts' */
 
-const messagePriority = {
-    modChannel: 4,
-    tellPlayer: 3,
-    tellRoom: 3,
-    gameMechanicMessage: 2,
-    logMessage: 1,
-    spectatorMessage: 0
-};
+/**
+ * Processes a message sent in a guild during a game and directs it to the relevant handlers.
+ * @param {Game} game - The game the message is intended for.
+ * @param {UserMessage} message - The message to process.
+ */
+export function processIncomingMessage(game, message) {
+    if (message.channel.type !== ChannelType.GuildText) return;
+    const isInWhisperChannel = message.channel.parentId === game.guildContext.whisperCategoryId;
+    const isInAnnouncementChannel = message.channel.id === game.guildContext.announcementChannel.id;
+    const isInRoomChannel = game.guildContext.roomCategories.includes(message.channel.parentId);
+    if (!isInWhisperChannel && !isInAnnouncementChannel && !isInRoomChannel) return;
 
-// Narrate something to a room
-module.exports.addNarration = async (room, messageText, addSpectate = true, speaker = null) => {
-    addMessageToQueue(room.channel, messageText, messagePriority.tellRoom);
-    if (addSpectate) {
-        // Create a queued message for each of the occupants' spectate channels
-        room.occupants.forEach(player => {
-            if ((speaker === null || speaker.name !== player.name) && (!player.hasAttribute("no channel") || player.hasAttribute("see room")) && !player.hasAttribute("no sight") && !player.hasAttribute("unconscious") && player.spectateChannel !== null)
-                addMessageToQueue(player.spectateChannel, messageText, messagePriority.spectatorMessage);
-        });
+    game.communicationHandler.cacheDialog(message);
+
+    const isModerator = message.member && message.member.roles.cache.has(game.guildContext.moderatorRole.id);
+    const room = game.entityFinder.getRoom(message.channel.name);
+    const whisper = game.entityFinder.getWhisperByChannelId(message.channel.id);
+    const player = game.entityFinder.getLivingPlayerById(message.author.id);
+    if (player) {
+        player.setOnline();
+        const playerNoSpeechStatusEffects = player.getBehaviorAttributeStatusEffects("no speech");
+        if (playerNoSpeechStatusEffects.length > 0) {
+            game.communicationHandler.sendMessageToPlayer(player, game.notificationGenerator.generatePlayerNoSpeechNotification(playerNoSpeechStatusEffects[0].id), false, MessageDisplayType.ALERT);
+            message.delete().catch();
+            return;
+        }
+        const location = isInAnnouncementChannel || isInWhisperChannel ? player.location : room;
+        const dialog = new Dialog(game, message, player, location, message.content, isInAnnouncementChannel, whisper, message.cleanContent);
+        if (dialog.isAnnouncement) {
+            const announceAction = new AnnounceAction(game, message, dialog.speaker, dialog.location, false, dialog.whisper);
+            announceAction.performAnnounce(dialog);
+        }
+        else {
+            const sayAction = new SayAction(game, message, dialog.speaker, dialog.location, false, dialog.whisper);
+            sayAction.performSay(dialog);
+        }
     }
-};
-
-// Narrate something in a whisper
-module.exports.addNarrationToWhisper = async (whisper, messageText, addSpectate = true) => {
-    addMessageToQueue(whisper.channel, messageText, messagePriority.tellRoom);
-    if (addSpectate) {
-        // Create a queued message for each of the occupants' spectate channels, and specify it's in a whisper channel
-        let whisperMessageText = `*(In a whisper with ${whisper.makePlayersSentenceGroup()}):*\n` + messageText;
-        whisper.players.forEach(player => {
-            if (!player.hasAttribute("no sight") && !player.hasAttribute("unconscious") && player.spectateChannel !== null)
-                addMessageToQueue(player.spectateChannel, whisperMessageText, messagePriority.spectatorMessage);
-        });
+    else if (isModerator && (room || whisper)) {
+        const moderator = game.entityLoader.getOrCreateModerator(message.member);
+        if (moderator.sentMessageInLatchChannel(message) && !message.content.startsWith("(")) {
+            const npc = moderator.getLatch();
+            const dialog = new Dialog(game, message, npc, npc.location, message.content, false, whisper, message.cleanContent);
+            const channel = whisper ? whisper.channel : npc.location.channel;
+            game.communicationHandler.sendDialogAsWebhook(channel, dialog, dialog.getDisplayNameForWebhook(!!whisper), dialog.getDisplayIconForWebhook(!!whisper)).then(dialogMessage => {
+                dialog.setMessage(dialogMessage);
+                const sayAction = new SayAction(game, dialogMessage, npc, npc.location, true, whisper);
+                sayAction.performSay(dialog);
+                message.delete().catch();
+            });
+        }
+        else {
+            const location = whisper ? whisper.location : room;
+            const narrateAction = new NarrateAction(game, message, undefined, location, false, whisper);
+            game.narrationHandler.sendNarrateAction(MessageDisplayType.PLAIN_TEXT, narrateAction, message.content, moderator);
+        }
     }
-};
+}
 
-// Narrate something directly to a player
-module.exports.addDirectNarration = async (player, messageText, addSpectate = true) => {
-    if (player.talent !== "NPC") addMessageToQueue(player.member, messageText, messagePriority.tellPlayer);
-    if (addSpectate && player.spectateChannel !== null)
-        addMessageToQueue(player.spectateChannel, messageText, messagePriority.spectatorMessage);
-};
+/**
+ * Narrates a message to a room.
+ * @param {Room} room - The room to send the message to.
+ * @param {Narration} narration - The narration being sent.
+ * @param {string} messageText - The message to send.
+ * @param {MessageDisplayType} messageDisplayType - The display type of the message to send.
+ * @param {boolean} [addSpectate] - Whether or not to mirror the message in spectate channels. Defaults to true.
+ * @param {Player} [player] - The player whose action the narration is about, if applicable.
+ * @param {string} [webhookUsername] - The username to use for the narrated webhook message, if applicable.
+ */
+export function sendNarrationToRoom(room, narration, messageText, messageDisplayType, addSpectate = true, player = null, webhookUsername = narration.narratorDisplayName) {
+    if (messageText !== "") {
+        const files = narration.attachments.map(attachment => attachment.url);
+        const sendWebhookMessage = messageDisplayType === MessageDisplayType.PLAYER || narration.isModeratorNarration();
+        let messageCreateOptions;
+        if (sendWebhookMessage)
+            messageCreateOptions = discordUtils.generateWebhookMessageDisplayCreateOptions(messageDisplayType, room.getGame(), messageText, webhookUsername, narration.narratorDisplayIcon, narration.embeds, files, player);
+        else messageCreateOptions = discordUtils.generateMessageDisplayCreateOptions(messageDisplayType, room.getGame(), messageText, player);
 
-// Narrate something directly to a player with attachments
-module.exports.addDirectNarrationWithAttachments = async (player, messageText, attachments, addSpectate = true) => {
-    var files = [];
-    [...attachments.values()].forEach(attachment => files.push(attachment.url));
-
-    if (player.talent !== "NPC") addMessageWithAttachmentsToQueue(player.member, { content: messageText, files: files }, messagePriority.tellPlayer);
-    if (addSpectate && player.spectateChannel !== null)
-        addMessageWithAttachmentsToQueue(player.spectateChannel, { content: messageText, files: files }, messagePriority.spectatorMessage);
-};
-
-// Narrate a room description to a player
-module.exports.addRoomDescription = async (game, player, location, descriptionText, defaultDropObjectText, addSpectate = true) => {
-    // Create the list of occupants
-    let occupantsString = location.generate_occupantsString(location.occupants.filter(occupant => !occupant.hasAttribute("hidden") && occupant.name !== player.name));
-    occupantsString = occupantsString === "" ? "You don't see anyone here." : location.occupantsString.length <= 1000 ? `You see ${occupantsString} in this room.` : `Too many players in this room.`;
-    let sleepingPlayersString = location.generate_occupantsString(location.occupants.filter(occupant => occupant.hasAttribute("unconscious") && !occupant.hasAttribute("hidden")));
-    if (sleepingPlayersString !== "") {
-        occupantsString += `\n${sleepingPlayersString} ` + (sleepingPlayersString.includes(" and ") ? "are" : "is") + " asleep.";
-    }
-
-    const thumbnail = location.iconURL !== "" ? location.iconURL : settings.defaultRoomIconURL !== "" ? settings.defaultRoomIconURL : game.guild.iconURL();
-    let embed = new discord.EmbedBuilder()
-        .setThumbnail(thumbnail)
-        .setTitle(location.name)
-        .setColor('1F8B4C')
-        .setDescription(descriptionText)
-        .addFields([
-            { name: "Occupants", value: occupantsString },
-            { name: `${settings.defaultDropObject.charAt(0) + settings.defaultDropObject.substring(1).toLowerCase()}`, value: defaultDropObjectText === "" ? "You don't see any items." : defaultDropObjectText }
-        ]);
-
-    if (player.talent !== "NPC") addEmbedToQueue(player.member, embed, messagePriority.tellPlayer);
-    if (addSpectate && player.spectateChannel !== null)
-        addEmbedToQueue(player.spectateChannel, embed, messagePriority.spectatorMessage);
-};
-
-// Add a log message
-module.exports.addLogMessage = async (logChannel, messageText) => {
-    addMessageToQueue(logChannel, messageText, messagePriority.logMessage);
-};
-
-// Add a game mechanic message that does not add to narration (e.g. incorrect syntax message, or the reason an action was prevented)
-module.exports.addGameMechanicMessage = (channel, messageText) => {
-    // Give a higher priority if this is sent in the mod channel
-    let priority = channel.parent !== undefined && channel.id === serverconfig.commandChannel ? messagePriority.modChannel : messagePriority.gameMechanicMessage;
-    addMessageToQueue(channel, messageText, priority);
-};
-
-// Add a reply to a message
-module.exports.addReply = async (message, messageText) => {
-    // Give a higher priority if this is sent in the mod channel
-    let priority = message.channel.id === serverconfig.commandChannel ? messagePriority.modChannel : messagePriority.gameMechanicMessage;
-    addReplyToQueue(message, messageText, priority);
-};
-
-// Take a message sent in a room/whisper by a player and add it to the spectate channels of other players in the room
-module.exports.addSpectatedPlayerMessage = async (player, speaker, message, whisper = null, displayName = null) => {
-    if (player.spectateChannel !== null) {
-        var messageText = message.content || '';
-        // If this is a whisper, specify that the following message comes from the whisper
-        if (whisper && whisper.players.length > 1)
-            messageText = `*(Whispered to ${whisper.makePlayersSentenceGroupExcluding(speaker.displayName)}):*\n` + messageText;
-        else if (whisper)
-            messageText = `*(Whispered):*\n` + messageText;
-
-        // Create a webhook for this spectate channel if necessary, or grab the existing one
-        let webHooks = await player.spectateChannel.fetchWebhooks();
-        let webHook = webHooks.find(webhook => webhook.owner.id === this.clientID);
-        if (webHook === null || webHook === undefined)
-            webHook = await player.spectateChannel.createWebhook({ name: player.spectateChannel.name });
-
-        var files = [];
-        [...message.attachments.values()].forEach(attachment => files.push(attachment.url));
-
-        // Send through the webhook with the original author's username and avatar, and the original message's contents
-        addWebhookMessageToQueue(webHook,
+        room.getGame().messageQueue.enqueue(
             {
-                content: messageText,
-                username: displayName ? displayName : speaker.displayName,
-                avatarURL: speaker.displayIcon ? speaker.displayIcon : speaker.member ? speaker.member.displayAvatarURL() : message.author.avatarURL() || message.author.defaultAvatarURL,
-                embeds: message.embeds,
-                files: files
+                fire: async () => {
+                    if (sendWebhookMessage) {
+                        const webhook = await getOrCreateWebhook(room.channel);
+                        const webhookMessage = await webhook.send(messageCreateOptions);
+                        if (narration.message && webhookMessage) room.getGame().communicationHandler.cacheSpectateMirrorForDialog(narration.message, webhookMessage.id, webhook.id);
+                    }
+                    else await room.channel.send(messageCreateOptions);
+                },
+                destination: room.channel.id
             },
-            messagePriority.spectatorMessage, message.id
+            "tell"
+        );
+        if (addSpectate) {
+            room.occupants.forEach(occupant => {
+                if (doMirrorInSpectateChannel(occupant, player)) {
+                    sendNarrationSpectateMessage(occupant, messageText, messageDisplayType, files, messageCreateOptions);
+                }
+            });
+        }
+    }
+}
+
+/**
+ * Narrates a message to a whisper.
+ * @param {Whisper} whisper - The whisper to send the message to.
+ * @param {Narration} narration - The narration being sent.
+ * @param {string} messageText - The message to send.
+ * @param {string} messageTextWithSpectatePrefix - The message to send with a prefix for spectate channels indicating which whisper the narration occurred in.
+ * @param {MessageDisplayType} messageDisplayType - The display type of the message to send.
+ * @param {boolean} [addSpectate] - Whether or not to mirror the message in spectate channels. Defaults to true.
+ * @param {Player} [player] - The player whose action the narration is about, if applicable.
+ */
+export function sendNarrationToWhisper(whisper, narration, messageText, messageTextWithSpectatePrefix, messageDisplayType, addSpectate = true, player = null) {
+    if (messageText !== "") {
+        const files = narration.attachments.map(attachment => attachment.url);
+        const sendWebhookMessage = messageDisplayType === MessageDisplayType.PLAYER;
+
+        whisper.getGame().messageQueue.enqueue(
+            {
+                fire: async () => {
+                    if (whisper.deleted) return;
+                    let messageCreateOptions;
+                    if (sendWebhookMessage) {
+                        messageCreateOptions = discordUtils.generateWebhookMessageDisplayCreateOptions(messageDisplayType, whisper.getGame(), messageText, narration.narratorDisplayName, narration.narratorDisplayIcon, narration.embeds, files, player);
+                        const webhook = await getOrCreateWebhook(whisper.channel);
+                        webhook.send(messageCreateOptions);
+                    }
+                    else {
+                        messageCreateOptions = discordUtils.generateMessageDisplayCreateOptions(messageDisplayType, whisper.getGame(), messageText, player);
+                        await whisper.channel.send(messageCreateOptions);
+                    }
+                },
+                destination: whisper.channel.id
+            },
+            "tell"
+        );
+        if (addSpectate) {
+            whisper.players.forEach(player => {
+                if (player.canSee() && player.isConscious() && player.spectateChannel !== null) {
+                    let messageCreateOptions;
+                    if (sendWebhookMessage)
+                        messageCreateOptions = discordUtils.generateWebhookMessageDisplayCreateOptions(messageDisplayType, whisper.getGame(), messageTextWithSpectatePrefix, narration.narratorDisplayName, narration.narratorDisplayIcon, [], [], player);
+                    else messageCreateOptions = discordUtils.generateMessageDisplayCreateOptions(messageDisplayType, whisper.getGame(), messageTextWithSpectatePrefix);
+                    sendNarrationSpectateMessage(player, messageText, messageDisplayType, files, messageCreateOptions);
+                }
+            });
+        }
+    }
+}
+
+/**
+ * Sends a notification message to a player.
+ * @param {Player} player - The player to send the message to.
+ * @param {string} messageText - The message to send.
+ * @param {MessageDisplayType} messageDisplayType - The display type of the message to send.
+ * @param {boolean} [addSpectate] - Whether or not to mirror the message in spectate channels. Defaults to true.
+ * @param {Collection<string, Attachment>} [attachments] - A collection of attachments to send, if any.
+ * @param {Interactable[]} interactables - An array of interactables.
+ */
+export function sendNotification(player, messageText, messageDisplayType, addSpectate = true, attachments = new Collection(), interactables = []) {
+    const files = attachments.map(attachment => attachment.url);
+
+    if (!player.isNPC) {
+        player.getGame().messageQueue.enqueue(
+            {
+                fire: async () => {
+                    const message = await player.notificationChannel.send(
+                        discordUtils.generateMessageDisplayCreateOptions(messageDisplayType, player.getGame(), messageText, player, files, interactables),
+                    );
+                    if (message && interactables.length > 0)
+                        player.getGame().botContext.interactableManager.addInteractableMessage(player.notificationChannel.id, message.id, interactables.map(interactable => interactable.customId));
+                },
+                destination: player.notificationChannel.id
+            },
+            "tell"
         );
     }
-};
+    if (addSpectate && player.spectateChannel !== null) {
+        sendNarrationSpectateMessage(player, messageText, messageDisplayType, files, discordUtils.generateMessageDisplayCreateOptions(messageDisplayType, player.getGame(), messageText, player, files));
+    }
+}
 
-module.exports.editSpectatorMessage = async (messageOld, messageNew) => {
-    const cachedMessage = module.exports.cache.find(entry => entry.id === messageOld.id);
-    if (!cachedMessage) return;
-    cachedMessage.related.forEach(async related => {
-        const webHook = await messageOld.client.fetchWebhook(related.webHook);
-        if (webHook) {
+/**
+ * Sends the room description to a player as an array of Discord Components.
+ * @param {Player} player - The player to send the message to.
+ * @param {Room} location - The room whose description is being sent.
+ * @param {string} descriptionText - The description of the room to send.
+ * @param {string} occupantsString - The list of occupants in the room.
+ * @param {string} defaultDropFixtureText - The description of the default drop fixture in this room.
+ * @param {boolean} [addSpectate] - Whether or not to mirror the message in spectate channels. Defaults to true.
+ * @param {Interactable[]} interactables - An array of interactables.
+ */
+export function sendRoomDescription(player, location, descriptionText, occupantsString, defaultDropFixtureText, addSpectate = true, interactables = []) {
+    if (!player.isNPC || (addSpectate && player.spectateChannel !== null)) {
+        if (!player.isNPC) {
+            location.getGame().messageQueue.enqueue(
+                {
+                    fire: async () => {
+                        const message = await player.notificationChannel.send({
+                            components: discordUtils.createRoomDescriptionComponents(location, descriptionText, occupantsString, defaultDropFixtureText, location.getGame().settings.embedAccentColor, interactables),
+                            flags: MessageFlags.IsComponentsV2,
+                        });
+                        if (message && interactables.length > 0)
+                            player.getGame().botContext.interactableManager.addInteractableMessage(player.notificationChannel.id, message.id, interactables.map(interactable => interactable.customId));
+                    },
+                    destination: player.notificationChannel.id
+                },
+                "tell"
+            );
+        }
+        if (addSpectate && player.spectateChannel !== null) {
+            location.getGame().messageQueue.enqueue(
+                {
+                    fire: async () => {
+                        await player.spectateChannel.send({
+                            components: discordUtils.createRoomDescriptionComponents(location, descriptionText, occupantsString, defaultDropFixtureText, location.getGame().settings.embedAccentColor),
+                            flags: MessageFlags.IsComponentsV2,
+                        });
+                    },
+                    destination: player.spectateChannel.id
+                },
+                "spectator"
+            );
+        }
+    }
+}
+
+/**
+ * Edits the given message to remove its interactable components.
+ * @param {Message} message - The message to remove interactable components from.
+ */
+export function removeInteractablesFromMessage(message) {
+    message.edit({ components: message.components.filter(component => component.type !== ComponentType.ActionRow)});
+}
+
+/**
+ * Sends the help menu for a command as an array of Discord Components.
+ * @param {Game} game - The game context in which this help menu is being sent.
+ * @param {Messageable} channel - The channel to send the help menu to.
+ * @param {Command} command - The command to display the help menu for.
+ */
+export function sendCommandHelp(game, channel, command) {
+    const commandName = capitalizeFirstLetter(command.config.name.substring(0, command.config.name.indexOf('_')));
+    const title = `**${commandName} Command Help**`;
+    const description = command.config.description;
+    let aliasString = "";
+    for (const alias of command.config.aliases) aliasString += `\`${game.settings.commandPrefix}${alias}\` `;
+    const usage = command.usage(game.settings);
+    const details = command.config.details;
+    const thumbnailURL = game.guildContext.guild.members.me.avatarURL() || game.guildContext.guild.members.me.user.avatarURL();
+    const color = game.settings.embedAccentColor;
+
+    game.messageQueue.enqueue(
+        {
+            fire: async () => {
+                await channel.send({
+                    components: discordUtils.createCommandHelpComponents(title, description, aliasString, usage, details, thumbnailURL, color),
+                    flags: MessageFlags.IsComponentsV2,
+                });
+            },
+            destination: channel.id
+        },
+        channel.id === game.guildContext.commandChannel.id ? "mod" : "mechanic"
+    );
+}
+
+/**
+ * Sends the view of a game entity as an array of Discord components.
+ * @param {Game} game - The game context in which this help menu is being sent.
+ * @param {Messageable} channel - The channel to send the view to.
+ * @param {PersistentGameEntityName} entityType - The type of entity this view is for.
+ * @param {number} entityRow - The row number of this entity.
+ * @param {ViewField[]} fields - An array of view fields to convert into components. 
+ * @param {Interactable[]} interactables - An array of interactables.
+ */
+export function sendEntityView(game, channel, entityType, entityRow, fields, interactables = []) {
+    const color = game.settings.embedAccentColor;
+    game.messageQueue.enqueue(
+        {
+            fire: async () => {
+                const message = await channel.send({
+                    components: discordUtils.createEntityViewComponents(entityType, entityRow, fields, color, interactables),
+                    flags: MessageFlags.IsComponentsV2,
+                });
+                if (message && interactables.length > 0)
+                    game.botContext.interactableManager.addInteractableMessage(channel.id, message.id, interactables.map(interactable => interactable.customId));
+            },
+            destination: channel.id
+        },
+        channel.id === game.guildContext.commandChannel.id ? "mod" : "mechanic"
+    )
+}
+
+/**
+ * Sends a message to the game's log channel.
+ * @param {Game} game - The game in which to send a log message.
+ * @param {string} messageText - The message to send.
+ */
+export function sendLogMessage(game, messageText) {
+    game.messageQueue.enqueue(
+        {
+            fire: async () => {
+                await game.guildContext.logChannel.send(messageText);
+            },
+            destination: game.guildContext.logChannel.id
+        },
+        "log"
+    );
+}
+
+/**
+ * Sends a standard message indicating the outcome of a game mechanic in the specified channel.
+ * @param {Game} game - The game in which this mechanic is occurring.
+ * @param {Messageable} channel - The channel to send the message to.
+ * @param {string} messageText - The message to send.
+ * @param {Interactable[]} interactables - An array of interactables.
+ * @param {(Embed|EmbedBuilder)[]} embeds - The embeds to send. 
+ */
+export function sendGameMechanicMessage(game, channel, messageText, interactables = [], embeds = []) {
+    const messageCreateOptions = interactables.length > 0 ? discordUtils.generateMessageDisplayCreateOptions(MessageDisplayType.PLAIN_TEXT, game, messageText, undefined, undefined, interactables, embeds) : messageText;
+    game.messageQueue.enqueue(
+        {
+            fire: async () => {
+                const message = await channel.send(messageCreateOptions);
+                if (message && interactables.length > 0)
+                    game.botContext.interactableManager.addInteractableMessage(channel.id, message.id, interactables.map(interactable => interactable.customId));
+            },
+            destination: channel.id
+        },
+        channel.id === game.guildContext.commandChannel.id ? "mod" : "mechanic"
+    );
+}
+
+/**
+ * Replies to a message. This is usually done when a user has sent a message with an error.
+ * @param {Game} game - The game this message was sent in.
+ * @param {UserMessage} message - The message to reply to.
+ * @param {string} messageText - The text to send in response.
+ */
+export function sendReply(game, message, messageText) {
+    game.messageQueue.enqueue(
+        {
+            fire: async () => {
+                if (message.channel.type === ChannelType.GuildText && message.channel.id === game.guildContext.commandChannel.id) {
+                    await message.reply(messageText);
+                }
+                else {
+                    await message.author.send(messageText);
+                }
+            },
+            destination: message.channel.id
+        },
+        message.channel.type === ChannelType.GuildText && message.channel.id === game.guildContext.commandChannel.id ? "mod" : "mechanic"
+    );
+}
+
+/**
+ * Mirrors a narration in a spectate channel.
+ * @param {Player} player - The player whose spectate channel this message is being sent to.
+ * @param {string} messageText - The text of the message to send.
+ * @param {MessageDisplayType} messageDisplayType - The type of message to send.
+ * @param {string[]} [files] - A collection of attachments to send, if any.
+ * @param {object} [messageCreateOptions] - The message create options to send. Optional.
+ */
+export function sendNarrationSpectateMessage(player, messageText, messageDisplayType, files = [], messageCreateOptions = discordUtils.generateMessageDisplayCreateOptions(messageDisplayType, player.getGame(), messageText, player, files)) {
+    player.getGame().messageQueue.enqueue(
+        {
+            fire: async () => {
+                const sendWebhookMessage = messageDisplayType === MessageDisplayType.PLAYER;
+                if (sendWebhookMessage) {
+                    const webhook = await getOrCreateWebhook(player.spectateChannel);
+                    await webhook.send(messageCreateOptions);
+                }
+                else await player.spectateChannel.send(messageCreateOptions);
+            },
+            destination: player.spectateChannel.id
+        },
+        "spectator"
+    );
+}
+
+/**
+ * Mirrors a message in a spectate channel as a webhook.
+ * @param {Player} player - The player whose spectate channel this message is being sent to.
+ * @param {string} messageText - The text of the message to send.
+ * @param {string} webhookUsername - The username to use for the mirrored webhook message.
+ * @param {string} webhookAvatarURL - The avatar URL to use for the mirrored webhook message.
+ * @param {Embed[]} [embeds] - An array of embeds to send in the message. Optional.
+ * @param {string[]} [files] - An array of URLs to send as attachments. Optional.
+ * @param {UserMessage} [message] - The message being mirrored. Optional.
+ * @param {MessageDisplayType} [messageDisplayType] - The type of message to send. Defaults to PLAIN_TEXT.
+ * @param {Player} [speaker] - The player who initiated the webhook message. Optional.
+ */
+export function sendWebhookSpectateMessage(player, messageText, webhookUsername, webhookAvatarURL, embeds = [], files = [], message, messageDisplayType = MessageDisplayType.PLAIN_TEXT, speaker) {
+    if (player.spectateChannel !== null) {
+        player.getGame().messageQueue.enqueue(
+            {
+                fire: async () => {
+                    const webhook = await getOrCreateWebhook(player.spectateChannel);
+                    const webhookMessage = await sendWebhookMessage(webhook, messageText, webhookUsername, webhookAvatarURL, embeds, files, player.getGame(), messageDisplayType, speaker);
+                    if (message) player.getGame().communicationHandler.cacheSpectateMirrorForDialog(message, webhookMessage.id, webhook.id);
+                },
+                destination: player.spectateChannel.id
+            },
+            "spectator"
+        );
+    }
+}
+
+/**
+ * Edits spectate messages when the dialog they mirror is edited.
+ * @param {Game} game - The game this dialog belongs to.
+ * @param {UserMessage|import('discord.js').PartialMessage} messageOld - The original message being edited.
+ * @param {UserMessage} messageNew - The new message after being edited.
+ */
+export function editSpectatorMessage(game, messageOld, messageNew) {
+    const spectateMirrors = game.communicationHandler.getDialogSpectateMirrors(messageOld);
+    if (!spectateMirrors) return;
+    spectateMirrors.forEach(async mirror => {
+        const webhook = await messageOld.client.fetchWebhook(mirror.webhookId);
+        if (webhook) {
             let messageText = messageNew.content;
-            if (messageOld.channel.parentId === serverconfig.whisperCategory) {
-                const relatedMessage = await webHook.fetchMessage(related.message);
-                const regexGroups = relatedMessage.content.match(new RegExp(/(\*\(Whispered(?:.*)\):\*\n)(.*)/m));
+            if (messageOld.channel.type === ChannelType.GuildText && messageOld.channel.parentId === game.guildContext.whisperCategoryId) {
+                const relatedMessage = await webhook.fetchMessage(mirror.messageId);
+                const regexGroups = relatedMessage.content.match(new RegExp(/((?:-# )?\*\(Whispered(?:.*)\):\*\n)(.*)/m));
                 if (regexGroups) messageText = regexGroups[1] + messageNew.content;
             }
-            webHook.editMessage(related.message, { content: messageText });
+            webhook.editMessage(mirror.messageId, { content: messageText });
         }
     });
 }
 
-module.exports.sendQueuedMessages = async () => {
-    let queue = module.exports.queue;
-    // Send the first message and remove it, until there are no messages left
-    while (queue.length > 0) {
-        queue[0].sendAction();
-        queue.splice(0, 1);
-    }
-};
-
-module.exports.clearQueue = async () => {
-    module.exports.queue = [];
-};
-
-
-function addMessageToQueue(channel, messageText, priority) {
-    if (messageText !== "") {
-        let sendAction = () => channel.send(messageText);
-        addToQueue(sendAction, priority);
-    }
+/**
+ * Edits spectate messages when the dialog they mirror is edited.
+ * @param {Game} game - The game this dialog belongs to.
+ * @param {UserMessage|import('discord.js').PartialMessage} message - The message being deleted.
+ */
+export function deleteSpectatorMessage(game, message) {
+    const spectateMirrors = game.communicationHandler.getDialogSpectateMirrors(message);
+    if (!spectateMirrors) return;
+    spectateMirrors.forEach(async mirror => {
+        const webhook = await message.client.fetchWebhook(mirror.webhookId);
+        webhook.deleteMessage(mirror.messageId);
+    });
 }
 
-function addMessageWithAttachmentsToQueue(channel, attachments, priority) {
-    let sendAction = () => channel.send(attachments);
-    addToQueue(sendAction, priority);
+/**
+ * Gets the client's webhook for the given channel, or creates one if it doesn't exist already.
+ * @param {TextChannel} channel - The channel to get or create a webhook for.
+ */
+export async function getOrCreateWebhook(channel) {
+    const webhooks = await channel.fetchWebhooks();
+    let webhook = webhooks.find(webhook => webhook.owner.id === channel.client.user.id);
+    if (webhook === undefined) webhook = await channel.createWebhook({ name: channel.name });
+    return webhook;
 }
 
-function addWebhookMessageToQueue(webHook, webHookContents, priority, originId) {
-    let sendAction = () => webHook.send(webHookContents).then(message => {
-        const cachedMessage = module.exports.cache.find(entry => entry.id === originId);
-        if (cachedMessage) cachedMessage.related.push({ message: message.id, webHook: webHook.id });
-    }).catch(console.error);
-    addToQueue(sendAction, priority);
+/**
+ * Sends a webhook message in the specified channel.
+ * @param {Webhook} webhook - The channel to send the webhook message to.
+ * @param {string} content - The content of the message to send.
+ * @param {string} username - The username of the webhook message.
+ * @param {string} avatarURL - The URL of the icon to use for the webhook message.
+ * @param {Embed[]} [embeds] - An array of embeds to send in the message. Optional.
+ * @param {string[]} [files] - An array of URLs to send as attachments. Optional.
+ * @param {Game} [game] - The game the message is for. Optional.
+ * @param {MessageDisplayType} [messageDisplayType] - The type of message to send. Defaults to PLAIN_TEXT.
+ * @param {Player} [player] - The player who initiated the webhook message. Optional.
+ */
+export async function sendWebhookMessage(webhook, content, username, avatarURL, embeds = [], files = [], game, messageDisplayType = MessageDisplayType.PLAIN_TEXT, player) {
+    const createdMessage = await webhook.send(discordUtils.generateWebhookMessageDisplayCreateOptions(messageDisplayType, game, content, username, avatarURL, embeds, files, player));
+    return createdMessage;
 }
 
-function addReplyToQueue(message, messageText, priority) {
-    let sendAction = priority === messagePriority.modChannel ? () => message.reply(messageText) : () => message.author.send(messageText);
-    addToQueue(sendAction, priority);
+/**
+ * @param {Game} game - The game whose message queue should have its messages sent.
+ */
+export async function sendQueuedMessages(game) {
+    await game.messageQueue.process();
 }
 
-function addEmbedToQueue(channel, embed, priority) {
-    let sendAction = () => channel.send({ embeds: [embed] });
-    addToQueue(sendAction, priority);
+/**
+ * @param {Game} game - The game whose message queue should be emptied.
+ */
+export function clearQueue(game) {
+    game.messageQueue.clear();
 }
 
-function addToQueue(sendAction, priority) {
-    let queuedMessage = new QueuedMessage(sendAction, priority);
-
-    let queue = module.exports.queue;
-    let i = 0;
-    while (i < queue.length - 1 && queue[i].priority >= queuedMessage.priority) {
-        i++;
-    }
-    queue.splice(i, 0, queuedMessage);
+/**
+ * Returns true if the message should be mirrored in the given player's spectate channel.
+ * @param {Player} player - The player whose spectate channel the message would be mirrored in.
+ * @param {Player} performer - The player who performed the action.
+ */
+function doMirrorInSpectateChannel(player, performer) {
+    return (
+        (performer === null || performer.name !== player.name)
+        && (!player.hasBehaviorAttribute("no channel") || player.hasBehaviorAttribute("see room"))
+        && player.canSee()
+        && player.isConscious()
+        && player.spectateChannel !== null
+    );
 }

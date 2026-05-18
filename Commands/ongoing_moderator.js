@@ -1,28 +1,37 @@
-const settings = include('Configs/settings.json');
+/** @import Moderator from '../Data/Moderator.ts' */
+/** @import GameSettings from '../Classes/GameSettings.js' */
+/** @import Game from '../Data/Game.ts' */
 
-module.exports.config = {
+/** @type {CommandConfig} */
+export const config = {
     name: "ongoing_moderator",
     description: "Lists all ongoing events.",
     details: "Lists all events which are currently ongoing, along with the time remaining on each one, if applicable.",
-    usage: `${settings.commandPrefix}ongoing\n`
-        + `${settings.commandPrefix}events`,
     usableBy: "Moderator",
     aliases: ["ongoing", "events"],
     requiresGame: true
 };
 
-module.exports.run = async (bot, game, message, command, args) => {
-    var events = [];
-    for (let i = 0; i < game.events.length; i++) {
-        if (game.events[i].ongoing) {
-            if (game.events[i].remaining === null)
-                events.push(game.events[i].name);
-            else
-                events.push(game.events[i].name + ` (${game.events[i].remainingString})`);
-        }
-    }
-    const eventList = events.join(", ");
-    game.messageHandler.addGameMechanicMessage(message.channel, `Ongoing events:\n${eventList}`);
+/**
+ * @param {GameSettings} settings 
+ * @returns {string} 
+ */
+export function usage(settings) {
+    return `${settings.commandPrefix}ongoing\n`
+        + `${settings.commandPrefix}events`;
+}
 
-    return;
-};
+/**
+ * @param {Game} game - The game in which the command is being executed. 
+ * @param {UserMessage} message - The message in which the command was issued. 
+ * @param {string} command - The command alias that was used. 
+ * @param {string[]} args - A list of arguments passed to the command as individual words.
+ * @param {Moderator} moderator - The moderator who issued the command.
+ */
+export async function execute(game, message, command, args, moderator) {
+    const events = game.entityFinder.getEvents(null, true).map((event) => {
+        return event.remaining === null ? event.id : `${event.id} (${event.remainingString})`;
+    });
+    const eventList = events.join(", ");
+    game.communicationHandler.sendToCommandChannel(`Ongoing events:\n${eventList}`);
+}

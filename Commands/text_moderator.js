@@ -1,62 +1,71 @@
-const settings = include('Configs/settings.json');
-const constants = include('Configs/constants.json');
-const messageHandler = include(`${constants.modulesDir}/messageHandler.js`);
+import TextAction from '../Data/Actions/TextAction.ts';
 
-module.exports.config = {
+/** @import Moderator from '../Data/Moderator.ts' */
+/** @import GameSettings from '../Classes/GameSettings.js' */
+/** @import Game from '../Data/Game.ts' */
+
+/** @type {CommandConfig} */
+export const config = {
     name: "text_moderator",
-    description: "Sends a text message from an NPC.",
-    details: "Sends a text message from the first player to the second player. The first player must have the talent \"NPC\". "
-        + "If an image is attached, it will be sent as well.",
-    usage: `${settings.commandPrefix}text amy florian I work at the bar.\n`
-        + `${settings.commandPrefix}text amy florian Here's a picture of me at work. (attached image)\n`
-        + `${settings.commandPrefix}text ??? keiko This is a message about your car's extended warranty.\n`
-        + `${settings.commandPrefix}text ??? hibiki (attached image)`,
+    description: "Sends a text message from an NPC to a player.",
+    details: `Sends a text message from the given NPC to a player. If an image is attached, it will be sent as well. `
+        + `It is possible to send a text message to any player, even those that don't have a status effect with the `
+        + `\`receive text\` behavior attribute.\n\n`
+        + `This command supports NPC latching. For more information, see the help details for the \`latch\` command. `
+        + `However, keep in mind that if you send a text with an attached image in the NPC's room channel, the message `
+        + `will be deleted, and the attachment may not send properly.`,
     usableBy: "Moderator",
     aliases: ["text"],
     requiresGame: true
 };
 
-module.exports.run = async (bot, game, message, command, args) => {
-    if (args.length < 2)
-        return game.messageHandler.addReply(message, `You need to specify a sender, a recipient, and a message. Usage:\n${exports.config.usage}`);
+/**
+ * @param {GameSettings} settings
+ * @returns {string}
+ */
+export function usage(settings) {
+    return `${settings.commandPrefix}text Amy Florian I work at the bar.\n`
+        + `${settings.commandPrefix}text Amy Florian Here's a picture of me at work. (attached image)\n`
+        + `${settings.commandPrefix}text ??? Sadie This is a message about your car's extended warranty.\n`
+        + `${settings.commandPrefix}text ??? Lisa (attached image)`;
+}
 
-    var player = null;
-    for (let i = 0; i < game.players_alive.length; i++) {
-        if (game.players_alive[i].name.toLowerCase() === args[0].toLowerCase() && game.players_alive[i].talent === "NPC") {
-            player = game.players_alive[i];
-            break;
-        }
-        if (game.players_alive[i].name.toLowerCase() === args[0].toLowerCase() && game.players_alive[i].talent !== "NPC")
-            return game.messageHandler.addReply(message, `You cannot text for a player that isn't an NPC.`);
-    }
-    if (player === null) return game.messageHandler.addReply(message, `Couldn't find player "${args[0]}".`);
-    args.splice(0, 1);
+/**
+ * @param {Game} game - The game in which the command is being executed.
+ * @param {UserMessage} message - The message in which the command was issued.
+ * @param {string} command - The command alias that was used.
+ * @param {string[]} args - A list of arguments passed to the command as individual words.
+ * @param {Moderator} moderator - The moderator who issued the command.
+ */
+export async function execute(game, message, command, args, moderator) {
+    const sentMessageInLatchChannel = moderator?.sentMessageInLatchChannel(message) ?? false;
+    if (!sentMessageInLatchChannel && args.length < 2)
+        return game.communicationHandler.reply(message, `You need to specify a sender, a recipient, and a message. Usage:\n${usage(game.settings)}`);
+    if (sentMessageInLatchChannel && args.length < 1)
+        return game.communicationHandler.reply(message, `You need to specify a recipient and a message. Usage:\n${usage(game.settings)}`);
 
-    var recipient = null;
-    for (let i = 0; i < game.players_alive.length; i++) {
-        if (game.players_alive[i].name.toLowerCase() === args[0].toLowerCase()) {
-            recipient = game.players_alive[i];
-            break;
-        }
-    }
-    if (recipient === null) return game.messageHandler.addReply(message, `Couldn't find player "${args[0]}".`);
-    if (recipient.name === player.name) return game.messageHandler.addReply(message, `${player.name} cannot send a message to ${player.originalPronouns.ref}.`);
-    args.splice(0, 1);
-
-    var input = args.join(" ");
-    if (input === "" && message.attachments.size === 0) return game.messageHandler.addReply(message, `Text message cannot be empty. Please send a message and/or an attachment.`);
-    if (input.length > 1900)
-        input = input.substring(0, 1897) + "...";
-
-    var senderText = `\`[ ${player.name} -> ${recipient.name} ]\` `;
-    var receiverText = `\`[ ${player.name} ]\` `;
-    if (input !== "") {
-        senderText += input;
-        receiverText += input;
+    let recipient = game.entityFinder.getLivingPlayer(args[1]);
+    if (recipient) args.splice(1, 1);
+    if (!recipient && sentMessageInLatchChannel) {
+        recipient = game.entityFinder.getLivingPlayer(args[0]);
+        if (recipient) args.splice(0, 1);
     }
 
-    messageHandler.addDirectNarrationWithAttachments(player, senderText, message.attachments);
-    messageHandler.addDirectNarrationWithAttachments(recipient, receiverText, message.attachments);
+    let player = game.entityFinder.getLivingPlayer(args[0]);
+    if (player)
+        args.splice(0, 1);
+    if (!player && sentMessageInLatchChannel)
+        player = moderator.getLatch();
+    if (player === undefined) return game.communicationHandler.reply(message, `Couldn't find player "${args[0]}".`);
+    else if (!player.isNPC) return game.communicationHandler.reply(message, `You cannot text for a player that isn't an NPC.`);
 
-    return;
-};
+    if (recipient === undefined) return game.communicationHandler.reply(message, `Couldn't find player "${args[0]}".`);
+    if (recipient.name === player.name) return game.communicationHandler.reply(message, `${player.name} cannot send a message to ${player.originalPronouns.ref}.`);
+
+    const input = args.join(" ");
+    if (input === "" && message.attachments.size === 0) return game.communicationHandler.reply(message, `Text message cannot be empty. Please send a message and/or an attachment.`);
+
+    const action = new TextAction(game, message, player, player.location, false);
+    action.performText(recipient, input);
+    action.sendSuccessMessageToCommandChannel();
+}

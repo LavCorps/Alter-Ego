@@ -1,149 +1,122 @@
-const settings = include('Configs/settings.json');
+import StashAction from '../Data/Actions/StashAction.ts';
 
-module.exports.config = {
+/** @import Moderator from '../Data/Moderator.ts' */
+/** @import GameSettings from '../Classes/GameSettings.js' */
+/** @import Game from '../Data/Game.ts' */
+
+/** @type {CommandConfig} */
+export const config = {
     name: "stash_moderator",
     description: "Stores a player's inventory item inside another inventory item.",
-    details: "Moves an item from the given player's hand to another item in their inventory. You can specify any item in their inventory "
-        + "that has the capacity to hold items. If the inventory item you choose has multiple slots for items (such as multiple pockets), "
-        + "you can specify which slot you want to store the item in. Note that each slot has a maximum capacity that it can hold, so if it's "
-        + "too full or too small to contain the item you're trying to stash, you won't be able to stash it there. If you attempt to stash a "
-        + "very large item (a sword, for example), people in the room with the player will see them doing so.",
-    usage: `${settings.commandPrefix}stash vivian laptop in satchel\n`
-        + `${settings.commandPrefix}store nero's sword in sheath\n`
-        + `${settings.commandPrefix}stash antimony's old key in right pocket of pants\n`
-        + `${settings.commandPrefix}store cassie water bottle in side pouch of backpack`,
+    details: `Moves an item from the given player's hand into an inventory slot of one of their container items. `
+        + `The held item and container item's prefab ID or container identifier must be used. If the player stashes a `
+        + `non-discreet item, this will be narrated in the room.\n\n`
+        + `The container item's identifier must be preceded by its preposition or "in". If the container item has `
+        + `multiple inventory slots, you can also specify which slot to stash the item in. To do so, enter the ID of `
+        + `the inventory slot followed by "of" before the container's identifier. If an inventory slot is not specified, `
+        + `the player will stash the item in the container's first inventory slot. Note that it is not possible to `
+        + `stash an item in an inventory slot if doing so would make it exceed its capacity.\n\n`
+        + `This command supports NPC latching. For more information, see the help details for the \`latch\` command.`,
     usableBy: "Moderator",
     aliases: ["stash", "store", "s"],
     requiresGame: true
 };
 
-module.exports.run = async (bot, game, message, command, args) => {
-    if (args.length < 3)
-        return game.messageHandler.addReply(message, `You need to specify a player and two items. Usage:\n${exports.config.usage}`);
+/**
+ * @param {GameSettings} settings
+ * @returns {string}
+ */
+export function usage(settings) {
+    return `${settings.commandPrefix}stash Vivian VIVIANS LAPTOP in VIVIANS SATCHEL\n`
+        + `${settings.commandPrefix}store Nero's KATANA in KATANA SHEATH\n`
+        + `${settings.commandPrefix}s Kyra's MASTER KEY in RIGHT POCKET of KYRAS LAB COAT 5\n`
+        + `${settings.commandPrefix}s Haru WATER BOTTLE in SIDE POUCH of GREEN BACKPACK 1`;
+}
 
-    var player = null;
-    for (let i = 0; i < game.players_alive.length; i++) {
-        if (game.players_alive[i].name.toLowerCase() === args[0].toLowerCase().replace(/'s/g, "")) {
-            player = game.players_alive[i];
-            args.splice(0, 1);
-            break;
-        }
-    }
-    if (player === null) return game.messageHandler.addReply(message, `Player "${args[0]}" not found.`);
+/**
+ * @param {Game} game - The game in which the command is being executed.
+ * @param {UserMessage} message - The message in which the command was issued.
+ * @param {string} command - The command alias that was used.
+ * @param {string[]} args - A list of arguments passed to the command as individual words.
+ * @param {Moderator} moderator - The moderator who issued the command.
+ */
+export async function execute(game, message, command, args, moderator) {
+    const sentMessageInLatchChannel = moderator?.sentMessageInLatchChannel(message) ?? false;
+    if (!sentMessageInLatchChannel && args.length < 3)
+        return game.communicationHandler.reply(message, `You need to specify a player and two items. Usage:\n${usage(game.settings)}`);
+    if (sentMessageInLatchChannel && args.length < 2)
+        return game.communicationHandler.reply(message, `You need to specify two items. Usage:\n${usage(game.settings)}`);
 
-    var input = args.join(' ');
-    var parsedInput = input.toUpperCase().replace(/\'/g, "");
-    var newArgs = parsedInput.split(' ');
+    let player = game.entityFinder.getLivingPlayer(args[0].replace(/'s/g, ""));
+    if (player && (moderator.getLatch() === null || moderator.getLatch().name.toLowerCase() !== args[0].toLowerCase().replace(/'s/g, "")))
+        args.splice(0, 1);
+    if (!player && sentMessageInLatchChannel)
+        player = moderator.getLatch();
+    if (player === undefined) return game.communicationHandler.reply(message, `Player "${args[0]}" not found.`);
+
+    let input = args.join(' ').toUpperCase().replace(/\'/g, "");
+    args = input.split(' ');
 
     // Look for the container item.
-    var items = game.inventoryItems.filter(item => item.player.name === player.name && item.prefab !== null);
-    var containerItem = null;
-    var containerItemSlot = null;
-    for (let i = 0; i < items.length; i++) {
-        if (items[i].identifier !== "" && parsedInput.endsWith(items[i].identifier) && parsedInput !== items[i].identifier ||
-            parsedInput.endsWith(items[i].prefab.id) && parsedInput !== items[i].prefab.id ||
-            parsedInput.endsWith(items[i].name) && parsedInput !== items[i].name) {
-            containerItem = items[i];
-            if (items[i].inventory.length === 0) continue;
-
-            if (items[i].identifer !== "" && parsedInput.endsWith(items[i].identifier))
-                parsedInput = parsedInput.substring(0, parsedInput.lastIndexOf(items[i].identifier)).trimEnd();
-            else if (parsedInput.endsWith(items[i].prefab.id))
-                parsedInput = parsedInput.substring(0, parsedInput.lastIndexOf(items[i].prefab.id)).trimEnd();
-            else if (parsedInput.endsWith(items[i].name))
-                parsedInput = parsedInput.substring(0, parsedInput.lastIndexOf(items[i].name)).trimEnd();
-
-            // Check if a slot was specified.
-            if (parsedInput.endsWith(" OF")) {
-                parsedInput = parsedInput.substring(0, parsedInput.lastIndexOf(" OF")).trimEnd();
-                newArgs = parsedInput.split(' ');
-                for (let slot = 0; slot < containerItem.inventory.length; slot++) {
-                    if (parsedInput.endsWith(containerItem.inventory[slot].name)) {
-                        containerItemSlot = containerItem.inventory[slot];
-                        parsedInput = parsedInput.substring(0, parsedInput.lastIndexOf(containerItemSlot.name)).trimEnd();
-                        break;
-                    }
-                }
-                if (containerItemSlot === null) return game.messageHandler.addReply(message, `Couldn't find "${newArgs[newArgs.length - 1]}" of ${containerItem.identifier}.`);
+    const items = game.inventoryItems.filter(item => item.player.name === player.name && item.prefab !== null && item.quantity !== 0);
+    let containerItem = null;
+    let containerItemSlot = null;
+    for (let i = 0; i < args.length; i++) {
+        for (const item of items) {
+            if (item.identifier !== "" && args.slice(i).join(" ") === item.identifier || args.slice(i).join(" ") === item.prefab.id) {
+                if (i === 0)
+                    return game.communicationHandler.reply(message, `You need to specify two items. Usage:\n${usage(game.settings)}`);
+                containerItem = item;
+                if (item.inventory.size === 0) continue;
+                args = args.slice(0, i);
+                input = args.join(" ");
+                break;
             }
-            newArgs = parsedInput.split(' ');
-            var itemPreposition = newArgs[newArgs.length - 1].toLowerCase();
-            newArgs.splice(newArgs.length - 1, 1);
-            parsedInput = newArgs.join(' ');
-            break;
         }
-        else if (items[i].identifier !== "" && parsedInput === items[i].identifier ||
-            parsedInput === items[i].prefab.id ||
-            parsedInput === items[i].name) {
-            game.messageHandler.addReply(message, `You need to specify two items. Usage:`);
-            game.messageHandler.addGameMechanicMessage(message.channel, exports.config.usage);
-            return;
-        }
+        if (containerItem !== null && containerItem.inventory.size !== 0) break;
     }
-    if (containerItem === null) return game.messageHandler.addReply(message, `Couldn't find container item "${newArgs[newArgs.length - 1]}".`);
-    else if (containerItem.inventory.length === 0) return game.messageHandler.addReply(message, `${containerItem.prefab.id} cannot hold items.`);
+    if (containerItem === null) return game.communicationHandler.reply(message, `Couldn't find container item "${args[args.length - 1]}".`);
+    else if (containerItem.inventory.size === 0) return game.communicationHandler.reply(message, `${containerItem.getIdentifier()} cannot hold items.`);
+    else if (args[args.length - 1] === "OF") {
+        args = args.slice(0, -1);
+        input = args.join(" ");
+        for (let i = 0; i < args.length; i++) {
+            for (const [id, slot] of containerItem.inventory) {
+                if (args.slice(i).join(" ") === id) {
+                    containerItemSlot = slot;
+                    args = args.slice(0, i);
+                    input = args.join(" ");
+                    break;
+                }
+            }
+            if (containerItemSlot !== null) break;
+        }
+        if (containerItemSlot === null) return game.communicationHandler.reply(message, `Couldn't find "${args[args.length - 1]}" of ${containerItem.getIdentifier()}.`);
+    }
+    args = args.slice(0, -1);
+    input = args.join(" ");
 
     // Now find the item in the player's inventory.
-    var item = null;
-    var hand = "";
-    // Get references to the right and left hand equipment slots so we don't have to iterate through the player's inventory to find them every time.
-    var rightHand = null;
-    var leftHand = null;
-    for (let slot = 0; slot < player.inventory.length; slot++) {
-        if (player.inventory[slot].name === "RIGHT HAND")
-            rightHand = player.inventory[slot];
-        else if (player.inventory[slot].name === "LEFT HAND")
-            leftHand = player.inventory[slot];
-    }
-    // Check for the identifier first.
-    if (item === null && rightHand.equippedItem !== null && rightHand.equippedItem.identifier !== "" && rightHand.equippedItem.identifier === parsedInput) {
-        item = rightHand.equippedItem;
-        hand = "RIGHT HAND";
-        parsedInput = parsedInput.substring(item.identifier.length).trim();
-    }
-    else if (item === null && leftHand.equippedItem !== null && leftHand.equippedItem.identifier !== "" && leftHand.equippedItem.identifier === parsedInput) {
-        item = leftHand.equippedItem;
-        hand = "LEFT HAND";
-        parsedInput = parsedInput.substring(item.identifier.length).trim();
-    }
-    // Check for the prefab ID next.
-    else if (item === null && rightHand.equippedItem !== null && rightHand.equippedItem.prefab.id === parsedInput) {
-        item = rightHand.equippedItem;
-        hand = "RIGHT HAND";
-        parsedInput = parsedInput.substring(item.prefab.id.length).trim();
-    }
-    else if (item === null && leftHand.equippedItem !== null && leftHand.equippedItem.prefab.id === parsedInput) {
-        item = leftHand.equippedItem;
-        hand = "LEFT HAND";
-        parsedInput = parsedInput.substring(item.prefab.id.length).trim();
-    }
-    // Check for the name last.
-    else if (item === null && rightHand.equippedItem !== null && rightHand.equippedItem.name === parsedInput) {
-        item = rightHand.equippedItem;
-        hand = "RIGHT HAND";
-        parsedInput = parsedInput.substring(item.name.length).trim();
-    }
-    else if (item === null && leftHand.equippedItem !== null && leftHand.equippedItem.name === parsedInput) {
-        item = leftHand.equippedItem;
-        hand = "LEFT HAND";
-        parsedInput = parsedInput.substring(item.name.length).trim();
-    }
-    if (item === null) return game.messageHandler.addReply(message, `Couldn't find item "${parsedInput}" in either of ${player.name}'s hands.`);
+    const hand = game.entityFinder.getPlayerHandHoldingItem(player, input, undefined, containerItem.row);
     // Make sure item and containerItem aren't the same item.
-    if (item.row === containerItem.row) return game.messageHandler.addReply(message, `Can't stash ${item.identifier ? item.identifier : item.prefab.id} ${itemPreposition} itself.`);
+    if (!hand && game.entityFinder.getPlayerHandHoldingItem(player, input))
+        return game.communicationHandler.reply(message, `Can't stash ${containerItem.getIdentifier()} ${containerItem.prefab.preposition} itself.`);
+    const item = hand ? hand.equippedItem : undefined;
+    if (item === undefined) return game.communicationHandler.reply(message, `Couldn't find item "${input}" in either of ${player.name}'s hands.`);
+    // Ensure an inventory item can't be stashed inside an inventory item that it contains.
+    let container = containerItem.container;
+    while (container !== null) {
+        if (container.row === item.row) return game.communicationHandler.reply(message, `Can't stash an item inside an item that it contains.`);
+        container = container.container;
+    }
 
-    if (containerItemSlot === null) containerItemSlot = containerItem.inventory[0];
-    if (item.prefab.size > containerItemSlot.capacity && containerItem.inventory.length !== 1) return game.messageHandler.addReply(message, `${item.identifier ? item.identifier : item.prefab.id} will not fit in ${containerItemSlot.name} of ${containerItem.identifier} because it is too large.`);
-    else if (item.prefab.size > containerItemSlot.capacity) return game.messageHandler.addReply(message, `${item.identifier ? item.identifier : item.prefab.id} will not fit in ${containerItem.identifier} because it is too large.`);
-    else if (containerItemSlot.takenSpace + item.prefab.size > containerItemSlot.capacity && containerItem.inventory.length !== 1) return game.messageHandler.addReply(message, `${item.identifier ? item.identifier : item.prefab.id} will not fit in ${containerItemSlot.name} of ${containerItem.identifier} because there isn't enough space left.`);
-    else if (containerItemSlot.takenSpace + item.prefab.size > containerItemSlot.capacity) return game.messageHandler.addReply(message, `${item.identifier ? item.identifier : item.prefab.id} will not fit in ${containerItem.identifier} because there isn't enough space left.`);
+    if (containerItemSlot === null) [containerItemSlot] = containerItem.inventory.values();
+    if (item.prefab.size > containerItemSlot.capacity && containerItem.inventory.size !== 1) return game.communicationHandler.reply(message, `${item.getIdentifier()} will not fit in ${containerItemSlot.id} of ${containerItem.identifier} because it is too large.`);
+    else if (item.prefab.size > containerItemSlot.capacity) return game.communicationHandler.reply(message, `${item.getIdentifier()} will not fit in ${containerItem.identifier} because it is too large.`);
+    else if (containerItemSlot.takenSpace + item.prefab.size > containerItemSlot.capacity && containerItem.inventory.size !== 1) return game.communicationHandler.reply(message, `${item.getIdentifier()} will not fit in ${containerItemSlot.id} of ${containerItem.identifier} because there isn't enough space left.`);
+    else if (containerItemSlot.takenSpace + item.prefab.size > containerItemSlot.capacity) return game.communicationHandler.reply(message, `${item.getIdentifier()} will not fit in ${containerItem.identifier} because there isn't enough space left.`);
 
-    player.stash(game, item, hand, containerItem, containerItemSlot.name);
-    // Post log message.
-    const time = new Date().toLocaleTimeString();
-    game.messageHandler.addLogMessage(game.logChannel, `${time} - ${player.name} forcibly stashed ${item.identifier ? item.identifier : item.prefab.id} ${containerItem.prefab.preposition} ${containerItemSlot.name} of ${containerItem.identifier} in ${player.location.channel}`);
-
-    game.messageHandler.addGameMechanicMessage(message.channel, `Successfully stashed ${item.identifier ? item.identifier : item.prefab.id} ${containerItem.prefab.preposition} ${containerItemSlot.name} of ${containerItem.identifier} for ${player.name}.`);
-
-    return;
-};
+    const action = new StashAction(game, message, player, player.location, true);
+    action.performStash(item, hand, containerItem, containerItemSlot);
+    action.sendSuccessMessageToCommandChannel();
+}

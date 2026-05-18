@@ -1,328 +1,340 @@
-const constants = include('Configs/constants.json');
-const itemManager = include(`${constants.modulesDir}/itemManager.js`);
+import DestroyInventoryItemAction from "../Data/Actions/DestroyInventoryItemAction.ts";
+import DestroyRoomItemAction from "../Data/Actions/DestroyRoomItemAction.ts";
+import Game from "../Data/Game.ts";
+import Fixture from "../Data/Fixture.ts";
+import RoomItem from "../Data/RoomItem.ts";
+import Puzzle from "../Data/Puzzle.ts";
+import { itemIdentifierMatches } from "../Modules/matchers.ts";
 
-module.exports.config = {
+/** @import GameSettings from '../Classes/GameSettings.js' */
+/** @import Player from '../Data/Player.ts' */
+/** @import InventoryItem from '../Data/InventoryItem.ts' */
+/** @import InventorySlot from '../Data/InventorySlot.ts' */
+
+/** @type {CommandConfig} */
+export const config = {
     name: "destroy_bot",
     description: "Destroys an item.",
-    details: "Destroys an item in the specified location or in the player's inventory. The prefab ID or container identifier of the item must be given. "
-        + "In order to destroy an item, the name of the room must be given, following \"at\". The name of the container it belongs to can also be specified. "
-        + "If the container is another item, the identifier of the item or its prefab ID must be used. "
-        + "The name of the inventory slot to destroy the item from can also be specified.\n\n"
-        + "To destroy an inventory item, \"player\", \"room\", \"all\", or the name of a player followed by \"'s\", must be given. A container item can also be specified, "
-        + "as well as which slot to delete the item from. The player will not be notified if a container item is specified. "
-        + "An equipment slot can also be specified instead of a container item. This will destroy whatever item is equipped to it. "
-        + "The player will be notified in this case, and the item's unequipped commands will be run.\n\n"
-        + "Note that using the \"all\" argument with a container will destroy all items in that container.",
-    usage: `destroy volleyball at beach\n`
-        + `destroy gasoline on shelves at warehouse\n`
-        + `destroy note in locker 1 at mens locker room\n`
-        + `destroy wrench in tool box at beach house\n`
-        + `destroy gloves in breast pocket of tuxedo at dressing room\n`
-        + `destroy all in trash can at lounge\n`
-        + `destroy player keyboard\n`
-        + `destroy all face\n`
-        + `destroy vivians laptop in vivian's vivians satchel\n`
-        + `destroy shotput ball in cassie's main pocket of large backpack\n`
-        + `destroy all in hitoshi's trousers\n`
-        + `destroy all in charlotte's right pocket of dress`,
+    details: `Destroys an item in the specified location or in the player's inventory. `
+        + `The prefab ID or container identifier of the item must be given.\n\n`
+        + `To destroy a room item, the display name or ID of the room it's in must be given at the end of the command, following "at". `
+        + `To destroy an inventory item, the name of the player must be given followed by \`'s\` before the item's identifier.\n\n`
+        + `If, when destroying an inventory item, "player" is supplied instead of a player's name, then the given item will be `
+        + `destroyed from the inventory of the player who caused this command to be executed. If "room" is supplied instead, then `
+        + `the command will be executed on all players in the room as the initiating player. If "all" is supplied instead, then `
+        + `the command will be executed on all living players, including NPCs and players with the Free Movement role.\n\n`
+        + `It is possible to specify the container from which to destroy the item. To do so, add the container's preposition or "in" `
+        + `after the item's identifier, followed by the container's name. If the container is another item, its identifier or prefab `
+        + `ID must be used. The ID of the inventory slot to destroy the item from can also be specified, followed by "of". `
+        + `If you enter "all" in place of an item's identifier and specify a container, all items in that container will be destroyed.\n\n`
+        + `It is also possible to destroy an inventory item by specifying only the ID of the equipment slot it's equipped to `
+        + `instead of the item's identifier. This will destroy whatever is equipped to that equipment slot.\n\n`
+        + `Note that if you destroy an inventory item, the player will be notified if it is an item they have equipped, and its `
+        + `unequipped commands will be executed. The player will not be notified if it is an item they have stashed.`,
     usableBy: "Bot",
-    aliases: ["destroy"]
+    aliases: ["destroy", "ds"],
+    requiresGame: true
 };
 
-module.exports.run = async (bot, game, command, args, player, data) => {
+/**
+ * @param {GameSettings} settings
+ * @returns {string}
+ */
+export function usage(settings) {
+    return `destroy VOLLEYBALL at beach\n`
+        + `ds CAN OF GASOLINE on SHELVES at Warehouse\n`
+        + `destroy NOTE in LOCKER 1 at Men's Locker Room\n`
+        + `ds WRENCH in TOOL BOX 1 at beach-house\n`
+        + `destroy WHITE GLOVES in BREAST POCKET of TUXEDO at dressing room\n`
+        + `ds all in TRASH CAN at lounge\n`
+        + `destroy player BLUE BIRD MUSIC BOX\n`
+        + `ds all FACE\n`
+        + `destroy room NUMBERED BRACELET`
+        + `ds Vivian's VIVIANS LAPTOP in VIVIANS SATCHEL\n`
+        + `destroy SHOTPUT BALL in Cassie's MAIN POCKET of LARGE BACKPACK 1\n`
+        + `ds all in Hitoshi's HITOSHIS TROUSERS\n`
+        + `destroy all in Evad's FRONT POCKET of DENIM OVERALLS 6`;
+}
+
+/**
+ * @param {Game} game - The game in which the command is being executed.
+ * @param {string} command - The command alias that was used.
+ * @param {string[]} args - A list of arguments passed to the command as individual words.
+ * @param {Player} [player] - The player who caused the command to be executed, if applicable.
+ * @param {Callee} [callee] - The in-game entity that caused the command to be executed, if applicable.
+ */
+export async function execute(game, command, args, player, callee) {
     const cmdString = command + " " + args.join(" ");
     if (args.length < 2) {
-        game.messageHandler.addGameMechanicMessage(game.commandChannel, `Error: Couldn't execute command "${cmdString}". Insufficient arguments.`);
+        game.communicationHandler.sendToCommandChannel(`Error: Couldn't execute command "${cmdString}". Insufficient arguments.`);
         return;
     }
 
-    var input = args.join(" ");
-    var parsedInput = input.toUpperCase().replace(/\'/g, "");
-    const undashedInput = parsedInput.replace(/-/g, " ");
+    let newArgs = args.map((arg) => Game.generateValidEntityName(arg));
 
-    let room = null;
-    for (let i = 0; i < game.rooms.length; i++) {
-        const parsedRoomName = game.rooms[i].name.toUpperCase().replace(/-/g, " ");
-        if (undashedInput.endsWith(` AT ${parsedRoomName}`)) {
-            room = game.rooms[i];
-            parsedInput = parsedInput.substring(0, undashedInput.lastIndexOf(` AT ${parsedRoomName}`));
-            break;
-        }
-        else if (undashedInput.endsWith(`AT ${parsedRoomName}`)) {
-            room = game.rooms[i];
-            parsedInput = parsedInput.substring(0, undashedInput.lastIndexOf(`AT ${parsedRoomName}`));
-            break;
-        }
-    }
+    const atIndex = newArgs.lastIndexOf("AT");
+    const room = (atIndex > -1) ? game.entityFinder.getRoom(newArgs.slice(atIndex+1).join(" ")) : undefined;
 
-    var destroyAll = false;
-    var item = null;
+    let destroyAll = (newArgs[0] === "ALL");
     // Room was found. Look for the container in it.
-    if (room !== null) {
-        let containerItem = null;
-        let containerItemSlot = null;
-        // Check if a container item was specified.
-        const roomItems = game.items.filter(item => item.location.name === room.name && (item.quantity > 0 || isNaN(item.quantity)));
-        for (let i = 0; i < roomItems.length; i++) {
-            // If parsedInput is only the identifier or the item's name, we've found the item to delete.
-            if (roomItems[i].identifier !== "" && roomItems[i].identifier === parsedInput || roomItems[i].prefab.id === parsedInput) {
-                item = roomItems[i];
-                break;
-            }
-            if (parsedInput.endsWith(roomItems[i].identifier) && roomItems[i].identifier !== "") {
-                if (roomItems[i].inventory.length === 0 || roomItems[i].prefab.preposition === "") return game.messageHandler.addGameMechanicMessage(game.commandChannel, `Error: Couldn't execute command "${cmdString}". ${roomItems[i].identifier ? roomItems[i].identifier : roomItems[i].prefab.id} cannot hold items.`);
-                containerItem = roomItems[i];
+    if (room) {
+        /** @type {RoomItem} */
+        let item;
+        /** @type {Fixture | Puzzle | RoomItem} */
+        let container = null;
+        /** @type {InventorySlot<RoomItem>} */
+        let containerItemSlot;
 
-                if (parsedInput.endsWith(roomItems[i].identifier) && roomItems[i].identifier !== "")
-                    parsedInput = parsedInput.substring(0, parsedInput.lastIndexOf(roomItems[i].identifier)).trimEnd();
-                else if (parsedInput.endsWith(roomItems[i].prefab.id))
-                    parsedInput = parsedInput.substring(0, parsedInput.lastIndexOf(roomItems[i].prefab.id)).trimEnd();
-                let newArgs = parsedInput.split(' ');
-                // Check if a slot was specified.
-                if (parsedInput.endsWith(" OF")) {
-                    parsedInput = parsedInput.substring(0, parsedInput.lastIndexOf(" OF")).trimEnd();
-                    newArgs = parsedInput.split(' ');
-                    for (let slot = 0; slot < containerItem.inventory.length; slot++) {
-                        if (parsedInput.endsWith(containerItem.inventory[slot].name)) {
-                            containerItemSlot = containerItem.inventory[slot];
-                            parsedInput = parsedInput.substring(0, parsedInput.lastIndexOf(containerItemSlot.name)).trimEnd();
+        newArgs = newArgs.splice(0, atIndex);
+
+        // Check if a container item was specified.
+        const roomItems = game.entityFinder.getRoomItems(null, room.id);
+        for (let i = args.length - 1; i >= 0; i--) {
+            let find = roomItems.find((item) => itemIdentifierMatches(item, newArgs.slice(i).join(" ")));
+            if (find) {
+                // If we have a complete slice of newArgs, we've found the item to delete.
+                if (i === args.length - 1) {
+                    item = find;
+                    newArgs = newArgs.slice(0, i);
+                    break;
+                } else {
+                    if (find.inventory.size === 0 || find.prefab.preposition === "")
+                        return game.communicationHandler.sendToCommandChannel(`Error: Couldn't execute command "${cmdString}". ${find.getIdentifier()} cannot hold items.`);
+                    container = find;
+                    newArgs = newArgs.slice(0, i);
+                    break;
+                }
+            }
+        }
+        // Check if a slot was specified.
+        if (container && newArgs.slice(-1)[0] === "OF" && container instanceof RoomItem) {
+            newArgs = newArgs.slice(0, -1);
+            for (const [id, collectionSlot] of container.inventory) {
+                for (let i = 0; i < newArgs.length; i++) {
+                    if (newArgs.slice(i).join(" ") === id) {
+                        containerItemSlot = collectionSlot;
+                        newArgs = newArgs.slice(0, i);
+                        break;
+                    }
+                }
+                if (containerItemSlot) break;
+            }
+            if (!containerItemSlot) return game.communicationHandler.sendToCommandChannel(`Error: Couldn't execute command "${cmdString}". Couldn't find "${newArgs[newArgs.length - 1]}" of ${container.getIdentifier()}.`);
+        }
+        if (container && !containerItemSlot && container instanceof RoomItem) {
+            containerItemSlot = container.inventory.first();
+        }
+
+        // Check if a fixture was specified.
+        if (!container && !item) {
+            const fixtures = game.entityFinder.getFixtures(null, room.id, true);
+            for (let i = 0; i < newArgs.length; i++) {
+                let fixture = fixtures.find((fixture) => fixture.name === newArgs.slice(i).join(" "));
+                if (fixture) {
+                    if (i === 0) {
+                        return game.communicationHandler.sendToCommandChannel(`Error: Couldn't execute command "${cmdString}". You need to supply an item and a preposition.`);
+                    } else {
+                        if (newArgs.slice(i - 1, i)[0] === "IN" || newArgs.slice(i - 1, i)[0] === fixture.preposition.toUpperCase()) {
+                            container = fixture;
+                            newArgs = newArgs.slice(0, i - 1);
+                            break;
+                        } else {
+                            container = fixture;
+                            newArgs = newArgs.slice(0, i);
                             break;
                         }
                     }
-                    if (containerItemSlot === null) return game.messageHandler.addGameMechanicMessage(game.commandChannel, `Error: Couldn't execute command "${cmdString}". Couldn't find "${newArgs[newArgs.length - 1]}" of ${containerItem.identifier ? containerItem.identifier : containerItem.prefab.id}.`);
-                }
-                if (parsedInput.endsWith(containerItem.prefab.preposition.toUpperCase()))
-                    parsedInput = parsedInput.substring(0, parsedInput.lastIndexOf(containerItem.prefab.preposition.toUpperCase())).trimEnd();
-                else if (parsedInput.endsWith(" IN"))
-                    parsedInput = parsedInput.substring(0, parsedInput.lastIndexOf(" IN")).trimEnd();
-                break;
-            }
-        }
-        if (containerItem !== null && containerItemSlot === null) containerItemSlot = containerItem.inventory[0];
-
-        // Check if an object was specified.
-        let object = null;
-        if (containerItem === null && item === null) {
-            const objects = game.objects.filter(object => object.location.name === room.name && object.accessible);
-            for (let i = 0; i < objects.length; i++) {
-                if (objects[i].name === parsedInput) return game.messageHandler.addGameMechanicMessage(game.commandChannel, `Error: Couldn't execute command "${cmdString}". You need to supply an item and a preposition.`);
-                if (parsedInput.endsWith(`${objects[i].preposition.toUpperCase()} ${objects[i].name}`) || parsedInput.endsWith(`IN ${objects[i].name}`)) {
-                    object = objects[i];
-                    if (parsedInput.endsWith(`${objects[i].preposition.toUpperCase()} ${objects[i].name}`))
-                        parsedInput = parsedInput.substring(0, parsedInput.lastIndexOf(`${objects[i].preposition.toUpperCase()} ${objects[i].name}`)).trimEnd();
-                    else if (parsedInput.endsWith(`IN ${objects[i].name}`))
-                        parsedInput = parsedInput.substring(0, parsedInput.lastIndexOf(`IN ${objects[i].name}`)).trimEnd();
-                    else
-                        parsedInput = parsedInput.substring(0, parsedInput.lastIndexOf(objects[i].name)).trimEnd();
-                    break;
                 }
             }
         }
+        if (container instanceof Fixture && container.childPuzzle !== null)
+            container = container.childPuzzle;
 
-        // Now decide what the container should be.
-        let container = null;
-        let slotName = "";
-        if (object !== null && object.childPuzzle === null && containerItem === null)
-            container = object;
-        else if (object !== null && object.childPuzzle !== null && containerItem === null)
-            container = object.childPuzzle;
-        else if (containerItem !== null) {
-            container = containerItem;
-            slotName = containerItemSlot.name;
-        }
-        else if (item !== null)
-            container = item.container;
-        else
-            container = null;
-
+        /** @type {RoomItem[]} */
         let containerItems = [];
-        // Container is a Room.
+         // Container is a Room.
         if (container === null)
             containerItems = roomItems;
-        // Container is an Object.
-        else if (container.hasOwnProperty("hidingSpotCapacity"))
-            containerItems = roomItems.filter(item => item.containerName === `Object: ${container.name}`);
+        // Container is a Fixture.
+        else if (container instanceof Fixture)
+            containerItems = container.getContainedItems();
         // Container is a Puzzle.
-        else if (container.hasOwnProperty("solved"))
-            containerItems = roomItems.filter(item => item.containerName === `Puzzle: ${container.name}`);
-        // Container is an Item.
-        else if (container.hasOwnProperty("inventory"))
-            containerItems = roomItems.filter(item => item.containerName === `Item: ${container.identifier}/${slotName}`);
-
-        let newArgs = parsedInput.split(" ");
-        if (newArgs[0] === "ALL") {
-            destroyAll = true;
-            newArgs.splice(0, 1);
-            parsedInput = newArgs.join(" ");
+        else if (container instanceof Puzzle)
+            containerItems = container.getContainedItems();
+        // Container is a RoomItem.
+        else if (container instanceof RoomItem) {
+            if (containerItemSlot) containerItems = containerItemSlot.getContainedItems();
+            else containerItems = container.getContainedItems();
         }
 
         if (destroyAll) {
-            if (parsedInput !== "") return game.messageHandler.addGameMechanicMessage(game.commandChannel, `Error: Couldn't execute command "${cmdString}". Couldn't find "${parsedInput}" at ${room.name}`);
-            for (let i = 0; i < containerItems.length; i++)
-                itemManager.destroyItem(containerItems[i], containerItems[i].quantity, true);
-        }
-        else {
+            newArgs.splice(0, 1);
+            if (newArgs.length !== 0)
+                return game.communicationHandler.sendToCommandChannel(`Error: Couldn't execute command "${cmdString}". Couldn't find "${newArgs.join(" ")}" at ${room.id}`);
+            for (const containerItem of containerItems) {
+                const destroyAction = new DestroyRoomItemAction(game, undefined, undefined, room, true);
+                destroyAction.performDestroyRoomItem(containerItem, containerItem.quantity, true);
+            }
+        } else {
             // Find the item if it hasn't been found already.
-            if (item === null) {
-                for (let i = 0; i < containerItems.length; i++) {
-                    if (containerItems[i].identifier === parsedInput || containerItems[i].prefab.id === parsedInput) {
-                        item = containerItems[i];
+            if (!item) {
+                for (const containerItem of containerItems) {
+                    if (itemIdentifierMatches(containerItem, newArgs.join(" "))) {
+                        item = containerItem;
                         break;
                     }
                 }
             }
-            if (item === null) return;
+            if (!item) return;
 
-            itemManager.destroyItem(item, item.quantity, true);
+            const destroyAction = new DestroyRoomItemAction(game, undefined, undefined, room, true);
+            destroyAction.performDestroyRoomItem(item, item.quantity, true);
         }
-    }
-    else {
-        var players = [];
+    } else {
+        /** @type {InventoryItem} */
+        let item;
+        /** @type {Player[]} */
+        let players = [];
         // Iterate in reverse so that the "all" argument for players doesn't conflict with the "all" argument for items.
         for (let i = args.length - 1; i >= 0; i--) {
-            if (args[i].toLowerCase().replace(/'s/g, "") === "player" && player !== null) {
+            let arg = args[i].toLowerCase().replace(/'s/g, "")
+            if (arg === "player" && player !== null) {
                 players.push(player);
                 args.splice(i, 1);
+                newArgs.splice(i, 1);
                 break;
-            }
-            else if (args[i].toLowerCase().replace(/'s/g, "") === "room" && player !== null) {
+            } else if (arg === "room" && player !== null) {
                 players = player.location.occupants;
                 args.splice(i, 1);
+                newArgs.splice(i, 1);
                 break;
-            }
-            else if (args[i].toLowerCase().replace(/'s/g, "") === "all") {
-                for (let j = 0; j < game.players_alive.length; j++)
-                    players.push(game.players_alive[j]);
+            } else if (arg === "all") {
+                players = game.entityFinder.getLivingPlayers();
                 args.splice(i, 1);
+                newArgs.splice(i, 1);
                 break;
+            } else {
+                const player = game.entityFinder.getLivingPlayer(arg);
+                if (player) {
+                    players.push(player);
+                    args.splice(i, 1);
+                    newArgs.splice(i, 1);
+                    break;
+                }
             }
-            else {
-                let found = false;
-                for (let j = 0; j < game.players_alive.length; j++) {
-                    if (args[i].toLowerCase() === `${game.players_alive[j].name.toLowerCase()}'s`) {
-                        found = true;
-                        players.push(game.players_alive[j]);
-                        args.splice(i, 1);
+        }
+        if (players.length === 0) return game.communicationHandler.sendToCommandChannel(`Error: Couldn't execute command "${cmdString}". Couldn't find a room or player in your input.`);
+
+        for (const player of players) {
+            let gotoNext = false;
+            // Check if an inventory item was specified.
+            /** @type {InventoryItem} */
+            let containerItem = null;
+            /** @type {InventorySlot} */
+            let containerItemSlot = null;
+            const playerItems = game.inventoryItems.filter(item => item.player.name === player.name && item.prefab !== null && (item.quantity > 0 || isNaN(item.quantity)));
+            for (let i = 0; i < newArgs.length; i++) {
+                let find = playerItems.find((item) => itemIdentifierMatches(item, newArgs.slice(i).join(" ")));
+                if (find) {
+                    // If we have a complete slice of newArgs, we've found the item to delete.
+                    if (i === 0) {
+                        item = find;
+                        newArgs = newArgs.slice(0, i);
+                        break;
+                    } else {
+                        if (find.inventory.size === 0 || find.prefab.preposition === "")
+                            return game.communicationHandler.sendToCommandChannel(`Error: Couldn't execute command "${cmdString}". ${find.getIdentifier()} cannot hold items.`);
+                        containerItem = find;
+                        newArgs = newArgs.slice(0, i);
                         break;
                     }
                 }
-                if (found) break;
             }
-        }
-        if (players.length === 0) return game.messageHandler.addGameMechanicMessage(game.commandChannel, `Error: Couldn't execute command "${cmdString}". Couldn't find a room or player in your input.`);
-
-        parsedInput = args.join(" ").toUpperCase().replace(/\'/g, "");
-
-        for (let j = 0; j < players.length; j++) {
-            player = players[j];
-            let parsedInput2 = parsedInput;
-            let gotoNext = false;
-            // Check if an inventory item was specified.
-            let containerItem = null;
-            let containerItemSlot = null;
-            const playerItems = game.inventoryItems.filter(item => item.player.name === player.name && item.prefab !== null && (item.quantity > 0 || isNaN(item.quantity)));
-            for (let i = 0; i < playerItems.length; i++) {
-                // If parsedInput2 is only the identifier or the item's name, we've found the item to delete.
-                if (playerItems[i].identifier !== "" && playerItems[i].identifier === parsedInput2 || playerItems[i].prefab.id === parsedInput2) {
-                    item = playerItems[i];
-                    break;
-                }
-                if (parsedInput2.endsWith(playerItems[i].identifier) && playerItems[i].identifier !== "" || parsedInput2.endsWith(playerItems[i].prefab.id)) {
-                    if (playerItems[i].inventory.length === 0 || playerItems[i].prefab.preposition === "") return game.messageHandler.addGameMechanicMessage(game.commandChannel, `Error: Couldn't execute command "${cmdString}". ${playerItems[i].identifier ? playerItems[i].identifier : playerItems[i].prefab.id} cannot hold items.`);
-                    containerItem = playerItems[i];
-
-                    if (parsedInput2.endsWith(playerItems[i].identifier) && playerItems[i].identifier !== "")
-                        parsedInput2 = parsedInput2.substring(0, parsedInput2.lastIndexOf(playerItems[i].identifier)).trimEnd();
-                    else if (parsedInput2.endsWith(playerItems[i].prefab.id))
-                        parsedInput2 = parsedInput2.substring(0, parsedInput2.lastIndexOf(playerItems[i].prefab.id)).trimEnd();
-                    let newArgs = parsedInput2.split(' ');
-                    // Check if a slot was specified.
-                    if (parsedInput2.endsWith(" OF")) {
-                        parsedInput2 = parsedInput2.substring(0, parsedInput2.lastIndexOf(" OF")).trimEnd();
-                        newArgs = parsedInput2.split(' ');
-                        for (let slot = 0; slot < containerItem.inventory.length; slot++) {
-                            if (parsedInput2.endsWith(containerItem.inventory[slot].name)) {
-                                containerItemSlot = containerItem.inventory[slot];
-                                parsedInput2 = parsedInput2.substring(0, parsedInput2.lastIndexOf(containerItemSlot.name)).trimEnd();
-                                break;
-                            }
+            // Check if a slot was specified.
+            if (containerItem && newArgs.slice(-1)[0] === "OF") {
+                newArgs = newArgs.slice(0, -1);
+                for (const [id, collectionSlot] of containerItem.inventory) {
+                    for (let i = 0; i < newArgs.length; i++) {
+                        if (newArgs.slice(i).join(" ") === id) {
+                            containerItemSlot = collectionSlot;
+                            newArgs = newArgs.slice(0, i);
+                            break;
                         }
-                        if (containerItemSlot === null) return game.messageHandler.addGameMechanicMessage(game.commandChannel, `Error: Couldn't execute command "${cmdString}". Couldn't find "${newArgs[newArgs.length - 1]}" of ${containerItem.identifier ? containerItem.identifier : containerItem.name}.`);
                     }
-                    if (parsedInput2.endsWith(containerItem.prefab.preposition.toUpperCase()))
-                        parsedInput2 = parsedInput2.substring(0, parsedInput2.lastIndexOf(containerItem.prefab.preposition.toUpperCase())).trimEnd();
-                    else if (parsedInput2.endsWith(" IN"))
-                        parsedInput2 = parsedInput2.substring(0, parsedInput2.lastIndexOf(" IN")).trimEnd();
-                    break;
+                    if (containerItemSlot) break;
                 }
+                if (!containerItemSlot) return game.communicationHandler.sendToCommandChannel(`Error: Couldn't execute command "${cmdString}". Couldn't find "${newArgs[newArgs.length - 1]}" of ${containerItem.getIdentifier()}.`);
+            } else if (containerItem && !containerItemSlot) {
+                containerItemSlot = containerItem.inventory.first();
             }
-            if (containerItem !== null && containerItemSlot === null) containerItemSlot = containerItem.inventory[0];
-            let slotName = containerItem !== null ? containerItemSlot.name : "";
+            if (containerItem && !containerItemSlot) {
+                containerItemSlot = containerItem.inventory.first();
+            }
 
-            let newArgs = parsedInput2.split(" ");
-            if (newArgs[0] === "ALL") {
-                destroyAll = true;
+            if (destroyAll) {
                 newArgs.splice(0, 1);
-                parsedInput2 = newArgs.join(" ");
             }
 
+            /** @type {InventoryItem[]} */
             let containerItems = [];
             let containerName = "";
             let preposition = "in";
-            // If the item still hasn't been found, but a containerItem was, find it in the container.
             if (containerItem !== null) {
-                containerItems = playerItems.filter(item => item.containerName === `${containerItem.identifier}/${slotName}`);
-                containerName = `${slotName} of ${containerItem.identifier} in ${player.name}'s inventory`;
-                preposition = containerItem.prefab.preposition ? containerItem.prefab.preposition : "in";
+                if (containerItemSlot) containerItems = containerItemSlot.getContainedItems();
+                else containerItems = containerItem.getContainedItems();
+                containerName = `${containerItemSlot.id} of ${containerItem.identifier} in ${player.name}'s inventory`;
+                preposition = containerItem.getPreposition();
 
                 if (destroyAll) {
-                    for (let i = 0; i < containerItems.length; i++)
-                        itemManager.destroyInventoryItem(containerItems[i], containerItems[i].quantity, bot, true);
+                    for (const containerItem of containerItems) {
+                        const destroyAction = new DestroyInventoryItemAction(game, undefined, player, player.location, true);
+                        destroyAction.performDestroyInventoryItem(containerItem, containerItem.quantity, true, false);
+                    }
                     gotoNext = true;
-                }
-                else {
+                } else {
                     // Find the item if it hasn't been found already.
-                    if (item === null) {
-                        for (let i = 0; i < containerItems.length; i++) {
-                            if (containerItems[i].identifier === parsedInput2 || containerItems[i].prefab.id === parsedInput2) {
-                                item = containerItems[i];
+                    if (!item) {
+                        for (const containerItem of containerItems) {
+                            if (itemIdentifierMatches(containerItem, newArgs.join(" "))) {
+                                item = containerItem;
                                 break;
                             }
                         }
-                        if (item === null) return game.messageHandler.addGameMechanicMessage(game.commandChannel, `Error: Couldn't execute command "${cmdString}". Couldn't find item "${parsedInput2}" ${preposition} ${containerName}.`);
+                        if (!item)
+                            return game.communicationHandler.sendToCommandChannel(`Error: Couldn't execute command "${cmdString}". Couldn't find item "${newArgs.join(" ")}" ${preposition} ${containerName}.`);
                     }
                 }
-            }
-            else {
+            } else {
                 // Check if an equipment slot was specified.
                 let equipmentSlotName = "";
-                for (let i = 0; i < player.inventory.length; i++) {
-                    if (player.inventory[i].name === parsedInput2) {
-                        item = player.inventory[i].equippedItem;
-                        equipmentSlotName = player.inventory[i].name;
-                        if (item === null) gotoNext = true;
-                        if (destroyAll) return game.messageHandler.addGameMechanicMessage(game.commandChannel, `Error: Couldn't execute command "${cmdString}". The "all" argument cannot be used when the container is an equipment slot.`);
-                        break;
-                    }
-                    else if (player.inventory[i].equippedItem !== null &&
-                        (player.inventory[i].equippedItem.identifier !== "" && player.inventory[i].equippedItem.identifier === parsedInput2 || player.inventory[i].equippedItem.prefab.id === parsedInput2)) {
-                        item = player.inventory[i].equippedItem;
-                        equipmentSlotName = player.inventory[i].name;
-                        if (destroyAll) return game.messageHandler.addGameMechanicMessage(game.commandChannel, `Error: Couldn't execute command "${cmdString}". The "all" argument cannot be used when the container is an equipped item.`);
-                        break;
+                if (player.getEquipmentSlot(newArgs.join(" "))) {
+                    item = player.getEquipmentSlot(newArgs.join(" ")).equippedItem;
+                    equipmentSlotName = newArgs.join(" ");
+                    if (!item) gotoNext = true;
+                    if (destroyAll) return game.communicationHandler.sendToCommandChannel(`Error: Couldn't execute command "${cmdString}". The "all" argument cannot be used when the container is an equipment slot.`);
+                } else {
+                    for (const [id, slot] of player.inventory) {
+                        if (slot.equippedItem && itemIdentifierMatches(slot.equippedItem, newArgs.join(" "))) {
+                            item = slot.equippedItem;
+                            equipmentSlotName = id;
+                            if (destroyAll) return game.communicationHandler.sendToCommandChannel(`Error: Couldn't execute command "${cmdString}". The "all" argument cannot be used when the container is an equipped item.`);
+                            break;
+                        }
                     }
                 }
-                if (item !== null && equipmentSlotName !== "") {
-                    itemManager.destroyInventoryItem(item, item.quantity, bot, true);
+                if (item && equipmentSlotName !== "") {
+                    const destroyAction = new DestroyInventoryItemAction(game, undefined, player, player.location, true);
+                    destroyAction.performDestroyInventoryItem(item, item.quantity, true, true);
                     gotoNext = true;
                 }
             }
             if (gotoNext) continue;
 
-            if (item !== null) itemManager.destroyInventoryItem(item, item.quantity, bot, true);
-            else return game.messageHandler.addGameMechanicMessage(game.commandChannel, `Error: Couldn't execute command "${cmdString}". Couldn't find "${parsedInput2}" in ${player.name}'s inventory.`);
+            if (item) {
+                const destroyAction = new DestroyInventoryItemAction(game, undefined, player, player.location, true);
+                destroyAction.performDestroyInventoryItem(item, item.quantity, true);
+            }
+            else return game.communicationHandler.sendToCommandChannel(`Error: Couldn't execute command "${cmdString}". Couldn't find "${newArgs.join(" ")}" in ${player.name}'s inventory.`);
         }
     }
-
-    return;
-};
+}
