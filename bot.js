@@ -266,6 +266,7 @@ client.on('clientReady', async () => {
             }
         }
     }, 0);
+    client.application.emojis.fetch() // make sure app emoji cache is populated for application emoji mirroring
     initialized = true;
 });
 
@@ -284,7 +285,7 @@ client.on('messageCreate', async message => {
         isCommand = await executeCommand(command, game, message);
     }
     if (message.channel.type !== ChannelType.DM && !isCommand && game.inProgress) {
-        processIncomingMessage(game, message);
+        await processIncomingMessage(game, message);
     }
 });
 

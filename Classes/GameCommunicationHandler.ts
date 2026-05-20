@@ -12,7 +12,8 @@ import { MessageDisplayType } from "../Modules/enums.js";
 import * as messageHandler from "../Modules/messageHandler.js";
 import { capitalizeFirstLetter } from "../Modules/helpers.ts";
 import { ChannelType, Collection } from "discord.js";
-import type { Attachment, Embed, EmbedBuilder, Snowflake, TextChannel } from "discord.js";
+import crypto from 'crypto';
+import type { ApplicationEmoji, Attachment, Embed, EmbedBuilder, Snowflake, TextChannel } from "discord.js";
 
 /**
  * An interface for the message handler. Contains a number of functions that ensure actions won't be communicated multiple times in the same channel.
@@ -89,6 +90,69 @@ export default class GameCommunicationHandler {
 	#actionHasBeenCommunicatedInChannel(channel: Messageable, action: Action) {
 		if (!channel) return true;
 		return action.hasBeenCommunicatedIn(channel.id);
+	}
+
+	/**
+	 * Adds the emojis in the given message to the emoji cache.
+	 * @param message - The message that initiated the cache.
+	 */
+	async cacheEmojis(message: UserMessage) {
+		const application = this.#game.botContext.client.application
+		const emojiRegex = /<(a?):([a-zA-Z0-9_]+):([0-9]+)>/g;
+		/** @type {{animated: boolean, name: string, snowflake: string, hash: string}[]} */
+		const emojiData = [];
+
+		for (const match of message.content.matchAll(emojiRegex)) {
+			const animated = match[1] === "a";
+			const name = match[2];
+			const snowflake = match[3];
+			const hash = crypto.createHash('md5').update(`${name}:${snowflake}:${animated}`).digest('hex');
+			emojiData.push({ animated: animated, name: name, snowflake: snowflake, hash: hash });
+		}
+
+		if (emojiData.length === 0) return;
+
+		const appEmojis = (await application.emojis.fetch()).map(emoji => emoji.name);
+
+		for (const data of emojiData) {
+			let shouldContinue = false;
+			for (const emoji of appEmojis) if (emoji === data.hash) { shouldContinue = true; break };
+			if (shouldContinue) continue;
+
+			const url = `https://cdn.discordapp.com/emojis/${data.snowflake}${data.animated ? ".gif?animated=true" : ".png"}`
+			const emoji = await fetch(url);
+			const emojiBase64 = Buffer.from(await emoji.arrayBuffer()).toString("base64");
+			await application.emojis.create({attachment: `data:image/${data.animated ? "gif" : "png"};base64,${emojiBase64}`, name: data.hash});
+		}
+	}
+
+	/**
+	 * Fetches the application emoji version of the given emoji
+	 * @param emoji - The message that initiated the cache.
+	 */
+	fetchCachedEmoji(emoji: {animated: boolean, name: string, snowflake: string}): ApplicationEmoji {
+		const application = this.#game.botContext.client.application
+		const hash = crypto.createHash('md5').update(`${emoji.name}:${emoji.snowflake}:${emoji.animated}`).digest('hex');
+
+		return application.emojis.cache.find(emoji => emoji.name === hash);
+	}
+
+	/**
+	 * Replaces custom emojis in the input with application cached emojis
+	 * @param text - The body of text to replace emojis in.
+	 */
+	replaceEmoji(text: string) {
+		const emojiRegex = /<(a?):([a-zA-Z0-9_]+):([0-9]+)>/g;
+
+		return text.replace(emojiRegex, (match, g1, g2, g3) => {
+			const animated = g1 === "a";
+			const name = g2;
+			const snowflake = g3;
+			const emoji = this.fetchCachedEmoji({ animated: animated, name: name, snowflake: snowflake });
+			if (emoji) {
+			  return `<${emoji.animated ? "a" : ""}:${emoji.name}:${emoji.id}>`
+			} else return match;
+		});
 	}
 
 	/**
