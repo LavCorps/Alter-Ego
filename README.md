@@ -332,11 +332,31 @@ Ava: "What makes a day wonderful for someone like you?"
 ## Game Development
 
 Alter Ego has a wide array of tools to develop exciting and unique game environments. All games are developed on a
-spreadsheet, and users require little to no programming knowledge to do so.
+spreadsheet, and users require little to no programming knowledge to do so. Each data structure has its own tab on the
+sheet. On the spreadsheet, you can:
 
-It comes bundled with a small but fully-featured demo environment for new users to study and experiment with. On top of
-that, [the documentation](https://msvblank.github.io/Alter-Ego/) is detailed and thorough,
-with many examples and tutorials.
+- Give **Players** unique descriptions, custom pronouns, stats that have in-game effects, and full inventories.
+- Add **NPCs** who are just like Players, but don't need a Discord account, and can only be controlled by a moderator.
+- Create **Rooms** for Players to move between, with **Exits** determining how they connect to each other.
+- Add **Fixtures** to Rooms that Players can inspect and interact with, and set some of them as **Hiding Spots** so
+  Players can hide in them without being seen.
+- Devise **Puzzles** for Players to try and solve, with multiple possible outcomes that can all trigger different
+  behavior.
+- Add **Status Effects** that Players can be inflicted with for a set period of time, which can give them special
+  behavior and temporarily alter their stats.
+- Define **Prefabs** that can be instantiated as **Room Items** and **Inventory Items**, and can be equipped by a Player
+  and/or used to inflict or cure Status Effects.
+- Create **Recipes** that can turn a list of ingredient Prefabs into any number of products, either instantaneously by
+  crafting them together, or after a set amount of time by processing them in a Fixture.
+- Set up **Events** that can automatically trigger at set days and times, and automatically inflict Players with a list
+  of Status Effects in all affected Rooms.
+- Add **Gestures** that allow Players to communicate non-verbally with ease.
+- Set **Flags** with values that can be referenced by other data structures, and write scripts that automatically
+  compute their value when read.
+
+Alter Ego comes bundled with a small but fully-featured demo environment. It demonstrates how to use all of these data
+structures effectively, and is free for users to study and experiment with. On top of that,
+[the documentation](https://msvblank.github.io/Alter-Ego/) is detailed and thorough, with many examples and tutorials.
 
 For additional resources to make developing games with Alter Ego easier, try out
 [Alter Ego Tools](https://github.com/flufflesamy/alter-ego-tools).
@@ -348,8 +368,8 @@ Alter Ego is strictly self-hosted, so you will have to install it and host it yo
 The [installation and setup guide](https://msvblank.github.io/Alter-Ego/moderator_guide/installation.html)
 walks you through every step of the process.
 
-Once you have Alter Ego up and running, you can issue the `.setupdemo` command to set up a demo game environment
-for you and a small group of players to get a feel for its gameplay.
+Once you have Alter Ego up and running, you can issue the `.setupdemo` command to instantly set up a demo game
+environment for you and a small group of players to get a feel for its gameplay.
 
 ## Troubleshooting
 
