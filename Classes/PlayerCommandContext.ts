@@ -75,6 +75,6 @@ export default class Context {
         this.players = this.room.occupants.filter(roomPlayer => roomPlayer !== this.player)
         this.exits = this.room.exits;
         this.fixtures = this.game.entityFinder.getFixtures(null, this.room.id);
-        this.roomItems = this.room.getContainedItems()
+        this.roomItems = this.room.getContainedItems();
     }
 }
