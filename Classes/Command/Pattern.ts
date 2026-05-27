@@ -8,11 +8,11 @@ export const CONSTANT = 0;
 /** Convenience alias for 1 in defining Slot pattern elements. */
 export const SLOT = 1;
 
-/** Convenience alias for 2 in defining Dynamic pattern elements. */
-export const DYNAMIC = 2;
+/** Convenience alias for 2 in defining Reference pattern elements. */
+export const REFERENCE = 2;
 
 /** Type union for PatternElement types */
-export type ElementTypes = typeof CONSTANT | typeof SLOT | typeof DYNAMIC;
+export type ElementTypes = typeof CONSTANT | typeof SLOT | typeof REFERENCE;
 
 /** Convenience alias for 0 in defining Player Slot pattern elements. */
 export const PLAYER = 0;
@@ -71,11 +71,11 @@ export interface Slot extends PatternElement {
 }
 
 /**
- * Dynamic interface representing a piece of a grammar pattern that references the data of another argument.
+ * Reference interface representing a piece of a grammar pattern that references the data of another argument.
  */
-export interface Dynamic extends PatternElement {
+export interface Reference extends PatternElement {
     /**
-     * Dynamics are kind 2 of PatternElement.
+     * References are kind 2 of PatternElement.
      */
     readonly kind: 2;
 
@@ -99,14 +99,14 @@ export default class Pattern {
      *
      * This is an ordered Array, containing Constants, Slots, and other Patterns representing the grammar pattern of a desired command syntax.
      */
-    readonly grammar: Array<Constant | Slot | Dynamic | Pattern>;
+    readonly grammar: Array<Constant | Slot | Reference | Pattern>;
 
     /**
      * Whether the fulfillment of this Pattern is optional or not.
      */
     readonly optional: boolean;
 
-    constructor(grammar: Array<Constant | Slot | Dynamic | Pattern>, optional: boolean = false) {
+    constructor(grammar: Array<Constant | Slot | Reference | Pattern>, optional: boolean = false) {
         this.grammar = grammar;
         this.optional = optional;
     }
