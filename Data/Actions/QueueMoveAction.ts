@@ -23,14 +23,15 @@ export default class QueueMoveAction extends Action {
 		let exit: Exit = null;
 		let destinationRoom: Room = null;
 		let entrance: Exit = null;
-		let isMovingFreely = false;
+		let isMovingInstantly = false;
+        const canMoveFreely = this.getGame().guildContext.hasFreeMovementRole(this.player.member);
 
 		exit = currentRoom.getExit(destinationString);
 		if (!exit) {
-			if (this.player.member.roles.cache.has(this.getGame().guildContext.freeMovementRole.id)) {
-				// If the player has the free movement role, they can move to any room they please.
+            if (this.forced || canMoveFreely) {
+				// If the player is forced by a moderator or can move freely, they can instantly move to any room.
 				destinationRoom = this.getGame().entityFinder.getRoom(destinationString);
-				isMovingFreely = true;
+				isMovingInstantly = true;
 			}
 			else {
 				// Otherwise, check that the desired room is adjacent to the current room.
@@ -49,17 +50,26 @@ export default class QueueMoveAction extends Action {
 		}
 		if (!destinationRoom) {
 			this.player.moveQueue.length = 0;
-			return this.getGame().communicationHandler.sendMessageToPlayer(this.player, `There is no exit "${destinationString}" that you can currently move to. Please try the name of an exit in the room you're in or the name of the room you want to go to.`, false);
+            if (this.forced && this.message)
+                this.getGame().communicationHandler.reply(this.message, `Couldn't find room or exit "${destinationString}".`);
+			else if (this.message)
+                this.getGame().communicationHandler.sendMessageToPlayer(this.player, `There is no exit "${destinationString}" that you can currently move to. Please try the name of an exit in the room you're in or the name of the room you want to go to.`, false);
+            return;
 		}
 
 		if (exit) {
 			const startMoveAction = new StartMoveAction(this.getGame(), this.message, this.player, this.player.location, this.forced);
 			await startMoveAction.performStartMove(isRunning, currentRoom, destinationRoom, exit, entrance);
+            const verb = isRunning ? `running` : `moving`;
+            this.successMessage = `Successfully started ${verb} ${this.player.name} to ${exit.name} in ${this.location.channel}.`;
+            if (this.player.moveQueue.length > 1)
+                this.successMessage += ` ${this.player.originalPronouns.Dpos} move queue is now: "${this.player.moveQueue.join(' > ')}".`;
 		}
 		else {
 			const moveAction = new MoveAction(this.getGame(), this.message, this.player, this.player.location, this.forced);
-			moveAction.performMove(isRunning, currentRoom, destinationRoom, exit, entrance, isMovingFreely);
+			moveAction.performMove(isRunning, currentRoom, destinationRoom, exit, entrance, isMovingInstantly && canMoveFreely);
 			this.player.moveQueue.length = 0;
+            this.successMessage = `Successfully moved ${this.player.name} to ${destinationRoom.channel}.`;
 		}
 	}
 
