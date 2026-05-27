@@ -3,19 +3,19 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import type { Collection } from "discord.js";
-import type Exit from "../Data/Exit.ts";
-import type Fixture from "../Data/Fixture.ts";
-import type InventoryItem from "../Data/InventoryItem.ts";
-import type Player from "../Data/Player.ts";
-import type Room from "../Data/Room.ts";
-import type RoomItem from "../Data/RoomItem.ts";
-import type Game from "../Data/Game.ts";
-import type EquipmentSlot from "../Data/EquipmentSlot.ts";
+import type Exit from "../../Data/Exit.ts";
+import type Fixture from "../../Data/Fixture.ts";
+import type InventoryItem from "../../Data/InventoryItem.ts";
+import type Player from "../../Data/Player.ts";
+import type Room from "../../Data/Room.ts";
+import type RoomItem from "../../Data/RoomItem.ts";
+import type Game from "../../Data/Game.ts";
+import type EquipmentSlot from "../../Data/EquipmentSlot.ts";
 
 /**
- * Represents the in-game context of a command.
+ * Represents the in-game context of a new-generation player command.
  */
-export default class Context {
+export default class PlayerContext {
     /**
      * The game containing all objects of this context.
      */
