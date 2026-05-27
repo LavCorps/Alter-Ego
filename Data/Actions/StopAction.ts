@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import Action from "../Action.ts";
 import type Exit from "../Exit.js";
 
@@ -17,6 +21,7 @@ export default class StopAction extends Action {
 		if (this.performed) return;
 		super.perform();
 		this.player.stopMoving();
+        this.player.stopFollowing();
 		this.getGame().narrationHandler.narrateStop(this, this.player, exitLocked, exit);
 	}
 }

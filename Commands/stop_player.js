@@ -1,4 +1,8 @@
-﻿import StopAction from '../Data/Actions/StopAction.ts';
+﻿// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
+import StopAction from '../Data/Actions/StopAction.ts';
 
 /** @import GameSettings from '../Classes/GameSettings.js' */
 /** @import Game from '../Data/Game.ts' */
@@ -10,7 +14,7 @@ export const config = {
     description: "Stops your movement.",
     details: `Stops you in your tracks while moving to another room. Your distance to that room will be preserved, `
         + `so if you decide to move to that room again, it will not take as long. This command will also cancel any `
-        + `queued movements.`,
+        + `queued movements. If you are following another player, you can stop following them with this command.`,
     usableBy: "Player",
     aliases: ["stop", "st"],
     requiresGame: true
@@ -35,7 +39,7 @@ export async function execute(game, message, command, args, player) {
     const status = player.getBehaviorAttributeStatusEffects("disable stop");
     if (status.length > 0) return game.communicationHandler.reply(message, `You cannot do that because you are **${status[0].id}**.`);
 
-    if (!player.isMoving) return game.communicationHandler.reply(message, `You cannot do that because you are not moving.`);
+    if (!player.followedPlayer && !player.isMoving) return game.communicationHandler.reply(message, `You cannot do that because you are not moving.`);
 
     const action = new StopAction(game, message, player, player.location, false);
     action.performStop();

@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import Room from "../Data/Room.ts";
 import Whisper from "../Data/Whisper.ts";
 import Moderator from "../Data/Moderator.ts";
@@ -128,6 +132,7 @@ export default abstract class GameEntityManager {
 					status.timer.stop();
 			});
 			player.stopMoving();
+            player.stopFollowing();
 			player.setOffline();
 		});
 		this.game.rooms.forEach(room => {

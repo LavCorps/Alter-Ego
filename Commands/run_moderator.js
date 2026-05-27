@@ -59,6 +59,7 @@ export async function execute(game, message, command, args, moderator) {
     if (player === undefined) return game.communicationHandler.reply(message, `Player "${args[0]}" not found.`);
 
     player.stopMoving();
+    player.stopFollowing();
     player.moveQueue = args.join(" ").split(">");
     const action = new QueueMoveAction(game, message, player, player.location, true);
     await action.performQueueMove(true, player.moveQueue[0]);

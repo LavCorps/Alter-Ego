@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import { capitalizeFirstLetter, endsWithPunctuation } from "../Modules/helpers.ts";
 import type Dialog from "../Data/Dialog.ts";
 import type Fixture from "../Data/Fixture.ts";
@@ -41,7 +45,7 @@ export default class GameNotificationGenerator {
 	generateHearDialogNotification(dialog: Dialog, player: Player) {
 		const playerAndSpeakerAreHidingTogether = dialog.speaker.isHidden() && player.isHidden() && dialog.speaker.hidingSpot === player.hidingSpot;
 		const playerCanSeeSpeaker = player.canSee() && (!dialog.speaker.isHidden() || playerAndSpeakerAreHidingTogether);
-		
+
 		let speakerString = "";
 		if (!dialog.isOOCMessage && player.knows(dialog.speakerRecognitionName) && !dialog.isMimicking(player))
 			speakerString = dialog.speakerDisplayNameIsDifferent && playerCanSeeSpeaker ? `${dialog.speaker.displayName}, with ${dialog.speakerVoiceString} you recognize as ${dialog.speakerRecognitionName}'s,` : `${dialog.speakerRecognitionName}`;
@@ -148,7 +152,7 @@ export default class GameNotificationGenerator {
 	}
 
 	/**
-	 * Generates a notification indicating that a player heard dialog through a player with the `receiver` behavior attribute. 
+	 * Generates a notification indicating that a player heard dialog through a player with the `receiver` behavior attribute.
 	 * @param dialog - The dialog that was spoken.
 	 * @param receiver - The player with the `receiver` behavior attribute.
 	 * @param receiverItemName - The name of the inventory item that gave the player the `receiver` behavior attribute. Defaults to "receiver".
@@ -254,6 +258,46 @@ export default class GameNotificationGenerator {
 		const verb = secondPerson ? `stop` : `stops`;
 		return `${subject} ${verb} moving.`;
 	}
+
+    /**
+     * Generates a notification indicating the player began following someone.
+     * @param player - The player referred to in this notification.
+     * @param secondPerson - Whether or not the player should be referred to in second person.
+     * @param targetDisplayName - The display name of the player being followed.
+     */
+    generateFollowNotification(player: Player, secondPerson: boolean, targetDisplayName: string) {
+        const subject = secondPerson ? `You` : capitalizeFirstLetter(player.displayName);
+        const verb = secondPerson ? `begin following` : `begins following`;
+        return `${subject} ${verb} ${targetDisplayName}.`;
+    }
+
+    /**
+     * Generates a notification indicating the player is being followed.
+     * @param followerDisplayName - The display name of the player following the player being addressed.
+     */
+    generateBeingFollowedNotification(followerDisplayName: string) {
+        return `${capitalizeFirstLetter(followerDisplayName)} is following you.`;
+    }
+
+    /**
+     * Generates a notification indicating the player has stopped following the given target.
+     * @param player - The player referred to in this notification.
+     * @param secondPerson - Whether or not the player should be referred to in second person.
+     * @param targetDisplayName - The display name of the player that they were following.
+     */
+    generateStopFollowingNotification(player: Player, secondPerson: boolean, targetDisplayName: string) {
+        const subject = secondPerson ? `You` : capitalizeFirstLetter(player.displayName);
+        const verb = secondPerson ? `stop following` : `stops following`;
+        return `${subject} ${verb} ${targetDisplayName}.`;
+    }
+
+    /**
+     * Generates a notification indicating the player has lost track of the player they were following.
+     * @param targetDisplayName - The display name of the player that they were following.
+     */
+    generateLostFollowedPlayerNotification(targetDisplayName: string) {
+        return `You can't find ${targetDisplayName} here.`;
+    }
 
 	/**
 	 * Generates a notification indicating the player cannot move to an exit because it is locked.
@@ -461,7 +505,7 @@ export default class GameNotificationGenerator {
 	generateFoundHiddenPlayersNotification(hiddenPlayersList: string, hidingSpotPhrase: string) {
 		return `You find ${hiddenPlayersList} hiding in ${hidingSpotPhrase}!`;
 	}
-	
+
 	/**
 	 * Generates a notification indicating the player knocked on an exit.
 	 * @param player - The player referred to in this notification.
@@ -527,7 +571,7 @@ export default class GameNotificationGenerator {
 	/**
 	 * Generates a notification indicating the player can no longer whisper
 	 * because they were inflicted with a status effect with the `no channel` behavior attribute.
-	 * @param player - The player referred to in this notification. 
+	 * @param player - The player referred to in this notification.
 	 * @param statusId - The ID of the status effect that made the player unable to whisper.
 	 */
 	generateNoChannelLeaveWhisperNotification(player: Player, statusId: string) {
@@ -577,7 +621,7 @@ export default class GameNotificationGenerator {
 
 	/**
 	 * Generates a notification indicating the player took off their mask.
-	 * @param maskName - The name of the inventory item the player took off. 
+	 * @param maskName - The name of the inventory item the player took off.
 	 * @param playerDisplayName - The display name of the player.
 	 */
 	generateConcealedCuredNotification(maskName: string, playerDisplayName: string) {
@@ -1047,7 +1091,7 @@ export default class GameNotificationGenerator {
 	 * @param player - The player referred to in this notification.
 	 * @param secondPerson - Whether or not the player should be referred to in second person.
 	 * @param puzzle - The puzzle that was solved.
-	 * @param outcome - The puzzle's outcome. 
+	 * @param outcome - The puzzle's outcome.
 	 * @param item - The item the puzzle was solved with, if applicable.
 	 */
 	generateSolvePuzzleNotification(player: Player, secondPerson: boolean, puzzle: Puzzle, outcome: string, item?: ItemInstance) {

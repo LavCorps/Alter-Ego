@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import { Collection, GuildMember, type TextChannel } from "discord.js";
 import type { Duration } from "luxon";
 import type Interactable from "../Classes/Interactables/Interactable.ts";
@@ -245,6 +249,15 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
      */
     moveQueue: string[];
     /**
+     * The name of a player that this player is currently following. Used internally to avoid storing a reference to another player.
+     */
+    #followedPlayerName: string;
+    /**
+     * The display name of the player that this player is currently following.
+     * This is set when the player begins following them, so that if it changes, their new identity won't be revealed.
+     */
+    followedPlayerDisplayName: string;
+    /**
      * Whether or not the player has depleted half of their stamina while moving.
      * When they do, they will be warned that they're starting to become tired.
      */
@@ -352,6 +365,8 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
         this.moveTimer = null;
         this.remainingTime = 0;
         this.moveQueue = [];
+        this.#followedPlayerName = "";
+        this.followedPlayerDisplayName = "";
 
         this.#reachedHalfStamina = false;
         let player = this;
@@ -694,6 +709,39 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
         this.isMoving = false;
         this.remainingTime = 0;
         this.moveQueue.length = 0;
+    }
+
+    /**
+     * A player that this player is currently following. This player will follow every movement they make as long as
+     * they can see them when they enter the room.
+     */
+    get followedPlayer(): Player | null {
+        return this.getGame().entityFinder.getPlayer(this.#followedPlayerName) ?? null;
+    }
+
+    /**
+     * Returns true if the player is following the given player.
+     * @param player
+     */
+    isFollowing(player: Player): boolean {
+        return this.#followedPlayerName !== "" && this.#followedPlayerName === player.name;
+    }
+
+    /**
+     * Sets the player being followed, and their display name.
+     * @param player - The player to follow.
+     */
+    startFollowing(player: Player): void {
+        this.#followedPlayerName = player.name;
+        this.followedPlayerDisplayName = player.displayName;
+    }
+
+    /**
+     * Stops following a player.
+     */
+    stopFollowing(): void {
+        this.#followedPlayerName = "";
+        this.followedPlayerDisplayName = "";
     }
 
     /**
@@ -1046,7 +1094,7 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
 
     /**
      * Returns the item contained inside of this container with the given identifier or prefab ID.
-     * If no such item exists, returns undefined. 
+     * If no such item exists, returns undefined.
      * @param identifier - The identifier or prefab ID to search for.
      */
     override getContainedItem(identifier: string): ItemInstance {
@@ -1564,6 +1612,7 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
         this.hidingSpot = "";
         this.statusDisplays.length = 0;
         this.stopMoving();
+        this.stopFollowing();
         for (const status of this.status.values()) {
             if (status.timer !== null)
                 status.timer.stop();

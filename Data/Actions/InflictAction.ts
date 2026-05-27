@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import type { Duration } from "luxon";
 import { MessageDisplayType } from "../../Modules/enums.js";
 import Action from "../Action.ts";
@@ -70,8 +74,12 @@ export default class InflictAction extends Action {
 			this.player.setPronouns(this.player.pronouns, "neutral");
 			this.location.setOccupantsString();
 		}
-		if (status.behaviorAttributes.has("disable all") || status.behaviorAttributes.has("disable move") || status.behaviorAttributes.has("disable run"))
-			this.player.stopMoving();
+		if (status.behaviorAttributes.has("disable all") || status.behaviorAttributes.has("disable move") || status.behaviorAttributes.has("disable run")) {
+            this.player.stopMoving();
+            this.player.stopFollowing();
+        }
+        if (this.player.followedPlayer && status.behaviorAttributes.has("disable follow"))
+            this.player.stopFollowing();
 
 		this.player.inflict(status, duration);
 		if (notify) {

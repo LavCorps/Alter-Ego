@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import Description from "../Data/Description.ts";
 import Fixture from "../Data/Fixture.ts";
 import InventoryItem from "../Data/InventoryItem.ts";
@@ -232,12 +236,40 @@ export default class GameNarrationHandler {
 	narrateStop(action: Action, player: Player, exitLocked: boolean, exit?: Exit, interactables: Interactable[] = []) {
 		const messageType = MessageDisplayType.MINOR;
 		const notification = exitLocked ? this.#game.notificationGenerator.generateExitLockedNotification(player, true, exit.getDoorPhrase())
-			: this.#game.notificationGenerator.generateStopNotification(player, true);
+			: player.followedPlayer ? this.#game.notificationGenerator.generateStopFollowingNotification(player, true, player.followedPlayerDisplayName)
+                :this.#game.notificationGenerator.generateStopNotification(player, true);
 		const narration = exitLocked ? this.#game.notificationGenerator.generateExitLockedNotification(player, false, exit.getDoorPhrase())
 			: this.#game.notificationGenerator.generateStopNotification(player, false);
 		this.sendNotification(player, action, notification, exitLocked ? MessageDisplayType.WARNING : messageType, undefined, undefined, interactables);
 		this.#sendNarration(messageType, action, player, narration);
 	}
+
+    /**
+     * Narrates a follow action.
+     * @param action - The action that initiated this narration.
+     * @param player - The player performing the follow action.
+     * @param target - The player being followed.
+     * @param interactables - An array of interactables to send to the player alongside their notification. Optional.
+     */
+    narrateFollow(action: Action, player: Player, target: Player, interactables: Interactable[] = []) {
+        const messageType = MessageDisplayType.WARNING;
+        let playerNotification = this.#game.notificationGenerator.generateFollowNotification(player, true, target.displayName);
+        let targetNotification = this.#game.notificationGenerator.generateBeingFollowedNotification(player.displayName);
+        this.sendNotification(player, action, playerNotification, MessageDisplayType.STANDARD);
+        this.sendNotification(target, action, targetNotification, messageType, true, undefined, interactables);
+    }
+
+    /**
+     * Narrates that a player has lost track of the player they were following.
+     * @param action - The action that initiated this narration.
+     * @param player - The player who performed the follow action.
+     * @param interactables - An array of interactables to send to the player alongside their notification. Optional.
+     */
+    narrateLostFollowedPlayer(action: Action, player: Player, interactables: Interactable[] = []) {
+        const messageType = MessageDisplayType.STANDARD;
+        const notification = this.#game.notificationGenerator.generateLostFollowedPlayerNotification(player.followedPlayerDisplayName);
+        this.sendNotification(player, action, notification, messageType, true, undefined, interactables);
+    }
 
 	/**
 	 * Narrates an inspect action.

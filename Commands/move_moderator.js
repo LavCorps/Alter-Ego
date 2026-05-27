@@ -91,6 +91,7 @@ export async function execute(game, message, command, args, moderator) {
     if (singlePlayerSelected && !teleport) {
         const player = players[0];
         player.stopMoving();
+        player.stopFollowing();
         player.moveQueue = args.join(" ").split(">");
         const action = new QueueMoveAction(game, message, player, player.location, true);
         await action.performQueueMove(false, player.moveQueue[0]);
@@ -176,6 +177,7 @@ export async function execute(game, message, command, args, moderator) {
 
             // Clear the player's movement timer first.
             players[i].stopMoving();
+            players[i].stopFollowing();
             // Move the player.
             const action = new MoveAction(game, message, players[i], players[i].location, true);
             action.performMove(false, currentRoom, desiredRoom, exit, entrance);

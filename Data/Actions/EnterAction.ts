@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import Action from "../Action.ts";
 import type Exit from "../Exit.js";
 import type Room from "../Room.ts";
@@ -26,6 +30,15 @@ export default class EnterAction extends Action {
         if (this.player.moveQueue.length > 0) {
             const queueMoveAction = new QueueMoveAction(this.player.getGame(), undefined, this.player, this.player.location, this.forced);
             await queueMoveAction.performQueueMove(isRunning, this.player.moveQueue[0]);
+        }
+
+        const followedPlayerIsVisible = this.player.followedPlayer && destinationRoom.generateOccupantsStringExcluding(this.player).includes(this.player.followedPlayerDisplayName);
+        if (this.player.followedPlayer && !followedPlayerIsVisible) {
+            // We need a new Action so the message gets communicated properly, since we've already sent a notification with this one.
+            // We aren't going to actually do anything with it otherwise.
+            const lostPlayerAction = new EnterAction(this.getGame(), this.message, this.player, this.player.location, this.forced);
+            this.getGame().narrationHandler.narrateLostFollowedPlayer(lostPlayerAction, this.player);
+            this.player.stopFollowing();
         }
 	}
 }

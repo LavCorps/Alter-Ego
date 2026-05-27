@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import QueueMoveAction from '../Data/Actions/QueueMoveAction.ts';
 
 /** @import GameSettings from '../Classes/GameSettings.js' */
@@ -54,6 +58,8 @@ export async function execute(game, message, command, args, player) {
     if (status.length > 0) return game.communicationHandler.reply(message, `You cannot do that because you are **${status[0].id}**.`);
 
     if (player.isMoving) return game.communicationHandler.reply(message, `You cannot do that because you are already moving.`);
+    if (player.followedPlayer)
+        return game.communicationHandler.reply(message, `You cannot do that because you are following ${player.followedPlayerDisplayName}. If you want to move of your own accord again, use "${game.settings.commandPrefix}stop" first.`);
 
     player.moveQueue = args.join(" ").split(">");
     const action = new QueueMoveAction(game, message, player, player.location, false);
