@@ -2,10 +2,16 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-export type TokenType = 0 | 1 | 2;
+import type { SlotTypes } from "./Pattern.ts";
+
+export const CONSTANT = -1;
+
+export const REFERENCE = -2;
+
+export type TokenType = typeof REFERENCE | typeof CONSTANT | SlotTypes;
 
 export interface Token {
     type: TokenType;
     value: string;
-    attributes: Record<string, string>
+    attributes: Record<string, string>;
 }
