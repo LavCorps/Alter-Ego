@@ -17,7 +17,7 @@ export type ElementTypes = typeof CONSTANT | typeof SLOT | typeof DYNAMIC;
 /** Convenience alias for 0 in defining Player Slot pattern elements. */
 export const PLAYER = 0;
 
-/** Convenience alias for 1 in defining Player Slot pattern elements. */
+/** Convenience alias for 1 in defining Inventory Item Slot pattern elements. */
 export const INVENTORYITEM = 1;
 
 /** Type union for Slot.type types */
