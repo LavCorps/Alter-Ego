@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import Pattern, { CONSTANT, SLOT, INVENTORYITEM } from "../../Classes/Command/Pattern.ts";
+import Pattern, { CONSTANT, SLOT, INVENTORYITEM, constant, slot } from "../../Classes/Command/Pattern.ts";
 import PlayerCommand from "../../Classes/Command/PlayerCommand.ts";
 import type PlayerContext from "../../Classes/Command/PlayerContext.ts";
 import type GameSettings from "../../Classes/GameSettings.js";
@@ -25,14 +25,14 @@ export default class CraftPlayerCommand extends PlayerCommand {
 
     readonly patterns = [
         new Pattern([
-            { kind: SLOT, type: INVENTORYITEM, name: "item1" },
-            { kind: CONSTANT, value: "and" },
-            { kind: SLOT, type: INVENTORYITEM, name: "item2" },
+            slot(INVENTORYITEM, "item1"),
+            constant("and"),
+            slot(INVENTORYITEM, "item2"),
         ]),
         new Pattern([
-            { kind: SLOT, type: INVENTORYITEM, name: "item1" },
-            { kind: CONSTANT, value: "with" },
-            { kind: SLOT, type: INVENTORYITEM, name: "item2" },
+            slot(INVENTORYITEM, "item1"),
+            constant("with"),
+            slot(INVENTORYITEM, "item2"),
         ]),
     ];
 

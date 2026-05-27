@@ -51,6 +51,14 @@ export interface Constant extends PatternElement {
 }
 
 /**
+ * Helper function for constructing Constant pattern elements.
+ * @param value - The data of the Constant sentinel.
+ */
+export function constant(value: string): Constant {
+    return { kind: 0, value: value };
+}
+
+/**
  * Slot interface representing a slot in a grammar pattern for a tokenized argument.
  */
 export interface Slot extends PatternElement {
@@ -68,6 +76,15 @@ export interface Slot extends PatternElement {
      * The type of the Slot. Tokens must match this type to fit into the Slot.
      */
     readonly type: SlotTypes;
+}
+
+/**
+ * Helper function for constructing Slot pattern elements.
+ * @param type - The type of the Slot. Tokens must match this type to fit into the Slot.
+ * @param name - The name to refer to the Slot with. Inherited by any Tokens that fit the Slot.
+ */
+export function slot(type: SlotTypes, name?: string): Slot {
+    return { kind: 1, type: type, name: name };
 }
 
 /**
@@ -91,6 +108,15 @@ export interface Reference extends PatternElement {
 }
 
 /**
+ * Helper function for constructing Reference pattern elements.
+ * @param name - The name of the Slot that the Dynamic refers to.
+ * @param attribute - The attribute of the Slot that the Dynamic should fulfill. This should be a string attribute on a real Token.
+ */
+export function reference(name: string, attribute: string): Reference {
+    return { kind: 2, name: name, attribute: attribute };
+}
+
+/**
  * Grammar pattern representing a command syntax.
  */
 export default class Pattern {
@@ -102,12 +128,25 @@ export default class Pattern {
     readonly grammar: Array<Constant | Slot | Reference | Pattern>;
 
     /**
-     * Whether the fulfillment of this Pattern is optional or not.
+     * Whether the fulfillment of this Pattern is optional or not. This is most useful for optional sub-patterns.
      */
     readonly optional: boolean;
 
+    /**
+     * @param grammar - The grammar of the pattern. This is an ordered array, containing pattern elements, as well as other patterns.
+     * @param optional - Whether the fulfillment of this Pattern is optional or not. This is most useful for optional sub-patterns.
+     */
     constructor(grammar: Array<Constant | Slot | Reference | Pattern>, optional: boolean = false) {
         this.grammar = grammar;
         this.optional = optional;
     }
+}
+
+/**
+ * Helper function for constructing Patterns.
+ * @param grammar - The grammar of the pattern. This is an ordered array, containing pattern elements, as well as other patterns.
+ * @param optional - Whether the fulfillment of this Pattern is optional or not. This is most useful for optional sub-patterns.
+ */
+export function pattern(grammar: Array<Constant | Slot | Reference | Pattern>, optional: boolean = false): Pattern {
+    return new Pattern(grammar, optional)
 }
