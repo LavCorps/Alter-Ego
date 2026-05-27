@@ -3,25 +3,26 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import type { User as DiscordUser } from "discord.js";
+import Context from "./Context.ts";
 
 /**
  * Represents the command context of a new-generation eligible command.
  */
-export default class EligibleContext {
+export default class EligibleContext extends Context {
     /**
      * Alias the command was invoked with.
      */
-    private readonly invoked: string;
+    readonly invoked: string;
 
     /**
      * Message that invoked the command.
      */
-    private readonly message: UserMessage;
+    readonly message: UserMessage;
 
     /**
      * User that invoked the command.
      */
-    private readonly author: DiscordUser;
+    readonly author: DiscordUser;
 
     /**
      * @param invoked - The alias the command was invoked with.
@@ -29,6 +30,7 @@ export default class EligibleContext {
      *
      */
     private constructor(invoked: string, message: UserMessage) {
+        super()
         this.invoked = invoked;
         this.message = message;
         this.author = this.message.author;

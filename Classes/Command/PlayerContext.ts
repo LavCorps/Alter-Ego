@@ -11,20 +11,21 @@ import type Room from "../../Data/Room.ts";
 import type RoomItem from "../../Data/RoomItem.ts";
 import type Game from "../../Data/Game.ts";
 import type EquipmentSlot from "../../Data/EquipmentSlot.ts";
+import Context from "./Context.ts";
 
 /**
  * Represents the in-game context of a new-generation player command.
  */
-export default class PlayerContext {
+export default class PlayerContext extends Context {
     /**
      * The alias the command was invoked with.
      */
-    private readonly invoked: string;
+    readonly invoked: string;
 
     /**
      * The message that invoked the command.
      */
-    private readonly message: UserMessage;
+    readonly message: UserMessage;
 
     /**
      * The game containing all objects of this context.
@@ -79,6 +80,7 @@ export default class PlayerContext {
      *
      */
     private constructor(game: Game, player: Player, invoked: string, message: UserMessage) {
+        super()
         this.invoked = invoked;
         this.message = message;
         this.game = game;

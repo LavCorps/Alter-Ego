@@ -2,19 +2,21 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import Context from "./Context.ts";
+
 /**
  * Represents the command context of a new-generation moderator command.
  */
-export default class ModeratorContext {
+export default class ModeratorContext extends Context {
     /**
      * Alias the command was invoked with.
      */
-    private readonly invoked: string;
+    readonly invoked: string;
 
     /**
      * Message that invoked the command.
      */
-    private readonly message: UserMessage;
+    readonly message: UserMessage;
 
     /**
      * @param invoked - The alias the command was invoked with.
@@ -22,6 +24,7 @@ export default class ModeratorContext {
      *
      */
     private constructor(invoked: string, message: UserMessage) {
+        super();
         this.invoked = invoked;
         this.message = message;
     }
