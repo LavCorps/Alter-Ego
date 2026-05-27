@@ -5,4 +5,16 @@
 /**
  * Represents the command context of a new-generation bot command.
  */
-export default class BotContext { }
+export default class BotContext {
+    /**
+     * Alias the command was invoked with.
+     */
+    private readonly invoked: string;
+
+    /**
+     * @param invoked - The alias the command was invoked with.
+     */
+    private constructor(invoked: string) {
+        this.invoked = invoked;
+    }
+}

@@ -17,62 +17,78 @@ import type EquipmentSlot from "../../Data/EquipmentSlot.ts";
  */
 export default class PlayerContext {
     /**
+     * The alias the command was invoked with.
+     */
+    private readonly invoked: string;
+
+    /**
+     * The message that invoked the command.
+     */
+    private readonly message: UserMessage;
+
+    /**
      * The game containing all objects of this context.
      */
-    private readonly game: Game
-    
+    private readonly game: Game;
+
     /**
      * The player responsible for executing the command.
      */
-    readonly player: Player
-    
+    readonly player: Player;
+
     /**
      * The equipment slots of the player.
      */
-    readonly equipmentSlots: Collection<string, EquipmentSlot>
-    
+    readonly equipmentSlots: Collection<string, EquipmentSlot>;
+
     /**
      * The inventory items held by the player.
      */
-    readonly inventoryItems: Array<InventoryItem>
-    
+    readonly inventoryItems: Array<InventoryItem>;
+
     /**
      * The room the player occupies.
      */
-    readonly room: Room
-    
+    readonly room: Room;
+
     /**
      * The other players in the same room as the player.
      */
-    readonly players: Array<Player>
-    
+    readonly players: Array<Player>;
+
     /**
      * The exits within the room.
      */
-    readonly exits: Collection<string, Exit>
-    
+    readonly exits: Collection<string, Exit>;
+
     /**
      * The fixtures within the room.
      */
-    readonly fixtures: Array<Fixture>
-    
+    readonly fixtures: Array<Fixture>;
+
     /**
      * The room items within the room.
      */
-    readonly roomItems: Array<RoomItem>
-    
+    readonly roomItems: Array<RoomItem>;
+
     /**
-     * 
      * @param game - The game to construct the context within.
      * @param player - The player to construct the context for.
+     * @param invoked - The alias the command was invoked with.
+     * @param message - The message that invoked the command.
+     *
      */
-    private constructor(game: Game, player: Player) {
+    private constructor(game: Game, player: Player, invoked: string, message: UserMessage) {
+        this.invoked = invoked;
+        this.message = message;
         this.game = game;
         this.player = player;
         this.equipmentSlots = this.player.inventory;
-        this.inventoryItems = this.equipmentSlots.filter(slot => !slot.containsNoItems()).map(slot => slot.equippedItem)
+        this.inventoryItems = this.equipmentSlots
+            .filter((slot) => !slot.containsNoItems())
+            .map((slot) => slot.equippedItem);
         this.room = this.player.location;
-        this.players = this.room.occupants.filter(roomPlayer => roomPlayer !== this.player)
+        this.players = this.room.occupants.filter((roomPlayer) => roomPlayer !== this.player);
         this.exits = this.room.exits;
         this.fixtures = this.game.entityFinder.getFixtures(null, this.room.id);
         this.roomItems = this.room.getContainedItems();

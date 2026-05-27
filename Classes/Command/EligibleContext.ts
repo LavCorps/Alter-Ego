@@ -2,7 +2,35 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import type { User as DiscordUser } from "discord.js";
+
 /**
  * Represents the command context of a new-generation eligible command.
  */
-export default class EligibleContext { }
+export default class EligibleContext {
+    /**
+     * Alias the command was invoked with.
+     */
+    private readonly invoked: string;
+
+    /**
+     * Message that invoked the command.
+     */
+    private readonly message: UserMessage;
+
+    /**
+     * User that invoked the command.
+     */
+    private readonly author: DiscordUser;
+
+    /**
+     * @param invoked - The alias the command was invoked with.
+     * @param message - The message that invoked the command.
+     *
+     */
+    private constructor(invoked: string, message: UserMessage) {
+        this.invoked = invoked;
+        this.message = message;
+        this.author = this.message.author;
+    }
+}
