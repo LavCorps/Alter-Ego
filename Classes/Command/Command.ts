@@ -17,7 +17,7 @@ export default abstract class Command {
     /**
      * Examples of the command's usage.
      */
-    abstract readonly usage: (settings: GameSettings) => string;
+    abstract usage(settings: GameSettings): string;
     /**
      * Grammar patterns for the command.
      */

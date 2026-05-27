@@ -13,5 +13,5 @@ export default abstract class EligibleCommand extends Command {
     /**
      * The code to execute when the command is called.
      */
-    abstract readonly execute: (context: EligibleContext) => Promise<void>;
+    abstract execute(context: EligibleContext): Promise<void>;
 }

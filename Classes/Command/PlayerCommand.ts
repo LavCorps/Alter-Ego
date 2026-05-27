@@ -13,5 +13,5 @@ export default abstract class PlayerCommand extends Command {
     /**
      * The code to execute when the command is called.
      */
-    abstract readonly execute: (context: PlayerContext) => Promise<void>;
+    abstract execute(context: PlayerContext): Promise<void>;
 }

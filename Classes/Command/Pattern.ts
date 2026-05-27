@@ -11,6 +11,18 @@ export const SLOT = 1;
 /** Convenience alias for 2 in defining Dynamic pattern elements. */
 export const DYNAMIC = 2;
 
+/** Type union for PatternElement types */
+export type ElementTypes = typeof CONSTANT | typeof SLOT | typeof DYNAMIC;
+
+/** Convenience alias for 0 in defining Player Slot pattern elements. */
+export const PLAYER = 0;
+
+/** Convenience alias for 1 in defining Player Slot pattern elements. */
+export const INVENTORYITEM = 1;
+
+/** Type union for Slot.type types */
+export type SlotTypes = typeof PLAYER | typeof INVENTORYITEM;
+
 /**
  * Base interface representing a pattern element.
  */
@@ -18,7 +30,7 @@ export interface PatternElement {
     /**
      * The "kind" of the PatternElement. Should be either 0 (constant), 1 (slot), or 2 (dynamic)
      */
-    readonly kind: 0 | 1 | 2;
+    readonly kind: ElementTypes;
 }
 
 /**
@@ -55,7 +67,7 @@ export interface Slot extends PatternElement {
     /**
      * The type of the Slot. Tokens must match this type to fit into the Slot.
      */
-    readonly type: any;
+    readonly type: SlotTypes;
 }
 
 /**
