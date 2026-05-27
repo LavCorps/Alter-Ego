@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import type GameSettings from "../GameSettings.js";
+import type Pattern from "./Pattern.ts"
 
 /**
  * Abstract base class for all new-generation commands.
@@ -20,5 +21,5 @@ export default abstract class Command {
     /**
      * Grammar patterns for the command.
      */
-    abstract readonly patterns: Array<any>;
+    abstract readonly patterns: Array<Pattern>;
 }
