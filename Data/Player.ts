@@ -236,6 +236,14 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
      */
     isMoving: boolean;
     /**
+     * Whether the player is currently running or not.
+     */
+    isRunning: boolean;
+    /**
+     * The speed at which the player is currently moving.
+     */
+    currentMovingSpeed: number;
+    /**
      * A timeout that updates the player's position and stamina every 100 milliseconds while the player is moving.
      */
     moveTimer: NodeJS.Timeout | null;
@@ -362,6 +370,8 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
         this.carryWeight = 0;
 
         this.isMoving = false;
+        this.isRunning = false;
+        this.currentMovingSpeed = 0;
         this.moveTimer = null;
         this.remainingTime = 0;
         this.moveQueue = [];
@@ -521,6 +531,7 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
     move(isRunning: boolean, currentRoom: Room, destinationRoom: Room, exit: Exit, entrance: Exit, time: number, forced: boolean): void {
         this.remainingTime = time;
         this.isMoving = true;
+        this.isRunning = isRunning;
         const startingPos: Pos = { x: this.pos.x, y: this.pos.y, z: this.pos.z };
 
         let player = this;
@@ -582,6 +593,8 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
             if (player.remainingTime <= 0 && player.stamina !== 0) {
                 clearInterval(player.moveTimer);
                 player.isMoving = false;
+                player.isRunning = false;
+                player.currentMovingSpeed = 0;
                 const restrictedExitPuzzle = player.getGame().entityFinder.getPuzzle(exit.name, player.location.id, "restricted exit", true);
                 const exitPuzzlePassable = restrictedExitPuzzle && restrictedExitPuzzle.solutions.includes(player.name);
                 if (exit.unlocked || exitPuzzlePassable) {
@@ -604,13 +617,14 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
     /**
      * Calculates the player's movement rate in meters per second, irrespective of distance or slope.
      *
-     * @param isRunning - Whether the player is running or not. Defaults to false.
+     * @param isRunning - Whether the player is running or not. Determines speed multiplier. Defaults to false.
+     * @param speed - The speed at which the player is moving. Defaults to their current speed.
      */
-    calculateMoveRate(isRunning: boolean = false): number {
+    calculateMoveRate(isRunning: boolean = false, speed = this.speed): number {
         // The formula to calculate the rate is a quadratic function.
         // The equation is Rate = 0.0183x^2 + 0.005x + 0.916, where x is the player's speed stat multiplied by 2 or 1, depending on if the player is running or not.
         const speedMultiplier = isRunning ? 2 : 1;
-        let rate = 0.0183 * Math.pow(speedMultiplier * this.speed, 2) + 0.005 * speedMultiplier * this.speed + 0.916;
+        let rate = 0.0183 * Math.pow(speedMultiplier * speed, 2) + 0.005 * speedMultiplier * speed + 0.916;
         // Slow down the player relative to how much weight they're carrying.
         // The equation is Slowdown = 15/x, where x is the number of kilograms a player is carrying, and 1/4 <= Slowdown <= 1.
         const slowdown = Math.min(Math.max(15.0 / this.carryWeight, 0.25), 1.0);
@@ -620,10 +634,13 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
     /**
      * Calculates the time it takes to move the player to the desired exit.
      *
+     * @param exit - The exit to move toward.
+     * @param isRunning - Whether the player is running or not. Determines speed multiplier. Defaults to false.
+     * @param customSpeed - A custom speed at which to move. Optional. If not provided, the player's current speed will be used.
      * @returns The number of milliseconds it will take to move to the desired exit.
      */
-    calculateMoveTime(exit: Exit, isRunning: boolean): number {
-        let rate = this.calculateMoveRate(isRunning);
+    calculateMoveTime(exit: Exit, isRunning: boolean, customSpeed?: number): number {
+        let rate = this.calculateMoveRate(isRunning, customSpeed);
         let distance = Math.sqrt(Math.pow(exit.pos.x - this.pos.x, 2) + Math.pow(exit.pos.z - this.pos.z, 2));
         distance = distance / this.getGame().settings.pixelsPerMeter;
         // Slope should affect the rate.
@@ -707,6 +724,8 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
         if (this.moveTimer !== null)
             clearInterval(this.moveTimer);
         this.isMoving = false;
+        this.isRunning = false;
+        this.currentMovingSpeed = 0;
         this.remainingTime = 0;
         this.moveQueue.length = 0;
     }
@@ -734,6 +753,13 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
     startFollowing(player: Player): void {
         this.#followedPlayerName = player.name;
         this.followedPlayerDisplayName = player.displayName;
+    }
+
+    /**
+     * Gets the speed at which to follow the followed player.
+     */
+    getFollowingSpeed(): number {
+        return Math.min(this.speed, this.followedPlayer.currentMovingSpeed);
     }
 
     /**

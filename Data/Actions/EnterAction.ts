@@ -32,13 +32,19 @@ export default class EnterAction extends Action {
             await queueMoveAction.performQueueMove(isRunning, this.player.moveQueue[0]);
         }
 
-        const followedPlayerIsVisible = this.player.followedPlayer && destinationRoom.generateOccupantsStringExcluding(this.player).includes(this.player.followedPlayerDisplayName);
-        if (this.player.followedPlayer && !followedPlayerIsVisible) {
+        const followedPlayer = this.player.followedPlayer;
+        const followedPlayerIsVisible = followedPlayer && destinationRoom.occupants.includes(followedPlayer)
+            && destinationRoom.generateOccupantsStringExcluding(this.player).includes(this.player.followedPlayerDisplayName);
+        if (followedPlayer && !followedPlayerIsVisible) {
             // We need a new Action so the message gets communicated properly, since we've already sent a notification with this one.
             // We aren't going to actually do anything with it otherwise.
             const lostPlayerAction = new EnterAction(this.getGame(), this.message, this.player, this.player.location, this.forced);
             this.getGame().narrationHandler.narrateLostFollowedPlayer(lostPlayerAction, this.player);
             this.player.stopFollowing();
+        }
+        else if (followedPlayerIsVisible && followedPlayer.isMoving) {
+            const queueMoveAction = new QueueMoveAction(this.getGame(), undefined, this.player, this.player.location, this.forced);
+            await queueMoveAction.performQueueMove(this.player.followedPlayer.isRunning, followedPlayer.moveQueue[0], this.player.getFollowingSpeed());
         }
 	}
 }

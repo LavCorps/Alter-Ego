@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import Action from "../Action.ts";
 import type Exit from "../Exit.js";
 import Room from "../Room.ts";
@@ -15,8 +19,9 @@ export default class QueueMoveAction extends Action {
      *
 	 * @param isRunning - Whether the player is running.
 	 * @param destinationString - The destination the user supplied.
+     * @param customSpeed - A custom speed at which to move. Optional. If not provided, the player's current speed will be used.
 	 */
-	async performQueueMove(isRunning: boolean, destinationString: string): Promise<void> {
+	async performQueueMove(isRunning: boolean, destinationString: string, customSpeed?: number): Promise<void> {
 		if (this.performed) return;
 		super.perform();
 		const currentRoom = this.player.location;
@@ -59,7 +64,7 @@ export default class QueueMoveAction extends Action {
 
 		if (exit) {
 			const startMoveAction = new StartMoveAction(this.getGame(), this.message, this.player, this.player.location, this.forced);
-			await startMoveAction.performStartMove(isRunning, currentRoom, destinationRoom, exit, entrance);
+			await startMoveAction.performStartMove(isRunning, currentRoom, destinationRoom, exit, entrance, customSpeed);
             const verb = isRunning ? `running` : `moving`;
             this.successMessage = `Successfully started ${verb} ${this.player.name} to ${exit.name} in ${this.location.channel}.`;
             if (this.player.moveQueue.length > 1)

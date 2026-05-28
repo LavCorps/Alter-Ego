@@ -67,5 +67,5 @@ export async function execute(game, message, command, args, player) {
     if (player.isFollowing(followedPlayer)) return game.communicationHandler.reply(message, `You are already following ${followedPlayer.displayName}.`);
 
     const action = new FollowAction(game, message, player, player.location, false);
-    action.performFollow(followedPlayer);
+    await action.performFollow(followedPlayer);
 }

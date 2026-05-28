@@ -4,6 +4,7 @@
 
 import Action from "../Action.ts";
 import type Player from "../Player.ts";
+import QueueMoveAction from "./QueueMoveAction.ts";
 
 /**
  * Represents a follow action.
@@ -16,13 +17,17 @@ export default class FollowAction extends Action {
      *
      * @param player - The player to follow.
      */
-    performFollow(player: Player): void {
+    async performFollow(player: Player): Promise<void> {
         if (this.performed) return;
         super.perform();
         this.getGame().narrationHandler.narrateFollow(this, this.player, player);
         this.player.stopMoving();
         this.player.stopFollowing();
         this.player.startFollowing(player);
+        if (player.isMoving) {
+            const queueMoveAction = new QueueMoveAction(this.getGame(), this.message, this.player, this.player.location, this.forced);
+            await queueMoveAction.performQueueMove(player.isRunning, player.moveQueue[0], this.player.getFollowingSpeed());
+        }
         this.successMessage = `Successfully made ${this.player.name} begin following ${player.name}.`;
     }
 }

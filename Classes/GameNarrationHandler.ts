@@ -231,13 +231,14 @@ export default class GameNarrationHandler {
 	 * @param player - The player performing the stop action.
 	 * @param exitLocked - Whether or not the action was initiated because the destination exit was locked.
 	 * @param exit - The exit the player tried to move to, if applicable.
+     * @param stopFollowing - Whether or not the player stopped following someone. Defaults to false.
      * @param interactables - An array of interactables to send to the player alongside their notification. Optional.
 	 */
-	narrateStop(action: Action, player: Player, exitLocked: boolean, exit?: Exit, interactables: Interactable[] = []) {
+	narrateStop(action: Action, player: Player, exitLocked: boolean, exit?: Exit, stopFollowing = false, interactables: Interactable[] = []) {
 		const messageType = MessageDisplayType.MINOR;
 		const notification = exitLocked ? this.#game.notificationGenerator.generateExitLockedNotification(player, true, exit.getDoorPhrase())
-			: player.followedPlayer ? this.#game.notificationGenerator.generateStopFollowingNotification(player, true, player.followedPlayerDisplayName)
-                :this.#game.notificationGenerator.generateStopNotification(player, true);
+			: player.followedPlayer && stopFollowing ? this.#game.notificationGenerator.generateStopFollowingNotification(player, true, player.followedPlayerDisplayName)
+                : this.#game.notificationGenerator.generateStopNotification(player, true);
 		const narration = exitLocked ? this.#game.notificationGenerator.generateExitLockedNotification(player, false, exit.getDoorPhrase())
 			: this.#game.notificationGenerator.generateStopNotification(player, false);
 		this.sendNotification(player, action, notification, exitLocked ? MessageDisplayType.WARNING : messageType, undefined, undefined, interactables);
