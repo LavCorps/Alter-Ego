@@ -23,6 +23,7 @@ import type Fixture from "./Fixture.ts";
 import type Flag from "./Flag.ts";
 import type Gesture from "./Gesture.ts";
 import type InventoryItem from "./InventoryItem.ts";
+import type Party from "./Party.ts";
 import type Player from "./Player.ts";
 import type Prefab from "./Prefab.ts";
 import type Puzzle from "./Puzzle.ts";
@@ -186,6 +187,10 @@ export default class Game {
 	 */
 	whispers: Collection<string, Whisper>;
     /**
+     * A collection of all parties in the game, where the key is the party's ID. These are not saved to the sheet.
+     */
+    parties: Collection<string, Party>;
+    /**
      * A collection of all moderators in the game, where the key is the moderator's Discord user ID.
      * These are created the first time a user with the moderator role sends a message in the game server.
      */
@@ -247,6 +252,7 @@ export default class Game {
 		this.gestures = new Collection();
 		this.flags = new Collection();
 		this.whispers = new Collection();
+        this.parties = new Collection();
         this.moderators = new Collection();
 		this.messageQueue = new PriorityQueue();
 

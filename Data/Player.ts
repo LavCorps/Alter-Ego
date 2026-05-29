@@ -266,6 +266,10 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
      */
     followedPlayerDisplayName: string;
     /**
+     * A list of the names of all players that this player is currently leading. Used internally to avoid storing references to other players.
+     */
+    #ledPlayerNames: Set<string>;
+    /**
      * Whether or not the player has depleted half of their stamina while moving.
      * When they do, they will be warned that they're starting to become tired.
      */
@@ -377,6 +381,7 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
         this.moveQueue = [];
         this.#followedPlayerName = "";
         this.followedPlayerDisplayName = "";
+        this.#ledPlayerNames = new Set();
 
         this.#reachedHalfStamina = false;
         let player = this;
@@ -732,7 +737,7 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
 
     /**
      * A player that this player is currently following. This player will follow every movement they make as long as
-     * they can see them when they enter the room.
+     * they can see them when they enter the room. If the player is not following anyone, this is null.
      */
     get followedPlayer(): Player | null {
         return this.getGame().entityFinder.getPlayer(this.#followedPlayerName) ?? null;
@@ -740,7 +745,7 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
 
     /**
      * Returns true if the player is following the given player.
-     * @param player
+     * @param player - The player to check.
      */
     isFollowing(player: Player): boolean {
         return this.#followedPlayerName !== "" && this.#followedPlayerName === player.name;
@@ -768,6 +773,54 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
     stopFollowing(): void {
         this.#followedPlayerName = "";
         this.followedPlayerDisplayName = "";
+    }
+
+    /**
+     * A list of players that this player is currently leading. This player is being followed by all of them,
+     * and will adjust their movement speed to not leave anyone behind.
+     */
+    get ledPlayers(): Player[] {
+        let ledPlayers: Player[] = [];
+        this.#ledPlayerNames.forEach(playerName => {
+            const player = this.getGame().entityFinder.getPlayer(playerName);
+            if (player && player.isFollowing(this)) ledPlayers.push(player);
+        });
+        return ledPlayers;
+    }
+
+    /**
+     * Gets the player this player is leading with the given name, if they exist.
+     * If the player doesn't exist or isn't being led by this player, this returns null.
+     * @param playerName - The name of the player to get.
+     */
+    getLedPlayer(playerName: string): Player | null {
+        return this.ledPlayers.find(player => player.name === playerName) ?? null;
+    }
+
+    /**
+     * Returns true if the player is leading the given player.
+     * @param player - The player to check.
+     */
+    isLeading(player: Player): boolean {
+        return this.#ledPlayerNames.has(player.name);
+    }
+
+    /**
+     * Adds the player to the list of players this player is leading.
+     * The given player must be following this player.
+     * @param player - The player to lead.
+     */
+    startLeading(player: Player): void {
+        if (player.isFollowing(this))
+            this.#ledPlayerNames.add(player.name);
+    }
+
+    /**
+     * Removes the player from the list of players this player is leading.
+     * @param player - The player to stop leading.
+     */
+    stopLeading(player: Player): void {
+        this.#ledPlayerNames.delete(player.name);
     }
 
     /**

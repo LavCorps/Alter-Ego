@@ -24,6 +24,7 @@ import type Flag from "../Data/Flag.ts";
 import type Moderator from "../Data/Moderator.ts";
 import type Recipe from "../Data/Recipe.ts";
 import type Event from "../Data/Event.ts";
+import type Party from "../Data/Party.ts";
 
 /**
  * A set of functions to easily find in-game entities without parsing inputs yourself.
@@ -332,6 +333,16 @@ export default class GameEntityFinder {
 		if (!channelId) return;
 		return this.game.whispers.find(whisper => whisper.channel.id === channelId);
 	}
+
+    /**
+     * Gets a party.
+     * @param id - The party's ID.
+     * @returns The party with the specified ID. If no such party exists, returns undefined.
+     */
+    getParty(id: string): Party {
+        if (!id) return;
+        return this.game.parties.get(Room.generateValidId(id));
+    }
 
     /**
 	 * Gets a moderator by their Discord user ID.

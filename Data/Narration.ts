@@ -1,4 +1,8 @@
-﻿import { Attachment, Collection, Embed, type GuildMember } from "discord.js";
+﻿// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
+import { Attachment, Collection, Embed } from "discord.js";
 import { MessageDisplayType } from "../Modules/enums.js";
 import { capitalizeFirstLetter } from "../Modules/helpers.ts";
 import type Action from "./Action.ts";
@@ -127,10 +131,12 @@ export default class Narration extends GameConstruct {
      */
     getWhisperPrefixString(): string {
         if (!this.whisper || this.action instanceof UnhideAction) return "";
-        const hidingSpot = this.getGame().entityFinder.getFixture(this.whisper.hidingSpotName, this.location.id);
+        const associatedEntity = this.whisper.associatedEntity;
+        const preposition = associatedEntity ? associatedEntity.getPreposition() : "in";
+        const whisperPhrase = associatedEntity ? associatedEntity.getContainingPhrase() : "a whisper";
         const playerList = this.player ? this.whisper.generatePlayerListStringExcluding(this.player) : this.whisper.generatePlayerListString();
         const playerListPhrase = playerList !== `` ? ` with ${playerList}` : ``;
-        return `-# *(In ${hidingSpot ? hidingSpot.getContainingPhrase() : `a whisper`}${playerListPhrase}):*\n`;
+        return `-# *(${capitalizeFirstLetter(preposition)} ${whisperPhrase}${playerListPhrase}):*\n`;
     }
 
     /**

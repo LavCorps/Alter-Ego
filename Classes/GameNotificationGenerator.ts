@@ -66,18 +66,18 @@ export default class GameNotificationGenerator {
 	 * @param player - The player referred to in this notification.
 	 */
 	generateHearWhisperNotification(dialog: Dialog, player: Player) {
-		const hidingSpot = dialog.getGame().entityFinder.getFixture(dialog.whisper?.hidingSpotName, dialog.location.id);
-		const hidingSpotPhrase = hidingSpot ? ` in ${hidingSpot.getContainingPhrase()}` : ``;
+        const associatedEntity = dialog.whisper?.associatedEntity;
+		const entityPhrase = associatedEntity ? ` ${associatedEntity.getPreposition()} ${associatedEntity.getContainingPhrase()}` : ``;
 		let speakerString = "";
 		if (!dialog.isOOCMessage && player.knows(dialog.speakerRecognitionName))
 			speakerString = player.canSee() ? `${dialog.speaker.displayName}, with ${dialog.speakerVoiceString} you recognize as ${dialog.speakerRecognitionName}'s,` : `${dialog.speakerRecognitionName}`;
 		else if (player.knows(dialog.speakerRecognitionName) && !dialog.isMimicking(player) && !dialog.speakerDisplayNameIsDifferent && !player.canSee())
 			speakerString = `${dialog.speakerRecognitionName}`;
 		else if (!player.canSee())
-			speakerString = dialog.isMimicking(player) ? `someone${hidingSpotPhrase}` : `someone${hidingSpotPhrase} with ${dialog.speakerVoiceString}`;
+			speakerString = dialog.isMimicking(player) ? `someone${entityPhrase}` : `someone${entityPhrase} with ${dialog.speakerVoiceString}`;
 		else
 			speakerString = `${dialog.speakerDisplayName}`;
-		const contentAffix = hidingSpotPhrase !== `` && !speakerString.includes(hidingSpotPhrase) ? `${hidingSpotPhrase}` : ``;
+		const contentAffix = entityPhrase !== `` && !speakerString.includes(entityPhrase) ? `${entityPhrase}` : ``;
 		const punctuation = dialog.isMimicking(player) && !dialog.isOOCMessage ? `${contentAffix} in your voice!` : contentAffix === `` && endsWithPunctuation(dialog.unformattedContent) ? `` : `${contentAffix}.`;
 		return `${capitalizeFirstLetter(speakerString)} whispers "${dialog.unformattedContent}"${punctuation}`;
 	}
