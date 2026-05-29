@@ -1,5 +1,9 @@
-﻿import Room from '../Data/Room.ts';
-import { getChildItems } from '../Modules/itemManager.js';
+﻿// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
+import Room from '../Data/Room.ts';
+import { getChildItems } from '../Modules/itemManager.ts';
 
 /** @import Moderator from '../Data/Moderator.ts' */
 /** @import GameSettings from '../Classes/GameSettings.ts' */

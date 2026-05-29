@@ -1,10 +1,14 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import discord from "../__mocks__/libs/discord.js";
 import * as DialogClass from "../../Data/Dialog.ts";
 import AnnounceAction from "../../Data/Actions/AnnounceAction.ts";
 import SayAction from "../../Data/Actions/SayAction.ts";
 import SolveAction from "../../Data/Actions/SolveAction.ts";
 import * as messageHandler from "../../Modules/messageHandler.js";
-import { instantiateInventoryItem, destroyInventoryItem } from "../../Modules/itemManager.js";
+import { instantiateInventoryItem, destroyInventoryItem } from "../../Modules/itemManager.ts";
 
 /**
  * @import HidingSpot from "../../Data/HidingSpot.ts"

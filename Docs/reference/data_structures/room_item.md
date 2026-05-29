@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+
+SPDX-License-Identifier: CC-BY-SA-4.0
+-->
+
 # Room Item
 
 > [!NOTE]
@@ -40,7 +46,7 @@ It gives the Room Item most of its properties. All of the Prefab's attributes ar
 This is a unique name given to the Room Item if it is capable of containing other Room Items. This is necessary when
 loading Room Items in order for Alter Ego to determine which container the child Room Items belong to, in case there
 are multiple container Room Items with the same Prefab. Typically, this is the Prefab ID followed by a number (the
-standard followed by the [itemManager module](https://github.com/MsVBLANK/Alter-Ego/blob/master/Modules/itemManager.js)),
+standard followed by the [itemManager module](https://github.com/MsVBLANK/Alter-Ego/blob/master/Modules/itemManager.ts)),
 but there are no naming rules for identifiers. No two Room Items or Inventory Items can have the same identifier.
 For an example of how this looks, see the following table:
 

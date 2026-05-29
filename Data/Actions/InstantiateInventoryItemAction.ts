@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import Action from "../Action.ts";
 import EquipmentSlot from "../EquipmentSlot.ts";
 import InventoryItem from "../InventoryItem.ts";
@@ -5,7 +9,7 @@ import type InventorySlot from "../InventorySlot.ts";
 import ItemInstance from "../ItemInstance.ts";
 import Prefab from "../Prefab.ts";
 import { parseProceduralSelections } from "../../Modules/stringDataExtractor.ts";
-import { instantiateInventoryItem } from "../../Modules/itemManager.js";
+import { instantiateInventoryItem } from "../../Modules/itemManager.ts";
 import { generateListString, makeCopyable } from "../../Modules/helpers.ts";
 
 /**

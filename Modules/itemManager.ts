@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import Description from '../Data/Description.ts';
 import Fixture from '../Data/Fixture.ts';
 import Puzzle from '../Data/Puzzle.ts';
@@ -5,26 +9,26 @@ import InventoryItem from '../Data/InventoryItem.ts';
 import InventorySlot from '../Data/InventorySlot.ts';
 import RoomItem from '../Data/RoomItem.ts';
 import ItemInstance from '../Data/ItemInstance.ts';
-import { generateProceduralOutput } from '../Modules/parser.js';
-
-/** @import CollatedItem from '../Data/CollatedItem.ts' */
-/** @import EquipmentSlot from '../Data/EquipmentSlot.ts' */
-/** @import Prefab from '../Data/Prefab.ts' */
-/** @import Room from '../Data/Room.ts' */
-/** @import Player from '../Data/Player.ts' */
+import { generateProceduralOutput } from './parser.js';
+import type Prefab from '../Data/Prefab.ts';
+import type Room from '../Data/Room.ts';
+import type Player from '../Data/Player.ts';
+import type CollatedItem from '../Data/CollatedItem.ts';
+import type EquipmentSlot from '../Data/EquipmentSlot.ts';
 
 /**
  * Instantiates a new room item in the specified location and container.
- * @param {Prefab} prefab - The prefab to instantiate as an item.
- * @param {Room} location - The room to instantiate the item in.
- * @param {RoomItemContainer} container - The container to instantiate the item in.
- * @param {string} inventorySlotId - The ID of the {@link InventorySlot|inventory slot} to instantiate the item in.
- * @param {number} quantity - The quantity to instantiate.
- * @param {number} [uses] - The number of uses to instantiate the room item with. Defaults to the prefab's uses.
- * @param {Map<string, string>} [proceduralSelections] - The manually selected procedural possibilities.
- * @param {Player} [player] - The player who caused this item to be instantiated, if applicable.
+ * @param prefab - The prefab to instantiate as an item.
+ * @param location - The room to instantiate the item in.
+ * @param container - The container to instantiate the item in.
+ * @param inventorySlotId - The ID of the {@link InventorySlot|inventory slot} to instantiate the item in.
+ * @param quantity - The quantity to instantiate.
+ * @param uses - The number of uses to instantiate the room item with. Defaults to the prefab's uses.
+ * @param proceduralSelections - The manually selected procedural possibilities.
+ * @param player - The player who caused this item to be instantiated, if applicable.
+ * @returns The instantiated room item.
  */
-export function instantiateRoomItem(prefab, location, container, inventorySlotId, quantity, uses = prefab.uses, proceduralSelections = new Map(), player) {
+export function instantiateRoomItem(prefab: Prefab, location: Room, container: RoomItemContainer, inventorySlotId: string, quantity: number, uses: number = prefab.uses, proceduralSelections: Map<string, string> = new Map(), player?: Player): RoomItem {
     let containerType = "";
     let containerName = "";
     let accessible = true;
@@ -73,16 +77,17 @@ export function instantiateRoomItem(prefab, location, container, inventorySlotId
 
 /**
  * Instantiates a new inventory item in the player's inventory with the specified equipment slot and container.
- * @param {Prefab} prefab - The prefab to instantiate as an inventory item.
- * @param {Player} player - The player to give this inventory item to.
- * @param {string} equipmentSlotId - The ID of the equipment slot this inventory item will belong to.
- * @param {InventoryItem} container - The container to instantiate the item in.
- * @param {string} inventorySlotId - The ID of the {@link InventorySlot|inventory slot} to instantiate the item in.
- * @param {number} quantity - The quantity to instantiate.
- * @param {number} [uses] - The number of uses to instantiate the inventory item with. Defaults to the prefab's uses.
- * @param {Map<string, string>} proceduralSelections - The manually selected procedural possibilities.
+ * @param prefab - The prefab to instantiate as an inventory item.
+ * @param player - The player to give this inventory item to.
+ * @param equipmentSlotId - The ID of the equipment slot this inventory item will belong to.
+ * @param container - The container to instantiate the item in.
+ * @param inventorySlotId - The ID of the {@link InventorySlot|inventory slot} to instantiate the item in.
+ * @param quantity - The quantity to instantiate.
+ * @param uses - The number of uses to instantiate the inventory item with. Defaults to the prefab's uses.
+ * @param proceduralSelections - The manually selected procedural possibilities.
+ * @returns The instantiated inventory item.
  */
-export function instantiateInventoryItem(prefab, player, equipmentSlotId, container, inventorySlotId, quantity, uses = prefab.uses, proceduralSelections = new Map()) {
+export function instantiateInventoryItem(prefab: Prefab, player: Player, equipmentSlotId: string, container: InventoryItem, inventorySlotId: string, quantity: number, uses: number = prefab.uses, proceduralSelections: Map<string, string> = new Map()): InventoryItem {
     let createdItem = new InventoryItem(
         player.name,
         prefab.id,
@@ -117,10 +122,11 @@ export function instantiateInventoryItem(prefab, player, equipmentSlotId, contai
 
 /**
  * Replaces an inventory item in-place with an instance of a different prefab.
- * @param {InventoryItem} item - The inventory item to replace.
- * @param {Prefab} [newPrefab] - The prefab to replace it with. If one isn't given, the inventory item is simply destroyed.
+ * @param item - The inventory item to replace.
+ * @param newPrefab - The prefab to replace it with. If one isn't given, the inventory item is simply destroyed.
+ * @returns The updated inventory item.
  */
-export function replaceInventoryItem(item, newPrefab) {
+export function replaceInventoryItem(item: InventoryItem, newPrefab?: Prefab | null): InventoryItem {
     if (newPrefab === null || newPrefab === undefined) {
         destroyInventoryItem(item, item.quantity, true);
     }
@@ -130,8 +136,7 @@ export function replaceInventoryItem(item, newPrefab) {
         item.uses = newPrefab.uses;
 
         // Destroy all child items.
-        /** @type {InventoryItem[]} */
-        let childItems = [];
+        let childItems: InventoryItem[] = [];
         getChildItems(childItems, item);
         for (let i = 0; i < childItems.length; i++)
             destroyInventoryItem(childItems[i], childItems[i].quantity, false);
@@ -148,11 +153,11 @@ export function replaceInventoryItem(item, newPrefab) {
 
 /**
  * Destroys a room item.
- * @param {RoomItem} item - The item to destroy.
- * @param {number} quantity - How many of this item to destroy.
- * @param {boolean} getChildren - Whether or not to recursively destroy all of the items it contains as well.
+ * @param item - The item to destroy.
+ * @param quantity - How many of this item to destroy.
+ * @param getChildren - Whether or not to recursively destroy all of the items it contains as well.
  */
-export function destroyRoomItem(item, quantity, getChildren) {
+export function destroyRoomItem(item: RoomItem, quantity: number, getChildren: boolean): void {
     if (isNaN(quantity)) item.quantity = 0;
     else item.quantity -= quantity;
     const container = item.container;
@@ -161,8 +166,7 @@ export function destroyRoomItem(item, quantity, getChildren) {
         container.removeItem(item, item.slot, quantity);
 
     if (getChildren) {
-        /** @type {RoomItem[]} */
-        let childItems = [];
+        let childItems: RoomItem[] = [];
         getChildItems(childItems, item);
         for (let i = 0; i < childItems.length; i++)
             destroyRoomItem(childItems[i], childItems[i].quantity, false);
@@ -171,14 +175,13 @@ export function destroyRoomItem(item, quantity, getChildren) {
 
 /**
  * Destroys an inventory item.
- * @param {InventoryItem} item - The inventory item to destroy.
- * @param {number} quantity - How many of this inventory item to destroy.
- * @param {boolean} getChildren - Whether or not to recursively destroy all of the inventory items it contains as well.
+ * @param item - The inventory item to destroy.
+ * @param quantity - How many of this inventory item to destroy.
+ * @param getChildren - Whether or not to recursively destroy all of the inventory items it contains as well.
  */
-export function destroyInventoryItem(item, quantity, getChildren) {
+export function destroyInventoryItem(item: InventoryItem, quantity: number, getChildren: boolean): void {
     if (getChildren) {
-        /** @type {InventoryItem[]} */
-        let childItems = [];
+        let childItems: InventoryItem[] = [];
         getChildItems(childItems, item);
         for (let i = 0; i < childItems.length; i++)
             destroyInventoryItem(childItems[i], childItems[i].quantity, false);
@@ -196,13 +199,13 @@ export function destroyInventoryItem(item, quantity, getChildren) {
 
 /**
  * Converts a room item to an inventory item and recursively converts all of the items it contains.
- * @param {ItemInstance} item - The item to convert.
- * @param {Player} player - The player who the new inventory item will belong to.
- * @param {string} equipmentSlotId - The ID of the equipment slot the inventory item will be created in.
- * @param {number} quantity - The quantity of the new inventory item.
- * @returns {InventoryItem} The new inventory item.
+ * @param item - The item to convert.
+ * @param player - The player who the new inventory item will belong to.
+ * @param equipmentSlotId - The ID of the equipment slot the inventory item will be created in.
+ * @param quantity - The quantity of the new inventory item.
+ * @returns The new inventory item.
  */
-export function convertRoomItem(item, player, equipmentSlotId, quantity) {
+export function convertRoomItem(item: ItemInstance, player: Player, equipmentSlotId: string, quantity: number): InventoryItem {
     // Make a copy of the RoomItem as an InventoryItem.
     let createdItem = new InventoryItem(
         player.name,
@@ -240,22 +243,23 @@ export function convertRoomItem(item, player, equipmentSlotId, quantity) {
 
 /**
  * Copies an inventory item into the given equipment slot.
- * @param {InventoryItem} item - The inventory item to copy.
- * @param {Player} player - The player who the new inventory item will belong to.
- * @param {string} equipmentSlotId - The ID of the equipment slot the inventory item will be created in.
- * @param {number} quantity - The quantity of the new inventory item.
- * @returns {InventoryItem} The new inventory item.
+ * @param item - The inventory item to copy.
+ * @param player - The player who the new inventory item will belong to.
+ * @param equipmentSlotId - The ID of the equipment slot the inventory item will be created in.
+ * @param quantity - The quantity of the new inventory item.
+ * @returns The new inventory item.
  */
-export function copyInventoryItem(item, player, equipmentSlotId, quantity) {
+export function copyInventoryItem(item: InventoryItem, player: Player, equipmentSlotId: string, quantity: number): InventoryItem {
     return convertRoomItem(item, player, equipmentSlotId, quantity);
 }
 
 /**
  * Makes an exact copy of the given inventory item and returns it.
  * Does not copy any contained items.
- * @param {InventoryItem} item 
+ * @param item - The inventory item to copy.
+ * @returns An exact copy of the given inventory item.
  */
-export function cloneInventoryItem(item) {
+export function cloneInventoryItem(item: InventoryItem): InventoryItem {
     let createdItem = new InventoryItem(
         item.player.name,
         item.prefab.id,
@@ -278,14 +282,14 @@ export function cloneInventoryItem(item) {
 
 /**
  * Converts an inventory item to a room item and recursively converts all of the inventory items it contains.
- * @param {ItemInstance} item - The inventory item to convert.
- * @param {Player} player - The player the inventory item currently belongs to.
- * @param {Fixture|Puzzle|ItemInstance} container - The container to new item will be created in.
- * @param {string} inventorySlotId - The ID of the {@link InventorySlot|inventory slot} to instantiate the item in.
- * @param {number} quantity - The quantity of the new item.
- * @returns {RoomItem} The new room item.
+ * @param item - The inventory item to convert.
+ * @param player - The player the inventory item currently belongs to.
+ * @param container - The container to new item will be created in.
+ * @param inventorySlotId - The ID of the {@link InventorySlot|inventory slot} to instantiate the item in.
+ * @param quantity - The quantity of the new item.
+ * @returns The new room item.
  */
-export function convertInventoryItem(item, player, container, inventorySlotId, quantity) {
+export function convertInventoryItem(item: ItemInstance, player: Player, container: Fixture|Puzzle|ItemInstance, inventorySlotId: string, quantity: number): RoomItem {
     let containerType = "";
     let containerName = "";
     let accessible = true;
@@ -345,10 +349,10 @@ export function convertInventoryItem(item, player, container, inventorySlotId, q
 
 /**
  * Recursively adds all child items of the given item to the array of items.
- * @param {ItemInstance[]} items - The array to add child items to.
- * @param {ItemInstance} item - The item whose child items are to be added.
+ * @param items - The array to add child items to.
+ * @param item - The item whose child items are to be added.
  */
-export function getChildItems(items, item) {
+export function getChildItems(items: ItemInstance[], item: ItemInstance): void {
     item.inventory.forEach(inventorySlot => {
         for (let childItem of inventorySlot.items) {
             items.push(childItem);
@@ -359,11 +363,10 @@ export function getChildItems(items, item) {
 
 /**
  * Sets the quantities of all child items to 0.
- * @param {ItemInstance} item - The item whose child items are to have their quantities updated.
+ * @param item - The item whose child items are to have their quantities updated.
  */
-export function setChildItemQuantitiesZero(item) {
-    /** @type {ItemInstance[]} */
-    let childItems = [];
+export function setChildItemQuantitiesZero(item: ItemInstance): void {
+    let childItems: ItemInstance[] = [];
     getChildItems(childItems, item);
     for (let i = 0; i < childItems.length; i++)
         childItems[i].quantity = 0;
@@ -371,12 +374,11 @@ export function setChildItemQuantitiesZero(item) {
 
 /**
  * Combines the procedural selections of the given items into one map.
- * @param {(ItemInstance | CollatedItem)[]} items - The items whose procedural selections should be combined. 
- * @returns {Map<string, string>} The combined procedural selections.
+ * @param items - The items whose procedural selections should be combined.
+ * @returns The combined procedural selections.
  */
-export function combineProceduralSelections(items) {
-    /** @type {Map<string, string>} */
-    const proceduralSelections = new Map();
+export function combineProceduralSelections<T extends ItemInstance>(items: (ItemInstance | CollatedItem<T>)[]): Map<string, string> {
+    const proceduralSelections = new Map<string, string>();
     for (const item of items)
         item.proceduralSelections.forEach((value, key) => proceduralSelections.set(key, value));
     return proceduralSelections;
@@ -385,12 +387,12 @@ export function combineProceduralSelections(items) {
 /**
  * Removes a stashed inventory item from the inventory slot in its container.
  * Also decrements the quantity, updates the container's description, and removes the item from its equipment slot.
- * @param {InventoryItem} item - The item to remove.
- * @param {InventoryItem} container - The item's container.
- * @param {InventorySlot<InventoryItem>} inventorySlot - The inventory slot to remove the item from.
- * @param {EquipmentSlot} equipmentSlot - The equipment slot to remove the item from.
+ * @param item - The item to remove.
+ * @param container - The item's container.
+ * @param inventorySlot - The inventory slot to remove the item from.
+ * @param equipmentSlot - The equipment slot to remove the item from.
  */
-export function removeStashedItem(item, container, inventorySlot, equipmentSlot) {
+export function removeStashedItem(item: InventoryItem, container: InventoryItem, inventorySlot: InventorySlot<InventoryItem>, equipmentSlot: EquipmentSlot): void {
     // Reduce quantity if the quantity is finite.
     if (!isNaN(item.quantity))
         item.quantity--;
@@ -406,12 +408,12 @@ export function removeStashedItem(item, container, inventorySlot, equipmentSlot)
 /**
  * Converts the given item into an inventory item and puts it in the player's hand.
  * Also converts its child items and inserts the newly created items into the game's list of inventory items.
- * @param {ItemInstance} item - The item to put in the player's hand.
- * @param {Player} player - The player whose hand the item will be put in.
- * @param {EquipmentSlot} handEquipmentSlot - The hand equipment slot to put the item in.
+ * @param item - The item to put in the player's hand.
+ * @param player - The player whose hand the item will be put in.
+ * @param handEquipmentSlot - The hand equipment slot to put the item in.
  * @returns The created item in the player's hand.
  */
-export function putItemInHand(item, player, handEquipmentSlot) {
+export function putItemInHand(item: ItemInstance, player: Player, handEquipmentSlot: EquipmentSlot): InventoryItem {
     // Copy the item into the player's hand.
     let createdItem = convertRoomItem(item, player, handEquipmentSlot.id, 1);
     createdItem.containerName = "";
@@ -421,8 +423,7 @@ export function putItemInHand(item, player, handEquipmentSlot) {
     // Equip the item and add it to the player's inventory.
     handEquipmentSlot.equipItem(createdItem);
     // Create a list of all the child items.
-    /** @type {InventoryItem[]} */
-    let items = [];
+    let items: InventoryItem[] = [];
     getChildItems(items, createdItem);
     // Now that the item has been converted, we can update the quantities of child items.
     setChildItemQuantitiesZero(item);
@@ -433,10 +434,10 @@ export function putItemInHand(item, player, handEquipmentSlot) {
 
 /**
  * Inserts an array of items into the game at the correct position in the game's array of room items.
- * @param {Room} location - The room to insert items into.
- * @param {RoomItem[]} items - The items to insert.
+ * @param location - The room to insert items into.
+ * @param items - The items to insert.
  */
-export function insertRoomItems(location, items) {
+export function insertRoomItems(location: Room, items: RoomItem[]): void {
     const game = location.getGame();
     for (let item of items) {
         // Check if the player is putting this item back in original spot unmodified.
@@ -453,19 +454,13 @@ export function insertRoomItems(location, items) {
         if (matchedItem) {
             if (!isNaN(matchedItem.quantity))
                 matchedItem.quantity += item.quantity;
-            /** @type {RoomItemContainer} */
-            let itemContainer = null;
+            let itemContainer: RoomItemContainer = null;
             if (item.container instanceof RoomItem) {
-                /**
-                 * @param {RoomItem} item1
-                 * @param {RoomItem} item2
-                 */
-                const containersMatch = function (item1, item2) {
+                const containersMatch = function (item1: RoomItem, item2: RoomItem) {
                     if (item1.container instanceof RoomItem && item2.container instanceof RoomItem)
                         return containersMatch(item1.container, item2.container);
                     else {
-                        if (item1.containerName === item2.containerName) return true;
-                        else return false;
+                        return item1.containerName === item2.containerName;
                     }
                 };
                 const possibleContainers = roomItems.filter(roomItem =>
@@ -545,11 +540,11 @@ export function insertRoomItems(location, items) {
 
 /**
  * Inserts an array of inventory items into the game at the correct position in the game's array of inventory items.
- * @param {Player} player - The player who these inventory items belong to.
- * @param {InventoryItem[]} items - The inventory items to insert.
- * @param {EquipmentSlot} equipmentSlot - The equipment slot within the player's inventory.
+ * @param player - The player who these inventory items belong to.
+ * @param items - The inventory items to insert.
+ * @param equipmentSlot - The equipment slot within the player's inventory.
  */
-export function insertInventoryItems(player, items, equipmentSlot) {
+export function insertInventoryItems(player: Player, items: InventoryItem[], equipmentSlot: EquipmentSlot): void {
     const game = player.getGame();
     let lastNewItem = player.inventory.last().equippedItem !== null ?
         player.inventory.last().equippedItem :
@@ -645,10 +640,10 @@ export function insertInventoryItems(player, items, equipmentSlot) {
 
 /**
  * Generates a unique identifier for a new item instance.
- * @param {Prefab} prefab - The prefab this item is an instance of.
- * @returns {string} The new unique identifier.
+ * @param prefab - The prefab this item is an instance of.
+ * @returns The new unique identifier.
  */
-function generateIdentifier(prefab) {
+function generateIdentifier(prefab: Prefab): string {
     let identifier = "";
     if (prefab.inventory.size > 0) {
         identifier = prefab.id;

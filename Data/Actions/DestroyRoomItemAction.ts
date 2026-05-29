@@ -1,4 +1,8 @@
-import { destroyRoomItem } from "../../Modules/itemManager.js";
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
+import { destroyRoomItem } from "../../Modules/itemManager.ts";
 import Action from "../Action.ts";
 import RoomItem from "../RoomItem.ts";
 

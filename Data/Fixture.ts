@@ -1,7 +1,11 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import { Duration } from "luxon";
 import Timer from "../Classes/Timer.ts";
 import { MessageDisplayType } from "../Modules/enums.js";
-import { getChildItems, combineProceduralSelections } from "../Modules/itemManager.js";
+import { getChildItems, combineProceduralSelections } from "../Modules/itemManager.ts";
 import DeactivateAction from "./Actions/DeactivateAction.ts";
 import InstantiateRoomItemAction from "./Actions/InstantiateRoomItemAction.ts";
 import CollatedItem from "./CollatedItem.ts";

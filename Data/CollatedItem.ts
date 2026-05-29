@@ -1,5 +1,9 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import { getSortedItems } from "../Modules/helpers.ts";
-import { getChildItems, combineProceduralSelections } from "../Modules/itemManager.js";
+import { getChildItems, combineProceduralSelections } from "../Modules/itemManager.ts";
 import DestroyInventoryItemAction from "./Actions/DestroyInventoryItemAction.ts";
 import DestroyRoomItemAction from "./Actions/DestroyRoomItemAction.ts";
 import InstantiateInventoryItemAction from "./Actions/InstantiateInventoryItemAction.ts";
