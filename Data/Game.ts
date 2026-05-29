@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import { Collection } from "discord.js";
 import { DateTime } from "luxon";
 import BotContext from "../Classes/BotContext.ts";
@@ -6,6 +10,7 @@ import GameConstants from "../Classes/GameConstants.ts";
 import GameEntityFinder from "../Classes/GameEntityFinder.js";
 import GameEntityLoader from "../Classes/GameEntityLoader.js";
 import GameEntitySaver from "../Classes/GameEntitySaver.ts";
+import GameErrorMessageGenerator from "../Classes/GameErrorMessageGenerator.ts";
 import GameLogHandler from "../Classes/GameLogHandler.ts";
 import GameNarrationHandler from "../Classes/GameNarrationHandler.ts";
 import GameNotificationGenerator from "../Classes/GameNotificationGenerator.ts";
@@ -70,6 +75,10 @@ export default class Game {
 	 * A set of functions to send messages to the game's log channel.
 	 */
 	readonly logHandler: GameLogHandler;
+    /**
+     * A set of functions to generate error messages to send to users.
+     */
+    readonly errorMessageGenerator: GameErrorMessageGenerator;
 	/**
 	 * A set of functions to generate notifications to send to players.
 	 */
@@ -211,6 +220,7 @@ export default class Game {
 		this.entityLoader = new GameEntityLoader(this);
 		this.entitySaver = new GameEntitySaver(this);
 		this.logHandler = new GameLogHandler(this);
+        this.errorMessageGenerator = new GameErrorMessageGenerator(this);
 		this.notificationGenerator = new GameNotificationGenerator(this);
 		this.narrationHandler = new GameNarrationHandler(this);
 		this.inProgress = false;

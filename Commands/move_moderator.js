@@ -59,9 +59,9 @@ export function usage(settings) {
 export async function execute(game, message, command, args, moderator) {
     const sentMessageInLatchChannel = moderator?.sentMessageInLatchChannel(message) ?? false;
     if (!sentMessageInLatchChannel && args.length < 2)
-        return game.communicationHandler.reply(message, `You need to specify at least one player and a room or exit. Usage:\n${usage(game.settings)}`);
+        return game.communicationHandler.reply(message, game.errorMessageGenerator.generateSpecifyErrorWithUsage("at least one player and a room or exit", usage));
     else if (sentMessageInLatchChannel && args.length < 1)
-        return game.communicationHandler.reply(message, `You need to specify a room or exit. Usage:\n${usage(game.settings)}`);
+        return game.communicationHandler.reply(message, game.errorMessageGenerator.generateSpecifyErrorWithUsage("a room or exit", usage));
     const teleport = command === "teleport" || command === "tp";
 
     // Get all listed players first.
@@ -122,7 +122,7 @@ export async function execute(game, message, command, args, moderator) {
     if (!desiredRoom && players.length !== 0) {
         const currentRoom = players[0].location;
         for (let i = 1; i < players.length; i++) {
-            if (players[i].location !== currentRoom) return game.communicationHandler.reply(message, "All listed players must be in the same room to use an exit name.");
+            if (players[i].location !== currentRoom) return game.communicationHandler.reply(message, game.errorMessageGenerator.generateCannotUseExitOnPlayersInDifferentRoomsError());
         }
         input = args.join(" ").toUpperCase();
         for (let i = 0; i <= args.length; i++) {
@@ -148,14 +148,13 @@ export async function execute(game, message, command, args, moderator) {
     if (args.length > 0) {
         if (!desiredRoom && !exit) {
             const roomName = args.join(" ");
-            return game.communicationHandler.reply(message, `Couldn't find room or exit "${roomName}".`);
+            return game.communicationHandler.reply(message, game.errorMessageGenerator.generateEntityNotFoundError("room or exit", roomName));
         }
         else {
-            const missingPlayers = args.join(", ");
-            return game.communicationHandler.reply(message, `Couldn't find player(s): ${missingPlayers}.`);
+            return game.communicationHandler.reply(message, game.errorMessageGenerator.generatePlayersNotFoundError(args));
         }
     }
-    if (players.length === 0) return game.communicationHandler.reply(message, "You need to specify at least one player.");
+    if (players.length === 0) return game.communicationHandler.reply(message, game.errorMessageGenerator.generateSpecifyError("at least one player"));
 
     for (let i = 0; i < players.length; i++) {
         // Skip over players who are already in the specified room.
@@ -180,7 +179,7 @@ export async function execute(game, message, command, args, moderator) {
             players[i].stopFollowing();
             // Move the player.
             const action = new MoveAction(game, message, players[i], players[i].location, true);
-            action.performMove(false, currentRoom, desiredRoom, exit, entrance);
+            await action.performMove(false, currentRoom, desiredRoom, exit, entrance);
         }
     }
 

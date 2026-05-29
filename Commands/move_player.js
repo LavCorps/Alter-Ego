@@ -52,16 +52,16 @@ export function usage(settings) {
  */
 export async function execute(game, message, command, args, player) {
     if (args.length === 0)
-        return game.communicationHandler.reply(message, `You need to specify a room. Usage:\n${usage(game.settings)}`);
+        return game.communicationHandler.reply(message, game.errorMessageGenerator.generateSpecifyErrorWithUsage("a room or exit", usage));
 
     const status = player.getBehaviorAttributeStatusEffects("disable move");
-    if (status.length > 0) return game.communicationHandler.reply(message, `You cannot do that because you are **${status[0].id}**.`);
+    if (status.length > 0) return game.communicationHandler.reply(message, game.errorMessageGenerator.generateCommandDisabledError(status[0]));
 
-    if (player.isMoving) return game.communicationHandler.reply(message, `You cannot do that because you are already moving.`);
+    if (player.isMoving) return game.communicationHandler.reply(message, game.errorMessageGenerator.generateAlreadyMovingError());
     if (player.followedPlayer)
-        return game.communicationHandler.reply(message, `You cannot do that because you are following ${player.followedPlayerDisplayName}. If you want to move of your own accord again, use "${game.settings.commandPrefix}stop" first.`);
+        return game.communicationHandler.reply(message, game.errorMessageGenerator.generateCannotMoveAlreadyFollowingPlayerError(player));
 
     player.moveQueue = args.join(" ").split(">");
     const action = new QueueMoveAction(game, message, player, player.location, false);
-    action.performQueueMove(false, player.moveQueue[0]);
+    await action.performQueueMove(false, player.moveQueue[0]);
 }

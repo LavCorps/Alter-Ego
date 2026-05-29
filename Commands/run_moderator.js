@@ -47,16 +47,16 @@ export function usage(settings) {
 export async function execute(game, message, command, args, moderator) {
     const sentMessageInLatchChannel = moderator?.sentMessageInLatchChannel(message) ?? false;
     if (!sentMessageInLatchChannel && args.length < 2)
-        return game.communicationHandler.reply(message, `You need to specify a player and an exit. Usage:\n${usage(game.settings)}`);
+        return game.communicationHandler.reply(message, game.errorMessageGenerator.generateSpecifyErrorWithUsage("a player and an exit", usage));
     else if (sentMessageInLatchChannel && args.length < 1)
-        return game.communicationHandler.reply(message, `You need to specify an exit. Usage:\n${usage(game.settings)}`);
+        return game.communicationHandler.reply(message, game.errorMessageGenerator.generateSpecifyErrorWithUsage("an exit", usage));
 
     let player = game.entityFinder.getLivingPlayer(args[0].replace(/'s/g, ""));
     if (player && (moderator.getLatch() === null || moderator.getLatch().name.toLowerCase() !== args[0].toLowerCase().replace(/'s/g, "")))
         args.splice(0, 1);
     if (!player && sentMessageInLatchChannel)
         player = moderator.getLatch();
-    if (player === undefined) return game.communicationHandler.reply(message, `Player "${args[0]}" not found.`);
+    if (player === undefined) return game.communicationHandler.reply(message, game.errorMessageGenerator.generatePlayersNotFoundError([args[0]]));
 
     player.stopMoving();
     player.stopFollowing();

@@ -36,11 +36,12 @@ export function usage(settings) {
  */
 export async function execute(game, message, command, args, player) {
     if (args.length === 0)
-        return game.communicationHandler.reply(message, `You need to specify a player to follow. Usage:\n${usage(game.settings)}`);
+        return game.communicationHandler.reply(message, game.errorMessageGenerator.generateSpecifyErrorWithUsage("a player to follow", usage));
 
     const status = player.getBehaviorAttributeStatusEffects("disable follow");
-    if (status.length > 0) return game.communicationHandler.reply(message, `You cannot do that because you are **${status[0].id}**.`);
-    if (player.isMoving) return game.communicationHandler.reply(message, `You cannot do that because you are already moving.`);
+    if (status.length > 0) return game.communicationHandler.reply(message, game.errorMessageGenerator.generateCommandDisabledError(status[0]));
+    if (player.isMoving) return game.communicationHandler.reply(message, game.errorMessageGenerator.generateAlreadyMovingError());
+    if (player.followedPlayer) return game.communicationHandler.reply(message, game.errorMessageGenerator.generateCannotFollowWhenAlreadyFollowingError(player, "Player"))
 
     // This will be checked multiple times, so get it now.
     const hiddenStatus = player.getBehaviorAttributeStatusEffects("hidden");
@@ -55,16 +56,25 @@ export async function execute(game, message, command, args, player) {
         const occupant = player.location.occupants[i];
         if (parsedInput === occupant.displayName.toUpperCase() && (hiddenStatus.length === 0 && !occupant.isHidden() || occupant.hidingSpot === player.hidingSpot)) {
             // Player cannot give to themselves.
-            if (occupant.name === player.name) return game.communicationHandler.reply(message, "You can't follow yourself.");
+            if (occupant.name === player.name) return game.communicationHandler.reply(message, game.errorMessageGenerator.generateCannotFollowSelfError(player, "Player"));
 
             followedPlayer = occupant;
             break;
         }
         else if (parsedInput === occupant.displayName.toUpperCase() && hiddenStatus.length > 0 && !occupant.isHidden())
-            return game.communicationHandler.reply(message, `You cannot do that because you are **${hiddenStatus[0].id}**.`);
+            return game.communicationHandler.reply(message, game.errorMessageGenerator.generateCommandDisabledError(hiddenStatus[0]));
     }
-    if (!followedPlayer) return game.communicationHandler.reply(message, `Couldn't find player "${args[0]}" in the room with you. Make sure you spelled it right.`);
-    if (player.isFollowing(followedPlayer)) return game.communicationHandler.reply(message, `You are already following ${followedPlayer.displayName}.`);
+    if (!followedPlayer) return game.communicationHandler.reply(message, game.errorMessageGenerator.generatePlayerNotFoundInRoomError(args[0]));
+    if (player.isFollowing(followedPlayer)) return game.communicationHandler.reply(message, game.errorMessageGenerator.generateAlreadyFollowingPlayerError(player, "Player"));
+    if (followedPlayer.isFollowing(player))
+        return game.communicationHandler.reply(message, game.errorMessageGenerator.generateCannotFollowFollowerError(player, "Player"));
+    // Prevent following loops.
+    let nextFollowedPlayer = followedPlayer.followedPlayer;
+    while (nextFollowedPlayer) {
+        if (nextFollowedPlayer.name === player.name)
+            return game.communicationHandler.reply(message, game.errorMessageGenerator.generateFollowingWouldCauseInfiniteLoopError(player, "Player"));
+        nextFollowedPlayer = nextFollowedPlayer.followedPlayer;
+    }
 
     const action = new FollowAction(game, message, player, player.location, false);
     await action.performFollow(followedPlayer);

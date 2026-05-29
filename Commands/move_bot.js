@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import Event from "../Data/Event.ts";
 import MoveAction from "../Data/Actions/MoveAction.ts";
 
@@ -111,7 +115,7 @@ export async function execute(game, command, args, player, callee) {
             players[i].stopMoving();
             // Move the player.
             const action = new MoveAction(game, undefined, players[i], players[i].location, true);
-            action.performMove(false, currentRoom, desiredRoom, exit, entrance);
+            await action.performMove(false, currentRoom, desiredRoom, exit, entrance);
         }
     }
 }

@@ -91,6 +91,7 @@ export const SCRIPT_SCOPE_OPTIONS = {
         'entityLoader',
         'entitySaver',
         'logHandler',
+        'errorMessageGenerator',
         'notificationGenerator',
         'narrationHandler',
         'loadedEntitiesWithErrors',
