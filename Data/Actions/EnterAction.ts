@@ -27,12 +27,12 @@ export default class EnterAction extends Action {
 		destinationRoom.addPlayer(this.player, entrance);
 		await this.getGame().narrationHandler.narrateEnter(this, this.player, destinationRoom, entrance, isMovingFreely);
         this.player.moveQueue.splice(0, 1);
-        if (this.player.moveQueue.length > 0) {
+        const followedPlayer = this.player.followedPlayer;
+        if (!followedPlayer && this.player.moveQueue.length > 0) {
             const queueMoveAction = new QueueMoveAction(this.player.getGame(), undefined, this.player, this.player.location, this.forced);
             await queueMoveAction.performQueueMove(isRunning, this.player.moveQueue[0]);
         }
 
-        const followedPlayer = this.player.followedPlayer;
         const followedPlayerIsVisible = followedPlayer && destinationRoom.occupants.includes(followedPlayer)
             && destinationRoom.generateOccupantsStringExcluding(this.player).includes(this.player.followedPlayerDisplayName);
         if (followedPlayer && !followedPlayerIsVisible) {
@@ -42,9 +42,10 @@ export default class EnterAction extends Action {
             this.getGame().narrationHandler.narrateLostFollowedPlayer(lostPlayerAction, this.player);
             this.player.stopFollowing();
         }
-        else if (followedPlayerIsVisible && followedPlayer.isMoving) {
+        else if (followedPlayerIsVisible && followedPlayer.isMoving && this.player.moveQueue.length === 0) {
+            this.player.moveQueue = [followedPlayer.moveQueue[0]];
             const queueMoveAction = new QueueMoveAction(this.getGame(), undefined, this.player, this.player.location, this.forced);
-            await queueMoveAction.performQueueMove(this.player.followedPlayer.isRunning, followedPlayer.moveQueue[0], this.player.getFollowingSpeed());
+            await queueMoveAction.performQueueMove(followedPlayer.isRunning, this.player.moveQueue[0], this.player.getFollowingSpeed());
         }
 	}
 }

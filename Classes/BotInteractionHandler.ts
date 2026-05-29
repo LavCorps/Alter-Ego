@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import type Action from "../Data/Action.ts";
 import InspectAction from "../Data/Actions/InspectAction.ts";
 import QueueMoveAction from "../Data/Actions/QueueMoveAction.ts";
@@ -148,13 +152,16 @@ export default class BotInteractionHandler {
 		if (action instanceof QueueMoveAction) {
 			const args = interactable.actionDirective.getArgs();
 			const parsedArgs = action.parseInteractionArgs(args);
-			const validatedArgs = action.validateInteractionArgs(parsedArgs);
-			if (validatedArgs.length === 2) {
-				await action.performQueueMove(validatedArgs[0], validatedArgs[1]);
-				this.#replyOrDeleteActionResponse(action, interaction, reply);
-                this.#logInteraction("QueueMoveAction", author, timestamp, validatedArgs);
-				return true;
-			}
+            try {
+                const validatedArgs = action.validateInteractionArgs(parsedArgs);
+                if (validatedArgs.length === 2) {
+                    await action.performQueueMove(validatedArgs[0], validatedArgs[1]);
+                    this.#replyOrDeleteActionResponse(action, interaction, reply);
+                    this.#logInteraction("QueueMoveAction", author, timestamp, validatedArgs);
+                    return true;
+                }
+            }
+            catch (error) { throw new Error(error.message); }
 		}
         if (action instanceof StopAction) {
             if (player && player.isMoving) {

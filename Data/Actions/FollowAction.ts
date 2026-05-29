@@ -25,8 +25,9 @@ export default class FollowAction extends Action {
         this.player.stopFollowing();
         this.player.startFollowing(player);
         if (player.isMoving) {
-            const queueMoveAction = new QueueMoveAction(this.getGame(), this.message, this.player, this.player.location, this.forced);
-            await queueMoveAction.performQueueMove(player.isRunning, player.moveQueue[0], this.player.getFollowingSpeed());
+            this.player.moveQueue = [player.moveQueue[0]];
+            const queueMoveAction = new QueueMoveAction(this.getGame(), undefined, this.player, this.player.location, this.forced);
+            await queueMoveAction.performQueueMove(player.isRunning, this.player.moveQueue[0], this.player.getFollowingSpeed());
         }
         this.successMessage = `Successfully made ${this.player.name} begin following ${player.name}.`;
     }

@@ -57,7 +57,7 @@ export default class QueueMoveAction extends Action {
 			this.player.moveQueue.length = 0;
             if (this.forced && this.message)
                 this.getGame().communicationHandler.reply(this.message, `Couldn't find room or exit "${destinationString}".`);
-			else if (this.message)
+			else
                 this.getGame().communicationHandler.sendMessageToPlayer(this.player, `There is no exit "${destinationString}" that you can currently move to. Please try the name of an exit in the room you're in or the name of the room you want to go to.`, false);
             return;
 		}
@@ -72,8 +72,14 @@ export default class QueueMoveAction extends Action {
 		}
 		else {
 			const moveAction = new MoveAction(this.getGame(), this.message, this.player, this.player.location, this.forced);
-			moveAction.performMove(isRunning, currentRoom, destinationRoom, exit, entrance, isMovingInstantly && canMoveFreely);
+			await moveAction.performMove(isRunning, currentRoom, destinationRoom, exit, entrance, isMovingInstantly && canMoveFreely);
 			this.player.moveQueue.length = 0;
+            // If anyone if following the player who teleported, they have lost track of them and should stop following them.
+            for (const occupant of this.location.occupants) {
+                if (occupant.isFollowing(this.player)) {
+                    occupant.stopFollowing();
+                }
+            }
             this.successMessage = `Successfully moved ${this.player.name} to ${destinationRoom.channel}.`;
 		}
 	}
@@ -96,14 +102,26 @@ export default class QueueMoveAction extends Action {
      *
 	 * @param args - The args after being parsed.
 	 */
-	validateInteractionArgs(args: [Room, boolean, string]): [boolean, string] | [] {
-		if (args.length !== 3) return [];
-		if (!args[0]) return [];
-		if (args[0].id !== this.player.location.id) return [];
-		if (this.player.isMoving) return [];
-		if (args[1] === false && (this.player.hasBehaviorAttribute("disable move") || this.player.hasBehaviorAttribute("disable all") && !this.player.hasBehaviorAttribute("enable move"))) return [];
-		if (args[1] === true && (this.player.hasBehaviorAttribute("disable run") || this.player.hasBehaviorAttribute("disable all") && !this.player.hasBehaviorAttribute("enable run"))) return [];
-		if (!args[2]) return [];
+	validateInteractionArgs(args: [Room, boolean, string]): [boolean, string] {
+        const errorMessageGenerator = this.getGame().errorMessageGenerator;
+		if (args.length !== 3) throw new Error(errorMessageGenerator.generateInsufficientArgumentsError());
+		if (!args[0]) throw new Error(errorMessageGenerator.generateInvalidEntityError("Room"));
+		if (args[0].id !== this.player.location.id) throw new Error(errorMessageGenerator.generateCannotMoveLocationMismatchError());
+		if (this.player.isMoving) throw new Error(errorMessageGenerator.generateAlreadyMovingError());
+        if (this.player.followedPlayer) throw new Error(errorMessageGenerator.generateCannotMoveAlreadyFollowingPlayerError(this.player));
+		if (args[1] === false) {
+            if (this.player.hasBehaviorAttribute("disable move"))
+                throw new Error(errorMessageGenerator.generateCommandDisabledError(this.player.getBehaviorAttributeStatusEffects("disable move")[0]));
+            if (this.player.hasBehaviorAttribute("disable all") && !this.player.hasBehaviorAttribute("enable move"))
+                throw new Error(errorMessageGenerator.generateCommandDisabledError(this.player.getBehaviorAttributeStatusEffects("disable all")[0]));
+        }
+		if (args[1] === true) {
+            if (this.player.hasBehaviorAttribute("disable run"))
+                throw new Error(errorMessageGenerator.generateCommandDisabledError(this.player.getBehaviorAttributeStatusEffects("disable run")[0]));
+            if (this.player.hasBehaviorAttribute("disable all") && !this.player.hasBehaviorAttribute("enable run"))
+                throw new Error(errorMessageGenerator.generateCommandDisabledError(this.player.getBehaviorAttributeStatusEffects("disable all")[0]));
+        }
+		if (!args[2]) throw new Error(errorMessageGenerator.generateInvalidEntityError("Exit"));
 		return [args[1], args[2]];
 	}
 }

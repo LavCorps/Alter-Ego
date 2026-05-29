@@ -535,7 +535,7 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
         const startingPos: Pos = { x: this.pos.x, y: this.pos.y, z: this.pos.z };
 
         let player = this;
-        this.moveTimer = setInterval(function () {
+        this.moveTimer = setInterval(async function () {
             const settings = player.getGame().settings;
             let subtractedTime = 100;
             if (player.getGame().heated) subtractedTime = settings.heatedSlowdownRate * subtractedTime;
@@ -599,12 +599,12 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
                 const exitPuzzlePassable = restrictedExitPuzzle && restrictedExitPuzzle.solutions.includes(player.name);
                 if (exit.unlocked || exitPuzzlePassable) {
                     const moveAction = new MoveAction(player.getGame(), undefined, player, player.location, forced);
-                    moveAction.performMove(isRunning, currentRoom, destinationRoom, exit, entrance);
+                    await moveAction.performMove(isRunning, currentRoom, destinationRoom, exit, entrance);
                 }
                 else {
                     // The exit is locked.
                     const stopAction = new StopAction(player.getGame(), undefined, player, player.location, forced);
-                    stopAction.performStop(true, exit);
+                    stopAction.performStop(true, exit, false);
                     player.pos.x = exit.pos.x;
                     player.pos.y = exit.pos.y;
                     player.pos.z = exit.pos.z;

@@ -240,7 +240,8 @@ export default class GameNarrationHandler {
 			: player.followedPlayer && stopFollowing ? this.#game.notificationGenerator.generateStopFollowingNotification(player, true, player.followedPlayerDisplayName)
                 : this.#game.notificationGenerator.generateStopNotification(player, true);
 		const narration = exitLocked ? this.#game.notificationGenerator.generateExitLockedNotification(player, false, exit.getDoorPhrase())
-			: this.#game.notificationGenerator.generateStopNotification(player, false);
+            : player.followedPlayer && stopFollowing ? this.#game.notificationGenerator.generateStopFollowingNotification(player, false, player.followedPlayerDisplayName)
+			    : this.#game.notificationGenerator.generateStopNotification(player, false);
 		this.sendNotification(player, action, notification, exitLocked ? MessageDisplayType.WARNING : messageType, undefined, undefined, interactables);
 		this.#sendNarration(messageType, action, player, narration);
 	}
@@ -253,11 +254,13 @@ export default class GameNarrationHandler {
      * @param interactables - An array of interactables to send to the player alongside their notification. Optional.
      */
     narrateFollow(action: Action, player: Player, target: Player, interactables: Interactable[] = []) {
-        const messageType = MessageDisplayType.WARNING;
-        let playerNotification = this.#game.notificationGenerator.generateFollowNotification(player, true, target.displayName);
-        let targetNotification = this.#game.notificationGenerator.generateBeingFollowedNotification(player.displayName);
+        const messageType = MessageDisplayType.MINOR;
+        const playerNotification = this.#game.notificationGenerator.generateFollowNotification(player, true, target.displayName);
+        const targetNotification = this.#game.notificationGenerator.generateBeingFollowedNotification(player.displayName);
+        const narration = this.#game.notificationGenerator.generateFollowNotification(player, false, target.displayName);
         this.sendNotification(player, action, playerNotification, MessageDisplayType.STANDARD);
-        this.sendNotification(target, action, targetNotification, messageType, true, undefined, interactables);
+        this.sendNotification(target, action, targetNotification, MessageDisplayType.WARNING, true, undefined, interactables);
+        this.#sendNarration(messageType, action, player, narration);
     }
 
     /**

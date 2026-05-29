@@ -36,9 +36,29 @@ export default class StartMoveAction extends Action {
 
         // If anyone is following this player, they need to start moving.
         for (const occupant of this.location.occupants) {
-            if (!occupant.isMoving && occupant.isFollowing(this.player)) {
-                const queueMoveAction = new QueueMoveAction(this.getGame(), undefined, occupant, occupant.location, this.forced);
-                await queueMoveAction.performQueueMove(this.player.isRunning, exit.name, occupant.getFollowingSpeed());
+            if (occupant.moveQueue.length === 0 && occupant.isFollowing(this.player)) {
+                // We don't want the occupant to reach the destination before the player they're following, or they'll lose track of them.
+                // So, calculate how long to delay their movement.
+                let delay = 0;
+                const occupantTime = occupant.calculateMoveTime(exit, isRunning, occupant.getFollowingSpeed());
+                // Add one tick to the delay just to be safe.
+                const tick = 100;
+                if (occupantTime <= time) delay = time - occupantTime + tick;
+                // We use an interval here to match the way the player moveTimer works.
+                // This allows us to account for the heatedSlowdownRate.
+                // We need access to the action, so create a variable to replace `this`.
+                const action = this;
+                const delayInterval = setInterval(async function () {
+                    let subtractedTime = tick;
+                    if (action.getGame().heated) subtractedTime = action.getGame().settings.heatedSlowdownRate * subtractedTime;
+                    delay -= subtractedTime;
+                    if (delay <= 0) {
+                        clearInterval(delayInterval);
+                        occupant.moveQueue = [exit.name];
+                        const queueMoveAction = new QueueMoveAction(action.getGame(), undefined, occupant, occupant.location, action.forced);
+                        await queueMoveAction.performQueueMove(action.player.isRunning, occupant.moveQueue[0], occupant.getFollowingSpeed());
+                    }
+                }, tick);
             }
         }
 	}
