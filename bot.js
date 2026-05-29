@@ -18,7 +18,7 @@ import { Client, Collection, ChannelType, Events, GatewayIntentBits, Partials, T
 import { readdir, readFileSync } from 'fs';
 import { loadDotEnv } from "./Modules/envLoader.ts";
 import { loadGameSettings, loadPlayerDefaults } from "./Modules/settingsLoader.ts";
-import GameSettings from "./Classes/GameSettings.js";
+import GameSettings from "./Classes/GameSettings.ts";
 import { loadCredentials } from "./Modules/credentialsLoader.ts";
 
 if (process.env.STACK_TRACE_LIMIT && Number.isInteger(parseInt(process.env.STACK_TRACE_LIMIT))) {

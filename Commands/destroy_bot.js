@@ -6,7 +6,7 @@ import RoomItem from "../Data/RoomItem.ts";
 import Puzzle from "../Data/Puzzle.ts";
 import { itemIdentifierMatches } from "../Modules/matchers.ts";
 
-/** @import GameSettings from '../Classes/GameSettings.js' */
+/** @import GameSettings from '../Classes/GameSettings.ts' */
 /** @import Player from '../Data/Player.ts' */
 /** @import InventoryItem from '../Data/InventoryItem.ts' */
 /** @import InventorySlot from '../Data/InventorySlot.ts' */

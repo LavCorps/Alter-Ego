@@ -4,7 +4,7 @@ import UnsolveAction from "../Data/Actions/UnsolveAction.ts";
 import Room from "../Data/Room.ts";
 import { endsWithPunctuation } from "../Modules/helpers.ts";
 
-/** @import GameSettings from '../Classes/GameSettings.js' */
+/** @import GameSettings from '../Classes/GameSettings.ts' */
 /** @import Game from '../Data/Game.ts' */
 /** @import Player from '../Data/Player.ts' */
 

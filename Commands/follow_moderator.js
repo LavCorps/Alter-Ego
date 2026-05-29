@@ -5,7 +5,7 @@
 import FollowAction from '../Data/Actions/FollowAction.ts';
 
 /** @import Moderator from '../Data/Moderator.ts'; */
-/** @import GameSettings from '../Classes/GameSettings.js'; */
+/** @import GameSettings from '../Classes/GameSettings.ts'; */
 /** @import Game from '../Data/Game.ts'; */
 
 /** @type {CommandConfig} */

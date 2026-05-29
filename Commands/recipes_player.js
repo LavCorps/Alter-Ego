@@ -1,6 +1,6 @@
 import RecipesAction from '../Data/Actions/RecipesAction.ts';
 
-/** @import GameSettings from '../Classes/GameSettings.js' */
+/** @import GameSettings from '../Classes/GameSettings.ts' */
 /** @import Game from '../Data/Game.ts' */
 /** @import InventoryItem from '../Data/InventoryItem.ts' */
 /** @import Player from '../Data/Player.ts' */

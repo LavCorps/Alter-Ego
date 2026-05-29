@@ -1,7 +1,7 @@
 import CraftAction from '../Data/Actions/CraftAction.ts';
 import { itemNameMatches } from '../Modules/matchers.ts';
 
-/** @import GameSettings from '../Classes/GameSettings.js' */
+/** @import GameSettings from '../Classes/GameSettings.ts' */
 /** @import Game from '../Data/Game.ts' */
 /** @import Player from '../Data/Player.ts' */
 /** @import InventoryItem from '../Data/InventoryItem.ts' */

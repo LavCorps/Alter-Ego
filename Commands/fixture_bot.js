@@ -4,7 +4,7 @@ import Room from "../Data/Room.ts";
 import { endsWithPunctuation } from "../Modules/helpers.ts";
 
 /** @import Fixture from '../Data/Fixture.ts' */
-/** @import GameSettings from '../Classes/GameSettings.js' */
+/** @import GameSettings from '../Classes/GameSettings.ts' */
 /** @import Game from '../Data/Game.ts' */
 /** @import Player from '../Data/Player.ts' */
 

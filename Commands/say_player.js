@@ -2,7 +2,7 @@
 import SayAction from "../Data/Actions/SayAction.ts";
 import { ChannelType } from "discord.js";
 
-/** @import GameSettings from '../Classes/GameSettings.js' */
+/** @import GameSettings from '../Classes/GameSettings.ts' */
 /** @import Game from '../Data/Game.ts' */
 /** @import Player from '../Data/Player.ts' */
 

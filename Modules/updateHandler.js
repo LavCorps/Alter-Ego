@@ -1,5 +1,5 @@
 import GameConstants from '../Classes/GameConstants.ts';
-import GameSettings from '../Classes/GameSettings.js';
+import GameSettings from '../Classes/GameSettings.ts';
 import { batchUpdateSheet, batchUpdateSheetValues, getSheetWithProperties } from './sheets.js';
 import { generateListString } from './helpers.ts';
 
@@ -7,7 +7,7 @@ import fs from 'fs';
 
 /**
  * Automatically updates config files and the sheet.
- * @param {GameSettings} settings 
+ * @param {GameSettings} settings
  */
 export default async function autoUpdate(settings) {
     const constants = GameConstants.Instance;
@@ -17,13 +17,13 @@ export default async function autoUpdate(settings) {
 }
 
 /**
- * @param {GameSettings} settings 
+ * @param {GameSettings} settings
  * @param {GameConstants} constants
  */
 async function v2_0Update(settings, constants) {
     // Update sheets and formatting.
     const batchUpdateRequests = [];
-    
+
     // Update Rooms sheet with the "Exit Phrase" and "Exit Tags" column.
     let insertRoomColumns = false;
     let roomsSheetId;
@@ -380,7 +380,7 @@ async function v2_0Update(settings, constants) {
 }
 
 /**
- * @param {GameSettings} settings 
+ * @param {GameSettings} settings
  * @param {GameConstants} constants
  */
 async function v1_10Update(settings, constants) {
@@ -439,12 +439,12 @@ async function v1_10Update(settings, constants) {
         batchUpdateSheet(requests, settings.spreadsheetID).then(() => {
             console.log("Inserted Uncraftable and Message When Uncrafted columns on Recipes sheet.");
         }).catch(err => console.error(err));
-        
+
     }
 }
 
 /**
- * @param {GameSettings} settings 
+ * @param {GameSettings} settings
  * @param {GameConstants} constants
  */
 async function v1_9Update(settings, constants) {

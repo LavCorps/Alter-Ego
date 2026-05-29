@@ -3,7 +3,7 @@ import Player from '../Data/Player.ts';
 import { Collection } from 'discord.js';
 import {loadPlayerDefaults} from "../Modules/settingsLoader.ts";
 
-/** @import GameSettings from '../Classes/GameSettings.js' */
+/** @import GameSettings from '../Classes/GameSettings.ts' */
 
 /** @type {CommandConfig} */
 export const config = {

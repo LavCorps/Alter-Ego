@@ -4,7 +4,7 @@
 
 import FollowAction from '../Data/Actions/FollowAction.ts';
 
-/** @import GameSettings from '../Classes/GameSettings.js' */
+/** @import GameSettings from '../Classes/GameSettings.ts' */
 /** @import Game from '../Data/Game.ts' */
 /** @import Player from '../Data/Player.ts' */
 

@@ -3,7 +3,7 @@ import Fixture from "../Data/Fixture.ts";
 import RoomItem from "../Data/RoomItem.ts";
 import Puzzle from "../Data/Puzzle.ts";
 
-/** @import GameSettings from '../Classes/GameSettings.js' */
+/** @import GameSettings from '../Classes/GameSettings.ts' */
 /** @import EquipmentSlot from '../Data/EquipmentSlot.ts' */
 /** @import Game from '../Data/Game.ts' */
 /** @import InventoryItem from '../Data/InventoryItem.ts' */

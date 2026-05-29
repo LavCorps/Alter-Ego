@@ -1,7 +1,7 @@
 import DieAction from '../Data/Actions/DieAction.ts';
 import Event from "../Data/Event.ts";
 
-/** @import GameSettings from '../Classes/GameSettings.js' */
+/** @import GameSettings from '../Classes/GameSettings.ts' */
 /** @import Game from '../Data/Game.ts' */
 /** @import Player from '../Data/Player.ts' */
 

@@ -2,7 +2,7 @@ import CraftAction from '../Data/Actions/CraftAction.ts';
 import { itemIdentifierMatches } from '../Modules/matchers.ts';
 
 /** @import Moderator from '../Data/Moderator.ts' */
-/** @import GameSettings from '../Classes/GameSettings.js' */
+/** @import GameSettings from '../Classes/GameSettings.ts' */
 /** @import Game from '../Data/Game.ts' */
 /** @import InventoryItem from '../Data/InventoryItem.ts' */
 

@@ -2,7 +2,7 @@
 import UnlockAction from '../Data/Actions/UnlockAction.ts';
 
 /** @import Moderator from '../Data/Moderator.ts' */
-/** @import GameSettings from '../Classes/GameSettings.js' */
+/** @import GameSettings from '../Classes/GameSettings.ts' */
 /** @import Game from '../Data/Game.ts' */
 
 /** @type {CommandConfig} */

@@ -2,7 +2,7 @@ import UnequipAction from '../Data/Actions/UnequipAction.ts';
 import Game from '../Data/Game.ts';
 
 /** @import Moderator from '../Data/Moderator.ts' */
-/** @import GameSettings from '../Classes/GameSettings.js' */
+/** @import GameSettings from '../Classes/GameSettings.ts' */
 /** @import InventoryItem from '../Data/InventoryItem.ts' */
 
 /** @type {CommandConfig} */

@@ -5,7 +5,7 @@ import DestroyInventoryItemAction from "../Data/Actions/DestroyInventoryItemActi
 import DestroyRoomItemAction from "../Data/Actions/DestroyRoomItemAction.ts";
 
 /** @import Moderator from '../Data/Moderator.ts' */
-/** @import GameSettings from '../Classes/GameSettings.js' */
+/** @import GameSettings from '../Classes/GameSettings.ts' */
 /** @import Game from '../Data/Game.ts' */
 /** @import InventoryItem from '../Data/InventoryItem.ts' */
 /** @import InventorySlot from '../Data/InventorySlot.ts' */
