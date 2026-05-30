@@ -299,6 +299,27 @@ export default class GameNotificationGenerator {
         return `You can't find ${targetDisplayName} here.`;
     }
 
+    /**
+     * Generates a notification indicating the player has begun leading other players.
+     * @param player - The player referred to in this notification.
+     * @param secondPerson - Whether or not the player should be referred to in second person.
+     * @param followerListString - A list of the players being led.
+     */
+    generateLeadNotification(player: Player, secondPerson: boolean, followerListString: string) {
+        const subject = secondPerson ? `You` : capitalizeFirstLetter(player.displayName);
+        const verb = secondPerson ? `begin leading` : `begins leading`;
+        return `${subject} ${verb} ${followerListString}.`;
+    }
+
+    /**
+     * Generates a notification indicating the player is being led.
+     * @param leaderDisplayName - The display name of the player leading the player being addressed.
+     * @param followerListString - A list of the players being led by the same leader.
+     */
+    generateBeingLedNotification(leaderDisplayName: string, followerListString: string) {
+        return `${capitalizeFirstLetter(leaderDisplayName)} is now leading ${followerListString}.`;
+    }
+
 	/**
 	 * Generates a notification indicating the player cannot move to an exit because it is locked.
 	 * @param player - The player referred to in this notification.

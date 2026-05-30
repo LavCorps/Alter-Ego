@@ -66,13 +66,41 @@ export default class Party extends GameConstruct {
     }
 
     /**
-     * Adds a player to the party as a follower.
-     * @param player - The player to add to the party.
+     * Returns true if the party has the given player as a member.
+     * @param player - The player to check for membership in the party.
      */
-    async addFollower(player: Player): Promise<void> {
-        if (player.canSee()) this.deleteWhisper();
-        this.followers.set(player.name, player);
-        this.members.set(player.name, player);
+    hasMember(player: Player): boolean {
+        return this.members.has(player.name);
+    }
+
+    /**
+     * Returns true if the party has the given player as the leader.
+     * @param player - The player to check for being the leader of the party.
+     */
+    hasLeader(player: Player): boolean {
+        return this.leader.name === player.name;
+    }
+
+    /**
+     * Returns true if the party has the given player as a follower.
+     * @param player - The player to check for being a follower in the party.
+     */
+    hasFollower(player: Player): boolean {
+        return this.followers.has(player.name);
+    }
+
+    /**
+     * Adds one or more players to the party as followers.
+     * @param players - The players to add to the party.
+     */
+    async addFollowers(players: Player[]): Promise<void> {
+        let deleteWhisper = false;
+        for (const player of players) {
+            if (player.canSee()) deleteWhisper = true; // Will this cause the whisper to be created without being deleted first if all of the new players are blind?
+            this.followers.set(player.name, player);
+            this.members.set(player.name, player);
+        }
+        if (deleteWhisper) this.deleteWhisper();
         this.whisper = await this.getGame().entityLoader.createWhisper(Array.from(this.members.values()), this.idPrefix, WhisperType.PARTY);
         this.id = this.whisper.id;
     }

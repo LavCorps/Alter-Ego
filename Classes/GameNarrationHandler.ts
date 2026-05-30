@@ -13,7 +13,7 @@ import DieAction from "../Data/Actions/DieAction.ts";
 import NarrateAction from "../Data/Actions/NarrateAction.ts";
 import { MessageDisplayType } from "../Modules/enums.js";
 import { parseDescription } from "../Modules/parser.js";
-import { capitalizeFirstLetter, generateListString } from "../Modules/helpers.ts";
+import { capitalizeFirstLetter, generateListString, generatePlayerListString } from "../Modules/helpers.ts";
 import { Collection } from "discord.js";
 import type Interactable from "./Interactables/Interactable.ts";
 import type Action from "../Data/Action.ts";
@@ -273,6 +273,28 @@ export default class GameNarrationHandler {
         const messageType = MessageDisplayType.STANDARD;
         const notification = this.#game.notificationGenerator.generateLostFollowedPlayerNotification(player.followedPlayerDisplayName);
         this.sendNotification(player, action, notification, messageType, true, undefined, interactables);
+    }
+
+    /**
+     * Narrates a lead action.
+     * @param action - The action that initiated this narration.
+     * @param leader - The player performing the lead action.
+     * @param ledPlayers - The players being led.
+     * @param interactables - An array of interactables to send to the player alongside their notification. Optional.
+     */
+    narrateLead(action: Action, leader: Player, ledPlayers: Player[], interactables: Interactable[] = []) {
+        const messageType = MessageDisplayType.MINOR;
+        const followerListString = generatePlayerListString(ledPlayers);
+        const leaderNotification = this.#game.notificationGenerator.generateLeadNotification(leader, true, followerListString);
+        this.sendNotification(leader, action, leaderNotification, MessageDisplayType.STANDARD, undefined, undefined, interactables);
+        for (const ledPlayer of ledPlayers) {
+            const tailoredFollowers = ledPlayers.filter(player => player.name !== ledPlayer.name).map(player => player.displayName).concat("you");
+            const tailoredFollowerListString = generateListString(tailoredFollowers);
+            const ledPlayerNotification = this.#game.notificationGenerator.generateBeingLedNotification(leader.displayName, tailoredFollowerListString);
+            this.sendNotification(ledPlayer, action, ledPlayerNotification, MessageDisplayType.STANDARD);
+        }
+        const narration = this.#game.notificationGenerator.generateLeadNotification(leader, false, followerListString);
+        this.#sendNarration(messageType, action, leader, narration);
     }
 
 	/**

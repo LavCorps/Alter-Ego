@@ -55,7 +55,7 @@ export async function execute(game, message, command, args, player) {
     for (let i = 0; i < player.location.occupants.length; i++) {
         const occupant = player.location.occupants[i];
         if (parsedInput === occupant.displayName.toUpperCase() && (hiddenStatus.length === 0 && !occupant.isHidden() || occupant.hidingSpot === player.hidingSpot)) {
-            // Player cannot give to themselves.
+            // Player cannot follow themself.
             if (occupant.name === player.name) return game.communicationHandler.reply(message, game.errorMessageGenerator.generateCannotFollowSelfError(player, "Player"));
 
             followedPlayer = occupant;

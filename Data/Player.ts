@@ -27,6 +27,7 @@ import type InventoryItem from "./InventoryItem.ts";
 import type InventorySlot from "./InventorySlot.ts";
 import type ItemInstance from "./ItemInstance.ts";
 import Notification from "./Notification.ts";
+import type Party from "./Party.ts";
 import type Prefab from "./Prefab.ts";
 import Puzzle from "./Puzzle.ts";
 import type Recipe from "./Recipe.ts";
@@ -269,6 +270,11 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
      * A list of the names of all players that this player is currently leading. Used internally to avoid storing references to other players.
      */
     #ledPlayerNames: Set<string>;
+    /**
+     * The party this player is currently in, if any.
+     * If the player is not in a party, this is null.
+     */
+    party: Party | null;
     /**
      * Whether or not the player has depleted half of their stamina while moving.
      * When they do, they will be warned that they're starting to become tired.

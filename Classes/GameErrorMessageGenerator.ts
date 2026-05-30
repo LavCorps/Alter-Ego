@@ -162,7 +162,7 @@ export default class GameErrorMessageGenerator {
                 return `${this.youCannotString} already following ${player.followedPlayerDisplayName}. `
                     + `If you want to follow someone else, use ${this.getCommandString(`stop`)} first.`;
             default:
-                return `${player.name} is already following ${player.followedPlayerDisplayName}.`;
+                return `${player.name} is already following ${player.followedPlayer?.name}.`;
         }
     }
 
@@ -221,6 +221,79 @@ export default class GameErrorMessageGenerator {
                 return `You cannot follow ${followedPlayer?.displayName} because doing so would create an infinite loop.`;
             default:
                 return `${player.name} cannot follow ${followedPlayer?.name} because doing so would create an infinite loop.`;
+        }
+    }
+
+    /**
+     * Generates an error message indicating that the player cannot lead because they are currently following someone.
+     * @param player - The player who cannot lead.
+     * @param context - The context in which the command is being issued.
+     */
+    generateCannotLeadWhileFollowingError(player: Player, context: UserContext) {
+        switch (context) {
+            case "Player":
+                return `${this.youCannotString} following ${player.followedPlayerDisplayName}. `
+                    + `If you want to lead someone, use ${this.getCommandString(`stop`)} first.`;
+            default:
+                return `${player.name} cannot lead because ${player.originalPronouns.sbj} ${this.isOrAre(player, context)} following ${player.followedPlayer?.name}.`;
+        }
+    }
+
+    /**
+     * Generates an error message indicating that the player cannot lead themself.
+     * @param player - The player who cannot lead.
+     * @param context - The context in which the command is being issued.
+     */
+    generateCannotLeadSelfError(player: Player, context: UserContext) {
+        switch (context) {
+            case "Player":
+                return `You cannot lead yourself.`;
+            default:
+                return `${player.name} cannot lead ${player.originalPronouns.ref}.`;
+        }
+    }
+
+    /**
+     * Generates an error message indicating that the player cannot lead a player who is not their follower.
+     * @param player - The player who cannot lead.
+     * @param follower - The player who cannot be led.
+     * @param context - The context in which the command is being issued.
+     */
+    generateCannotLeadNonFollowerError(player: Player, follower: Player, context: UserContext) {
+        switch (context) {
+            case "Player":
+                return `You cannot lead ${follower?.displayName} because ${follower?.pronouns?.sbj} ${this.isOrAre(follower, context)} not following you.`;
+            default:
+                return `${player.name} cannot lead ${follower?.name} because ${follower?.originalPronouns?.sbj} ${this.isOrAre(follower, context)} not following ${player.originalPronouns.obj}.`;
+        }
+    }
+
+    /**
+     * Generates an error message indicating that the player cannot lead a player who is already leading others.
+     * @param player - The player who cannot lead.
+     * @param follower - The player who cannot be led.
+     * @param context - The context in which the command is being issued.
+     */
+    generateCannotLeadLeaderError(player: Player, follower: Player, context: UserContext) {
+        switch (context) {
+            case "Player":
+                return `You cannot lead ${follower?.displayName} because ${follower?.pronouns?.sbj} ${this.isOrAre(follower, context)} leading other player${follower?.ledPlayers.length !== 1 ? `s` : ``}.`;
+            default:
+                return `${player.name} cannot lead ${follower?.name} because ${follower?.originalPronouns?.sbj} ${this.isOrAre(follower, context)} leading other player${follower?.ledPlayers.length !== 1 ? `s` : ``}.`;
+        }
+    }
+
+    /**
+     * Generates an error message indicating that the player cannot lead any of the listed players because they are already leading all of them.
+     * @param player - The player who cannot lead.
+     * @param context - The context in which the command is being issued.
+     */
+    generateNoNewLedPlayersError(player: Player, context: UserContext) {
+        switch (context) {
+            case "Player":
+                return `You are already leading all of those players.`;
+            default:
+                return `${player.name} is already leading all of those players.`;
         }
     }
 }

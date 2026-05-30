@@ -70,5 +70,3 @@ export async function execute(game, message, command, args, moderator) {
     await action.performFollow(followedPlayer);
     action.sendSuccessMessageToCommandChannel();
 }
-
-
