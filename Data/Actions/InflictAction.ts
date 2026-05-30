@@ -8,6 +8,7 @@ import Action from "../Action.ts";
 import type InventoryItem from "../InventoryItem.ts";
 import type Status from "../Status.ts";
 import CureAction from "./CureAction.ts";
+import DisbandPartyAction from "./DisbandPartyAction.ts";
 
 /**
  * Represents an inflict action.
@@ -76,10 +77,17 @@ export default class InflictAction extends Action {
 		}
 		if (status.behaviorAttributes.has("disable all") || status.behaviorAttributes.has("disable move") || status.behaviorAttributes.has("disable run")) {
             this.player.stopMoving();
-            this.player.stopFollowing();
+            if (!this.player.party) this.player.stopFollowing();
         }
+        // TODO: Maybe there should be a StopFollowingAction.
         if (this.player.followedPlayer && status.behaviorAttributes.has("disable follow"))
             this.player.stopFollowing();
+        if (this.player.party && this.player.party.hasLeader(this.player) &&
+        (status.behaviorAttributes.has("disable lead") || status.behaviorAttributes.has("disable all") && !status.behaviorAttributes.has("enable lead"))) {
+            const disbandNotification = this.getGame().notificationGenerator.generatePartyDisbandedByStatusNotification(this.player, `**${status.id}**`, true);
+            const disbandAction = new DisbandPartyAction(this.getGame(), undefined, this.player, this.player.location, true);
+            disbandAction.performDisbandParty(true, "", "", disbandNotification);
+        }
 
 		this.player.inflict(status, duration);
 		if (notify) {

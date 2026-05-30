@@ -286,7 +286,8 @@ export default class GameNotificationGenerator {
      * @param targetDisplayName - The display name of the player that they were following.
      */
     generateStopFollowingNotification(player: Player, secondPerson: boolean, targetDisplayName: string) {
-        const subject = secondPerson ? `You` : capitalizeFirstLetter(player.displayName);
+        const displayName = player.party && targetDisplayName === "you" ? player.party.getMemberDisplayName(player) : player.displayName;
+        const subject = secondPerson ? `You` : capitalizeFirstLetter(displayName);
         const verb = secondPerson ? `stop following` : `stops following`;
         return `${subject} ${verb} ${targetDisplayName}.`;
     }
@@ -318,6 +319,65 @@ export default class GameNotificationGenerator {
      */
     generateBeingLedNotification(leaderDisplayName: string, followerListString: string) {
         return `${capitalizeFirstLetter(leaderDisplayName)} is now leading ${followerListString}.`;
+    }
+
+    /**
+     * Generates a notification indicating that the player has stopped leading the given followers.
+     * @param player - The player referred to in this notification.
+     * @param secondPerson - Whether or not the player should be referred to in second person.
+     * @param followerListString - A list of the players that they have stopped leading.
+     */
+    generateStopLeadingNotification(player: Player, secondPerson: boolean, followerListString: string) {
+        const subject = secondPerson ? `You` : capitalizeFirstLetter(player.displayName);
+        const verb = secondPerson ? `stop leading` : `stops leading`;
+        return `${subject} ${verb} ${followerListString}.`;
+    }
+
+    /**
+     * Generates a notification indicating that the player is no longer being led.
+     * @param leaderDisplayName - The display name of the player that was leading the player being addressed.
+     * @param followerListString - A list of the players that were being led by the same leader as the player being addressed.
+     */
+    generateNoLongerBeingLedNotification(leaderDisplayName: string, followerListString: string) {
+        return `${capitalizeFirstLetter(leaderDisplayName)} stops leading ${followerListString}.`;
+    }
+
+    /**
+     * Generates a notification indicating that the player has disbanded their party.
+     * @param player - The player referred to in this notification.
+     * @param secondPerson - Whether or not the player should be referred to in second person.
+     * @param stopFollowing - Whether or not the followers stopped following the leader as a result of the party being disbanded.
+     * @param followerListString - A list of the followers that were in the disbanded party.
+     */
+    generateDisbandPartyNotification(player: Player, secondPerson: boolean, stopFollowing: boolean, followerListString: string) {
+        const subject = secondPerson ? `You` : capitalizeFirstLetter(player.displayName);
+        const verb1 = secondPerson ? `disband` : `disbands`;
+        const dpos = secondPerson ? `your` : `${player.pronouns.dpos}`;
+        const verb2 = followerListString.includes(" and ") ? `are` : `is`;
+        const obj = secondPerson ? `you` : `${player.pronouns.obj}`;
+        const addendum = stopFollowing ? `` : `, but ${followerListString} ${verb2} still following ${obj}`;
+        return `${subject} ${verb1} ${dpos} party${addendum}.`;
+    }
+
+    /**
+     * Generates a notification indicating that the player's party has been disbanded by their leader.
+     * @param leader - The leader that disbanded the party of the player being addressed.
+     * @param stopFollowing - Whether or not the followers stopped following the leader as a result of the party being disbanded.
+     */
+    generatePartyDisbandedNotification(leader: Player, stopFollowing: boolean) {
+        const addendum = stopFollowing ? `. You are no longer following ${leader.pronouns.obj}` : `, but you are still following ${leader.pronouns.obj}`;
+        return `${capitalizeFirstLetter(leader.displayName)} has disbanded your party${addendum}.`;
+    }
+
+    /**
+     * Generates a notification indicating that the player's party has been disbanded because their leader has a status effect.
+     * @param leader - The leader that disbanded the party of the player being addressed.
+     * @param statusId - The ID of the status effect that caused the party to be disbanded.
+     * @param stopFollowing - Whether or not the followers stopped following the leader as a result of the party being disbanded.
+     */
+    generatePartyDisbandedByStatusNotification(leader: Player, statusId: string, stopFollowing: boolean) {
+        const addendum = stopFollowing ? `. You are no longer following ${leader.pronouns.obj}` : `, but you are still following ${leader.pronouns.obj}`;
+        return `Your party has been disbanded because ${leader.party.getMemberDisplayName(leader)} is ${statusId}${addendum}.`;
     }
 
 	/**

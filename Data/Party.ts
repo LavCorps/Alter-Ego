@@ -42,6 +42,11 @@ export default class Party extends GameConstruct {
      */
     followers: Collection<string, Player>;
     /**
+     * A collection of display names for the members of the party.
+     * The key for each entry is the player's name, and the value is the display name they had at the time of joining.
+     */
+    #memberDisplayNames: Collection<string, string>;
+    /**
      * The whisper associated with the party. This is the whisper that the party members are using to communicate with each other.
      */
     whisper: Whisper;
@@ -58,10 +63,13 @@ export default class Party extends GameConstruct {
         this.leader = leader;
         this.followers = new Collection();
         this.members = new Collection();
+        this.#memberDisplayNames = new Collection();
         this.members.set(leader.name, leader);
+        this.#memberDisplayNames.set(leader.name, leader.displayName);
         for (const follower of followers) {
             this.followers.set(follower.name, follower);
             this.members.set(follower.name, follower);
+            this.#memberDisplayNames.set(follower.name, follower.displayName);
         }
     }
 
@@ -90,15 +98,24 @@ export default class Party extends GameConstruct {
     }
 
     /**
+     * Returns the display name of the member they had at the time of joining.
+     * @param player - The player to get the display name for. 
+     */
+    getMemberDisplayName(player: Player): string {
+        return this.#memberDisplayNames.get(player.name);
+    }
+
+    /**
      * Adds one or more players to the party as followers.
      * @param players - The players to add to the party.
      */
     async addFollowers(players: Player[]): Promise<void> {
         let deleteWhisper = false;
         for (const player of players) {
-            if (player.canSee()) deleteWhisper = true; // Will this cause the whisper to be created without being deleted first if all of the new players are blind?
+            if (player.canSee()) deleteWhisper = true; // TODO: Will this cause the whisper to be created without being deleted first if all of the new players are blind?
             this.followers.set(player.name, player);
             this.members.set(player.name, player);
+            this.#memberDisplayNames.set(player.name, player.displayName);
         }
         if (deleteWhisper) this.deleteWhisper();
         this.whisper = await this.getGame().entityLoader.createWhisper(Array.from(this.members.values()), this.idPrefix, WhisperType.PARTY);
@@ -114,6 +131,7 @@ export default class Party extends GameConstruct {
     removeFollower(player: Player, action?: Action, leaveNarration: string = ""): void {
         this.followers.delete(player.name);
         this.members.delete(player.name);
+        this.#memberDisplayNames.delete(player.name);
         const whisperNarration = action ? leaveNarration : "";
         player.removeFromWhispers(whisperNarration, action);
         this.id = this.whisper.id;

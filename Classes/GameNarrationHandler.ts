@@ -243,6 +243,10 @@ export default class GameNarrationHandler {
             : player.followedPlayer && stopFollowing ? this.#game.notificationGenerator.generateStopFollowingNotification(player, false, player.followedPlayerDisplayName)
 			    : this.#game.notificationGenerator.generateStopNotification(player, false);
 		this.sendNotification(player, action, notification, exitLocked ? MessageDisplayType.WARNING : messageType, undefined, undefined, interactables);
+        if (player.followedPlayer && stopFollowing) {
+            const followedPlayerNotification = this.#game.notificationGenerator.generateStopFollowingNotification(player, false, "you");
+            this.sendNotification(player.followedPlayer, action, followedPlayerNotification, MessageDisplayType.STANDARD);
+        }
 		this.#sendNarration(messageType, action, player, narration);
 	}
 
@@ -280,7 +284,7 @@ export default class GameNarrationHandler {
      * @param action - The action that initiated this narration.
      * @param leader - The player performing the lead action.
      * @param ledPlayers - The players being led.
-     * @param interactables - An array of interactables to send to the player alongside their notification. Optional.
+     * @param interactables - An array of interactables to send to the leader alongside their notification. Optional.
      */
     narrateLead(action: Action, leader: Player, ledPlayers: Player[], interactables: Interactable[] = []) {
         const messageType = MessageDisplayType.MINOR;
@@ -295,6 +299,61 @@ export default class GameNarrationHandler {
         }
         const narration = this.#game.notificationGenerator.generateLeadNotification(leader, false, followerListString);
         this.#sendNarration(messageType, action, leader, narration);
+    }
+
+    /**
+     * Narrates that a player has stopped leading other players.
+     * @param action - The action that initiated this narration.
+     * @param leader - The player who was leading.
+     * @param removedLedPlayers - The players who are no longer being led.
+     * @param interactables - An array of interactables to send to the leader alongside their notification. Optional.
+     */
+    narrateStopLeading(action: Action, leader: Player, removedLedPlayers: Player[], interactables: Interactable[] = []) {
+        const messageType = MessageDisplayType.MINOR;
+        const followerListString = generatePlayerListString(removedLedPlayers);
+        const leaderNotification = this.#game.notificationGenerator.generateStopLeadingNotification(leader, true, followerListString);
+        this.sendNotification(leader, action, leaderNotification, MessageDisplayType.STANDARD, undefined, undefined, interactables);
+        for (const removedLedPlayer of removedLedPlayers) {
+            const tailoredFollowers = removedLedPlayers.filter(player => player.name !== removedLedPlayer.name).map(player => player.displayName).concat("you");
+            const tailoredFollowerListString = generateListString(tailoredFollowers);
+            const removedLedPlayerNotification = this.#game.notificationGenerator.generateNoLongerBeingLedNotification(leader.displayName, tailoredFollowerListString);
+            this.sendNotification(removedLedPlayer, action, removedLedPlayerNotification, MessageDisplayType.STANDARD);
+        }
+        const narration = this.#game.notificationGenerator.generateStopLeadingNotification(leader, false, followerListString);
+        this.#sendNarration(messageType, action, leader, narration);
+    }
+
+    /**
+     * Narrates that a disband party action.
+     * @param action - The action that initiated this narration.
+     * @param leader - The player who was leading.
+     * @param followers - The players who were following.
+     * @param stopFollowing - Whether or not the players stopped following the leader as a result of the party being disbanded. Defaults to false.
+     * @param customNarration - A custom narration to send instead of the default narration. Optional.
+     * @param customLeaderNotification - A custom notification to send to the leader instead of the default notification. Optional.
+     * @param customFollowerNotification - A custom notification to send to the followers instead of the default notification. Optional.
+     * @param interactables - An array of interactables to send to the leader alongside their notification. Optional.
+     */
+    narrateDisbandParty(action: Action, leader: Player, followers: Player[], stopFollowing: boolean = false, customNarration?: string, customLeaderNotification?: string, customFollowerNotification?: string, interactables: Interactable[] = []) {
+        const narrationMessageType = action instanceof DieAction ? MessageDisplayType.ALERT : MessageDisplayType.MINOR;
+        const notificationMessageType = action instanceof DieAction ? MessageDisplayType.ALERT : MessageDisplayType.STANDARD;
+        const followerListString = generatePlayerListString(followers);
+        let leaderNotification = customLeaderNotification;
+        let narration = customNarration;
+        if (leaderNotification === undefined)
+            leaderNotification = this.#game.notificationGenerator.generateDisbandPartyNotification(leader, true, stopFollowing, followerListString);
+        if (leaderNotification) this.sendNotification(leader, action, leaderNotification, notificationMessageType, undefined, undefined, interactables);
+
+        let followerNotification = customFollowerNotification;
+        if (followerNotification === undefined)
+            followerNotification = this.#game.notificationGenerator.generatePartyDisbandedNotification(leader, stopFollowing);
+        if (followerNotification) {
+            for (const follower of followers)
+                this.sendNotification(follower, action, followerNotification, notificationMessageType);
+        }
+        if (narration === undefined)
+            narration = this.#game.notificationGenerator.generateDisbandPartyNotification(leader, false, stopFollowing, followerListString);
+        this.#sendNarration(narrationMessageType, action, leader, narration);
     }
 
 	/**

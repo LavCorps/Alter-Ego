@@ -25,7 +25,7 @@ export default class StopAction extends Action {
 		this.getGame().narrationHandler.narrateStop(this, this.player, exitLocked, exit, stopFollowing);
         if (stopFollowing) this.player.stopFollowing();
 
-        // If anyone is following this player, they need to start moving.
+        // If anyone is following this player, they need to stop moving.
         for (const occupant of this.location.occupants) {
             if (occupant.isMoving && occupant.isFollowing(this.player)) {
                 const stopAction = new StopAction(this.getGame(), undefined, occupant, occupant.location, this.forced);
