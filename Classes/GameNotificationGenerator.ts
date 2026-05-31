@@ -327,7 +327,7 @@ export default class GameNotificationGenerator {
      * @param secondPerson - Whether or not the player should be referred to in second person.
      * @param followerListString - A list of the players that they have stopped leading.
      */
-    generateStopLeadingNotification(player: Player, secondPerson: boolean, followerListString: string) {
+    generateDismissNotification(player: Player, secondPerson: boolean, followerListString: string) {
         const subject = secondPerson ? `You` : capitalizeFirstLetter(player.displayName);
         const verb = secondPerson ? `stop leading` : `stops leading`;
         return `${subject} ${verb} ${followerListString}.`;

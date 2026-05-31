@@ -65,13 +65,13 @@ export async function execute(game, message, command, args, moderator) {
     for (let i = 0; i < args.length; i++) {
         const playerName = args[i].toLowerCase();
         // Player cannot lead themself.
-        if (playerName === player.name.toLowerCase()) return game.communicationHandler.reply(message, game.errorMessageGenerator.generateCannotLeadSelfError(player, "Moderator"));
+        if (playerName === player.name.toLowerCase()) return game.communicationHandler.reply(message, game.errorMessageGenerator.generateCannotSelectSelfError(player, "Moderator", "lead"));
 
         /** @type {Player} */
         let follower = game.entityFinder.getLivingPlayer(args[i].replace(/'s/g, ""));
         if (!follower) return game.communicationHandler.reply(message, game.errorMessageGenerator.generatePlayerNotFoundInRoomError(args[i]));
         if (player.location.id !== follower.location.id) return game.communicationHandler.reply(message, game.errorMessageGenerator.generatePlayersNotInSameRoomError([player, follower]));
-        if (!follower.isFollowing(player)) return game.communicationHandler.reply(message, game.errorMessageGenerator.generateCannotLeadNonFollowerError(player, follower, "Moderator"));
+        if (!follower.isFollowing(player)) return game.communicationHandler.reply(message, game.errorMessageGenerator.generateCannotSelectNonFollowerError(player, follower, "Moderator", "lead"));
         if (follower.ledPlayers.length !== 0) return game.communicationHandler.reply(message, game.errorMessageGenerator.generateCannotLeadLeaderError(player, follower, "Moderator"));
 
         if (player.ledPlayers.includes(follower)) alreadyLedPlayers.add(follower);

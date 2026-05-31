@@ -55,7 +55,7 @@ export async function execute(game, message, command, args, moderator) {
     if (followedPlayer === undefined) return game.communicationHandler.reply(message, game.errorMessageGenerator.generatePlayersNotFoundError([args[args.length - 1]]));
     args.splice(args.length - 1, 1);
 
-    if (player.name === followedPlayer.name) return game.communicationHandler.reply(message, game.errorMessageGenerator.generateCannotFollowSelfError(player, "Moderator"));
+    if (player.name === followedPlayer.name) return game.communicationHandler.reply(message, game.errorMessageGenerator.generateCannotSelectSelfError(player, "Moderator", "follow"));
     if (player.location.id !== followedPlayer.location.id) return game.communicationHandler.reply(message, game.errorMessageGenerator.generatePlayersNotInSameRoomError([player, followedPlayer]));
     if (player.isFollowing(followedPlayer)) return game.communicationHandler.reply(message, game.errorMessageGenerator.generateAlreadyFollowingPlayerError(player, "Moderator"));
     // Prevent following loops.

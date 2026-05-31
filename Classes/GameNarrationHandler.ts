@@ -302,16 +302,16 @@ export default class GameNarrationHandler {
     }
 
     /**
-     * Narrates that a player has stopped leading other players.
+     * Narrates a dismiss action.
      * @param action - The action that initiated this narration.
      * @param leader - The player who was leading.
      * @param removedLedPlayers - The players who are no longer being led.
      * @param interactables - An array of interactables to send to the leader alongside their notification. Optional.
      */
-    narrateStopLeading(action: Action, leader: Player, removedLedPlayers: Player[], interactables: Interactable[] = []) {
+    narrateDismiss(action: Action, leader: Player, removedLedPlayers: Player[], interactables: Interactable[] = []) {
         const messageType = MessageDisplayType.MINOR;
         const followerListString = generatePlayerListString(removedLedPlayers);
-        const leaderNotification = this.#game.notificationGenerator.generateStopLeadingNotification(leader, true, followerListString);
+        const leaderNotification = this.#game.notificationGenerator.generateDismissNotification(leader, true, followerListString);
         this.sendNotification(leader, action, leaderNotification, MessageDisplayType.STANDARD, undefined, undefined, interactables);
         for (const removedLedPlayer of removedLedPlayers) {
             const tailoredFollowers = removedLedPlayers.filter(player => player.name !== removedLedPlayer.name).map(player => player.displayName).concat("you");
@@ -319,12 +319,12 @@ export default class GameNarrationHandler {
             const removedLedPlayerNotification = this.#game.notificationGenerator.generateNoLongerBeingLedNotification(leader.displayName, tailoredFollowerListString);
             this.sendNotification(removedLedPlayer, action, removedLedPlayerNotification, MessageDisplayType.STANDARD);
         }
-        const narration = this.#game.notificationGenerator.generateStopLeadingNotification(leader, false, followerListString);
+        const narration = this.#game.notificationGenerator.generateDismissNotification(leader, false, followerListString);
         this.#sendNarration(messageType, action, leader, narration);
     }
 
     /**
-     * Narrates that a disband party action.
+     * Narrates a disband party action.
      * @param action - The action that initiated this narration.
      * @param leader - The player who was leading.
      * @param followers - The players who were following.

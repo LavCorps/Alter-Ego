@@ -56,7 +56,7 @@ export async function execute(game, message, command, args, player) {
         const occupant = player.location.occupants[i];
         if (parsedInput === occupant.displayName.toUpperCase() && (hiddenStatus.length === 0 && !occupant.isHidden() || occupant.hidingSpot === player.hidingSpot)) {
             // Player cannot follow themself.
-            if (occupant.name === player.name) return game.communicationHandler.reply(message, game.errorMessageGenerator.generateCannotFollowSelfError(player, "Player"));
+            if (occupant.name === player.name) return game.communicationHandler.reply(message, game.errorMessageGenerator.generateCannotSelectSelfError(player, "Player", "follow"));
 
             followedPlayer = occupant;
             break;

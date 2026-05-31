@@ -58,7 +58,7 @@ export async function execute(game, message, command, args, player) {
     for (let i = 0; i < args.length; i++) {
         const playerName = args[i].toLowerCase();
         // Player cannot lead themself.
-        if (playerName === player.name.toLowerCase()) return game.communicationHandler.reply(message, game.errorMessageGenerator.generateCannotLeadSelfError(player, "Player"));
+        if (playerName === player.name.toLowerCase()) return game.communicationHandler.reply(message, game.errorMessageGenerator.generateCannotSelectSelfError(player, "Player", "lead"));
 
         /** @type {Player} */
         let follower = null;
@@ -71,7 +71,7 @@ export async function execute(game, message, command, args, player) {
         if (!follower) return game.communicationHandler.reply(message, game.errorMessageGenerator.generatePlayerNotFoundInRoomError(args[i]));
         if (hiddenStatus.length > 0 && !follower.isHidden())
             return game.communicationHandler.reply(message, game.errorMessageGenerator.generateCommandDisabledError(hiddenStatus[0]));
-        if (!follower.isFollowing(player)) return game.communicationHandler.reply(message, game.errorMessageGenerator.generateCannotLeadNonFollowerError(player, follower, "Player"));
+        if (!follower.isFollowing(player)) return game.communicationHandler.reply(message, game.errorMessageGenerator.generateCannotSelectNonFollowerError(player, follower, "Player", "lead"));
         if (follower.ledPlayers.length !== 0) return game.communicationHandler.reply(message, game.errorMessageGenerator.generateCannotLeadLeaderError(player, follower, "Player"));
 
         if (player.ledPlayers.includes(follower)) alreadyLedPlayers.add(follower);

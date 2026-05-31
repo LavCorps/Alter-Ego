@@ -113,6 +113,21 @@ export default class GameErrorMessageGenerator {
     }
 
     /**
+     * Generates an error message indicating that the player cannot select themself.
+     * @param player - The player who cannot select themself.
+     * @param context - The context in which the command is being issued.
+     * @param verb - The verb to use. Defaults to "select".
+     */
+    generateCannotSelectSelfError(player: Player, context: UserContext, verb: string = "select") {
+        switch (context) {
+            case "Player":
+                return `You cannot ${verb} yourself.`;
+            default:
+                return `${player.name} cannot ${verb} ${player.originalPronouns.ref}.`;
+        }
+    }
+
+    /**
      * Generates an error message indicating that the players are not in the same room.
      * @param players - A list of players.
      */
@@ -181,20 +196,6 @@ export default class GameErrorMessageGenerator {
     }
 
     /**
-     * Generates an error message indicating that the player cannot follow themself.
-     * @param player - The player who cannot follow.
-     * @param context - The context in which the command is being issued.
-     */
-    generateCannotFollowSelfError(player: Player, context: UserContext) {
-        switch (context) {
-            case "Player":
-                return `You cannot follow yourself.`;
-            default:
-                return `${player.name} cannot follow ${player.originalPronouns.ref}.`;
-        }
-    }
-
-    /**
      * Generates an error message indicating that the player cannot follow a player who is already following them.
      * @param player - The player who cannot follow.
      * @param context - The context in which the command is being issued.
@@ -240,31 +241,18 @@ export default class GameErrorMessageGenerator {
     }
 
     /**
-     * Generates an error message indicating that the player cannot lead themself.
-     * @param player - The player who cannot lead.
-     * @param context - The context in which the command is being issued.
-     */
-    generateCannotLeadSelfError(player: Player, context: UserContext) {
-        switch (context) {
-            case "Player":
-                return `You cannot lead yourself.`;
-            default:
-                return `${player.name} cannot lead ${player.originalPronouns.ref}.`;
-        }
-    }
-
-    /**
      * Generates an error message indicating that the player cannot lead a player who is not their follower.
      * @param player - The player who cannot lead.
      * @param follower - The player who cannot be led.
      * @param context - The context in which the command is being issued.
+     * @param verb - The verb to use. Defaults to "select".
      */
-    generateCannotLeadNonFollowerError(player: Player, follower: Player, context: UserContext) {
+    generateCannotSelectNonFollowerError(player: Player, follower: Player, context: UserContext, verb: string) {
         switch (context) {
             case "Player":
-                return `You cannot lead ${follower?.displayName} because ${follower?.pronouns?.sbj} ${this.isOrAre(follower, context)} not following you.`;
+                return `You cannot ${verb} ${follower?.displayName} because ${follower?.pronouns?.sbj} ${this.isOrAre(follower, context)} not following you.`;
             default:
-                return `${player.name} cannot lead ${follower?.name} because ${follower?.originalPronouns?.sbj} ${this.isOrAre(follower, context)} not following ${player.originalPronouns.obj}.`;
+                return `${player.name} cannot ${verb} ${follower?.name} because ${follower?.originalPronouns?.sbj} ${this.isOrAre(follower, context)} not following ${player.originalPronouns.obj}.`;
         }
     }
 
@@ -294,6 +282,35 @@ export default class GameErrorMessageGenerator {
                 return `You are already leading all of those players.`;
             default:
                 return `${player.name} is already leading all of those players.`;
+        }
+    }
+
+    /**
+     * Generates an error message indicating that the player is not in a party.
+     * @param player - The player who is not in a party.
+     * @param context - The context in which the command is being issued.
+     */
+    generateNotInPartyError(player: Player, context: UserContext) {
+        switch (context) {
+            case "Player":
+                return `${this.youCannotString} not in a party.`;
+            default:
+                return `${player.name} is not in a party.`;
+        }
+    }
+
+    /**
+     * Generates an error message indicating that the player is not the party leader.
+     * @param player - The player who is not the party leader.
+     * @param context - The context in which the command is being issued.
+     * @param includeLeavePartyDirections - Whether or not to give the player directions on how to leave the party. Only works if context is "Player".
+     */
+    generateNotPartyLeaderError(player: Player, context: UserContext, includeLeavePartyDirections: boolean) {
+        switch (context) {
+            case "Player":
+                return `${this.youCannotString} not the party leader.${includeLeavePartyDirections ? ` If you want to leave the party, use ${this.getCommandString(`stop`)}.`: ``}`;
+            default:
+                return `${player.name} is not the party leader.`;
         }
     }
 }
