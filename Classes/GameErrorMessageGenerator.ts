@@ -4,7 +4,7 @@
 
 import { generateListString, makeCopyable } from "../Modules/helpers.ts";
 import type Game from "../Data/Game.ts";
-import type GameSettings from "./GameSettings.js";
+import type GameSettings from "./GameSettings.ts";
 import type Player from "../Data/Player.ts";
 import type Status from "../Data/Status.ts";
 

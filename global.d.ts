@@ -1,5 +1,9 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import type { ActivitiesOptions, ActivityType, ButtonInteraction, GuildMember, Message, ModalSubmitInteraction, OmitPartialGroupDMChannel, Snowflake, StringSelectMenuInteraction } from "discord.js";
-import type GameSettings from "./Classes/GameSettings.js";
+import type GameSettings from "./Classes/GameSettings.ts";
 import type Event from "./Data/Event.ts";
 import type Exit from "./Data/Exit.js";
 import type Fixture from "./Data/Fixture.ts";
