@@ -9,7 +9,7 @@ import Timer from "../Classes/Timer.ts";
 import { MessageDisplayType } from "../Modules/enums.js";
 import * as itemManager from "../Modules/itemManager.ts";
 import { itemIdentifierMatches } from "../Modules/matchers.ts";
-import { makeCopyable } from "../Modules/helpers.ts";
+import { capitalizeFirstLetter, generateListString, makeCopyable } from "../Modules/helpers.ts";
 import type Action from "./Action.ts";
 import CureAction from "./Actions/CureAction.ts";
 import DieAction from "./Actions/DieAction.ts";
@@ -827,6 +827,37 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
      */
     stopLeading(player: Player): void {
         this.#ledPlayerNames.delete(player.name);
+    }
+
+    /**
+     * Displays the player's party.
+     * 
+     * @param moderatorView - Whether or not to use the names of players in the party. If this is false, the players' display names will be used instead.
+     * @returns A string representation of the player's party.
+     */
+    viewParty(moderatorView: boolean): string {
+        let partyString = moderatorView ? `${this.name} is` : `You are`;
+        if (this.party) {
+            if (this.party.hasLeader(this)) {
+                partyString += ` the leader of a party.\n\n`;
+                const followerList = this.party.followers.map(follower => moderatorView ? follower.name : this.party.getMemberDisplayName(follower)).toSorted();
+                partyString += capitalizeFirstLetter(generateListString(followerList));
+                partyString += `${followerList.length === 1 ? " is" : " are"} traveling together with `;
+                partyString += moderatorView ? `${this.originalPronouns.obj}.` : `you.`;
+            }
+            else {
+                partyString += ` in a party led by ${moderatorView ? this.party.leader.name : this.party.getMemberDisplayName(this.party.leader)}.`;
+                const followerList = this.party.followers.filter(follower => follower !== this).map(follower => moderatorView ? follower.name : this.party.getMemberDisplayName(follower)).toSorted();
+                if (followerList.length > 0) {
+                    partyString += `\n\n${capitalizeFirstLetter(generateListString(followerList))}`;
+                    partyString += `${followerList.length === 1 ? " is" : " are"} also traveling with ${moderatorView ? this.originalPronouns.obj : "you"}.`;
+                }
+            }
+        }
+        else if (this.followedPlayer)
+            partyString += ` not in a party. However, you are following ${moderatorView ? this.followedPlayer.name : this.followedPlayerDisplayName}.`;
+        else partyString += ` not in a party.`;
+        return partyString;
     }
 
     /**
