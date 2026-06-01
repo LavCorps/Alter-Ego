@@ -67,12 +67,12 @@ export async function execute(game, message, command, args, player) {
     if (!followedPlayer) return game.communicationHandler.reply(message, game.errorMessageGenerator.generatePlayerNotFoundInRoomError(args[0]));
     if (player.isFollowing(followedPlayer)) return game.communicationHandler.reply(message, game.errorMessageGenerator.generateAlreadyFollowingPlayerError(player, "Player"));
     if (followedPlayer.isFollowing(player))
-        return game.communicationHandler.reply(message, game.errorMessageGenerator.generateCannotFollowFollowerError(player, "Player"));
+        return game.communicationHandler.reply(message, game.errorMessageGenerator.generateCannotFollowFollowerError(player, "Player", followedPlayer));
     // Prevent following loops.
     let nextFollowedPlayer = followedPlayer.followedPlayer;
     while (nextFollowedPlayer) {
         if (nextFollowedPlayer.name === player.name)
-            return game.communicationHandler.reply(message, game.errorMessageGenerator.generateFollowingWouldCauseInfiniteLoopError(player, "Player"));
+            return game.communicationHandler.reply(message, game.errorMessageGenerator.generateFollowingWouldCauseInfiniteLoopError(player, "Player", followedPlayer));
         nextFollowedPlayer = nextFollowedPlayer.followedPlayer;
     }
 

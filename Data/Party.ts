@@ -15,7 +15,7 @@ import { Collection } from "discord.js";
  * The party has a leader, who is responsible for moving the party to new rooms, and followers,
  * who will automatically follow the leader when they move to a new room.
  * The party also has a whisper that the members can use to communicate with each other.
- * 
+ *
  * @see https://msvblank.github.io/Alter-Ego/reference/data_structures/party.html
  */
 export default class Party extends GameConstruct {
@@ -61,6 +61,7 @@ export default class Party extends GameConstruct {
         super(game);
         this.idPrefix = idPrefix;
         this.leader = leader;
+        this.leader.joinParty(this);
         this.followers = new Collection();
         this.members = new Collection();
         this.#memberDisplayNames = new Collection();
@@ -70,6 +71,7 @@ export default class Party extends GameConstruct {
             this.followers.set(follower.name, follower);
             this.members.set(follower.name, follower);
             this.#memberDisplayNames.set(follower.name, follower.displayName);
+            follower.joinParty(this);
         }
     }
 
@@ -99,7 +101,7 @@ export default class Party extends GameConstruct {
 
     /**
      * Returns the display name of the member they had at the time of joining.
-     * @param player - The player to get the display name for. 
+     * @param player - The player to get the display name for.
      */
     getMemberDisplayName(player: Player): string {
         return this.#memberDisplayNames.get(player.name);
@@ -116,6 +118,7 @@ export default class Party extends GameConstruct {
             this.followers.set(player.name, player);
             this.members.set(player.name, player);
             this.#memberDisplayNames.set(player.name, player.displayName);
+            player.joinParty(this);
         }
         if (deleteWhisper) this.deleteWhisper();
         this.whisper = await this.getGame().entityLoader.createWhisper(Array.from(this.members.values()), this.idPrefix, WhisperType.PARTY);
@@ -128,13 +131,17 @@ export default class Party extends GameConstruct {
      * @param action - The action that caused the player to be removed.
      * @param leaveNarration - The narration to send to the party whisper channel when the player leaves. Optional.
      */
-    removeFollower(player: Player, action?: Action, leaveNarration: string = ""): void {
+    async removeFollower(player: Player, action?: Action, leaveNarration: string = ""): Promise<void> {
+        player.leaveParty();
         this.followers.delete(player.name);
         this.members.delete(player.name);
         this.#memberDisplayNames.delete(player.name);
         const whisperNarration = action ? leaveNarration : "";
         player.removeFromWhispers(whisperNarration, action);
         this.id = this.whisper.id;
+        if (this.followers.size === 0) {
+            await this.disband();
+        }
     }
 
     /**
@@ -148,9 +155,10 @@ export default class Party extends GameConstruct {
 
     /**
      * Disbands the party, removing all members and deleting the party's whisper.
-      * @param action - The action that caused the party to be disbanded. Optional.
      */
     async disband(): Promise<void> {
+        for (const member of this.members.values())
+            member.leaveParty();
         await this.getGame().entityLoader.deleteParty(this);
     }
 

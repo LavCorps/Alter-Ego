@@ -199,9 +199,9 @@ export default class GameErrorMessageGenerator {
      * Generates an error message indicating that the player cannot follow a player who is already following them.
      * @param player - The player who cannot follow.
      * @param context - The context in which the command is being issued.
+     * @param followedPlayer - The player who cannot be followed. Defaults to the player's followed player.
      */
-    generateCannotFollowFollowerError(player: Player, context: UserContext) {
-        const followedPlayer = player.followedPlayer;
+    generateCannotFollowFollowerError(player: Player, context: UserContext, followedPlayer = player.followedPlayer) {
         switch (context) {
             case "Player":
                 return `You cannot follow ${followedPlayer?.displayName} because ${followedPlayer?.pronouns?.sbj} ${this.isOrAre(followedPlayer, context)} already following you.`;
@@ -214,9 +214,9 @@ export default class GameErrorMessageGenerator {
      * Generates an error message indicating that the player cannot follow a player because doing so would create an infinite loop.
      * @param player - The player who cannot follow.
      * @param context - The context in which the command is being issued.
+     * @param followedPlayer - The player who cannot be followed. Defaults to the player's followed player.
      */
-    generateFollowingWouldCauseInfiniteLoopError(player: Player, context: UserContext) {
-        const followedPlayer = player.followedPlayer;
+    generateFollowingWouldCauseInfiniteLoopError(player: Player, context: UserContext, followedPlayer = player.followedPlayer) {
         switch (context) {
             case "Player":
                 return `You cannot follow ${followedPlayer?.displayName} because doing so would create an infinite loop.`;

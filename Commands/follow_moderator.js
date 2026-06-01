@@ -62,7 +62,7 @@ export async function execute(game, message, command, args, moderator) {
     let nextFollowedPlayer = followedPlayer;
     while (nextFollowedPlayer) {
         if (nextFollowedPlayer.isFollowing(player))
-            return game.communicationHandler.reply(message, game.errorMessageGenerator.generateFollowingWouldCauseInfiniteLoopError(player, "Moderator"));
+            return game.communicationHandler.reply(message, game.errorMessageGenerator.generateFollowingWouldCauseInfiniteLoopError(player, "Moderator", followedPlayer));
         nextFollowedPlayer = nextFollowedPlayer.followedPlayer;
     }
 

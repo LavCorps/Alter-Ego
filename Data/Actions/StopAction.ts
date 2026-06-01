@@ -4,6 +4,7 @@
 
 import Action from "../Action.ts";
 import type Exit from "../Exit.js";
+import StopFollowingAction from "./StopFollowingAction.ts";
 
 /**
  * Represents a stop action.
@@ -23,7 +24,10 @@ export default class StopAction extends Action {
 		super.perform();
 		this.player.stopMoving();
 		this.getGame().narrationHandler.narrateStop(this, this.player, exitLocked, exit, stopFollowing);
-        if (stopFollowing) this.player.stopFollowing();
+        if (stopFollowing) {
+            const stopFollowingAction = new StopFollowingAction(this.getGame(), undefined, this.player, this.player.location, this.forced);
+            stopFollowingAction.performStopFollowing(false);
+        }
 
         // If anyone is following this player, they need to stop moving.
         for (const occupant of this.location.occupants) {

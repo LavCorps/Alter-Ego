@@ -388,6 +388,7 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
         this.#followedPlayerName = "";
         this.followedPlayerDisplayName = "";
         this.#ledPlayerNames = new Set();
+        this.party = null;
 
         this.#reachedHalfStamina = false;
         let player = this;
@@ -830,8 +831,23 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
     }
 
     /**
+     * Sets the player's party.
+     * @param party - The party to join.
+     */
+    joinParty(party: Party): void {
+        this.party = party;
+    }
+
+    /**
+     * Clears the player's party.
+     */
+    leaveParty(): void {
+        this.party = null;
+    }
+
+    /**
      * Displays the player's party.
-     * 
+     *
      * @param moderatorView - Whether or not to use the names of players in the party. If this is false, the players' display names will be used instead.
      * @returns A string representation of the player's party.
      */
