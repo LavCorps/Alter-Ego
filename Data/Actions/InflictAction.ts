@@ -80,7 +80,8 @@ export default class InflictAction extends Action {
             this.player.stopMoving();
             if (!this.player.party) this.player.stopFollowing();
         }
-        if (this.player.followedPlayer && status.behaviorAttributes.has("disable follow")) {
+        if (this.player.followedPlayer &&
+        (status.behaviorAttributes.has("disable follow") || status.behaviorAttributes.has("disable all") && !status.behaviorAttributes.has("enable follow"))) {
             const stopFollowingAction = new StopFollowingAction(this.getGame(), undefined, this.player, this.player.location, true);
             stopFollowingAction.performStopFollowing(true);
         }

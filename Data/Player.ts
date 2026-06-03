@@ -6,7 +6,7 @@ import { Collection, GuildMember, type TextChannel } from "discord.js";
 import type { Duration } from "luxon";
 import type Interactable from "../Classes/Interactables/Interactable.ts";
 import Timer from "../Classes/Timer.ts";
-import { MessageDisplayType } from "../Modules/enums.js";
+import { MessageDisplayType, WhisperType } from "../Modules/enums.js";
 import * as itemManager from "../Modules/itemManager.ts";
 import { itemIdentifierMatches } from "../Modules/matchers.ts";
 import { capitalizeFirstLetter, generateListString, makeCopyable } from "../Modules/helpers.ts";
@@ -1761,10 +1761,11 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
      *
      * @param narration - The text of the narration to send in the whisper channel when the player is removed.
      * @param action - The action that caused the player to be removed. If a narration is supplied, this is required.
+     * @param removeFromParty - Whether or not to remove the player from party whispers. Defaults to true.
      */
-    removeFromWhispers(narration: string, action?: Action): void {
+    removeFromWhispers(narration: string, action?: Action, removeFromParty: boolean = true): void {
         for (const whisper of this.getGame().whispers.values()) {
-            if (whisper.players.has(this.name))
+            if (whisper.players.has(this.name) && (removeFromParty || whisper.type !== WhisperType.PARTY))
                 whisper.removePlayer(this, narration, action);
         }
     }

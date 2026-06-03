@@ -316,12 +316,12 @@ export default class GameEntityFinder {
 	/**
 	 * Gets a whisper.
 	 * @param players - The players in the whisper.
-	 * @param hidingSpotName - The name of the hiding spot associated with the whisper, if applicable.
-	 * @returns The whisper with the specified players and hiding spot. If no such whisper exists, returns undefined.
+	 * @param associatedEntityName - The name of the entity associated with the whisper, if applicable.
+	 * @returns The whisper with the specified players and associated entity. If no such whisper exists, returns undefined.
 	 */
-	getWhisper(players: Player[], hidingSpotName?: string): Whisper {
+	getWhisper(players: Player[], associatedEntityName?: string): Whisper {
 		if (!players || players.length === 0) return;
-		return this.game.whispers.get(Whisper.generateValidId(players, players.at(0).location, hidingSpotName));
+		return this.game.whispers.get(Whisper.generateValidId(players, players.at(0).location, associatedEntityName));
 	}
 
 	/**

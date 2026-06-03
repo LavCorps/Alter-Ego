@@ -4,7 +4,7 @@
 
 import { Collection, type TextChannel } from "discord.js";
 import { generatePlayerListString } from "../Modules/helpers.ts";
-import { WhisperType } from "../Modules/enums.js"; 
+import { WhisperType } from "../Modules/enums.js";
 import type Action from "./Action.ts";
 import type Game from "./Game.ts";
 import GameConstruct from "./GameConstruct.ts";
@@ -80,7 +80,7 @@ export default class Whisper extends GameConstruct {
             this.associatedEntityName = associatedEntityName;
             this.hidingSpotName = associatedEntityName;
         }
-        this.id = Whisper.generateValidId(this.players.map(player => player), this.location, this.associatedEntityName);
+        this.id = Whisper.generateValidId(this.players.map(player => player), this.type !== WhisperType.PARTY ? this.location : undefined, this.associatedEntityName);
         const discordChannelNameCharacterLimit = 100;
         this.channelName = this.id.substring(0, discordChannelNameCharacterLimit);
         this.deleted = false;
@@ -148,7 +148,7 @@ export default class Whisper extends GameConstruct {
     async removePlayer(player: Player, narration?: string, action?: Action): Promise<void> {
         await this.revokeChannelAccess(player);
         this.players.delete(player.name);
-        const newId = Whisper.generateValidId(this.players.map(player => player), this.location, this.associatedEntityName);
+        const newId = Whisper.generateValidId(this.players.map(player => player), this.type !== WhisperType.PARTY ? this.location : undefined, this.associatedEntityName);
         const deleteWhisper = this.players.size === 0 || this.getGame().whispers.get(newId);
         if (!deleteWhisper) {
             this.getGame().entityLoader.updateWhisperId(this, newId);
@@ -156,7 +156,7 @@ export default class Whisper extends GameConstruct {
         }
         else {
             this.deleted = true;
-            this.getGame().entityLoader.deleteWhisper(this);
+            await this.getGame().entityLoader.deleteWhisper(this);
         }
     }
 
