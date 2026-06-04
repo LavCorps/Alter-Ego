@@ -33,6 +33,15 @@ export function processIncomingMessage(game, message) {
     const room = game.entityFinder.getRoom(message.channel.name);
     const whisper = game.entityFinder.getWhisperByChannelId(message.channel.id);
     const player = game.entityFinder.getLivingPlayerById(message.author.id);
+
+    // Forwarded messages should be deleted.
+    if (message.flags.has(MessageFlags.HasSnapshot)) {
+        const errorMessage = `You cannot forward messages to game channels.`;
+        game.communicationHandler.reply(message, errorMessage);
+        message.delete().catch();
+        return;
+    }
+
     if (player) {
         player.setOnline();
         const playerNoSpeechStatusEffects = player.getBehaviorAttributeStatusEffects("no speech");

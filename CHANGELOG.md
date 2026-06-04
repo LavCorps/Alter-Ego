@@ -9,6 +9,26 @@ SPDX-License-Identifier: CC-BY-SA-4.0
 All notable changes to this project will be documented in this file.
 This project does **not** adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [v2.0.1] - 2026-06-04
+
+## Fixed
+
+- All Prefabs in the demo data containing `JEANS` in the ID had incorrect names and containing phrases for the indigo
+  procedural options. These have been corrected.
+- One Room in the demo data had descriptions that mentioned an Exit that doesn't actually exist. It's been replaced
+  with the proper Exit name.
+- When a message was forwarded to a game channel, Alter Ego would try to mirror it in spectate channels, but it had
+  no content to mirror. Forwarded messages sent in Room channels, Whisper channels, or the Announcements channel are
+  now automatically deleted by Alter Ego.
+- When generating Interactables for the Stash Action, Alter Ego would generate Interactables that allowed the user to
+  stash an Inventory Item inside of an Inventory Item that it contains, causing an infinite loop. It will no longer
+  do this, and in the event that it somehow does, it will not allow a Stash Action to be performed if the Interactable
+  is selected.
+- If a Room Item was contained inside of a Room Item, and the two Room Items separately could be used as ingredients
+  in a Recipe, Alter Ego would mistakenly consider the Recipe to be satisfied by those Room Items, and attempt to
+  process it. This could potentially cause an infinite loop, causing it to stop responding. It now correctly identifies
+  the Recipe as not being satisfied by those Room Items.
+
 # [v2.0.0] - 2026-05-20
 
 # Version 2.0: A New Alter Ego
@@ -1078,6 +1098,7 @@ https://docs.google.com/spreadsheets/d/1MqdWPqUmhR6qqJJsC5zMwyvIYmIwENEFcYENBd50
 
 ---
 
+[v2.0.1]: https://github.com/MsVBLANK/Alter-Ego/compare/2.0.0...2.0.1
 [v2.0.0]: https://github.com/MsVBLANK/Alter-Ego/compare/1.10.1...2.0.0
 [v1.10.1]: https://github.com/MsVBLANK/Alter-Ego/compare/1.10.0...1.10.1
 [v1.10.0]: https://github.com/MsVBLANK/Alter-Ego/compare/1.9.0...1.10.0

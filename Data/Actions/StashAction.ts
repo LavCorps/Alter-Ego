@@ -55,6 +55,12 @@ export default class StashAction extends Action {
 		if (!args[2] || !(args[2] instanceof InventoryItem) || args[2].prefab === null || args[2].quantity === 0 || args[2].inventory.size === 0) return [];
 		if (args[2].player.name !== this.player.name) return [];
 		const container = args[2];
+        // Ensure an inventory item can't be stashed inside an inventory item that it contains.
+        let nextContainer = container.container;
+        while (nextContainer !== null) {
+            if (nextContainer.row === item.row) return [];
+            nextContainer = nextContainer.container;
+        }
 		const inventorySlot = args[3];
 		if (inventorySlot && inventorySlot.willBeOverFilledBy(item)) return [];
 		return [item, hand, container, inventorySlot];
