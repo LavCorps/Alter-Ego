@@ -5,6 +5,7 @@ import SayAction from "../../Data/Actions/SayAction.ts";
 import SolveAction from "../../Data/Actions/SolveAction.ts";
 import * as messageHandler from "../../Modules/messageHandler.js";
 import { instantiateInventoryItem, destroyInventoryItem } from "../../Modules/itemManager.js";
+import { MessageFlags } from "discord.js";
 
 /**
  * @import HidingSpot from "../../Data/HidingSpot.ts"
@@ -237,6 +238,27 @@ describe('messageHandler test', () => {
         });
 
         describe('general tests', () => {
+            test('forwarded messages in room channels are deleted', async () => {
+                const message = discord.createPlayerMessage(asuka, "", asuka.location.channel, MessageFlags.HasSnapshot);
+                const deleteMessageSpy = vi.spyOn(message, 'delete');
+                messageHandler.processIncomingMessage(game, message);
+                await messageHandler.sendQueuedMessages(game);
+                expect(asuka.member.user.dmChannel.messages.cache).toHaveSize(1);
+                expect(asuka.member.user.dmChannel.messages.cache.first().content).toBe(`You cannot forward messages to game channels.`);
+                expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
+                expect(deleteMessageSpy).toHaveBeenCalledTimes(1);
+            });
+
+            test('forwarded messages in OOC channels are not deleted', async () => {
+                const message = discord.createPlayerMessage(asuka, "", game.guildContext.generalChannel, MessageFlags.HasSnapshot);
+                const deleteMessageSpy = vi.spyOn(message, 'delete');
+                messageHandler.processIncomingMessage(game, message);
+                await messageHandler.sendQueuedMessages(game);
+                expect(asuka.member.user.dmChannel.messages.cache).toHaveSize(0);
+                expect(game.communicationHandler.getDialogSpectateMirrors(message)).toBeUndefined();
+                expect(deleteMessageSpy).toHaveBeenCalledTimes(0);
+            });
+
             test('mute player cannot speak', async () => {
                 asuka.inflict(mute);
                 const message = discord.createPlayerMessage(asuka, "Hi.");
@@ -369,9 +391,10 @@ describe('messageHandler test', () => {
              * @param {Player} player
              * @param {string} messageText
              * @param {TextChannel} [channel]
+             * @param {number} [flags]
              */
-            const sendPlayerMessage = async (player, messageText, channel) => {
-                message = discord.createPlayerMessage(player, messageText, channel);
+            const sendPlayerMessage = async (player, messageText, channel, flags = 0) => {
+                message = discord.createPlayerMessage(player, messageText, channel, flags);
                 messageHandler.processIncomingMessage(game, message);
                 await messageHandler.sendQueuedMessages(game);
                 kyraSpectateMessage = kyra.spectateChannel.messages.cache.first();

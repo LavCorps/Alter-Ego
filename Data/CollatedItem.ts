@@ -172,7 +172,8 @@ export default class CollatedItem<T extends ItemInstance | RoomItem | InventoryI
 	 * Returns true if the collated items' container matches the given recipe item's container.
 	 */
 	containerMatches(recipeItem: RecipeItem): boolean {
-		return recipeItem.container === null || this.container instanceof ItemInstance && this.container.prefab.id === recipeItem.container.prefab.id;
+        if (recipeItem.container === null) return !(this.container instanceof ItemInstance);
+        else return this.container instanceof ItemInstance && this.container.prefab.id === recipeItem.container.prefab.id;
 	}
 
 	/**
@@ -198,6 +199,8 @@ export default class CollatedItem<T extends ItemInstance | RoomItem | InventoryI
 			for (const item of this.items) {
 				// Return if ingredientUseCount is 0.
 				if (ingredientUseCount === 0) return;
+                // If, somehow, the entire collated item has had its quantity reduced to zero but still has uses left, return to prevent an infinite loop.
+                if (this.quantity === 0) return;
 				// Continue to next item if uses is 0 or NaN or if quantity is 0.
 				if (item.uses === 0 || item.quantity === 0 || isNaN(item.uses)) continue;
 				// Define step as the lowest of either item.uses or ⌊ingredientUseCount/item.quantity⌋.
