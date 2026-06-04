@@ -322,14 +322,14 @@ example, this time using the short-form alias for the _narrate_ command:
 ```txt
 .n Kyra crosses her arms, brows furrowed. She looks absolutely **furious** as she glares intently at the person across from her. The fact that she can maintain her dignity and composure even when her anger is *this* palpable makes the daggers in her eyes feel that much sharper.
 
-She huffs indignantly, and then begins to speak with low, steady tone of voice, every word feeling deliberate and calculated.
+She huffs indignantly, and then begins to speak with a low, steady tone of voice, every word feeling deliberate and calculated.
 ```
 
 ![A narration performed by Kyra. It looks just like the last one. In a container block, it says:
 .n Kyra crosses her arms, brows furrowed. She looks absolutely **furious** as she glares intently at the person across
 from her. The fact that she can maintain her dignity and composure even when her anger is *this* palpable makes the
 daggers in her eyes feel that much sharper.
-She huffs indignantly, and then begins to speak with low, steady tone of voice, every word feeling
+She huffs indignantly, and then begins to speak with a low, steady tone of voice, every word feeling
 deliberate and calculated.
 ](../images/narration_example_3.png)
 
