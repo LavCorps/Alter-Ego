@@ -851,6 +851,17 @@ export default class BotInteractableManager {
             // Get stash interactables.
             for (const heldItem of heldItems) {
                 for (const containerItem of playerContainerItems) {
+                    // Ensure an inventory item can't be stashed inside an inventory item that it contains.
+                    let container = containerItem.container;
+                    let causesLoop = false;
+                    while (container !== null) {
+                        if (container.row === heldItem.row) {
+                            causesLoop = true;
+                            break;
+                        }
+                        container = container.container;
+                    }
+                    if (causesLoop) continue;
                     const viableInventorySlots: string[] = [];
                     for (const inventorySlot of containerItem.inventory.values()) {
                         if (inventorySlot.willBeOverFilledBy(heldItem)) continue;
