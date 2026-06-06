@@ -137,6 +137,20 @@ export default class GameErrorMessageGenerator {
     }
 
     /**
+     * Generates an error message indicating that the player cannot move because their speed is 0.
+     * @param player - The player being addressed.
+     * @param context - The context in which the command is being issued.
+     */
+    generateCannotMoveWithNoSpeedError(player: Player, context: UserContext) {
+        switch(context) {
+            case "Player":
+                return `You cannot do that because your speed is 0.`;
+            default:
+                return `${player.name} cannot do that because ${player.originalPronouns.dpos} speed is 0.`;
+        }
+    }
+
+    /**
      * Generates an error message indicating that the player cannot move because they are already moving.
      */
     generateAlreadyMovingError() {
@@ -157,6 +171,31 @@ export default class GameErrorMessageGenerator {
      */
     generateCannotMoveLocationMismatchError() {
         return `${this.youCannotString} no longer in that room.`;
+    }
+
+    /**
+     * Generates an error message indicating that the player's party cannot move because they have immovable party members, and lists those members.
+     * @param player - The player being addressed.
+     * @param isRunning - Whether or not the player is trying to run. This affects the wording of the message.
+     * @param context - The context in which the command is being issued.
+     */
+    generatePartyCannotMoveError(player: Player, isRunning: boolean, context: UserContext) {
+        const moveVerb = isRunning ? "run" : "move";
+        const immovablePlayers = player.party ? player.party.getImmovablePlayers(isRunning) : [];
+        let immovablePlayerNames: string[] = [];
+        let preventedString: string;
+        if (context === "Player") {
+            immovablePlayerNames = immovablePlayers.filter(immovablePlayer => immovablePlayer.name !== player.name)
+                .map(immovablePlayer => player.party ? player.party.getMemberDisplayName(immovablePlayer) : immovablePlayer.displayName);
+            if (immovablePlayers.includes(player)) immovablePlayerNames.push("you");
+            preventedString = `${this.youCannotString}`;
+        }
+        else {
+            immovablePlayerNames = immovablePlayers.map(immovablePlayer => immovablePlayer.name);
+            preventedString = `${player.name} cannot do that because ${player.originalPronouns.sbj} ${this.isOrAre(player, context)}`;
+        }
+        const immovablePlayersString = generateListString(immovablePlayerNames);
+        return `${preventedString} in a party and ${immovablePlayersString} ${immovablePlayerNames.length === 1 ? "is" : "are"} unable to ${moveVerb}.`;
     }
 
     /**

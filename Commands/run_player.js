@@ -56,6 +56,8 @@ export async function execute(game, message, command, args, player) {
 
     const status = player.getBehaviorAttributeStatusEffects("disable run");
     if (status.length > 0) return game.communicationHandler.reply(message, game.errorMessageGenerator.generateCommandDisabledError(status[0]));
+    if (player.speed <= 0) return game.communicationHandler.reply(message, game.errorMessageGenerator.generateCannotMoveWithNoSpeedError(player, "Player"));
+    if (player.party && !player.party.canMove(true)) return game.communicationHandler.reply(message, game.errorMessageGenerator.generatePartyCannotMoveError(player, true, "Player"));
 
     if (player.isMoving) return game.communicationHandler.reply(message, game.errorMessageGenerator.generateAlreadyMovingError());
     if (player.followedPlayer)

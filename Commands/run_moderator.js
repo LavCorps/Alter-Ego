@@ -57,6 +57,8 @@ export async function execute(game, message, command, args, moderator) {
     if (!player && sentMessageInLatchChannel)
         player = moderator.getLatch();
     if (player === undefined) return game.communicationHandler.reply(message, game.errorMessageGenerator.generatePlayersNotFoundError([args[0]]));
+    
+    if (player.speed <= 0) return game.communicationHandler.reply(message, game.errorMessageGenerator.generateCannotMoveWithNoSpeedError(player, "Moderator"));
 
     player.stopMoving();
     player.stopFollowing();

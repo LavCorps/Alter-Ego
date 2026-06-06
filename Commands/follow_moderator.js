@@ -50,6 +50,8 @@ export async function execute(game, message, command, args, moderator) {
         player = moderator.getLatch();
     if (player === undefined) return game.communicationHandler.reply(message, game.errorMessageGenerator.generatePlayersNotFoundError([args[0]]));
 
+    if (player.speed <= 0) return game.communicationHandler.reply(message, game.errorMessageGenerator.generateCannotMoveWithNoSpeedError(player, "Moderator"));
+
     // Next, find the player to follow.
     const followedPlayer = game.entityFinder.getLivingPlayer(args[args.length - 1].replace(/'s/g, ""));
     if (followedPlayer === undefined) return game.communicationHandler.reply(message, game.errorMessageGenerator.generatePlayersNotFoundError([args[args.length - 1]]));

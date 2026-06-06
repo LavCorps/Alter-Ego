@@ -121,6 +121,9 @@ export default class QueueMoveAction extends Action {
             if (this.player.hasBehaviorAttribute("disable all") && !this.player.hasBehaviorAttribute("enable run"))
                 throw new Error(errorMessageGenerator.generateCommandDisabledError(this.player.getBehaviorAttributeStatusEffects("disable all")[0]));
         }
+        const context = this.forced ? "Moderator" : "Player";
+        if (this.player.speed <= 0) throw new Error(errorMessageGenerator.generateCannotMoveWithNoSpeedError(this.player, context));
+        if (this.player.party && !this.player.party.canMove(args[1])) throw new Error(errorMessageGenerator.generatePartyCannotMoveError(this.player, args[1], context));
 		if (!args[2]) throw new Error(errorMessageGenerator.generateInvalidEntityError("Exit"));
 		return [args[1], args[2]];
 	}

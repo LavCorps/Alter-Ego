@@ -90,6 +90,7 @@ export async function execute(game, message, command, args, moderator) {
     // If we only want to move a single player and the teleport alias wasn't used, perform a QueueMoveAction.
     if (singlePlayerSelected && !teleport) {
         const player = players[0];
+        if (player.speed <= 0) return game.communicationHandler.reply(message, game.errorMessageGenerator.generateCannotMoveWithNoSpeedError(player, "Moderator"));
         player.stopMoving();
         player.stopFollowing();
         player.moveQueue = args.join(" ").split(">");

@@ -163,6 +163,39 @@ export default class Party extends GameConstruct {
     }
 
     /**
+     * Returns true if the party can move. If any player in the party is unable to move, the party cannot move.
+     * This can be used to prevent the party from moving if, for example, one of the members is paralyzed or restrained.
+     * Also returns false if the party's movement speed is less than or equal to 0.
+     * @param isRunning - Whether or not the party is trying to run.
+     */
+    canMove(isRunning: boolean): boolean {
+        const command = isRunning ? "run" : "move";
+        for (const member of this.members.values()) {
+            if (!member.canUseCommand(command)) return false;
+        }
+        if (this.speed <= 0) return false;
+        return true;
+    }
+
+    /**
+     * Gets a list of players in the party who are unable to move, sorted by display name.
+     * @param isRunning - Whether or not the party is trying to run.
+     */
+    getImmovablePlayers(isRunning: boolean): Player[] {
+        const command = isRunning ? "run" : "move";
+        const immovablePlayers = this.members.filter(player => !player.canUseCommand(command) || player.speed <= 0);
+        return Array.from(immovablePlayers.values()).toSorted((a, b) => this.getMemberDisplayName(a).localeCompare(this.getMemberDisplayName(b)));
+    }
+
+    /**
+     * The speed at which the party moves when the leader moves to a new room.
+     * This will be the speed of the slowest member of the party.
+     */
+    get speed(): number {
+        return Math.min(...Array.from(this.members.values()).map(member => member.speed));
+    }
+
+    /**
      * Gets the phrase that should be used to refer to the party's associated entity.
      * If there is no associated entity, returns the `idPrefix` preceded by "a".
      */

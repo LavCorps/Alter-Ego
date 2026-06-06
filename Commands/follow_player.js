@@ -40,8 +40,9 @@ export async function execute(game, message, command, args, player) {
 
     const status = player.getBehaviorAttributeStatusEffects("disable follow");
     if (status.length > 0) return game.communicationHandler.reply(message, game.errorMessageGenerator.generateCommandDisabledError(status[0]));
+    if (player.speed <= 0) return game.communicationHandler.reply(message, game.errorMessageGenerator.generateCannotMoveWithNoSpeedError(player, "Player"));
     if (player.isMoving) return game.communicationHandler.reply(message, game.errorMessageGenerator.generateAlreadyMovingError());
-    if (player.followedPlayer) return game.communicationHandler.reply(message, game.errorMessageGenerator.generateCannotFollowWhenAlreadyFollowingError(player, "Player"))
+    if (player.followedPlayer) return game.communicationHandler.reply(message, game.errorMessageGenerator.generateCannotFollowWhenAlreadyFollowingError(player, "Player"));
 
     // This will be checked multiple times, so get it now.
     const hiddenStatus = player.getBehaviorAttributeStatusEffects("hidden");

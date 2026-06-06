@@ -940,6 +940,11 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
 
         this.status.set(status.id, statusInstance);
         this.#recalculateStats();
+        // If the player's new speed is less than or equal to 0, stop them from moving.
+        if (this.speed <= 0 && (this.isMoving || this.followedPlayer)) {
+            const stopAction = new StopAction(this.getGame(), undefined, this, this.location, true);
+            stopAction.performStop(false, undefined, true);
+        }
         this.statusDisplays = this.#generateStatusDisplays(true, true);
     }
 
@@ -1049,6 +1054,20 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
      */
     getAttributeStatusEffects(attribute: string): Status[] {
         return this.getBehaviorAttributeStatusEffects(attribute);
+    }
+
+    /**
+     * Returns true if the player can use the given command. Returns false if they have a status with the
+     * `disable ${command}` behavior attribute. Also returns false they have the `disable all` behavior attribute,
+     * but this can be overridden by a status with the `enable ${command}` behavior attribute, returning true. 
+     * @param command - The command to check.
+     */
+    canUseCommand(command: string): boolean {
+        for (const status of this.status.values()) {
+            if (status.behaviorAttributes.has(`disable ${command}`)) return false;
+            if (status.behaviorAttributes.has("disable all") && !this.hasBehaviorAttribute(`enable ${command}`)) return false;
+        }
+        return true;
     }
 
     /**
