@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import type { ActivitiesOptions, ActivityType, ButtonInteraction, GuildMember, Message, ModalSubmitInteraction, OmitPartialGroupDMChannel, Snowflake, StringSelectMenuInteraction } from "discord.js";
+import type { ButtonInteraction, GuildMember, Message, ModalSubmitInteraction, OmitPartialGroupDMChannel, StringSelectMenuInteraction } from "discord.js";
 import type GameSettings from "./Classes/GameSettings.ts";
 import type Event from "./Data/Event.ts";
 import type Exit from "./Data/Exit.js";
@@ -15,25 +15,12 @@ import type Player from "./Data/Player.ts";
 import type Puzzle from "./Data/Puzzle.ts";
 import type Room from "./Data/Room.ts";
 import type RoomItem from "./Data/RoomItem.ts";
-import type { DateTime } from "luxon";
 import type { Node } from "acorn";
 import type Moderator from "./Data/Moderator.ts";
 
 export { };
 
 declare global {
-	/**
-	 * Represents a Discord activity.
-	 */
-	interface Activity extends ActivitiesOptions {
-        /** The name of the activity. */
-		name: string;
-        /** The type of activity. {@link https://discord.com/developers/docs/events/gateway-events#activity-object-activity-types} */
-		type: ActivityType;
-        /** The URL of the activity, if applicable. */
-		url?: string;
-	}
-
     /**
      * Represents a user of the bot in a game context.
      */
@@ -82,26 +69,6 @@ declare global {
      * Represents an interaction that the bot can accept.
      */
     type BotInteraction = ButtonInteraction|StringSelectMenuInteraction|ModalSubmitInteraction;
-
-	/**
-	 * A dialog message that has been mirrored in a spectate channel.
-	 */
-	interface DialogSpectateMirror {
-        /** The ID of the mirrored dialog message. */
-		messageId: Snowflake;
-        /** The ID of the webhook used to send the mirrored message to the spectate channel. */
-		webhookId: Snowflake;
-	}
-
-	/**
-	 * A message with Interactables on it that has been cached for tracking.
-	 */
-	interface InteractableMessage {
-        /** The ID of the channel the message is in. */
-		channelId: Snowflake;
-        /** The ID of the message. */
-		messageId: Snowflake;
-	}
 
 	/**
 	 * The configuration for a command.
@@ -165,26 +132,6 @@ declare global {
 		execute: (game: Game, message: UserMessage, command: string, args: string[]) => Promise<void>;
 	}
 
-	/**
-	 * Represents a log entry for a command executed in the game.
-	 */
-	interface CommandLogEntry {
-        /** The date and time when the command was executed. */
-		timestamp: Date;
-        /** Who issued the command. */
-		author: string;
-        /** The content of the command. */
-		content: string;
-	}
-
-	/**
-	 * Represents a queue entry for a message waiting to be sent in one of the priority queue's stack queues.
-	 */
-	interface MessageQueueEntry {
-		fire: () => Promise<void>;
-		destination: string;
-	}
-
     type PersistentGameEntityName = "Room"|"Exit"|"Fixture"|"Prefab"|"Recipe"|"RoomItem"|"Puzzle"|"Event"|"StatusEffect"|"Player"|"InventoryItem"|"Gesture"|"Flag";
 
     interface PersistentGameEntity extends GameEntity {
@@ -198,8 +145,6 @@ declare global {
         label?: string,
         value: string
     }
-
-	type GameEntityMatcher = (entity: GameEntity, criteria: string | number | boolean, normalize?: boolean) => boolean;
 
 	/**
 	 * Represents a range of values in a spreadsheet.
@@ -223,34 +168,6 @@ declare global {
 		y: number;
         /** Z coordinate */
 		z: number;
-	}
-
-	/**
-	 * A player's third-person pronouns.
-	 */
-	interface Pronouns {
-        /** The subjective pronoun. */
-		sbj?: string;
-        /** The subjective pronoun with first letter capitalized. */
-		Sbj?: string;
-        /** The objective pronoun. */
-		obj?: string;
-        /** The objective pronoun with first letter capitalized. */
-		Obj?: string;
-        /** The dependent possessive pronoun. */
-		dpos?: string;
-        /** The dependent possessive pronoun with first letter capitalized. */
-		Dpos?: string;
-        /** The independent possessive pronoun. */
-		ipos?: string;
-        /** The independent possessive pronoun with first letter capitalized. */
-		Ipos?: string;
-        /** The reflexive pronoun. */
-		ref?: string;
-        /** The reflexive pronoun with first letter capitalized. */
-		Ref?: string;
-        /** Whether this set of pronouns turns verbs into their plural form. */
-		plural?: boolean;
 	}
 
 	/**
@@ -306,60 +223,10 @@ declare global {
 		ingredient2: InventoryItem | null;
 	}
 
-	interface PuzzleRequirement {
-        /** The type of entity required. */
-		type: string;
-        /** The ID of the entity required. */
-		entityId: string
-	}
-
-	interface PuzzleCommandSet {
-        /** Strings indicating which puzzle solutions will execute the commands in this command set. Optional. */
-		outcomes?: string[];
-        /** Bot commands that will be executed when the puzzle is solved. */
-		solvedCommands: string[];
-        /** Bot commands that will be executed when the puzzle is unsolved. */
-		unsolvedCommands: string[];
-	}
-
-	interface FlagCommandSet {
-        /** Strings indicating which flag values will execute the commands in this command set. Optional. */
-		values?: string[];
-        /** Bot commands that will be executed when the flag is set. */        
-		setCommands: string[];
-        /** Bot commands that will be executed when the flag is cleared. */
-		clearedCommands: string[];
-	}
-
-	interface ModifierResult {
-        /** The total modifier value. */
-		number: number;
-        /** The modifier strings. */
-		strings: string[];
-	}
-
 	interface Possibility {
 		index: number;
 		chance: number;
         name: string;
-	}
-
-	interface DayJsDurationInput {
-		days?: number;
-		hours?: number;
-		minutes?: number;
-		seconds?: number;
-	}
-
-	interface TimerAttributes {
-		loop: boolean;
-		start: boolean;
-	}
-
-	interface ParsedTriggerTime {
-		datetime?: DateTime<true>;
-		format?: string;
-		valid: boolean;
 	}
 
 	interface TestParserWarningOrError {
@@ -373,11 +240,6 @@ declare global {
 		errors: TestParserWarningOrError[];
         gameDictionary: Set<string>;
 	}
-
-	interface TestParserError {
-        cell: string;
-        text: string;
-    }
 
 	type ScriptEvaluationContext = {
         /** The game entity this script is attached to. */
@@ -399,21 +261,4 @@ declare global {
 		getOwnPropertyDescriptor: (targetObject: Node, propKey: string | symbol) => TypedPropertyDescriptor<any>;
 		getPrototypeOf: (targetObject: Node) => object;
 	};
-
-	type PriorityQueuePriority = "mod" | "tell" | "mechanic" | "log" | "spectator";
-
-	type TypeGuard<T> = (value: unknown) => value is T;
-
-    type Formatter<T> = (
-        value: T,
-        config?: import("pretty-format").Config,
-        indentation?: string,
-        depth?: number,
-        refs?: import("pretty-format").Refs,
-        printer?: import("pretty-format").Printer
-    ) => string;
-
-    type FormatterPair<T = unknown> = [TypeGuard<T>, Formatter<T>];
-
-    type FormatterPairs = Array<FormatterPair<any>>;
 }

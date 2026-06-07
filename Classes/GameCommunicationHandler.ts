@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import type Interactable from "./Interactables/Interactable.ts";
 import type Action from "../Data/Action.ts";
 import type Command from "./Command.ts";
@@ -13,6 +17,16 @@ import * as messageHandler from "../Modules/messageHandler.js";
 import { capitalizeFirstLetter } from "../Modules/helpers.ts";
 import { ChannelType, Collection } from "discord.js";
 import type { Attachment, Embed, EmbedBuilder, Snowflake, TextChannel } from "discord.js";
+
+/**
+ * A dialog message that has been mirrored in a spectate channel.
+ */
+interface DialogSpectateMirror {
+    /** The ID of the mirrored dialog message. */
+    messageId: Snowflake;
+    /** The ID of the webhook used to send the mirrored message to the spectate channel. */
+    webhookId: Snowflake;
+}
 
 /**
  * An interface for the message handler. Contains a number of functions that ensure actions won't be communicated multiple times in the same channel.

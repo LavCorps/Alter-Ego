@@ -2,6 +2,20 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import type { ActivitiesOptions, ActivityType } from "discord.js";
+
+/**
+ * Represents a Discord activity.
+ */
+export interface Activity extends ActivitiesOptions {
+    /** The name of the activity. */
+    name: string;
+    /** The type of activity. {@link https://discord.com/developers/docs/events/gateway-events#activity-object-activity-types} */
+    type: ActivityType;
+    /** The URL of the activity, if applicable. */
+    url?: string;
+}
+
 /**
  * Contains all of the settings for a Game.
  */

@@ -26,6 +26,8 @@ import type Recipe from "../Data/Recipe.ts";
 import type Event from "../Data/Event.ts";
 import type Party from "../Data/Party.ts";
 
+type GameEntityMatcher = (entity: GameEntity, criteria: string | number | boolean, normalize?: boolean) => boolean;
+
 /**
  * A set of functions to easily find in-game entities without parsing inputs yourself.
  */

@@ -54,6 +54,34 @@ export type PlayerField =
     "description";
 
 /**
+ * A player's third-person pronouns.
+ */
+interface Pronouns {
+    /** The subjective pronoun. */
+    sbj?: string;
+    /** The subjective pronoun with first letter capitalized. */
+    Sbj?: string;
+    /** The objective pronoun. */
+    obj?: string;
+    /** The objective pronoun with first letter capitalized. */
+    Obj?: string;
+    /** The dependent possessive pronoun. */
+    dpos?: string;
+    /** The dependent possessive pronoun with first letter capitalized. */
+    Dpos?: string;
+    /** The independent possessive pronoun. */
+    ipos?: string;
+    /** The independent possessive pronoun with first letter capitalized. */
+    Ipos?: string;
+    /** The reflexive pronoun. */
+    ref?: string;
+    /** The reflexive pronoun with first letter capitalized. */
+    Ref?: string;
+    /** Whether this set of pronouns turns verbs into their plural form. */
+    plural?: boolean;
+}
+
+/**
  * Represents a player in the game.
  *
  * @see https://msvblank.github.io/Alter-Ego/reference/data_structures/player.html
@@ -1059,7 +1087,7 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
     /**
      * Returns true if the player can use the given command. Returns false if they have a status with the
      * `disable ${command}` behavior attribute. Also returns false they have the `disable all` behavior attribute,
-     * but this can be overridden by a status with the `enable ${command}` behavior attribute, returning true. 
+     * but this can be overridden by a status with the `enable ${command}` behavior attribute, returning true.
      * @param command - The command to check.
      */
     canUseCommand(command: string): boolean {

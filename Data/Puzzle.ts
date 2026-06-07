@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import { parseAndExecuteBotCommands } from "../Modules/commandHandler.ts";
 import { itemIdentifierMatches } from "../Modules/matchers.ts";
 import Description from "./Description.ts";
@@ -31,6 +35,22 @@ export type PuzzleField =
     "incorrectDescription" |
     "noMoreAttemptsDescription" |
     "requirementsNotMetDescription";
+
+export interface PuzzleRequirement {
+    /** The type of entity required. */
+    type: string;
+    /** The ID of the entity required. */
+    entityId: string
+}
+
+export interface PuzzleCommandSet {
+    /** Strings indicating which puzzle solutions will execute the commands in this command set. Optional. */
+    outcomes?: string[];
+    /** Bot commands that will be executed when the puzzle is solved. */
+    solvedCommands: string[];
+    /** Bot commands that will be executed when the puzzle is unsolved. */
+    unsolvedCommands: string[];
+}
 
 /**
  * Represents an interactable entity with correct, incorrect, and limited ways to engage with it.
@@ -308,7 +328,7 @@ export default class Puzzle extends ItemContainer implements PersistentGameEntit
 
     /**
      * Returns the item contained inside of this container with the given identifier or prefab ID.
-     * If no such item exists, returns undefined. 
+     * If no such item exists, returns undefined.
      * @param identifier - The identifier or prefab ID to search for.
      */
     override getContainedItem(identifier: string): ItemInstance {

@@ -1,7 +1,18 @@
-﻿import type Game from "./Game.ts";
+﻿// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
+import type Game from "./Game.ts";
 import GameConstruct from "./GameConstruct.ts";
 import type Player from "./Player.ts";
 import Status from "./Status.ts";
+
+interface ModifierResult {
+    /** The total modifier value. */
+    number: number;
+    /** The modifier strings. */
+    strings: string[];
+}
 
 /**
  * Represents a die that can be rolled for a semi-random number.

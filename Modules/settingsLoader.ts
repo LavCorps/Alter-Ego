@@ -4,6 +4,7 @@
 
 import GameSettings from "../Classes/GameSettings.ts";
 import BotContext from "../Classes/BotContext.ts";
+import { type Activity } from "../Classes/GameSettings.ts";
 
 export interface PlayerDefaults {
     defaultPronouns: string;

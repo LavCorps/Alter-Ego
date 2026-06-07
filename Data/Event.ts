@@ -11,6 +11,12 @@ import type Status from "./Status.ts";
 
 export type EventField = "id"|"ongoing"|"durationString"|"timeRemaining"|"triggerTimesString"|"roomTag"|"commandsString"|"effectsString"|"refreshesString"|"triggeredNarration"|"endedNarration";
 
+interface ParsedTriggerTime {
+    datetime?: DateTime<true>;
+    format?: string;
+    valid: boolean;
+}
+
 /**
  * Represents a timed event in the game.
  *

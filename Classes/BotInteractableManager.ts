@@ -1,4 +1,8 @@
-import { ButtonStyle, Collection } from "discord.js";
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
+import { ButtonStyle, Collection, type Snowflake } from "discord.js";
 import ButtonInteractable from "./Interactables/ButtonInteractable.ts";
 import PageNextInteractable from "./Interactables/PageNextInteractable.ts";
 import PagePrevInteractable from "./Interactables/PagePrevInteractable.ts";
@@ -12,6 +16,7 @@ import Fixture from "../Data/Fixture.ts";
 import type Game from "../Data/Game.ts";
 import type Interactable from "./Interactables/Interactable.ts";
 import InventoryItem from "../Data/InventoryItem.ts";
+import ItemInstance from "../Data/ItemInstance.ts";
 import type Exit from "../Data/Exit.ts";
 import Moderator from "../Data/Moderator.ts";
 import Recipe from "../Data/Recipe.ts";
@@ -37,9 +42,8 @@ import DestroyRoomItemAction from "../Data/Actions/DestroyRoomItemAction.ts";
 import FindAction from "../Data/Actions/FindAction.ts";
 import ViewAction, { type EntityField } from "../Data/Actions/ViewAction.ts";
 import { removeInteractablesFromMessage } from "../Modules/messageHandler.js";
-import { ActionPriority} from "../Modules/enums.js";
+import { ActionPriority } from "../Modules/enums.js";
 import { capitalizeFirstLetter, getSortedItems } from "../Modules/helpers.ts";
-import ItemInstance from "../Data/ItemInstance.ts";
 
 class InteractableOptions<T extends Action> {
     actionDirective: ActionDirective<T>;
@@ -54,6 +58,16 @@ class InteractableOptions<T extends Action> {
         this.description = description;
         this.respondWithModal = respondWithModal;
     }
+}
+
+/**
+ * A message with Interactables on it that has been cached for tracking.
+ */
+interface InteractableMessage {
+    /** The ID of the channel the message is in. */
+    channelId: Snowflake;
+    /** The ID of the message. */
+    messageId: Snowflake;
 }
 
 /**

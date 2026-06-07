@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import { parseAndExecuteBotCommands } from "../Modules/commandHandler.ts";
 import { default as evaluateScript } from "../Modules/scriptParser.js";
 import type Game from "./Game.ts";
@@ -5,6 +9,15 @@ import GameEntity from "./GameEntity.ts";
 import type Player from "./Player.ts";
 
 export type FlagField = "id"|"value"|"valueScript"|"commandSetsString";
+
+export interface FlagCommandSet {
+    /** Strings indicating which flag values will execute the commands in this command set. Optional. */
+    values?: string[];
+    /** Bot commands that will be executed when the flag is set. */
+    setCommands: string[];
+    /** Bot commands that will be executed when the flag is cleared. */
+    clearedCommands: string[];
+}
 
 /**
  * Represents a flag that can hold various forms of data for easy access elsewhere in the game.
