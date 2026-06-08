@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { generateListString, makeCopyable } from "../Modules/helpers.ts";
+import type Fixture from "../Data/Fixture.ts";
 import type Game from "../Data/Game.ts";
 import type GameSettings from "./GameSettings.ts";
 import type Player from "../Data/Player.ts";
@@ -167,9 +168,9 @@ export default class GameErrorMessageGenerator {
     }
 
     /**
-     * Generates an error message indicating that the player cannot move because their location has changed.
+     * Generates an error message indicating that the player cannot perform an action because their location has changed.
      */
-    generateCannotMoveLocationMismatchError() {
+    generatePlayerLocationMismatchError() {
         return `${this.youCannotString} no longer in that room.`;
     }
 
@@ -350,6 +351,36 @@ export default class GameErrorMessageGenerator {
                 return `${this.youCannotString} not the party leader.${includeLeavePartyDirections ? ` If you want to leave the party, use ${this.getCommandString(`stop`)}.`: ``}`;
             default:
                 return `${player.name} is not the party leader.`;
+        }
+    }
+
+    /**
+     * Generates an error message indicating that the fixture is not activatable, or that it has no recipe tag.
+     * @param fixture - The fixture that is not activatable.
+     * @param context - The context in which the command is being issued.
+     */
+    generateFixtureNotActivatableError(fixture: Fixture, context: UserContext) {
+        const verb = `${fixture.activated ? 'de' : ''}activate`;
+        switch (context) {
+            case "Player":
+                return `You cannot ${verb} ${fixture.getContainingPhrase()}.`;
+            default:
+                return `${fixture.name} cannot be ${verb}d because it has no recipe tag.`;
+        }
+    }
+
+    /**
+     * Generates an error message indicating that the fixture cannot be activated/deactivated because it is already in that activation state.
+     * @param fixture - The fixture that cannot be activated/deactivated.
+     * @param context - The context in which the command is being issued.
+     */
+    generateFixtureAlreadyInActivationStateError(fixture: Fixture, context: UserContext) {
+        const verb = `${fixture.activated ? '' : 'de'}activate`;
+        switch (context) {
+            case "Player":
+                return `You cannot ${verb} ${fixture.getContainingPhrase()} because it is already ${verb}d.`;
+            default:
+                return `${fixture.name} is already ${verb}d.`;
         }
     }
 }

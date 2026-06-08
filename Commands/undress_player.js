@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import UndressAction from '../Data/Actions/UndressAction.ts';
 import Fixture from "../Data/Fixture.ts";
 import RoomItem from "../Data/RoomItem.ts";
@@ -144,5 +148,5 @@ export async function execute(game, message, command, args, player) {
     }
 
     const action = new UndressAction(game, message, player, player.location, false);
-    action.performUndress(container, slot);
+    await action.performUndress(container, slot);
 }

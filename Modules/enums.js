@@ -41,7 +41,9 @@ export const ActionPriority = {
     EQUIP: 25,
     USE: 30,
     UNEQUIP: 35,
-    DROP: 40
+    DROP: 40,
+    ACTIVATE: 45,
+    DEACTIVATE: 46
 };
 
 /** @enum {number} */

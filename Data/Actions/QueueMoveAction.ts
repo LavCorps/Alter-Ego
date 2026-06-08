@@ -106,7 +106,7 @@ export default class QueueMoveAction extends Action {
         const errorMessageGenerator = this.getGame().errorMessageGenerator;
 		if (args.length !== 3) throw new Error(errorMessageGenerator.generateInsufficientArgumentsError());
 		if (!args[0]) throw new Error(errorMessageGenerator.generateInvalidEntityError("Room"));
-		if (args[0].id !== this.player.location.id) throw new Error(errorMessageGenerator.generateCannotMoveLocationMismatchError());
+		if (args[0].id !== this.player.location.id) throw new Error(errorMessageGenerator.generatePlayerLocationMismatchError());
 		if (this.player.isMoving) throw new Error(errorMessageGenerator.generateAlreadyMovingError());
         if (this.player.followedPlayer) throw new Error(errorMessageGenerator.generateCannotMoveAlreadyFollowingPlayerError(this.player));
 		if (args[1] === false) {

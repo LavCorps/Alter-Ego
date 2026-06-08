@@ -1,12 +1,17 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import { getSortedItemsString } from "../../Modules/helpers.ts";
 import Action from "../Action.ts";
 import type EquipmentSlot from "../EquipmentSlot.ts";
-import type Fixture from "../Fixture.ts";
+import Fixture from "../Fixture.ts";
 import InventoryItem from "../InventoryItem.ts";
 import InventorySlot from "../InventorySlot.ts";
 import Puzzle from "../Puzzle.ts";
 import RoomItem from "../RoomItem.ts";
 import AttemptAction from "./AttemptAction.ts";
+import type Interactable from "../../Classes/Interactables/Interactable.ts";
 
 /**
  * Represents a drop action.
@@ -23,10 +28,11 @@ export default class DropAction extends Action {
      * @param inventorySlot - The {@link InventorySlot|inventory slot} to put the item in.
      * @param notify - Whether or not to notify the player that they dropped the item. Defaults to true.
 	 */
-	performDrop(item: InventoryItem, handEquipmentSlot: EquipmentSlot, container: RoomItemContainer, inventorySlot: InventorySlot<RoomItem>, notify: boolean = true): void {
+	async performDrop(item: InventoryItem, handEquipmentSlot: EquipmentSlot, container: RoomItemContainer, inventorySlot: InventorySlot<RoomItem>, notify: boolean = true): Promise<void> {
 		if (this.performed) return;
 		super.perform();
-		this.getGame().narrationHandler.narrateDrop(this, item, container, this.player, notify);
+        const interactables = await this.#getInteractables(container);
+		this.getGame().narrationHandler.narrateDrop(this, item, container, this.player, notify, interactables);
 		this.getGame().logHandler.logDrop(item, this.player, container, inventorySlot, this.forced);
 		this.player.drop(item, handEquipmentSlot, container, inventorySlot);
 		// Container is a weight puzzle.
@@ -51,6 +57,14 @@ export default class DropAction extends Action {
         const containerPhrase = container instanceof RoomItem ? `${inventorySlot.id} of ${container.identifier}` : container.name;
         this.successMessage = `Successfully dropped ${item.getIdentifier()} ${preposition} ${containerPhrase} for ${this.player.name}.`;
 	}
+
+    async #getInteractables(container: RoomItemContainer): Promise<Interactable[]> {
+        let interactables: Interactable[] = [];
+        if (container instanceof Fixture) {
+            interactables = interactables.concat(await this.getGame().botContext.interactableManager.getActivateOrDeactivateInteractables(container, this.player));
+        }
+        return interactables;
+    }
 
 	/**
 	 * Finds the required inventory item to call performDrop.
