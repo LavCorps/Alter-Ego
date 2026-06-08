@@ -175,6 +175,7 @@ export const SCRIPT_SCOPE_OPTIONS = {
         'setInventory',
         'moveTimer',
 		'queueMovement',
+        'doAfterDelay',
 		'move',
         'stopMoving',
         'startFollowing',

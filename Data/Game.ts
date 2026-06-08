@@ -211,6 +211,10 @@ export default class Game {
 	 * A timeout that checks for events that should be triggered every minute.
 	 */
 	#eventTriggerInterval: NodeJS.Timeout;
+    /**
+     * A constant value that determines how long an in-game tick is. To be used in timers.
+     */
+    public static readonly tick = 100;
 
 	/**
 	 * @param guildContext - The guild this game is occurring in.

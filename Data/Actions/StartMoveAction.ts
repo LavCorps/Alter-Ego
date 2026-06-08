@@ -4,6 +4,7 @@
 
 import Action from "../Action.ts";
 import type Exit from "../Exit.js";
+import Game from "../Game.ts";
 import type Room from "../Room.ts";
 import QueueMoveAction from "./QueueMoveAction.ts";
 
@@ -21,9 +22,9 @@ export default class StartMoveAction extends Action {
      * @param destinationRoom - The room the player will be moved to.
      * @param exit - The exit the player will leave their current room through.
      * @param entrance - The exit the player will enter the destination room from.
-     * @param speed - The speed at which the player is moving. Defaults to their current speed.
+     * @param speed - The speed at which the player is moving. Defaults to the minimum speed of their party, or their own current speed if they're not in a party.
 	 */
-	async performStartMove(isRunning: boolean, currentRoom: Room, destinationRoom: Room, exit: Exit, entrance: Exit, speed = this.player.speed): Promise<void> {
+	async performStartMove(isRunning: boolean, currentRoom: Room, destinationRoom: Room, exit: Exit, entrance: Exit, speed = this.player.party ? this.player.party.speed : this.player.speed): Promise<void> {
 		if (this.performed) return;
 		super.perform();
         this.player.currentMovingSpeed = speed;
@@ -42,23 +43,12 @@ export default class StartMoveAction extends Action {
                 let delay = 0;
                 const occupantTime = occupant.calculateMoveTime(exit, isRunning, occupant.getFollowingSpeed());
                 // Add one tick to the delay just to be safe.
-                const tick = 100;
-                if (occupantTime <= time) delay = time - occupantTime + tick;
-                // We use an interval here to match the way the player moveTimer works.
-                // This allows us to account for the heatedSlowdownRate.
-                // We need access to the action, so create a variable to replace `this`.
-                const action = this;
-                const delayInterval = setInterval(async function () {
-                    let subtractedTime = tick;
-                    if (action.getGame().heated) subtractedTime = action.getGame().settings.heatedSlowdownRate * subtractedTime;
-                    delay -= subtractedTime;
-                    if (delay <= 0) {
-                        clearInterval(delayInterval);
-                        occupant.moveQueue = [exit.name];
-                        const queueMoveAction = new QueueMoveAction(action.getGame(), undefined, occupant, occupant.location, action.forced);
-                        await queueMoveAction.performQueueMove(action.player.isRunning, occupant.moveQueue[0], occupant.getFollowingSpeed());
-                    }
-                }, tick);
+                if (occupantTime <= time) delay = time - occupantTime + Game.tick;
+                occupant.doAfterDelay(delay, async () => {
+                    occupant.moveQueue = [exit.name];
+                    const queueMoveAction = new QueueMoveAction(this.getGame(), undefined, occupant, occupant.location, this.forced);
+                    await queueMoveAction.performQueueMove(this.player.isRunning, occupant.moveQueue[0], occupant.getFollowingSpeed());
+                });
             }
         }
 	}

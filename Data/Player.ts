@@ -558,6 +558,27 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
     }
 
     /**
+     * Executes the given callback function after a set delay.
+     * Overwrites the player's `moveTimer` and `remainingTime`.
+     * @param delay - The amount of time to delay the callback function in milliseconds.
+     * @param callback - The function to call when the delay is over.
+     */
+    doAfterDelay(delay: number, callback: (...args: any[]) => Promise<void>): void {
+        clearInterval(this.moveTimer);
+        this.remainingTime = delay;
+        const player = this;
+        this.moveTimer = setInterval(async () => {
+            let subtractedTime = Game.tick;
+            if (player.getGame().heated) subtractedTime = player.getGame().settings.heatedSlowdownRate * subtractedTime;
+            player.remainingTime -= subtractedTime;
+            if (player.remainingTime <= 0) {
+                clearInterval(this.moveTimer);
+                await callback();
+            }
+        }, Game.tick);
+    }
+
+    /**
      * Moves the player to the desired room.
      *
      * @param isRunning - Whether the player is running.
@@ -651,7 +672,7 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
                     player.moveQueue.length = 0;
                 }
             }
-        }, 100);
+        }, Game.tick);
     }
 
     /**
@@ -799,7 +820,8 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
      * Gets the speed at which to follow the followed player.
      */
     getFollowingSpeed(): number {
-        return Math.min(this.speed, this.followedPlayer.currentMovingSpeed);
+        if (this.party) return this.party.speed;
+        else return Math.min(this.speed, this.followedPlayer.currentMovingSpeed);
     }
 
     /**
