@@ -2,6 +2,8 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import type { Token } from "./Token.ts";
+
 /** Convenience alias for 0 in defining Constant pattern elements. */
 export const CONSTANT = 0;
 
@@ -25,6 +27,10 @@ export const INVENTORYITEM = 1;
 
 /** Type union for Slot.type types */
 export type SlotTypes = typeof PLAYER | typeof INVENTORYITEM;
+
+type PatternValidationPassed = { passed: true; arguments: Map<string, any> };
+type PatternValidationFailed = { passed: false; errors: string[] };
+type PatternValidation = PatternValidationPassed | PatternValidationFailed;
 
 /**
  * Base interface representing a pattern element.
@@ -115,7 +121,7 @@ export function preposition(name: string): Preposition {
 
 /**
  * Preposition interface representing a piece of a grammar pattern that represents a Glob.
- * 
+ *
  * Globs must ALWAYS be the final Element of a Pattern!
  */
 export interface Glob extends PatternElement {
@@ -127,7 +133,7 @@ export interface Glob extends PatternElement {
 
 /**
  * Helper function for constructing Glob pattern elements.
- * 
+ *
  * Globs must ALWAYS be the final Element of a Pattern!
  */
 export function glob(): Glob {
@@ -157,6 +163,10 @@ export default class Pattern {
     constructor(grammar: Array<Constant | Slot | Preposition | Glob | Pattern>, optional: boolean = false) {
         this.grammar = grammar;
         this.optional = optional;
+    }
+
+    validate(tokens: Token[][]): PatternValidation {
+        throw new Error("NOT IMPLEMENTED");
     }
 }
 
