@@ -13,7 +13,7 @@ export class Trie {
     }
 
     insert(phrase: string, value: Token): void {
-        const words = phrase.toLocaleLowerCase().trim().split(/\s+/);
+        const words = phrase.toLocaleLowerCase().trim().split(/[^\S\n]/);
         let node = this.root;
 
         for (const word of words) {
