@@ -114,7 +114,9 @@ export function preposition(name: string): Preposition {
 }
 
 /**
- * Preposition interface representing a piece of a grammar pattern that represents the preposition of a Slot.
+ * Preposition interface representing a piece of a grammar pattern that represents a Glob.
+ * 
+ * Globs must ALWAYS be the final Element of a Pattern!
  */
 export interface Glob extends PatternElement {
     /**
@@ -125,6 +127,8 @@ export interface Glob extends PatternElement {
 
 /**
  * Helper function for constructing Glob pattern elements.
+ * 
+ * Globs must ALWAYS be the final Element of a Pattern!
  */
 export function glob(): Glob {
     return { kind: GLOB };
