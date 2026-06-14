@@ -9,13 +9,18 @@ import type { SlotTypes } from "./Pattern.ts";
 
 export const CONSTANT = -1;
 export const PREPOSITION = -2;
+export const SENTINEL = -999;
 
-export type TokenType = typeof PREPOSITION | typeof CONSTANT | SlotTypes;
+export type TokenType = typeof SENTINEL | typeof PREPOSITION | typeof CONSTANT | SlotTypes;
 
 type BaseToken = {
     value: string;
     type: TokenType;
 };
+
+type SentinelToken = BaseToken & {
+    type: typeof SENTINEL
+}
 
 type PrepositionToken = BaseToken & {
     type: typeof PREPOSITION;
