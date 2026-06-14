@@ -11,8 +11,11 @@ export const SLOT = 1;
 /** Convenience alias for 2 in defining Reference pattern elements. */
 export const PREPOSITION = 2;
 
+/** Convenience alias for 3 in defining Glob pattern elements. */
+export const GLOB = 3;
+
 /** Type union for PatternElement types */
-export type ElementTypes = typeof CONSTANT | typeof SLOT | typeof PREPOSITION;
+export type ElementTypes = typeof CONSTANT | typeof SLOT | typeof PREPOSITION | typeof GLOB;
 
 /** Convenience alias for 0 in defining Player Slot pattern elements. */
 export const PLAYER = 0;
@@ -111,6 +114,23 @@ export function preposition(name: string): Preposition {
 }
 
 /**
+ * Preposition interface representing a piece of a grammar pattern that represents the preposition of a Slot.
+ */
+export interface Glob extends PatternElement {
+    /**
+     * Globs are kind 3 of PatternElement.
+     */
+    readonly kind: typeof GLOB;
+}
+
+/**
+ * Helper function for constructing Glob pattern elements.
+ */
+export function glob(): Glob {
+    return { kind: GLOB };
+}
+
+/**
  * Grammar pattern representing a command syntax.
  */
 export default class Pattern {
@@ -119,7 +139,7 @@ export default class Pattern {
      *
      * This is an ordered Array, containing Constants, Slots, and other Patterns representing the grammar pattern of a desired command syntax.
      */
-    readonly grammar: Array<Constant | Slot | Preposition | Pattern>;
+    readonly grammar: Array<Constant | Slot | Preposition | Glob | Pattern>;
 
     /**
      * Whether the fulfillment of this Pattern is optional or not. This is most useful for optional sub-patterns.
@@ -130,7 +150,7 @@ export default class Pattern {
      * @param grammar - The grammar of the pattern. This is an ordered array, containing pattern elements, as well as other patterns.
      * @param optional - Whether the fulfillment of this Pattern is optional or not. This is most useful for optional sub-patterns.
      */
-    constructor(grammar: Array<Constant | Slot | Preposition | Pattern>, optional: boolean = false) {
+    constructor(grammar: Array<Constant | Slot | Preposition | Glob | Pattern>, optional: boolean = false) {
         this.grammar = grammar;
         this.optional = optional;
     }
@@ -141,6 +161,9 @@ export default class Pattern {
  * @param grammar - The grammar of the pattern. This is an ordered array, containing pattern elements, as well as other patterns.
  * @param optional - Whether the fulfillment of this Pattern is optional or not. This is most useful for optional sub-patterns.
  */
-export function pattern(grammar: Array<Constant | Slot | Preposition | Pattern>, optional: boolean = false): Pattern {
-    return new Pattern(grammar, optional)
+export function pattern(
+    grammar: Array<Constant | Slot | Preposition | Glob | Pattern>,
+    optional: boolean = false,
+): Pattern {
+    return new Pattern(grammar, optional);
 }
