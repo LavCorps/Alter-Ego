@@ -4,7 +4,7 @@
 
 import type InventoryItem from "../../Data/InventoryItem.ts";
 import type Player from "../../Data/Player.ts";
-import type { PLAYER, INVENTORYITEM } from "./Pattern.ts";
+import { PLAYER, INVENTORYITEM } from "./Pattern.ts";
 import type { SlotTypes } from "./Pattern.ts";
 
 export const CONSTANT = -1;
@@ -22,23 +22,43 @@ export type SentinelToken = BaseToken & {
     type: typeof SENTINEL;
 };
 
+export function sentinelFactory(value: string): SentinelToken {
+    return { type: SENTINEL, value: value };
+}
+
 export type PrepositionToken = BaseToken & {
     type: typeof PREPOSITION;
 };
 
+export function prepositionFactory(value: string): PrepositionToken {
+    return { type: PREPOSITION, value: value };
+}
+
 export type ConstantToken = BaseToken & {
     type: typeof CONSTANT;
 };
+
+export function constantFactory(value: string): ConstantToken {
+    return { type: CONSTANT, value: value };
+}
 
 export type PlayerToken = BaseToken & {
     type: typeof PLAYER;
     reference: Player;
 };
 
+export function playerFactory(value: string, reference: Player): PlayerToken {
+    return { type: PLAYER, value: value, reference: reference };
+}
+
 export type InventoryItemToken = BaseToken & {
     type: typeof INVENTORYITEM;
     reference: InventoryItem;
     preposition: string;
 };
+
+export function inventoryItemFactory(value: string, reference: InventoryItem): InventoryItemToken {
+    return { type: INVENTORYITEM, value: value, reference: reference, preposition: reference.prefab.preposition };
+}
 
 export type Token = SentinelToken | PrepositionToken | ConstantToken | PlayerToken | InventoryItemToken;
