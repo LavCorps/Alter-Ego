@@ -18,27 +18,27 @@ type BaseToken = {
     type: TokenType;
 };
 
-type SentinelToken = BaseToken & {
-    type: typeof SENTINEL
-}
+export type SentinelToken = BaseToken & {
+    type: typeof SENTINEL;
+};
 
-type PrepositionToken = BaseToken & {
+export type PrepositionToken = BaseToken & {
     type: typeof PREPOSITION;
 };
 
-type ConstantToken = BaseToken & {
+export type ConstantToken = BaseToken & {
     type: typeof CONSTANT;
 };
 
-type PlayerToken = BaseToken & {
+export type PlayerToken = BaseToken & {
     type: typeof PLAYER;
     reference: Player;
 };
 
-type InventoryItemToken = BaseToken & {
+export type InventoryItemToken = BaseToken & {
     type: typeof INVENTORYITEM;
     reference: InventoryItem;
     preposition: string;
 };
 
-export type Token = PrepositionToken | ConstantToken | PlayerToken | InventoryItemToken;
+export type Token = SentinelToken | PrepositionToken | ConstantToken | PlayerToken | InventoryItemToken;

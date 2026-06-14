@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import type { Token } from "./Token.ts";
+import { SENTINEL, type SentinelToken, type Token } from "./Token.ts";
 import { TrieNode } from "./TrieNode.ts";
 
 export class Trie {
@@ -45,7 +45,9 @@ export class Trie {
                 output.push(longestMatch);
                 i += longestLen;
             } else {
-                throw new Error("input does not resolve to token‽");
+                const sentinel: SentinelToken = { value: input[i], type: SENTINEL };
+                output.push([sentinel]);
+                i++;
             }
         }
         return output;
