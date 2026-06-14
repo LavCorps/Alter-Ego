@@ -9,10 +9,10 @@ export const CONSTANT = 0;
 export const SLOT = 1;
 
 /** Convenience alias for 2 in defining Reference pattern elements. */
-export const REFERENCE = 2;
+export const PREPOSITION = 2;
 
 /** Type union for PatternElement types */
-export type ElementTypes = typeof CONSTANT | typeof SLOT | typeof REFERENCE;
+export type ElementTypes = typeof CONSTANT | typeof SLOT | typeof PREPOSITION;
 
 /** Convenience alias for 0 in defining Player Slot pattern elements. */
 export const PLAYER = 0;
@@ -42,7 +42,7 @@ export interface Constant extends PatternElement {
     /**
      * Constants are kind 0 of PatternElement.
      */
-    readonly kind: 0;
+    readonly kind: typeof CONSTANT;
 
     /**
      * The data of the Constant sentinel.
@@ -55,7 +55,7 @@ export interface Constant extends PatternElement {
  * @param value - The data of the Constant sentinel.
  */
 export function constant(value: string): Constant {
-    return { kind: 0, value: value };
+    return { kind: CONSTANT, value: value };
 }
 
 /**
@@ -65,7 +65,7 @@ export interface Slot extends PatternElement {
     /**
      * Slots are kind 1 of PatternElement.
      */
-    readonly kind: 1;
+    readonly kind: typeof SLOT;
 
     /**
      * The name to refer to the Slot with. Inherited by any Tokens that fit the Slot.
@@ -84,36 +84,30 @@ export interface Slot extends PatternElement {
  * @param name - The name to refer to the Slot with. Inherited by any Tokens that fit the Slot.
  */
 export function slot(type: SlotTypes, name?: string): Slot {
-    return { kind: 1, type: type, name: name };
+    return { kind: SLOT, type: type, name: name };
 }
 
 /**
- * Reference interface representing a piece of a grammar pattern that references the data of another argument.
+ * Preposition interface representing a piece of a grammar pattern that represents the preposition of a Slot.
  */
-export interface Reference extends PatternElement {
+export interface Preposition extends PatternElement {
     /**
-     * References are kind 2 of PatternElement.
+     * Prepositions are kind 2 of PatternElement.
      */
-    readonly kind: 2;
+    readonly kind: typeof PREPOSITION;
 
     /**
      * The name of the Slot that the Dynamic refers to.
      */
     readonly name: string;
-
-    /**
-     * The attribute of the Slot that the Dynamic should fulfill. This should be a string attribute on a real Token.
-     */
-    readonly attribute: string;
 }
 
 /**
- * Helper function for constructing Reference pattern elements.
+ * Helper function for constructing Preposition pattern elements.
  * @param name - The name of the Slot that the Dynamic refers to.
- * @param attribute - The attribute of the Slot that the Dynamic should fulfill. This should be a string attribute on a real Token.
  */
-export function reference(name: string, attribute: string): Reference {
-    return { kind: 2, name: name, attribute: attribute };
+export function preposition(name: string): Preposition {
+    return { kind: PREPOSITION, name: name };
 }
 
 /**
@@ -125,7 +119,7 @@ export default class Pattern {
      *
      * This is an ordered Array, containing Constants, Slots, and other Patterns representing the grammar pattern of a desired command syntax.
      */
-    readonly grammar: Array<Constant | Slot | Reference | Pattern>;
+    readonly grammar: Array<Constant | Slot | Preposition | Pattern>;
 
     /**
      * Whether the fulfillment of this Pattern is optional or not. This is most useful for optional sub-patterns.
@@ -136,7 +130,7 @@ export default class Pattern {
      * @param grammar - The grammar of the pattern. This is an ordered array, containing pattern elements, as well as other patterns.
      * @param optional - Whether the fulfillment of this Pattern is optional or not. This is most useful for optional sub-patterns.
      */
-    constructor(grammar: Array<Constant | Slot | Reference | Pattern>, optional: boolean = false) {
+    constructor(grammar: Array<Constant | Slot | Preposition | Pattern>, optional: boolean = false) {
         this.grammar = grammar;
         this.optional = optional;
     }
@@ -147,6 +141,6 @@ export default class Pattern {
  * @param grammar - The grammar of the pattern. This is an ordered array, containing pattern elements, as well as other patterns.
  * @param optional - Whether the fulfillment of this Pattern is optional or not. This is most useful for optional sub-patterns.
  */
-export function pattern(grammar: Array<Constant | Slot | Reference | Pattern>, optional: boolean = false): Pattern {
+export function pattern(grammar: Array<Constant | Slot | Preposition | Pattern>, optional: boolean = false): Pattern {
     return new Pattern(grammar, optional)
 }
