@@ -5,7 +5,7 @@
 import { SENTINEL, type SentinelToken, type Token } from "./Token.ts";
 import { TrieNode } from "./TrieNode.ts";
 
-export class Trie {
+export default class Trie {
     root: TrieNode;
 
     constructor() {
