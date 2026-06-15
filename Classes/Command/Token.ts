@@ -4,15 +4,30 @@
 
 import type EquipmentSlot from "../../Data/EquipmentSlot.ts";
 import type Exit from "../../Data/Exit.ts";
+import type Event from "../../Data/Event.ts";
 import type Fixture from "../../Data/Fixture.ts";
 import type Flag from "../../Data/Flag.ts";
 import type InventoryItem from "../../Data/InventoryItem.ts";
 import type Player from "../../Data/Player.ts";
 import type Prefab from "../../Data/Prefab.ts";
+import type Puzzle from "../../Data/Puzzle.ts";
 import type Room from "../../Data/Room.ts";
 import type RoomItem from "../../Data/RoomItem.ts";
 import type Status from "../../Data/Status.ts";
-import { PLAYER, INVENTORYITEM, ROOMITEM, FIXTURE, EQUIPMENTSLOT, ROOM, EXIT, EVENT, FLAG, PREFAB, STATUS } from "./Pattern.ts";
+import {
+    PLAYER,
+    INVENTORYITEM,
+    ROOMITEM,
+    FIXTURE,
+    EQUIPMENTSLOT,
+    ROOM,
+    EXIT,
+    EVENT,
+    FLAG,
+    PREFAB,
+    STATUS,
+    PUZZLE,
+} from "./Pattern.ts";
 import type { SlotTypes } from "./Pattern.ts";
 
 export const CONSTANT = -1;
@@ -103,6 +118,17 @@ export class FixtureToken extends BaseToken {
     }
 }
 
+export class PuzzleToken extends BaseToken {
+    type: typeof PUZZLE = PUZZLE;
+    reference: Puzzle;
+
+    constructor(value: string, reference: Puzzle) {
+        super();
+        this.value = value;
+        this.reference = reference;
+    }
+}
+
 export class EquipmentSlotToken extends BaseToken {
     type: typeof EQUIPMENTSLOT = EQUIPMENTSLOT;
     reference: EquipmentSlot;
@@ -188,6 +214,7 @@ export type Token =
     | InventoryItemToken
     | RoomItemToken
     | FixtureToken
+    | PuzzleToken
     | EquipmentSlotToken
     | RoomToken
     | ExitToken
