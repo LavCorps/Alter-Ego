@@ -5,6 +5,11 @@
 import { SENTINEL, type SentinelToken, type Token } from "./Token.ts";
 import { TrieNode } from "./TrieNode.ts";
 
+type Word = {
+    clean: string;
+    original: string;
+};
+
 export default class Trie {
     root: TrieNode;
 
@@ -24,7 +29,9 @@ export default class Trie {
     }
 
     tokenize(words: string[]): Token[][] {
-        const input: string[] = words.map((word) => word.toLocaleLowerCase());
+        const input: Word[] = words.map((word) => {
+            return { clean: word.toLocaleLowerCase(), original: word };
+        });
         const output: Token[][] = [];
         let i = 0;
 
@@ -33,8 +40,8 @@ export default class Trie {
             let longestMatch: Token[] | null = null;
             let longestLen = 0;
             let j = i;
-            while (j < input.length && node.children.has(input[j])) {
-                node = node.children.get(input[j]);
+            while (j < input.length && node.children.has(input[j].clean)) {
+                node = node.children.get(input[j].clean);
                 j++;
                 if (node.value.length !== 0) {
                     longestMatch = node.value;
@@ -45,7 +52,7 @@ export default class Trie {
                 output.push(longestMatch);
                 i += longestLen;
             } else {
-                const sentinel: SentinelToken = { value: input[i], type: SENTINEL };
+                const sentinel: SentinelToken = { value: input[i].original, type: SENTINEL };
                 output.push([sentinel]);
                 i++;
             }
