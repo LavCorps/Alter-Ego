@@ -8,6 +8,7 @@ import {
     InventoryItemToken,
     PlayerToken,
     PrefabToken,
+    PrepositionToken,
     PuzzleToken,
     RoomItemToken,
     RoomToken,
@@ -83,6 +84,8 @@ describe("Trie class from NG Commands", () => {
 
     describe("benchmarking", () => {
         test("load all loadable game data into trie", async () => {
+            /** @type Set<string> */
+            const prepositions = new Set();
             const start = process.hrtime.bigint();
             for (const player of game.players.values()) {
                 trie.insert(player.displayName, new PlayerToken(player.displayName, player));
@@ -91,17 +94,32 @@ describe("Trie class from NG Commands", () => {
             for (const item of game.inventoryItems) {
                 if (item.prefab !== null && item.quantity > 0) {
                     trie.insert(item.prefab.id, new InventoryItemToken(item.prefab.id, item));
+                    if (!prepositions.has(item.getPreposition())) {
+                        const preposition = item.getPreposition();
+                        prepositions.add(preposition);
+                        trie.insert(preposition, new PrepositionToken(preposition));
+                    }
                 }
             }
             const inventoryItemConclude = process.hrtime.bigint();
             for (const item of game.roomItems) {
                 if (item.prefab !== null && item.quantity > 0) {
                     trie.insert(item.prefab.id, new RoomItemToken(item.prefab.id, item));
+                    if (!prepositions.has(item.getPreposition())) {
+                        const preposition = item.getPreposition();
+                        prepositions.add(preposition);
+                        trie.insert(preposition, new PrepositionToken(preposition));
+                    }
                 }
             }
             const roomItemConclude = process.hrtime.bigint();
             for (const fixture of game.fixtures) {
                 trie.insert(fixture.name, new FixtureToken(fixture.name, fixture));
+                if (!prepositions.has(fixture.getPreposition())) {
+                    const preposition = fixture.getPreposition();
+                    prepositions.add(preposition);
+                    trie.insert(preposition, new PrepositionToken(preposition));
+                }
             }
             const fixtureConclude = process.hrtime.bigint();
             for (const puzzle of game.puzzles) {
@@ -142,11 +160,15 @@ describe("Trie class from NG Commands", () => {
             const statusConclude = process.hrtime.bigint();
             console.log(`full trie load took ${Number(statusConclude - start) / 1000000}ms`);
             console.log(`  player trie load took ${Number(playerConclude - start) / 1000000}ms`);
-            console.log(`  inventory item trie load took ${Number(inventoryItemConclude - playerConclude) / 1000000}ms`);
+            console.log(
+                `  inventory item trie load took ${Number(inventoryItemConclude - playerConclude) / 1000000}ms`,
+            );
             console.log(`  room item trie load took ${Number(roomItemConclude - inventoryItemConclude) / 1000000}ms`);
             console.log(`  fixture trie load took ${Number(fixtureConclude - roomItemConclude) / 1000000}ms`);
             console.log(`  puzzle trie load took ${Number(puzzleConclude - fixtureConclude) / 1000000}ms`);
-            console.log(`  equipment slot trie load took ${Number(equipmentSlotConclude - puzzleConclude) / 1000000}ms`);
+            console.log(
+                `  equipment slot trie load took ${Number(equipmentSlotConclude - puzzleConclude) / 1000000}ms`,
+            );
             console.log(`  room trie load took ${Number(roomConclude - equipmentSlotConclude) / 1000000}ms`);
             console.log(`  exit trie load took ${Number(exitConclude - roomConclude) / 1000000}ms`);
             console.log(`  event trie load took ${Number(eventConclude - exitConclude) / 1000000}ms`);
@@ -161,13 +183,17 @@ describe("Trie class from NG Commands", () => {
             const potConclude = process.hrtime.bigint();
             const filledPotLookup = trie.tokenize(["pot", "filled", "with", "water"]);
             const filledPotConclude = process.hrtime.bigint();
-            console.log(`all lookups took ${Number(filledPotConclude - lookupStart) / 1000}μs`);
+            const complexLookup = trie.tokenize(["drop", "pot", "filled", "with", "water", "on", "reception", "desk"]);
+            const complexConclude = process.hrtime.bigint();
+            console.log(`all lookups took ${Number(complexConclude - lookupStart) / 1000}μs`);
             console.log(`  amadeus lookup took ${Number(amaConclude - lookupStart) / 1000}μs`);
             console.log(amaLookup);
             console.log(`  pot lookup took ${Number(potConclude - amaConclude) / 1000}μs`);
             console.log(potLookup);
             console.log(`  filled pot lookup took ${Number(filledPotConclude - potConclude) / 1000}μs`);
             console.log(filledPotLookup);
+            console.log(`  complex lookup took ${Number(complexConclude - filledPotConclude) / 1000}μs`);
+            console.log(complexLookup);
         });
     });
 });
