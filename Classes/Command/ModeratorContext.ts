@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2026 LavCorps <lavcorps@protonmail.com>
+// SPDX-FileCopyrightText: 2026 Ms. VBLANK <alteregomolly@pm.me>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -11,7 +12,7 @@ export default class ModeratorContext extends Context {
     /**
      * Alias the command was invoked with.
      */
-    readonly invoked: string;
+    readonly invokedAlias: string;
 
     /**
      * Message that invoked the command.
@@ -25,7 +26,7 @@ export default class ModeratorContext extends Context {
      */
     private constructor(invoked: string, message: UserMessage) {
         super();
-        this.invoked = invoked;
+        this.invokedAlias = invoked;
         this.message = message;
     }
 }

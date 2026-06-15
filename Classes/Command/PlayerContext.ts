@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2026 LavCorps <lavcorps@protonmail.com>
+// SPDX-FileCopyrightText: 2026 Ms. VBLANK <alteregomolly@pm.me>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -20,7 +21,7 @@ export default class PlayerContext extends Context {
     /**
      * The alias the command was invoked with.
      */
-    readonly invoked: string;
+    readonly invokedAlias: string;
 
     /**
      * The message that invoked the command.
@@ -43,7 +44,7 @@ export default class PlayerContext extends Context {
     readonly equipmentSlots: Collection<string, EquipmentSlot>;
 
     /**
-     * The inventory items held by the player.
+     * The inventory items held, equipped, or stashed by the player.
      */
     readonly inventoryItems: Array<InventoryItem>;
 
@@ -81,14 +82,12 @@ export default class PlayerContext extends Context {
      */
     private constructor(game: Game, player: Player, invoked: string, message: UserMessage) {
         super()
-        this.invoked = invoked;
+        this.invokedAlias = invoked;
         this.message = message;
         this.game = game;
         this.player = player;
         this.equipmentSlots = this.player.inventory;
-        this.inventoryItems = this.equipmentSlots
-            .filter((slot) => !slot.containsNoItems())
-            .map((slot) => slot.equippedItem);
+        this.inventoryItems = this.player.getContainedItems().filter(item => item !== null);
         this.room = this.player.location;
         this.players = this.room.occupants.filter((roomPlayer) => roomPlayer !== this.player);
         this.exits = this.room.exits;

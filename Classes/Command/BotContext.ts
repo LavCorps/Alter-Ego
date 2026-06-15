@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2026 LavCorps <lavcorps@protonmail.com>
+// SPDX-FileCopyrightText: 2026 Ms. VBLANK <alteregomolly@pm.me>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -11,13 +12,13 @@ export default class BotContext extends Context {
     /**
      * Alias the command was invoked with.
      */
-    readonly invoked: string;
+    readonly invokedAlias: string;
 
     /**
      * @param invoked - The alias the command was invoked with.
      */
     private constructor(invoked: string) {
         super()
-        this.invoked = invoked;
+        this.invokedAlias = invoked;
     }
 }
