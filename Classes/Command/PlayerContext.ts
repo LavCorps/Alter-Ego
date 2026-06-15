@@ -49,6 +49,11 @@ export default class PlayerContext extends Context {
     readonly inventoryItems: Array<InventoryItem>;
 
     /**
+     * The inventory items held by the player.
+     */
+    readonly heldItems: Array<InventoryItem>;
+
+    /**
      * The room the player occupies.
      */
     readonly room: Room;
@@ -88,6 +93,7 @@ export default class PlayerContext extends Context {
         this.player = player;
         this.equipmentSlots = this.player.inventory;
         this.inventoryItems = this.player.getContainedItems().filter(item => item !== null);
+        this.heldItems = this.game.entityFinder.getPlayerHands(this.player).map(slot => slot.equippedItem).filter(item => item !== null);
         this.room = this.player.location;
         this.players = this.room.occupants.filter((roomPlayer) => roomPlayer !== this.player);
         this.exits = this.room.exits;
