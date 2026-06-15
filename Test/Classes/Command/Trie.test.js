@@ -37,7 +37,27 @@ describe("Trie class from NG Commands", () => {
         });
 
         test("1", async () => {
-            trie.tokenize(["Last", "one", "in", "is", "a", "**{rotten", "egg}!**"]);
+            const stream = trie.tokenize(["Last", "one", "in", "is", "a", "**{rotten", "egg}!**"]);
+            expect(stream[0][0].type).toBe(-1);
+            expect(stream[0][0].value).toBe("Last one in is a **{rotten egg}!**");
+        });
+
+        test("2", async () => {
+            const stream = trie.tokenize(["Last", "one", "in", "is", "a", "rotten", "egg!"]);
+            expect(stream[0][0].type).toBe(-999);
+            expect(stream[0][0].value).toBe("Last");
+            expect(stream[0][0].type).toBe(-999);
+            expect(stream[0][0].value).toBe("one");
+            expect(stream[0][0].type).toBe(-999);
+            expect(stream[0][0].value).toBe("in");
+            expect(stream[0][0].type).toBe(-999);
+            expect(stream[0][0].value).toBe("is");
+            expect(stream[0][0].type).toBe(-999);
+            expect(stream[0][0].value).toBe("a");
+            expect(stream[0][0].type).toBe(-999);
+            expect(stream[0][0].value).toBe("rotten");
+            expect(stream[0][0].type).toBe(-999);
+            expect(stream[0][0].value).toBe("egg!");
         });
     });
 });
