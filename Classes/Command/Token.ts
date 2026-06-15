@@ -11,7 +11,8 @@ import type Player from "../../Data/Player.ts";
 import type Prefab from "../../Data/Prefab.ts";
 import type Room from "../../Data/Room.ts";
 import type RoomItem from "../../Data/RoomItem.ts";
-import { PLAYER, INVENTORYITEM, ROOMITEM, FIXTURE, EQUIPMENTSLOT, ROOM, EXIT, EVENT, FLAG, PREFAB } from "./Pattern.ts";
+import type Status from "../../Data/Status.ts";
+import { PLAYER, INVENTORYITEM, ROOMITEM, FIXTURE, EQUIPMENTSLOT, ROOM, EXIT, EVENT, FLAG, PREFAB, STATUS } from "./Pattern.ts";
 import type { SlotTypes } from "./Pattern.ts";
 
 export const CONSTANT = -1;
@@ -168,6 +169,17 @@ export class PrefabToken extends BaseToken {
     }
 }
 
+export class StatusToken extends BaseToken {
+    type: typeof STATUS = STATUS;
+    reference: Status;
+
+    constructor(value: string, reference: Status) {
+        super();
+        this.value = value;
+        this.reference = reference;
+    }
+}
+
 export type Token =
     | SentinelToken
     | PrepositionToken
@@ -180,4 +192,5 @@ export type Token =
     | RoomToken
     | ExitToken
     | EventToken
-    | FlagToken;
+    | FlagToken
+    | StatusToken;

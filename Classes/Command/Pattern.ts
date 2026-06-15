@@ -52,6 +52,9 @@ export const FLAG = 9;
 /** Convenience alias for 10 in defining Prefab pattern elements. */
 export const PREFAB = 10;
 
+/** Convenience alias for 11 in defining Status Effect pattern elements. */
+export const STATUS = 11;
+
 /** Type union for Slot.type types */
 export type SlotTypes =
     | typeof PLAYER
@@ -64,7 +67,8 @@ export type SlotTypes =
     | typeof EXIT
     | typeof EVENT
     | typeof FLAG
-    | typeof PREFAB;
+    | typeof PREFAB
+    | typeof STATUS;
 
 type PatternValidationPassed = { passed: true; arguments: Map<string, any> };
 type PatternValidationFailed = { passed: false; errors: string[] };
