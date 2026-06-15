@@ -220,4 +220,5 @@ export type Token =
     | ExitToken
     | EventToken
     | FlagToken
+    | PrefabToken
     | StatusToken;
