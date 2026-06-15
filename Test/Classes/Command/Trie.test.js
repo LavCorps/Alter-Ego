@@ -153,6 +153,7 @@ describe("Trie class from NG Commands", () => {
             console.log(`flag trie load took ${Number(flagConclude - eventConclude) / 1000000}ms`);
             console.log(`prefab trie load took ${Number(prefabConclude - flagConclude) / 1000000}ms`);
             console.log(`status trie load took ${Number(statusConclude - prefabConclude) / 1000000}ms`);
+            console.log(`final trie size is ${trie.size()}`);
         });
     });
 });
