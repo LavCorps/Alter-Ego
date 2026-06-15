@@ -1,4 +1,18 @@
-import { ConstantToken, InventoryItemToken, PlayerToken } from "../../../Classes/Command/Token.ts";
+import {
+    ConstantToken,
+    EquipmentSlotToken,
+    EventToken,
+    ExitToken,
+    FixtureToken,
+    FlagToken,
+    InventoryItemToken,
+    PlayerToken,
+    PrefabToken,
+    PuzzleToken,
+    RoomItemToken,
+    RoomToken,
+    StatusToken,
+} from "../../../Classes/Command/Token.ts";
 import Trie from "../../../Classes/Command/Trie.ts";
 import { clearQueue } from "../../../Modules/messageHandler.js";
 
@@ -80,12 +94,65 @@ describe("Trie class from NG Commands", () => {
                 }
             }
             const inventoryItemConclude = process.hrtime.bigint();
-            const allTime = inventoryItemConclude - start;
-            const playerTime = playerConclude - start;
-            const inventoryItemTime = inventoryItemConclude - playerConclude;
-            console.log(`full trie load took ${Number(allTime) / 1000000}ms`);
-            console.log(`player trie load took ${Number(playerTime) / 1000000}ms`);
-            console.log(`inventory item trie load took ${Number(inventoryItemTime) / 1000000}ms`);
+            for (const item of game.roomItems) {
+                if (item.prefab !== null && item.quantity > 0) {
+                    trie.insert(item.prefab.id, new RoomItemToken(item.prefab.id, item));
+                }
+            }
+            const roomItemConclude = process.hrtime.bigint();
+            for (const fixture of game.fixtures) {
+                trie.insert(fixture.name, new FixtureToken(fixture.name, fixture));
+            }
+            const fixtureConclude = process.hrtime.bigint();
+            for (const puzzle of game.puzzles) {
+                trie.insert(puzzle.name, new PuzzleToken(puzzle.name, puzzle));
+            }
+            const puzzleConclude = process.hrtime.bigint();
+            for (const player of game.players.values()) {
+                for (const slot of player.inventory.values()) {
+                    trie.insert(slot.id, new EquipmentSlotToken(slot.id, slot));
+                }
+            }
+            const equipmentSlotConclude = process.hrtime.bigint();
+            for (const room of game.rooms.values()) {
+                trie.insert(room.id, new RoomToken(room.id, room));
+            }
+            const roomConclude = process.hrtime.bigint();
+            for (const room of game.rooms.values()) {
+                for (const exit of room.exits.values()) {
+                    trie.insert(exit.name, new ExitToken(exit.name, exit));
+                }
+            }
+            const exitConclude = process.hrtime.bigint();
+            for (const event of game.events.values()) {
+                trie.insert(event.id, new EventToken(event.id, event));
+            }
+            const eventConclude = process.hrtime.bigint();
+            for (const flag of game.flags.values()) {
+                trie.insert(flag.id, new FlagToken(flag.id, flag));
+            }
+            const flagConclude = process.hrtime.bigint();
+            for (const prefab of game.prefabs.values()) {
+                trie.insert(prefab.id, new PrefabToken(prefab.id, prefab));
+            }
+            const prefabConclude = process.hrtime.bigint();
+            for (const status of game.statusEffects.values()) {
+                trie.insert(status.id, new StatusToken(status.id, status));
+            }
+            const statusConclude = process.hrtime.bigint();
+            console.log(`full trie load took ${Number(statusConclude - start) / 1000000}ms`);
+            console.log(`player trie load took ${Number(playerConclude - start) / 1000000}ms`);
+            console.log(`inventory item trie load took ${Number(inventoryItemConclude - playerConclude) / 1000000}ms`);
+            console.log(`room item trie load took ${Number(roomItemConclude - inventoryItemConclude) / 1000000}ms`);
+            console.log(`fixture trie load took ${Number(fixtureConclude - roomItemConclude) / 1000000}ms`);
+            console.log(`puzzle trie load took ${Number(puzzleConclude - fixtureConclude) / 1000000}ms`);
+            console.log(`equipment slot trie load took ${Number(equipmentSlotConclude - puzzleConclude) / 1000000}ms`);
+            console.log(`room trie load took ${Number(roomConclude - equipmentSlotConclude) / 1000000}ms`);
+            console.log(`exit trie load took ${Number(exitConclude - roomConclude) / 1000000}ms`);
+            console.log(`event trie load took ${Number(eventConclude - exitConclude) / 1000000}ms`);
+            console.log(`flag trie load took ${Number(flagConclude - eventConclude) / 1000000}ms`);
+            console.log(`prefab trie load took ${Number(prefabConclude - flagConclude) / 1000000}ms`);
+            console.log(`status trie load took ${Number(statusConclude - prefabConclude) / 1000000}ms`);
         });
     });
 });
