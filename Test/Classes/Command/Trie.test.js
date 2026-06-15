@@ -161,12 +161,12 @@ describe("Trie class from NG Commands", () => {
             const potConclude = process.hrtime.bigint();
             const filledPotLookup = trie.tokenize(["pot", "filled", "with", "water"]);
             const filledPotConclude = process.hrtime.bigint();
-            console.log(`all lookups took ${Number(filledPotConclude - lookupStart) / 1000000}ms`);
-            console.log(`  amadeus lookup took ${Number(amaConclude - lookupStart) / 1000000}ms`);
+            console.log(`all lookups took ${Number(filledPotConclude - lookupStart) / 1000}μs`);
+            console.log(`  amadeus lookup took ${Number(amaConclude - lookupStart) / 1000}μs`);
             console.log(amaLookup);
-            console.log(`  pot lookup took ${Number(potConclude - amaConclude) / 1000000}ms`);
+            console.log(`  pot lookup took ${Number(potConclude - amaConclude) / 1000}μs`);
             console.log(potLookup);
-            console.log(`  filled pot lookup took ${Number(filledPotConclude - potConclude) / 1000000}ms`);
+            console.log(`  filled pot lookup took ${Number(filledPotConclude - potConclude) / 1000}μs`);
             console.log(filledPotLookup);
         });
     });
