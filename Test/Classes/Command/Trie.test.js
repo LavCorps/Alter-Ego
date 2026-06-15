@@ -25,6 +25,14 @@ describe("Trie class from NG Commands", () => {
             trie.insert(data, constantFactory(data));
             expect(trie.size()).toBe(8); // 7 words + root node
         });
+        test("2", async () => {
+            const data1 = "The quick brown fox";
+            const data2 = "The lazy dog";
+            trie.insert(data1, constantFactory(data1));
+            trie.insert(data2, constantFactory(data2));
+            expect(trie.size()).toBe(7); // root node + shared "the" node + 3 words + 2 words
+            expect(trie.root.children.get("the").children.size).toBe(2); // two descending nodes from "the"
+        });
     });
 
     describe("input tokenization", () => {
