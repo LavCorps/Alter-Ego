@@ -1,4 +1,4 @@
-import { constantFactory, inventoryItemFactory, playerFactory } from "../../../Classes/Command/Token.ts";
+import { ConstantToken, InventoryItemToken, PlayerToken } from "../../../Classes/Command/Token.ts";
 import Trie from "../../../Classes/Command/Trie.ts";
 import { clearQueue } from "../../../Modules/messageHandler.js";
 
@@ -22,14 +22,14 @@ describe("Trie class from NG Commands", () => {
     describe("data loading", () => {
         test("1", async () => {
             const data = "Last one in is a **{rotten egg}!**";
-            trie.insert(data, constantFactory(data));
+            trie.insert(data, new ConstantToken(data));
             expect(trie.size()).toBe(8); // 7 words + root node
         });
         test("2", async () => {
             const data1 = "The quick brown fox";
             const data2 = "The lazy dog";
-            trie.insert(data1, constantFactory(data1));
-            trie.insert(data2, constantFactory(data2));
+            trie.insert(data1, new ConstantToken(data1));
+            trie.insert(data2, new ConstantToken(data2));
             expect(trie.size()).toBe(7); // root node + shared "the" node + 3 words + 2 words
             expect(trie.root.children.get("the").children.size).toBe(2); // two descending nodes from "the"
         });
@@ -40,7 +40,7 @@ describe("Trie class from NG Commands", () => {
             /** @type string[] */
             const data = ["Last one in is a **{rotten egg}!**"];
             for (const line of data) {
-                trie.insert(line, constantFactory(line));
+                trie.insert(line, new ConstantToken(line));
             }
         });
         test("1", async () => {
@@ -71,12 +71,12 @@ describe("Trie class from NG Commands", () => {
         test("load all loadable game data into trie", async () => {
             const start = process.hrtime.bigint();
             for (const player of game.players.values()) {
-                trie.insert(player.displayName, playerFactory(player.displayName, player));
+                trie.insert(player.displayName, new PlayerToken(player.displayName, player));
             }
             const playerConclude = process.hrtime.bigint();
             for (const item of game.inventoryItems) {
-                if (item.prefab !== null) {
-                    trie.insert(item.prefab.id, inventoryItemFactory(item.prefab.id, item));
+                if (item.prefab !== null && item.quantity > 0) {
+                    trie.insert(item.prefab.id, new InventoryItemToken(item.prefab.id, item));
                 }
             }
             const inventoryItemConclude = process.hrtime.bigint();

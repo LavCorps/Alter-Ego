@@ -25,8 +25,46 @@ export const PLAYER = 0;
 /** Convenience alias for 1 in defining Inventory Item Slot pattern elements. */
 export const INVENTORYITEM = 1;
 
+/** Convenience alias for 2 in defining Room Item Slot pattern elements. */
+export const ROOMITEM = 2;
+
+/** Convenience alias for 3 in defining Fixture Slot pattern elements. */
+export const FIXTURE = 3;
+
+/** Convenience alias for 4 in defining Puzzle pattern elements. */
+export const PUZZLE = 4;
+
+/** Convenience alias for 5 in defining Equipment Slot pattern elements. */
+export const EQUIPMENTSLOT = 5;
+
+/** Convenience alias for 6 in defining Room pattern elements. */
+export const ROOM = 6;
+
+/** Convenience alias for 7 in defining Exit pattern elements. */
+export const EXIT = 7;
+
+/** Convenience alias for 8 in defining Event pattern elements. */
+export const EVENT = 8;
+
+/** Convenience alias for 9 in defining Flag pattern elements. */
+export const FLAG = 9;
+
+/** Convenience alias for 10 in defining Prefab pattern elements. */
+export const PREFAB = 10;
+
 /** Type union for Slot.type types */
-export type SlotTypes = typeof PLAYER | typeof INVENTORYITEM;
+export type SlotTypes =
+    | typeof PLAYER
+    | typeof INVENTORYITEM
+    | typeof ROOMITEM
+    | typeof FIXTURE
+    | typeof PUZZLE
+    | typeof EQUIPMENTSLOT
+    | typeof ROOM
+    | typeof EXIT
+    | typeof EVENT
+    | typeof FLAG
+    | typeof PREFAB;
 
 type PatternValidationPassed = { passed: true; arguments: Map<string, any> };
 type PatternValidationFailed = { passed: false; errors: string[] };
