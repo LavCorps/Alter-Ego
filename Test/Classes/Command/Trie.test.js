@@ -1,6 +1,6 @@
-import { constantFactory } from "../../../Classes/Command/Token.ts";
+import { constantFactory, inventoryItemFactory, playerFactory } from "../../../Classes/Command/Token.ts";
 import Trie from "../../../Classes/Command/Trie.ts";
-import { clearQueue, sendQueuedMessages } from "../../../Modules/messageHandler.js";
+import { clearQueue } from "../../../Modules/messageHandler.js";
 
 describe("Trie class from NG Commands", () => {
     beforeAll(async () => {
@@ -43,13 +43,11 @@ describe("Trie class from NG Commands", () => {
                 trie.insert(line, constantFactory(line));
             }
         });
-
         test("1", async () => {
             const stream = trie.tokenize(["Last", "one", "in", "is", "a", "**{rotten", "egg}!**"]);
             expect(stream[0][0].type).toBe(-1);
             expect(stream[0][0].value).toBe("Last one in is a **{rotten egg}!**");
         });
-
         test("2", async () => {
             const stream = trie.tokenize(["Last", "one", "in", "is", "a", "rotten", "egg!"]);
             expect(stream[0][0].type).toBe(-999);
@@ -66,6 +64,28 @@ describe("Trie class from NG Commands", () => {
             expect(stream[5][0].value).toBe("rotten");
             expect(stream[6][0].type).toBe(-999);
             expect(stream[6][0].value).toBe("egg!");
+        });
+    });
+
+    describe("benchmarking", () => {
+        test("load all loadable game data into trie", async () => {
+            const start = process.hrtime.bigint();
+            for (const player of game.players.values()) {
+                trie.insert(player.displayName, playerFactory(player.displayName, player));
+            }
+            const playerConclude = process.hrtime.bigint();
+            for (const item of game.inventoryItems) {
+                if (item.prefab !== null) {
+                    trie.insert(item.prefab.id, inventoryItemFactory(item.prefab.id, item));
+                }
+            }
+            const inventoryItemConclude = process.hrtime.bigint();
+            const allTime = inventoryItemConclude - start;
+            const playerTime = playerConclude - start;
+            const inventoryItemTime = inventoryItemConclude - playerConclude;
+            console.log(`full trie load took ${Number(allTime) / 1000000}ms`);
+            console.log(`player trie load took ${Number(playerTime) / 1000000}ms`);
+            console.log(`inventory item trie load took ${Number(inventoryItemTime) / 1000000}ms`);
         });
     });
 });
