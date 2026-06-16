@@ -4,7 +4,7 @@
 
 import type { Token } from "./Token.ts";
 
-export class TrieNode {
+export default class TrieNode {
     children: Map<string, TrieNode>;
     value: Token[];
 
