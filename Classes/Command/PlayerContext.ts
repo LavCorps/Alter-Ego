@@ -106,9 +106,8 @@ export default class PlayerContext extends Context {
      * @param player - The player to construct the context for.
      * @param invoked - The alias the command was invoked with.
      * @param message - The message that invoked the command.
-     *
      */
-    private constructor(game: Game, player: Player, invoked: string, message: UserMessage) {
+    constructor(game: Game, player: Player, invoked: string, message: UserMessage) {
         super();
         this.invokedAlias = invoked;
         this.message = message;
