@@ -144,7 +144,7 @@ export default class PlayerContext extends Context {
                 const preposition = item.getPreposition();
                 tokens.push(new ItemContainerToken(item.name, item));
                 if (item.pluralName !== "") tokens.push(new ItemContainerToken(item.pluralName, item));
-                if (!prepositions.has(preposition)) {
+                if (!prepositions.has(preposition) && preposition !== "") {
                     prepositions.add(preposition);
                     tokens.push(new PrepositionToken(preposition));
                 }
@@ -156,7 +156,7 @@ export default class PlayerContext extends Context {
                 const preposition = item.getPreposition();
                 tokens.push(new ItemContainerToken(item.name, item));
                 if (item.pluralName !== "") tokens.push(new ItemContainerToken(item.pluralName, item));
-                if (!prepositions.has(preposition)) {
+                if (!prepositions.has(preposition) && preposition !== "") {
                     prepositions.add(preposition);
                     tokens.push(new PrepositionToken(preposition));
                 }
@@ -166,7 +166,7 @@ export default class PlayerContext extends Context {
         for (const fixture of this.fixtures) {
             const preposition = fixture.getPreposition();
             tokens.push(new ItemContainerToken(fixture.name, fixture));
-            if (!prepositions.has(preposition)) {
+            if (!prepositions.has(preposition) && preposition !== "") {
                 prepositions.add(preposition);
                 tokens.push(new PrepositionToken(preposition));
             }
@@ -175,7 +175,7 @@ export default class PlayerContext extends Context {
         for (const puzzle of this.puzzles) {
             const preposition = puzzle.getPreposition();
             tokens.push(new ItemContainerToken(puzzle.name, puzzle));
-            if (!prepositions.has(preposition)) {
+            if (!prepositions.has(preposition) && preposition !== "") {
                 prepositions.add(preposition);
                 tokens.push(new PrepositionToken(preposition));
             }
