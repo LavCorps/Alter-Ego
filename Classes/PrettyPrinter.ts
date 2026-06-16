@@ -18,6 +18,7 @@ import InventoryItem from '../Data/InventoryItem.ts';
 import EquipmentSlot from '../Data/EquipmentSlot.ts';
 import Recipe from '../Data/Recipe.ts';
 import type { NewPlugin, Config, Refs } from 'pretty-format';
+import TrieNode from './Command/TrieNode.ts';
 
 interface AEConfig extends Config {
 	printShadowRoot?: boolean;
@@ -130,6 +131,29 @@ export class DescriptionPlugin implements AEPlugin<Description> {
 
 	serialize(value: Description) {
 		return value.text.length !== 0 ? `<Description>${value.text}</Description>` : '<Description empty/>';
+	}
+}
+
+export class TrieNodePlugin implements AEPlugin<TrieNode> {
+	/** Set of objects currently being processed by the StatusPlugin to prevent recursion errors. */
+    processing: Set<TrieNode>;
+
+	/**
+	 * @param level Depth after which to truncate objects
+	 */
+	constructor() {
+		this.processing = new Set();
+    }
+
+	test(value: unknown): value is TrieNode {
+		return value instanceof TrieNode && !this.processing.has(value);
+	}
+
+	serialize(value: TrieNode, config: AEConfig, indentation: string, depth: number, refs: Refs, printer: AEPrinter) {
+		this.processing.add(value);
+		let serialized = printer(value, config, indentation, Infinity, refs);
+		this.processing.delete(value);
+		return serialized;
 	}
 }
 
@@ -539,7 +563,8 @@ const plugins = [
 	new TimerPlugin(),
 	new GesturePlugin(),
 	new BotContextPlugin(),
-	new DescriptionPlugin(),
+    new DescriptionPlugin(),
+    new TrieNodePlugin(),
 	new StatusPlugin(),
 	new PuzzlePlugin(),
 	new PrefabPlugin(),
