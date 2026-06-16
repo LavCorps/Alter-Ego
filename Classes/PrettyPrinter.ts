@@ -20,7 +20,7 @@ import Recipe from '../Data/Recipe.ts';
 import type { NewPlugin, Config, Refs } from 'pretty-format';
 import TrieNode from './Command/TrieNode.ts';
 import Trie from './Command/Trie.ts';
-import { ConstantToken, EntityToken, ItemContainerToken, PrepositionToken, SentinelToken, type Token } from './Command/Token.ts';
+import { ConstantToken, EntityToken, ItemContainerToken, PrepositionToken, SentinelToken } from './Command/Token.ts';
 import type GameEntity from '../Data/GameEntity.ts';
 
 interface AEConfig extends Config {
