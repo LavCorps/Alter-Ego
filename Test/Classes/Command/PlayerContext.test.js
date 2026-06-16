@@ -1,5 +1,6 @@
 import PlayerContext from "../../../Classes/Command/PlayerContext.ts";
 import Trie from "../../../Classes/Command/Trie.ts";
+import PrettyPrinter from "../../../Classes/PrettyPrinter.ts";
 import { clearQueue } from "../../../Modules/messageHandler.js";
 import { createMockMessage } from "../../__mocks__/libs/discord.js";
 
@@ -14,6 +15,8 @@ describe("PlayerContext class from NG Commands", () => {
 
     /** @type {import("../../../Data/Player.ts").default} */
     let kyra;
+
+    const printer = new PrettyPrinter();
 
     afterEach(async () => {
         clearQueue(game);
@@ -39,6 +42,7 @@ describe("PlayerContext class from NG Commands", () => {
             console.log(`  lexicon building took ${Number(getLexiconConclude - contextInitConclude) / 1000000}ms`);
             console.log(`  trie loading took ${Number(trieLoadConclude - getLexiconConclude) / 1000000}ms`);
             console.log(`final trie size is ${trie.size()}`);
+            console.log(printer.prettyString(trie))
         });
     });
 });
