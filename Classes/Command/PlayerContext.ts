@@ -128,7 +128,7 @@ export default class PlayerContext extends Context {
         this.adjacentRooms = this.exits.map((exit) => exit.dest);
         this.fixtures = this.game.entityFinder.getFixtures(null, this.room.id).filter((fixture) => fixture.accessible);
         this.puzzles = this.game.entityFinder.getPuzzles(null, this.room.id).filter((puzzle) => puzzle.accessible);
-        this.roomItems = this.room.getContainedItems();
+        this.roomItems = this.room.getContainedItems().filter((item) => item.accessible);
     }
 
     getLexicon(): Token[] {
@@ -143,7 +143,7 @@ export default class PlayerContext extends Context {
             if (item.prefab !== null && item.quantity > 0) {
                 const preposition = item.getPreposition();
                 tokens.push(new ItemContainerToken(item.name, item));
-                if (item.name !== item.pluralName) tokens.push(new ItemContainerToken(item.pluralName, item));
+                if (item.pluralName !== "") tokens.push(new ItemContainerToken(item.pluralName, item));
                 if (!prepositions.has(preposition)) {
                     prepositions.add(preposition);
                     tokens.push(new PrepositionToken(preposition));
@@ -155,7 +155,7 @@ export default class PlayerContext extends Context {
             if (item.prefab !== null && item.quantity > 0) {
                 const preposition = item.getPreposition();
                 tokens.push(new ItemContainerToken(item.name, item));
-                if (item.name !== item.pluralName) tokens.push(new ItemContainerToken(item.pluralName, item));
+                if (item.pluralName !== "") tokens.push(new ItemContainerToken(item.pluralName, item));
                 if (!prepositions.has(preposition)) {
                     prepositions.add(preposition);
                     tokens.push(new PrepositionToken(preposition));
