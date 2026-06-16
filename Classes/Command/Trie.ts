@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { SENTINEL, type SentinelToken, type Token } from "./Token.ts";
-import { TrieNode } from "./TrieNode.ts";
+import TrieNode from "./TrieNode.ts";
 
 type Word = {
     clean: string;
