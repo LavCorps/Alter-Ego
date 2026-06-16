@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import Action from "../Action.ts";
 import type Exit from "../Exit.js";
 import type Room from "../Room.ts";
@@ -21,6 +25,6 @@ export default class ExitAction extends Action {
 		this.getGame().narrationHandler.narrateExit(this, this.player, currentRoom, exit, isMovingFreely);
 		currentRoom.removePlayer(this.player);
 		const whisperRemovalMessage = this.getGame().notificationGenerator.generateExitLeaveWhisperNotification(this.player.displayName);
-		this.player.removeFromWhispers(whisperRemovalMessage, this);
+		this.player.removeFromWhispers(whisperRemovalMessage, this, false);
 	}
 }

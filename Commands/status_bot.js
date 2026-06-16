@@ -3,7 +3,7 @@ import InflictAction from '../Data/Actions/InflictAction.ts';
 import InventoryItem from "../Data/InventoryItem.ts";
 
 /** @import Status from "../Data/Status.ts" */
-/** @import GameSettings from '../Classes/GameSettings.js' */
+/** @import GameSettings from '../Classes/GameSettings.ts' */
 /** @import Game from '../Data/Game.ts' */
 /** @import Player from '../Data/Player.ts' */
 

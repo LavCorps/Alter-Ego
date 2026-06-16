@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+
+SPDX-License-Identifier: CC-BY-SA-4.0
+-->
+
 # Inventory Item
 
 An Inventory Item is a data structure used by Alter Ego. It represents an item that is currently possessed by
@@ -59,7 +65,7 @@ This is a unique name given to the Inventory Item if it is capable of containing
 necessary when loading Inventory Items in order for Alter Ego to determine which container the child Inventory Items
 belong to, in case there are multiple container Inventory Items with the same Prefab. Typically, this is the Prefab ID
 followed by a number (the standard followed by
-the [itemManager module](https://github.com/MsVBLANK/Alter-Ego/blob/master/Modules/itemManager.js)), but there are no
+the [itemManager module](https://github.com/MsVBLANK/Alter-Ego/blob/master/Modules/itemManager.ts)), but there are no
 naming rules for identifiers. No two Room Items or Inventory Items can have the same identifier. For an example of how
 this looks, see the following table:
 

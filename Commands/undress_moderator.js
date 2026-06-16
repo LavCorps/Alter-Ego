@@ -1,10 +1,14 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import UndressAction from '../Data/Actions/UndressAction.ts';
 import Fixture from "../Data/Fixture.ts";
 import RoomItem from "../Data/RoomItem.ts";
 import Puzzle from "../Data/Puzzle.ts";
 
 /** @import Moderator from '../Data/Moderator.ts' */
-/** @import GameSettings from '../Classes/GameSettings.js' */
+/** @import GameSettings from '../Classes/GameSettings.ts' */
 /** @import Game from '../Data/Game.ts' */
 
 /** @type {CommandConfig} */
@@ -149,6 +153,6 @@ export async function execute(game, message, command, args, moderator) {
     }
 
     const action = new UndressAction(game, message, player, player.location, true);
-    action.performUndress(container, slot);
+    await action.performUndress(container, slot);
     action.sendSuccessMessageToCommandChannel();
 }

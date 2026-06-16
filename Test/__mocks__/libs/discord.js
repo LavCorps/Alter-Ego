@@ -107,7 +107,10 @@ export function createMockUser(id = generateSnowflake(), username = '', avatarUR
 		username: username,
 		defaultAvatarURL: avatarURL,
 		dmChannel: createMockChannel(id, username),
-		send: vi.fn(async ({}) => createMockMessage({ content: '', channel: user.dmChannel })),
+		send: vi.fn(async (content) => {
+            const message = createMockMessage({ content: content, channel: user.dmChannel });
+            user.dmChannel.messages.cache.set(message.id, message);
+        }),
 		avatarURL: vi.fn(() => avatarURL),
 		setPresence: vi.fn(() => {})
 	};
@@ -140,6 +143,17 @@ function createPermissionsBitField(channel) {
 	};
 }
 
+/**
+ * @param {number} [flags]
+ */
+function createMessageFlagsBitField(flags = 0) {
+    let bitField = flags;
+    return {
+        bitfield: bitField,
+        has: vi.fn(flag => { return bitField === flag })
+    };
+}
+
 export function createMockMember(id = generateSnowflake(), displayName = '') {
 	const mockUser = createMockUser(id, displayName);
 	const member = {
@@ -149,7 +163,7 @@ export function createMockMember(id = generateSnowflake(), displayName = '') {
 		avatarURL: vi.fn(() => ''),
 		user: createMockUser(id, displayName),
 		dmChannel: mockUser.dmChannel,
-		createDM: vi.fn(async (force) => member.dmChannel),
+		createDM: vi.fn(async (force) => member.user.dmChannel),
 		roles: createMockRoleManager(),
 		permissionsIn: vi.fn((channel) => createPermissionsBitField(channel)),
 		send: vi.fn(async ({}) => Promise.resolve(createMockMessage({ content: '', channel: member.user.dmChannel })))
@@ -204,7 +218,7 @@ export function createMockClient() {
  * @param {*} param0 
  * @returns {UserMessage}
  */
-export function createMockMessage({ content = '', member = createMockMember(), author = createMockUser(), channel = null, webhookId, client, components = [] } = {}) {
+export function createMockMessage({ content = '', member = createMockMember(), author = createMockUser(), channel = null, webhookId, client, components = [], flags = 0 } = {}) {
 	const { Collection } = require('discord.js');
 	const messageChannel = channel || createMockChannel();
 	if (messageChannel && messageChannel.parent) messageChannel.parentId = messageChannel.parent.id;
@@ -219,6 +233,8 @@ export function createMockMessage({ content = '', member = createMockMember(), a
 		reply: vi.fn(async (text) => createMockMessage({ content: text, channel: messageChannel })),
 		// @ts-ignore
 		react: vi.fn(async () => ({})),
+        // @ts-ignore
+        flags: createMessageFlagsBitField(flags),
 		webhookId: webhookId,
 		attachments: new Collection(),
 		embeds: [],
@@ -237,13 +253,15 @@ export function createMockMessage({ content = '', member = createMockMember(), a
  * @param {Player} player
  * @param {string} content
  * @param {import("discord.js").TextChannel} [channel]
+ * @param {number} [flags]
  */
-export function createPlayerMessage(player, content, channel = player.location.channel) {
+export function createPlayerMessage(player, content, channel = player.location.channel, flags = 0) {
 	return createMockMessage({
 		content: content,
 		member: player.member,
 		author: player.member?.user,
-		channel: channel
+		channel: channel,
+        flags: flags
 	});
 }
 

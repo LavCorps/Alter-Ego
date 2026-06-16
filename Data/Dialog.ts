@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import { type Attachment, Collection, type Embed } from "discord.js";
 import { capitalizeFirstLetter } from "../Modules/helpers.ts";
 import type Game from "./Game.ts";
@@ -262,9 +266,9 @@ export default class Dialog extends GameConstruct {
      */
     getWhisperPrefixStringForWebhook(playerCanSeeSpeaker: boolean): string {
         const recipientPhrase = this.whisper?.players.size > 1 && playerCanSeeSpeaker ? ` to ${this.whisper.generatePlayerListStringExcluding(this.speaker)}` : ``;
-        const hidingSpot = this.getGame().entityFinder.getFixture(this.whisper?.hidingSpotName, this.location.id);
-        const hidingSpotPhrase = hidingSpot && playerCanSeeSpeaker ? ` in ${hidingSpot.getContainingPhrase()}` : ``;
-        return this.whisper ? `-# *(Whispered${recipientPhrase}${hidingSpotPhrase}):*\n` : "";
+        const associatedEntity = this.whisper?.associatedEntity;
+        const entityPhrase = associatedEntity && playerCanSeeSpeaker ? ` ${associatedEntity.getPreposition()} ${associatedEntity.getContainingPhrase()}` : ``;
+        return this.whisper ? `-# *(Whispered${recipientPhrase}${entityPhrase}):*\n` : "";
     }
 
     /**

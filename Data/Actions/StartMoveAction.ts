@@ -1,6 +1,12 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import Action from "../Action.ts";
 import type Exit from "../Exit.js";
+import Game from "../Game.ts";
 import type Room from "../Room.ts";
+import QueueMoveAction from "./QueueMoveAction.ts";
 
 /**
  * Represents a start move action.
@@ -16,15 +22,34 @@ export default class StartMoveAction extends Action {
      * @param destinationRoom - The room the player will be moved to.
      * @param exit - The exit the player will leave their current room through.
      * @param entrance - The exit the player will enter the destination room from.
+     * @param speed - The speed at which the player is moving. Defaults to the minimum speed of their party, or their own current speed if they're not in a party.
 	 */
-	async performStartMove(isRunning: boolean, currentRoom: Room, destinationRoom: Room, exit: Exit, entrance: Exit): Promise<void> {
+	async performStartMove(isRunning: boolean, currentRoom: Room, destinationRoom: Room, exit: Exit, entrance: Exit, speed = this.player.party ? this.player.party.speed : this.player.speed): Promise<void> {
 		if (this.performed) return;
 		super.perform();
-		const time = this.player.calculateMoveTime(exit, isRunning);
+        this.player.currentMovingSpeed = speed;
+		const time = this.player.calculateMoveTime(exit, isRunning, speed);
 		if (time > 1000) {
             const interactables = await this.getGame().botContext.interactableManager.createStopActionInteractable(this.player, this.user);
             this.getGame().narrationHandler.narrateStartMove(this, isRunning, exit, this.player, interactables);
         }
 		this.player.move(isRunning, currentRoom, destinationRoom, exit, entrance, time, this.forced);
+
+        // If anyone is following this player, they need to start moving.
+        for (const occupant of this.location.occupants) {
+            if (occupant.moveQueue.length === 0 && occupant.isFollowing(this.player)) {
+                // We don't want the occupant to reach the destination before the player they're following, or they'll lose track of them.
+                // So, calculate how long to delay their movement.
+                let delay = 0;
+                const occupantTime = occupant.calculateMoveTime(exit, isRunning, occupant.getFollowingSpeed());
+                // Add one tick to the delay just to be safe.
+                if (occupantTime <= time) delay = time - occupantTime + Game.tick;
+                occupant.doAfterDelay(delay, async () => {
+                    occupant.moveQueue = [exit.name];
+                    const queueMoveAction = new QueueMoveAction(this.getGame(), undefined, occupant, occupant.location, this.forced);
+                    await queueMoveAction.performQueueMove(this.player.isRunning, occupant.moveQueue[0], occupant.getFollowingSpeed());
+                });
+            }
+        }
 	}
 }

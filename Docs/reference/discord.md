@@ -182,6 +182,11 @@ Discord servers have a number of limits. The following limitations are relevant 
 * Username/nickname: **32 characters**.
     * A Player's name must be 32 characters or fewer.
 
+Discord also allows users to **forward** messages to almost any channel. Currently, Discord does not offer any way to
+restrict permission to do this, and these messages are considered to have no content of their own. As such, Alter Ego
+cannot handle these. Any forwarded messages sent to a Room channel, a Whisper channel, or the Announcements channel
+will be automatically deleted.
+
 Another limit involves the **Read Message History** permission. When a member doesn't have this permission (which is
 recommended for gameplay purposes), they will not be able to see messages sent any time they didn't have permission
 to read a channel during their current Discord session. A Discord session can loosely be defined as the period of time

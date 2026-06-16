@@ -1,11 +1,15 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import { Collection, GuildMember, type TextChannel } from "discord.js";
 import type { Duration } from "luxon";
 import type Interactable from "../Classes/Interactables/Interactable.ts";
 import Timer from "../Classes/Timer.ts";
-import { MessageDisplayType } from "../Modules/enums.js";
-import * as itemManager from "../Modules/itemManager.js";
+import { MessageDisplayType, WhisperType } from "../Modules/enums.js";
+import * as itemManager from "../Modules/itemManager.ts";
 import { itemIdentifierMatches } from "../Modules/matchers.ts";
-import { makeCopyable } from "../Modules/helpers.ts";
+import { capitalizeFirstLetter, generateListString, makeCopyable } from "../Modules/helpers.ts";
 import type Action from "./Action.ts";
 import CureAction from "./Actions/CureAction.ts";
 import DieAction from "./Actions/DieAction.ts";
@@ -23,6 +27,7 @@ import type InventoryItem from "./InventoryItem.ts";
 import type InventorySlot from "./InventorySlot.ts";
 import type ItemInstance from "./ItemInstance.ts";
 import Notification from "./Notification.ts";
+import type Party from "./Party.ts";
 import type Prefab from "./Prefab.ts";
 import Puzzle from "./Puzzle.ts";
 import type Recipe from "./Recipe.ts";
@@ -47,6 +52,34 @@ export type PlayerField =
     "hidingSpot" |
     "status" |
     "description";
+
+/**
+ * A player's third-person pronouns.
+ */
+interface Pronouns {
+    /** The subjective pronoun. */
+    sbj?: string;
+    /** The subjective pronoun with first letter capitalized. */
+    Sbj?: string;
+    /** The objective pronoun. */
+    obj?: string;
+    /** The objective pronoun with first letter capitalized. */
+    Obj?: string;
+    /** The dependent possessive pronoun. */
+    dpos?: string;
+    /** The dependent possessive pronoun with first letter capitalized. */
+    Dpos?: string;
+    /** The independent possessive pronoun. */
+    ipos?: string;
+    /** The independent possessive pronoun with first letter capitalized. */
+    Ipos?: string;
+    /** The reflexive pronoun. */
+    ref?: string;
+    /** The reflexive pronoun with first letter capitalized. */
+    Ref?: string;
+    /** Whether this set of pronouns turns verbs into their plural form. */
+    plural?: boolean;
+}
 
 /**
  * Represents a player in the game.
@@ -232,6 +265,14 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
      */
     isMoving: boolean;
     /**
+     * Whether the player is currently running or not.
+     */
+    isRunning: boolean;
+    /**
+     * The speed at which the player is currently moving.
+     */
+    currentMovingSpeed: number;
+    /**
      * A timeout that updates the player's position and stamina every 100 milliseconds while the player is moving.
      */
     moveTimer: NodeJS.Timeout | null;
@@ -244,6 +285,24 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
      * When the player finishes moving to one destination, they will begin moving to the next one in the queue, if it exists.
      */
     moveQueue: string[];
+    /**
+     * The name of a player that this player is currently following. Used internally to avoid storing a reference to another player.
+     */
+    #followedPlayerName: string;
+    /**
+     * The display name of the player that this player is currently following.
+     * This is set when the player begins following them, so that if it changes, their new identity won't be revealed.
+     */
+    followedPlayerDisplayName: string;
+    /**
+     * A list of the names of all players that this player is currently leading. Used internally to avoid storing references to other players.
+     */
+    #ledPlayerNames: Set<string>;
+    /**
+     * The party this player is currently in, if any.
+     * If the player is not in a party, this is null.
+     */
+    party: Party | null;
     /**
      * Whether or not the player has depleted half of their stamina while moving.
      * When they do, they will be warned that they're starting to become tired.
@@ -349,9 +408,15 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
         this.carryWeight = 0;
 
         this.isMoving = false;
+        this.isRunning = false;
+        this.currentMovingSpeed = 0;
         this.moveTimer = null;
         this.remainingTime = 0;
         this.moveQueue = [];
+        this.#followedPlayerName = "";
+        this.followedPlayerDisplayName = "";
+        this.#ledPlayerNames = new Set();
+        this.party = null;
 
         this.#reachedHalfStamina = false;
         let player = this;
@@ -493,6 +558,27 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
     }
 
     /**
+     * Executes the given callback function after a set delay.
+     * Overwrites the player's `moveTimer` and `remainingTime`.
+     * @param delay - The amount of time to delay the callback function in milliseconds.
+     * @param callback - The function to call when the delay is over.
+     */
+    doAfterDelay(delay: number, callback: (...args: any[]) => Promise<void>): void {
+        clearInterval(this.moveTimer);
+        this.remainingTime = delay;
+        const player = this;
+        this.moveTimer = setInterval(async () => {
+            let subtractedTime = Game.tick;
+            if (player.getGame().heated) subtractedTime = player.getGame().settings.heatedSlowdownRate * subtractedTime;
+            player.remainingTime -= subtractedTime;
+            if (player.remainingTime <= 0) {
+                clearInterval(this.moveTimer);
+                await callback();
+            }
+        }, Game.tick);
+    }
+
+    /**
      * Moves the player to the desired room.
      *
      * @param isRunning - Whether the player is running.
@@ -506,10 +592,11 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
     move(isRunning: boolean, currentRoom: Room, destinationRoom: Room, exit: Exit, entrance: Exit, time: number, forced: boolean): void {
         this.remainingTime = time;
         this.isMoving = true;
+        this.isRunning = isRunning;
         const startingPos: Pos = { x: this.pos.x, y: this.pos.y, z: this.pos.z };
 
         let player = this;
-        this.moveTimer = setInterval(function () {
+        this.moveTimer = setInterval(async function () {
             const settings = player.getGame().settings;
             let subtractedTime = 100;
             if (player.getGame().heated) subtractedTime = settings.heatedSlowdownRate * subtractedTime;
@@ -567,35 +654,38 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
             if (player.remainingTime <= 0 && player.stamina !== 0) {
                 clearInterval(player.moveTimer);
                 player.isMoving = false;
+                player.isRunning = false;
+                player.currentMovingSpeed = 0;
                 const restrictedExitPuzzle = player.getGame().entityFinder.getPuzzle(exit.name, player.location.id, "restricted exit", true);
                 const exitPuzzlePassable = restrictedExitPuzzle && restrictedExitPuzzle.solutions.includes(player.name);
                 if (exit.unlocked || exitPuzzlePassable) {
                     const moveAction = new MoveAction(player.getGame(), undefined, player, player.location, forced);
-                    moveAction.performMove(isRunning, currentRoom, destinationRoom, exit, entrance);
+                    await moveAction.performMove(isRunning, currentRoom, destinationRoom, exit, entrance);
                 }
                 else {
                     // The exit is locked.
                     const stopAction = new StopAction(player.getGame(), undefined, player, player.location, forced);
-                    stopAction.performStop(true, exit);
+                    stopAction.performStop(true, exit, false);
                     player.pos.x = exit.pos.x;
                     player.pos.y = exit.pos.y;
                     player.pos.z = exit.pos.z;
                     player.moveQueue.length = 0;
                 }
             }
-        }, 100);
+        }, Game.tick);
     }
 
     /**
      * Calculates the player's movement rate in meters per second, irrespective of distance or slope.
      *
-     * @param isRunning - Whether the player is running or not. Defaults to false.
+     * @param isRunning - Whether the player is running or not. Determines speed multiplier. Defaults to false.
+     * @param speed - The speed at which the player is moving. Defaults to their current speed.
      */
-    calculateMoveRate(isRunning: boolean = false): number {
+    calculateMoveRate(isRunning: boolean = false, speed = this.speed): number {
         // The formula to calculate the rate is a quadratic function.
         // The equation is Rate = 0.0183x^2 + 0.005x + 0.916, where x is the player's speed stat multiplied by 2 or 1, depending on if the player is running or not.
         const speedMultiplier = isRunning ? 2 : 1;
-        let rate = 0.0183 * Math.pow(speedMultiplier * this.speed, 2) + 0.005 * speedMultiplier * this.speed + 0.916;
+        let rate = 0.0183 * Math.pow(speedMultiplier * speed, 2) + 0.005 * speedMultiplier * speed + 0.916;
         // Slow down the player relative to how much weight they're carrying.
         // The equation is Slowdown = 15/x, where x is the number of kilograms a player is carrying, and 1/4 <= Slowdown <= 1.
         const slowdown = Math.min(Math.max(15.0 / this.carryWeight, 0.25), 1.0);
@@ -605,10 +695,13 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
     /**
      * Calculates the time it takes to move the player to the desired exit.
      *
+     * @param exit - The exit to move toward.
+     * @param isRunning - Whether the player is running or not. Determines speed multiplier. Defaults to false.
+     * @param customSpeed - A custom speed at which to move. Optional. If not provided, the player's current speed will be used.
      * @returns The number of milliseconds it will take to move to the desired exit.
      */
-    calculateMoveTime(exit: Exit, isRunning: boolean): number {
-        let rate = this.calculateMoveRate(isRunning);
+    calculateMoveTime(exit: Exit, isRunning: boolean, customSpeed?: number): number {
+        let rate = this.calculateMoveRate(isRunning, customSpeed);
         let distance = Math.sqrt(Math.pow(exit.pos.x - this.pos.x, 2) + Math.pow(exit.pos.z - this.pos.z, 2));
         distance = distance / this.getGame().settings.pixelsPerMeter;
         // Slope should affect the rate.
@@ -692,8 +785,145 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
         if (this.moveTimer !== null)
             clearInterval(this.moveTimer);
         this.isMoving = false;
+        this.isRunning = false;
+        this.currentMovingSpeed = 0;
         this.remainingTime = 0;
         this.moveQueue.length = 0;
+    }
+
+    /**
+     * A player that this player is currently following. This player will follow every movement they make as long as
+     * they can see them when they enter the room. If the player is not following anyone, this is null.
+     */
+    get followedPlayer(): Player | null {
+        return this.getGame().entityFinder.getPlayer(this.#followedPlayerName) ?? null;
+    }
+
+    /**
+     * Returns true if the player is following the given player.
+     * @param player - The player to check.
+     */
+    isFollowing(player: Player): boolean {
+        return this.#followedPlayerName !== "" && this.#followedPlayerName === player.name;
+    }
+
+    /**
+     * Sets the player being followed, and their display name.
+     * @param player - The player to follow.
+     */
+    startFollowing(player: Player): void {
+        this.#followedPlayerName = player.name;
+        this.followedPlayerDisplayName = player.displayName;
+    }
+
+    /**
+     * Gets the speed at which to follow the followed player.
+     */
+    getFollowingSpeed(): number {
+        if (this.party) return this.party.speed;
+        else return Math.min(this.speed, this.followedPlayer.currentMovingSpeed);
+    }
+
+    /**
+     * Stops following a player.
+     */
+    stopFollowing(): void {
+        this.#followedPlayerName = "";
+        this.followedPlayerDisplayName = "";
+    }
+
+    /**
+     * A list of players that this player is currently leading. This player is being followed by all of them,
+     * and will adjust their movement speed to not leave anyone behind.
+     */
+    get ledPlayers(): Player[] {
+        let ledPlayers: Player[] = [];
+        this.#ledPlayerNames.forEach(playerName => {
+            const player = this.getGame().entityFinder.getPlayer(playerName);
+            if (player && player.isFollowing(this)) ledPlayers.push(player);
+        });
+        return ledPlayers;
+    }
+
+    /**
+     * Gets the player this player is leading with the given name, if they exist.
+     * If the player doesn't exist or isn't being led by this player, this returns null.
+     * @param playerName - The name of the player to get.
+     */
+    getLedPlayer(playerName: string): Player | null {
+        return this.ledPlayers.find(player => player.name === playerName) ?? null;
+    }
+
+    /**
+     * Returns true if the player is leading the given player.
+     * @param player - The player to check.
+     */
+    isLeading(player: Player): boolean {
+        return this.#ledPlayerNames.has(player.name);
+    }
+
+    /**
+     * Adds the player to the list of players this player is leading.
+     * The given player must be following this player.
+     * @param player - The player to lead.
+     */
+    startLeading(player: Player): void {
+        if (player.isFollowing(this))
+            this.#ledPlayerNames.add(player.name);
+    }
+
+    /**
+     * Removes the player from the list of players this player is leading.
+     * @param player - The player to stop leading.
+     */
+    stopLeading(player: Player): void {
+        this.#ledPlayerNames.delete(player.name);
+    }
+
+    /**
+     * Sets the player's party.
+     * @param party - The party to join.
+     */
+    joinParty(party: Party): void {
+        this.party = party;
+    }
+
+    /**
+     * Clears the player's party.
+     */
+    leaveParty(): void {
+        this.party = null;
+    }
+
+    /**
+     * Displays the player's party.
+     *
+     * @param moderatorView - Whether or not to use the names of players in the party. If this is false, the players' display names will be used instead.
+     * @returns A string representation of the player's party.
+     */
+    viewParty(moderatorView: boolean): string {
+        let partyString = moderatorView ? `${this.name} is` : `You are`;
+        if (this.party) {
+            if (this.party.hasLeader(this)) {
+                partyString += ` the leader of a party.\n\n`;
+                const followerList = this.party.followers.map(follower => moderatorView ? follower.name : this.party.getMemberDisplayName(follower)).toSorted();
+                partyString += capitalizeFirstLetter(generateListString(followerList));
+                partyString += `${followerList.length === 1 ? " is" : " are"} traveling together with `;
+                partyString += moderatorView ? `${this.originalPronouns.obj}.` : `you.`;
+            }
+            else {
+                partyString += ` in a party led by ${moderatorView ? this.party.leader.name : this.party.getMemberDisplayName(this.party.leader)}.`;
+                const followerList = this.party.followers.filter(follower => follower !== this).map(follower => moderatorView ? follower.name : this.party.getMemberDisplayName(follower)).toSorted();
+                if (followerList.length > 0) {
+                    partyString += `\n\n${capitalizeFirstLetter(generateListString(followerList))}`;
+                    partyString += `${followerList.length === 1 ? " is" : " are"} also traveling with ${moderatorView ? this.originalPronouns.obj : "you"}.`;
+                }
+            }
+        }
+        else if (this.followedPlayer)
+            partyString += ` not in a party. However, you are following ${moderatorView ? this.followedPlayer.name : this.followedPlayerDisplayName}.`;
+        else partyString += ` not in a party.`;
+        return partyString;
     }
 
     /**
@@ -760,6 +990,11 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
 
         this.status.set(status.id, statusInstance);
         this.#recalculateStats();
+        // If the player's new speed is less than or equal to 0, stop them from moving.
+        if (this.speed <= 0 && (this.isMoving || this.followedPlayer)) {
+            const stopAction = new StopAction(this.getGame(), undefined, this, this.location, true);
+            stopAction.performStop(false, undefined, true);
+        }
         this.statusDisplays = this.#generateStatusDisplays(true, true);
     }
 
@@ -869,6 +1104,20 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
      */
     getAttributeStatusEffects(attribute: string): Status[] {
         return this.getBehaviorAttributeStatusEffects(attribute);
+    }
+
+    /**
+     * Returns true if the player can use the given command. Returns false if they have a status with the
+     * `disable ${command}` behavior attribute. Also returns false they have the `disable all` behavior attribute,
+     * but this can be overridden by a status with the `enable ${command}` behavior attribute, returning true.
+     * @param command - The command to check.
+     */
+    canUseCommand(command: string): boolean {
+        for (const status of this.status.values()) {
+            if (status.behaviorAttributes.has(`disable ${command}`)) return false;
+            if (status.behaviorAttributes.has("disable all") && !this.hasBehaviorAttribute(`enable ${command}`)) return false;
+        }
+        return true;
     }
 
     /**
@@ -1046,7 +1295,7 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
 
     /**
      * Returns the item contained inside of this container with the given identifier or prefab ID.
-     * If no such item exists, returns undefined. 
+     * If no such item exists, returns undefined.
      * @param identifier - The identifier or prefab ID to search for.
      */
     override getContainedItem(identifier: string): ItemInstance {
@@ -1564,6 +1813,7 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
         this.hidingSpot = "";
         this.statusDisplays.length = 0;
         this.stopMoving();
+        this.stopFollowing();
         for (const status of this.status.values()) {
             if (status.timer !== null)
                 status.timer.stop();
@@ -1580,10 +1830,11 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
      *
      * @param narration - The text of the narration to send in the whisper channel when the player is removed.
      * @param action - The action that caused the player to be removed. If a narration is supplied, this is required.
+     * @param removeFromParty - Whether or not to remove the player from party whispers. Defaults to true.
      */
-    removeFromWhispers(narration: string, action?: Action): void {
+    removeFromWhispers(narration: string, action?: Action, removeFromParty: boolean = true): void {
         for (const whisper of this.getGame().whispers.values()) {
-            if (whisper.players.has(this.name))
+            if (whisper.players.has(this.name) && (removeFromParty || whisper.type !== WhisperType.PARTY))
                 whisper.removePlayer(this, narration, action);
         }
     }

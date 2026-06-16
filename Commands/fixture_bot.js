@@ -1,10 +1,14 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import ActivateAction from "../Data/Actions/ActivateAction.ts";
 import DeactivateAction from "../Data/Actions/DeactivateAction.ts";
 import Room from "../Data/Room.ts";
 import { endsWithPunctuation } from "../Modules/helpers.ts";
 
 /** @import Fixture from '../Data/Fixture.ts' */
-/** @import GameSettings from '../Classes/GameSettings.js' */
+/** @import GameSettings from '../Classes/GameSettings.ts' */
 /** @import Game from '../Data/Game.ts' */
 /** @import Player from '../Data/Player.ts' */
 
@@ -160,11 +164,11 @@ export async function execute(game, command, args, player, callee) {
 
     if (command === "activate") {
         const activateAction = new ActivateAction(game, undefined, player, fixture.location, true);
-        activateAction.performActivate(fixture, narrate, announcement);
+        await activateAction.performActivate(fixture, narrate, announcement);
     }
     else if (command === "deactivate") {
         const deactivateAction = new DeactivateAction(game, undefined, player, fixture.location, true);
-        deactivateAction.performDeactivate(fixture, narrate, announcement);
+        await deactivateAction.performDeactivate(fixture, narrate, announcement);
     }
     else if (command === "tag") {
         if (!input) return game.communicationHandler.sendToCommandChannel(`Error: Couldn't execute command "${cmdString}". No tag to apply to ${fixture.name} was given.`);

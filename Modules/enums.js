@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 /** @enum {number} */
 export const MessageDisplayType = {
     STANDARD: 0,
@@ -37,5 +41,14 @@ export const ActionPriority = {
     EQUIP: 25,
     USE: 30,
     UNEQUIP: 35,
-    DROP: 40
+    DROP: 40,
+    ACTIVATE: 45,
+    DEACTIVATE: 46
+};
+
+/** @enum {number} */
+export const WhisperType = {
+    STANDALONE: 0,
+    HIDING_SPOT: 1,
+    PARTY: 2
 };

@@ -1,7 +1,11 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import { Duration } from "luxon";
 import Timer from "../Classes/Timer.ts";
 import { MessageDisplayType } from "../Modules/enums.js";
-import { getChildItems, combineProceduralSelections } from "../Modules/itemManager.js";
+import { getChildItems, combineProceduralSelections } from "../Modules/itemManager.ts";
 import DeactivateAction from "./Actions/DeactivateAction.ts";
 import InstantiateRoomItemAction from "./Actions/InstantiateRoomItemAction.ts";
 import CollatedItem from "./CollatedItem.ts";
@@ -179,12 +183,19 @@ export default class Fixture extends RecipeProcessor implements PersistentGameEn
     }
 
     /**
-     * Returns a custom ID for this fixture.
-     *
+     * Returns the args for the Inspect ActionDirective for this fixture.
      * @returns ["F", fixture name, fixture location id]
      */
     getInspectActionDirectiveArgs(): [string, string, string] {
         return ["F", this.name, this.getLocation().id];
+    }
+
+    /**
+     * Returns the args for the Activate or Deactivate ActionDirective for this fixture.
+     * @returns [name, location, narrate]
+     */
+    getActivateOrDeactivateActionDirectiveArgs(narrate: boolean): [string, string, string] {
+        return [this.name, this.getLocation().id, String(narrate)];
     }
 
     /**
@@ -257,7 +268,7 @@ export default class Fixture extends RecipeProcessor implements PersistentGameEn
 
     /**
      * Returns the item contained inside of this container with the given identifier or prefab ID.
-     * If no such item exists, returns undefined. 
+     * If no such item exists, returns undefined.
      * @param identifier - The identifier or prefab ID to search for.
      */
     override getContainedItem(identifier: string): ItemInstance {
@@ -292,7 +303,7 @@ export default class Fixture extends RecipeProcessor implements PersistentGameEn
 
     /**
      * Sets the fixture's process with the instantiated products.
-     * 
+     *
      * @param products - The products to set for the process.
      */
     #setProcessProducts(products: RoomItem[]): void {

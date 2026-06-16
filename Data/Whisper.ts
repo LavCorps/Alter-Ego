@@ -1,8 +1,15 @@
-﻿import { Collection, type TextChannel } from "discord.js";
+﻿// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
+import { Collection, type TextChannel } from "discord.js";
 import { generatePlayerListString } from "../Modules/helpers.ts";
+import { WhisperType } from "../Modules/enums.js";
 import type Action from "./Action.ts";
 import type Game from "./Game.ts";
 import GameConstruct from "./GameConstruct.ts";
+import type HidingSpot from "./HidingSpot.ts";
+import type Party from "./Party.ts";
 import type Player from "./Player.ts";
 import Room from "./Room.ts";
 
@@ -13,8 +20,13 @@ import Room from "./Room.ts";
  */
 export default class Whisper extends GameConstruct {
     /**
+     * The type of the whisper. This is based on the entity the whisper is associated with, if there is one.
+     */
+    readonly type: WhisperType;
+    /**
      * The unique ID of the whisper.
-     * Consists of the location ID, hiding spot name (if it exists), and a lowercase, alphabetized list of all the players' displayNames separated by hyphens.
+     * Consists of the location ID (if it has a fixed location), associated entity name (if it exists),
+     * and a lowercase, alphabetized list of all the players' displayNames separated by hyphens.
      */
     id: string;
     /**
@@ -24,15 +36,17 @@ export default class Whisper extends GameConstruct {
     /**
      * The ID of the room the players are whispering in.
      */
-    readonly locationId: string;
-    /**
-     * The room the players are whispering in.
-     */
-    location: Room;
+    locationId: string;
     /**
      * The name of the hiding spot the whisper belongs to.
+     * @deprecated
      */
     hidingSpotName: string;
+    /**
+     * The name of the entity the whisper belongs to.
+     * This can be the name of a hiding spot or a party.
+     */
+    associatedEntityName: string;
     /**
      * The name that the whisper's channel will be set to.
      * Usually matches the ID, but capped to fit within Discord's channel name character limit.
@@ -49,30 +63,51 @@ export default class Whisper extends GameConstruct {
 
     /**
      * @param game - The game this whisper is occurring in.
+     * @param type - The type of the whisper, based on the entity it belongs to.
      * @param players - The players in the whisper.
-     * @param hidingSpotName - The name of the hiding spot the whisper belongs to. Optional.
+     * @param associatedEntityName - The name of the entity the whisper belongs to. This can be the name of a hiding spot or a party. Optional.
      */
-    constructor(game: Game, players: Player[], hidingSpotName?: string) {
+    constructor(game: Game, type: WhisperType, players: Player[], associatedEntityName?: string) {
         super(game);
+        this.type = type;
         this.players = new Collection();
         for (const player of players)
             this.players.set(player.name, player);
         if (this.players.size > 0) {
             this.locationId = this.players.first().location.id;
-            this.location = this.getGame().entityFinder.getRoom(this.locationId);
         }
-        if (hidingSpotName) this.hidingSpotName = hidingSpotName;
-        this.id = Whisper.generateValidId(this.players.map(player => player), this.location, this.hidingSpotName)
+        if (associatedEntityName) {
+            this.associatedEntityName = associatedEntityName;
+            this.hidingSpotName = associatedEntityName;
+        }
+        this.id = Whisper.generateValidId(this.players.map(player => player), this.type !== WhisperType.PARTY ? this.location : undefined, this.associatedEntityName);
         const discordChannelNameCharacterLimit = 100;
         this.channelName = this.id.substring(0, discordChannelNameCharacterLimit);
         this.deleted = false;
     }
 
     /**
+     * The room the players are whispering in.
+     */
+    get location(): Room {
+        return this.getGame().entityFinder.getRoom(this.locationId);
+    }
+
+    /**
      * Sets the location.
      */
     setLocation(room: Room): void {
-        this.location = room;
+        this.locationId = room.id;
+    }
+
+    /**
+     * The entity associated with the whisper, if it exists. This can be a hiding spot or a party.
+     * If no associated entity exists, this is null.
+     */
+    get associatedEntity(): HidingSpot | Party {
+        if (this.type === WhisperType.HIDING_SPOT) return this.getGame().entityFinder.getFixture(this.associatedEntityName, this.locationId)?.hidingSpot;
+        else if (this.type === WhisperType.PARTY) return this.getGame().entityFinder.getParty(this.id);
+        return null;
     }
 
     /**
@@ -113,7 +148,7 @@ export default class Whisper extends GameConstruct {
     async removePlayer(player: Player, narration?: string, action?: Action): Promise<void> {
         await this.revokeChannelAccess(player);
         this.players.delete(player.name);
-        const newId = Whisper.generateValidId(this.players.map(player => player), this.location, this.hidingSpotName);
+        const newId = Whisper.generateValidId(this.players.map(player => player), this.type !== WhisperType.PARTY ? this.location : undefined, this.associatedEntityName);
         const deleteWhisper = this.players.size === 0 || this.getGame().whispers.get(newId);
         if (!deleteWhisper) {
             this.getGame().entityLoader.updateWhisperId(this, newId);
@@ -121,7 +156,7 @@ export default class Whisper extends GameConstruct {
         }
         else {
             this.deleted = true;
-            this.getGame().entityLoader.deleteWhisper(this);
+            await this.getGame().entityLoader.deleteWhisper(this);
         }
     }
 
@@ -136,12 +171,12 @@ export default class Whisper extends GameConstruct {
      * Generate an ID in all lowercase with
      *
      * @param players - The players in the whisper.
-     * @param location - The location of the whisper.
-     * @param hidingSpotName - The name of the hiding spot associated with the whisper, if applicable.
+     * @param location - The location of the whisper. Optional.
+     * @param associatedEntityName - The name of the entity the whisper belongs to. This can be the name of a hiding spot or a party. Optional.
      */
-    static generateValidId(players: Player[], location: Room, hidingSpotName?: string): string {
-        const locationString = `${location.id}-`;
-        const hidingSpotString = hidingSpotName ? `${hidingSpotName}-` : ``;
+    static generateValidId(players: Player[], location?: Room, associatedEntityName?: string): string {
+        const locationString = location ? `${location.id}-` : ``;
+        const hidingSpotString = associatedEntityName ? `${associatedEntityName}-` : ``;
         const playerListString = players.map(player => player.displayName).sort().join('-');
         return Room.generateValidId(`${locationString}${hidingSpotString}${playerListString}`);
     }

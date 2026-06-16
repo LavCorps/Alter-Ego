@@ -1,16 +1,29 @@
-import MoveAction from '../Data/Actions/MoveAction.ts';
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
 
-/** @import Moderator from '../Data/Moderator.ts' */
-/** @import GameSettings from '../Classes/GameSettings.js' */
-/** @import Game from '../Data/Game.ts' */
+import MoveAction from '../Data/Actions/MoveAction.ts';
+import QueueMoveAction from '../Data/Actions/QueueMoveAction.ts';
+
+/** @import Moderator from '../Data/Moderator.ts'; */
+/** @import GameSettings from '../Classes/GameSettings.ts'; */
+/** @import Game from '../Data/Game.ts'; */
+/** @import Exit from '../Data/Exit.ts'; */
+/** @import Player from '../Data/Player.ts'; */
+/** @import Room from '../Data/Room.ts'; */
 
 /** @type {CommandConfig} */
 export const config = {
     name: "move_moderator",
     description: "Moves the given player to the specified room or exit.",
     details: `Forcibly moves the given players to the specified room or exit. When a player is moved, they will be `
-        + `removed from the room channel they were already in and added to the destination room channel. `
-        + `They will move to the given destination immediately, without consuming any stamina, and with no regard for `
+        + `removed from the room channel they were already in and added to the destination room channel.\n\n`
+        + `If a single player and the name of an exit in the room they're in are given, they will begin moving to that `
+        + `exit, using stamina along the way. You can also queue their movements this way by separating each `
+        + `destination with \`>\`. However, if you wish to move them through an exit immediately and bypass locks and `
+        + `inaccessibility, you can use the \`teleport\` or \`tp\` alias.\n\n`
+        + `If multiple players are listed, or the name of a room is given, the listed players will move to the given `
+        + `destination immediately, without consuming any stamina, and with no regard for `
         + `whether the room is adjacent to their current room or the exit leading to it is locked.\n\n`
         + `You can select multiple players by separating their names with a space. If instead of providing the names of `
         + `players, you enter "living" or "all", all living players will be moved to the specified room, except for `
@@ -19,7 +32,7 @@ export const config = {
         + `the narration in the destination room will not specify which exit they entered from.\n\n`
         + `This command supports NPC latching. For more information, see the help details for the \`latch\` command.`,
     usableBy: "Moderator",
-    aliases: ["move", "go", "enter", "walk", "m"],
+    aliases: ["move", "go", "enter", "walk", "m", "teleport", "tp"],
     requiresGame: true
 };
 
@@ -29,9 +42,11 @@ export const config = {
  */
 export function usage(settings) {
     return `${settings.commandPrefix}move Kiki DOOR 2\n`
+        + `${settings.commandPrefix}m Lingling PATH 3 > PATH 5 > PATH 2\n`
+        + `${settings.commandPrefix}teleport Maple BLAST DOOR\n`
         + `${settings.commandPrefix}enter Kiki Lingling Maple Wally biosphere-garden\n`
         + `${settings.commandPrefix}go living Dining Hall\n`
-        + `${settings.commandPrefix}m all ELEVATOR`;
+        + `${settings.commandPrefix}tp all ELEVATOR`;
 }
 
 /**
@@ -44,11 +59,14 @@ export function usage(settings) {
 export async function execute(game, message, command, args, moderator) {
     const sentMessageInLatchChannel = moderator?.sentMessageInLatchChannel(message) ?? false;
     if (!sentMessageInLatchChannel && args.length < 2)
-        return game.communicationHandler.reply(message, `You need to specify at least one player and a room. Usage:\n${usage(game.settings)}`);
+        return game.communicationHandler.reply(message, game.errorMessageGenerator.generateSpecifyErrorWithUsage("at least one player and a room or exit", usage));
     else if (sentMessageInLatchChannel && args.length < 1)
-        return game.communicationHandler.reply(message, `You need to specify a room. Usage:\n${usage(game.settings)}`);
+        return game.communicationHandler.reply(message, game.errorMessageGenerator.generateSpecifyErrorWithUsage("a room or exit", usage));
+    const teleport = command === "teleport" || command === "tp";
 
     // Get all listed players first.
+    let singlePlayerSelected = false;
+    /** @type {Player[]} */
     const players = [];
     if (args[0] === "all" || args[0] === "living") {
         game.entityFinder.getLivingPlayers(null, false).map((player) => {
@@ -66,11 +84,25 @@ export async function execute(game, message, command, args, moderator) {
             }
         }
         if (players.length === 0 && sentMessageInLatchChannel) players.push(moderator.getLatch());
+        if (players.length === 1) singlePlayerSelected = true;
+    }
+
+    // If we only want to move a single player and the teleport alias wasn't used, perform a QueueMoveAction.
+    if (singlePlayerSelected && !teleport) {
+        const player = players[0];
+        if (player.speed <= 0) return game.communicationHandler.reply(message, game.errorMessageGenerator.generateCannotMoveWithNoSpeedError(player, "Moderator"));
+        player.stopMoving();
+        player.stopFollowing();
+        player.moveQueue = args.join(" ").split(">");
+        const action = new QueueMoveAction(game, message, player, player.location, true);
+        await action.performQueueMove(false, player.moveQueue[0]);
+        return action.sendSuccessMessageToCommandChannel();
     }
 
     // Args at this point should only include the room/exit name, as well as any players that weren't found.
     // Check to see that the last argument is the name of a room.
     let input = args.join(" ").replace(/\'/g, "").replace(/ /g, "-").toLowerCase();
+    /** @type {Room} */
     let desiredRoom = null;
     for (let i = 0; i < args.length; i++) {
         const searchString = args.slice(i).join(" ").replace(/\'/g, "").replace(/ /g, "-").toLowerCase();
@@ -84,12 +116,14 @@ export async function execute(game, message, command, args, moderator) {
     // Now, if the room couldn't be found, try looking for the name of an exit.
     // All given players must be in the same room for this to work.
     let isExit = false;
+    /** @type {Exit} */
     let exit = null;
+    /** @type {Exit} */
     let entrance = null;
     if (!desiredRoom && players.length !== 0) {
         const currentRoom = players[0].location;
         for (let i = 1; i < players.length; i++) {
-            if (players[i].location !== currentRoom) return game.communicationHandler.reply(message, "All listed players must be in the same room to use an exit name.");
+            if (players[i].location !== currentRoom) return game.communicationHandler.reply(message, game.errorMessageGenerator.generateCannotUseExitOnPlayersInDifferentRoomsError());
         }
         input = args.join(" ").toUpperCase();
         for (let i = 0; i <= args.length; i++) {
@@ -115,14 +149,13 @@ export async function execute(game, message, command, args, moderator) {
     if (args.length > 0) {
         if (!desiredRoom && !exit) {
             const roomName = args.join(" ");
-            return game.communicationHandler.reply(message, `Couldn't find room or exit "${roomName}".`);
+            return game.communicationHandler.reply(message, game.errorMessageGenerator.generateEntityNotFoundError("room or exit", roomName));
         }
         else {
-            const missingPlayers = args.join(", ");
-            return game.communicationHandler.reply(message, `Couldn't find player(s): ${missingPlayers}.`);
+            return game.communicationHandler.reply(message, game.errorMessageGenerator.generatePlayersNotFoundError(args));
         }
     }
-    if (players.length === 0) return game.communicationHandler.reply(message, "You need to specify at least one player.");
+    if (players.length === 0) return game.communicationHandler.reply(message, game.errorMessageGenerator.generateSpecifyError("at least one player"));
 
     for (let i = 0; i < players.length; i++) {
         // Skip over players who are already in the specified room.
@@ -144,9 +177,10 @@ export async function execute(game, message, command, args, moderator) {
 
             // Clear the player's movement timer first.
             players[i].stopMoving();
+            players[i].stopFollowing();
             // Move the player.
             const action = new MoveAction(game, message, players[i], players[i].location, true);
-            action.performMove(false, currentRoom, desiredRoom, exit, entrance);
+            await action.performMove(false, currentRoom, desiredRoom, exit, entrance);
         }
     }
 

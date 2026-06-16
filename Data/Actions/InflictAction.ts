@@ -1,9 +1,15 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import type { Duration } from "luxon";
 import { MessageDisplayType } from "../../Modules/enums.js";
 import Action from "../Action.ts";
 import type InventoryItem from "../InventoryItem.ts";
 import type Status from "../Status.ts";
 import CureAction from "./CureAction.ts";
+import DisbandPartyAction from "./DisbandPartyAction.ts";
+import StopFollowingAction from "./StopFollowingAction.ts";
 
 /**
  * Represents an inflict action.
@@ -70,8 +76,21 @@ export default class InflictAction extends Action {
 			this.player.setPronouns(this.player.pronouns, "neutral");
 			this.location.setOccupantsString();
 		}
-		if (status.behaviorAttributes.has("disable all") || status.behaviorAttributes.has("disable move") || status.behaviorAttributes.has("disable run"))
-			this.player.stopMoving();
+		if (status.behaviorAttributes.has("disable all") || status.behaviorAttributes.has("disable move") || status.behaviorAttributes.has("disable run")) {
+            this.player.stopMoving();
+            if (!this.player.party) this.player.stopFollowing();
+        }
+        if (this.player.followedPlayer &&
+        (status.behaviorAttributes.has("disable follow") || status.behaviorAttributes.has("disable all") && !status.behaviorAttributes.has("enable follow"))) {
+            const stopFollowingAction = new StopFollowingAction(this.getGame(), undefined, this.player, this.player.location, true);
+            stopFollowingAction.performStopFollowing(true);
+        }
+        if (this.player.party && this.player.party.hasLeader(this.player) &&
+        (status.behaviorAttributes.has("disable lead") || status.behaviorAttributes.has("disable all") && !status.behaviorAttributes.has("enable lead"))) {
+            const disbandNotification = this.getGame().notificationGenerator.generatePartyDisbandedByStatusNotification(this.player, `**${status.id}**`, true);
+            const disbandAction = new DisbandPartyAction(this.getGame(), undefined, this.player, this.player.location, true);
+            disbandAction.performDisbandParty(true, "", "", disbandNotification);
+        }
 
 		this.player.inflict(status, duration);
 		if (notify) {

@@ -1,6 +1,10 @@
-﻿import { Collection } from "discord.js";
+﻿// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
+import { Collection } from "discord.js";
 import { parseAndExecuteBotCommands } from "../Modules/commandHandler.ts";
-import { replaceInventoryItem } from "../Modules/itemManager.js";
+import { replaceInventoryItem } from "../Modules/itemManager.ts";
 import Description from "./Description.ts";
 import type EquipmentSlot from "./EquipmentSlot.ts";
 import type Game from "./Game.ts";

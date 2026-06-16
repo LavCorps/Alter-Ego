@@ -1,7 +1,7 @@
 ﻿import { clearQueue } from '../Modules/messageHandler.js';
 
 /** @import Moderator from '../Data/Moderator.ts' */
-/** @import GameSettings from '../Classes/GameSettings.js' */
+/** @import GameSettings from '../Classes/GameSettings.ts' */
 /** @import Game from '../Data/Game.ts' */
 /** @type {CommandConfig} */
 export const config = {

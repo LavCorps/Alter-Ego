@@ -1,7 +1,7 @@
 import Flag from "../Data/Flag.ts";
 import Game from "../Data/Game.ts";
 
-/** @import GameSettings from '../Classes/GameSettings.js' */
+/** @import GameSettings from '../Classes/GameSettings.ts' */
 /** @import Player from '../Data/Player.ts' */
 
 /** @type {CommandConfig} */

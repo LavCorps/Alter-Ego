@@ -1,9 +1,13 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import ActivateAction from '../Data/Actions/ActivateAction.ts';
 import AttemptAction from '../Data/Actions/AttemptAction.ts';
 import DeactivateAction from '../Data/Actions/DeactivateAction.ts';
 import UseAction from '../Data/Actions/UseAction.ts';
 
-/** @import GameSettings from '../Classes/GameSettings.js' */
+/** @import GameSettings from '../Classes/GameSettings.ts' */
 /** @import Game from '../Data/Game.ts' */
 /** @import Player from '../Data/Player.ts' */
 
@@ -138,11 +142,11 @@ export async function execute(game, message, command, args, player) {
         const narrate = puzzle === null ? true : false;
         if (fixture.activated) {
             const deactivateAction = new DeactivateAction(game, message, player, player.location, false);
-            deactivateAction.performDeactivate(fixture, narrate);
+            await deactivateAction.performDeactivate(fixture, narrate);
         }
         else {
             const activateAction = new ActivateAction(game, message, player, player.location, false);
-            activateAction.performActivate(fixture, narrate);
+            await activateAction.performActivate(fixture, narrate);
         }
     }
 

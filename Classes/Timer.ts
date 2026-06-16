@@ -1,5 +1,14 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import { Duration } from 'luxon';
 import type { DurationUnit } from 'luxon';
+
+interface TimerAttributes {
+    loop: boolean;
+    start: boolean;
+}
 
 /**
  * API-compatible replacement for moment.js, adapted to day.js.
@@ -30,7 +39,7 @@ export default class Timer {
     constructor(duration: number | Duration, attributes: TimerAttributes, callback?: Function) {
         if (Duration.isDuration(duration))
             this.timerDuration = duration.as('milliseconds');
-        else 
+        else
             this.timerDuration = duration;
         this.attributes = { ...{ loop: false, start: false }, ...attributes };
         this.callback = callback;

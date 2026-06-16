@@ -171,6 +171,15 @@ describe('Recipe test', () => {
 			expect(sinkRecipe.ingredients.toString()).toBe(items.toString());
 		});
 
+        test('getSatisfactoryProcessCount in video-room SINK 3', () => {
+			const recipe = game.entityFinder.getRecipes('processing', 'small water source', 'DIRTY POT, DETERGENT', 'POT, DETERGENT')[0];
+			const sink = game.entityFinder.getFixture('SINK 3', 'video-room');
+			const items = CollatedItem.collate(sink.getContainedItems());
+			expect(recipe.getSatisfactoryProcessCount(items)).toBe(0);
+			const sinkRecipe = sink.findRecipe();
+			expect(sinkRecipe.recipe).toBeNull();
+		});
+
 		test('getSatisfactoryProcessCount on video-room BURNER 1', () => {
 			const recipe = game.entityFinder.getRecipes('processing', 'stovetop', 'POT FILLED WITH WATER, SPAGHETTI NOODLES', 'POT OF SPAGHETTI')[0];
 			const burner = game.entityFinder.getFixture('BURNER 1', 'video-room');

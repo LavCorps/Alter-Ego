@@ -1,7 +1,11 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import Command from "./Command.ts";
 import type Game from "../Data/Game.ts";
 import type Player from "../Data/Player.ts";
-import type GameSettings from "./GameSettings.js";
+import type GameSettings from "./GameSettings.ts";
 
 /**
  * A command usable by the bot itself. Command sets can be written for some in-game data structures to be executed when certain conditions are met.

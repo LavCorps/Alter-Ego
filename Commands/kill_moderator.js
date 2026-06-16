@@ -1,7 +1,11 @@
-﻿import DieAction from '../Data/Actions/DieAction.ts';
+﻿// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
+import DieAction from '../Data/Actions/DieAction.ts';
 
 /** @import Moderator from '../Data/Moderator.ts' */
-/** @import GameSettings from '../Classes/GameSettings.js' */
+/** @import GameSettings from '../Classes/GameSettings.ts' */
 /** @import Game from '../Data/Game.ts' */
 /** @import Player from '../Data/Player.ts' */
 
@@ -63,7 +67,7 @@ export async function execute(game, message, command, args, moderator) {
 
     for (let i = 0; i < players.length; i++) {
         const action = new DieAction(game, message, players[i], players[i].location, true);
-        action.performDie();
+        await action.performDie();
     }
 
     game.communicationHandler.sendToCommandChannel("Listed players are now dead. Remember to use the reveal command when their bodies are discovered!");

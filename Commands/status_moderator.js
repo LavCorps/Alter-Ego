@@ -2,7 +2,7 @@ import CureAction from '../Data/Actions/CureAction.ts';
 import InflictAction from '../Data/Actions/InflictAction.ts';
 
 /** @import Moderator from '../Data/Moderator.ts' */
-/** @import GameSettings from '../Classes/GameSettings.js' */
+/** @import GameSettings from '../Classes/GameSettings.ts' */
 /** @import Game from '../Data/Game.ts' */
 /** @import Player from '../Data/Player.ts' */
 /** @import Status from "../Data/Status.ts" */

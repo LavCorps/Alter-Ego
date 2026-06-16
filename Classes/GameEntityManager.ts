@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import Room from "../Data/Room.ts";
 import Whisper from "../Data/Whisper.ts";
 import Moderator from "../Data/Moderator.ts";
@@ -6,11 +10,13 @@ import type Event from "../Data/Event.ts";
 import type Fixture from "../Data/Fixture.ts";
 import type Flag from "../Data/Flag.ts";
 import type Game from "../Data/Game.ts";
+import Party from "../Data/Party.ts";
 import type Player from "../Data/Player.ts";
 import type Prefab from "../Data/Prefab.ts";
 import type Puzzle from "../Data/Puzzle.ts";
 import type Status from "../Data/Status.ts";
 import type { GuildMember, TextChannel } from "discord.js";
+import { WhisperType } from "../Modules/enums.js";
 
 /**
  * A set of functions to manage game entities.
@@ -128,6 +134,7 @@ export default abstract class GameEntityManager {
 					status.timer.stop();
 			});
 			player.stopMoving();
+            player.stopFollowing();
 			player.setOffline();
 		});
 		this.game.rooms.forEach(room => {
@@ -304,10 +311,11 @@ export default abstract class GameEntityManager {
 	 * Creates a new whisper and adds it to the game's collection of whispers.
 	 * @param players - The players to add to the whisper.
 	 * @param hidingSpotName - The name of the hiding spot the whisper belongs to. Optional.
+     * @param type - The type of the whisper, based on the entity it belongs to. Defaults to `STANDALONE`, which is for whispers that don't belong to any entity.
 	 * @returns The created whisper.
 	 */
-	async createWhisper(players: Player[], hidingSpotName?: string): Promise<Whisper> {
-		const whisper = new Whisper(this.game, players, hidingSpotName);
+	async createWhisper(players: Player[], hidingSpotName?: string, type: WhisperType = WhisperType.STANDALONE): Promise<Whisper> {
+		const whisper = new Whisper(this.game, type, players, hidingSpotName);
 		whisper.channel = await this.#createWhisperChannel(whisper);
 		this.game.whispers.set(whisper.id, whisper);
 		return whisper;
@@ -333,7 +341,12 @@ export default abstract class GameEntityManager {
 	 */
 	async deleteWhisper(whisper: Whisper): Promise<void> {
 		if (this.game.settings.autoDeleteWhisperChannels) await whisper.channel.delete();
-		else await whisper.channel.edit({ name: `archived-${whisper.location.id}`, lockPermissions: true });
+		else {
+            const archivedIdentifier = whisper.type === WhisperType.HIDING_SPOT ? `${whisper.locationId}-${whisper.associatedEntityName}`
+                : whisper.type === WhisperType.PARTY ? whisper.associatedEntity
+                    : whisper.locationId;
+            await whisper.channel.edit({ name: Room.generateValidId(`archived-${archivedIdentifier}`), lockPermissions: true });
+        }
 		whisper.players.clear();
 		this.game.whispers.delete(whisper.id);
 	}
@@ -366,6 +379,33 @@ export default abstract class GameEntityManager {
 			}).catch();
 		});
 	}
+
+    /**
+     * Creates a new party and adds it to the game's collection of parties.
+     * Also creates a whisper for the party and adds it to the game's collection of whispers.
+     * @param leader - The leader of the party. This is the player who is responsible for moving the party.
+     * @param followers - The followers of the party. These are the players who will follow the leader when they move to a new room.
+     * @param idPrefix - The prefix for the ID of the party. This is used to generate the party's ID. Optional. By default, this is set to `party`.
+     */
+    async createParty(leader: Player, followers: Player[], idPrefix: string = "party"): Promise<Party> {
+        const party = new Party(this.game, leader, followers, idPrefix);
+        const whisper = await this.createWhisper(Array.from(party.members.values()), idPrefix, WhisperType.PARTY);
+        party.whisper = whisper;
+        this.game.parties.set(party.id, party);
+        return party;
+    }
+
+    /**
+     * Deletes a party from the game.
+     * @param party - The party to delete.
+     */
+    async deleteParty(party: Party): Promise<void> {
+        await this.deleteWhisper(party.whisper);
+        party.leader = null;
+        party.followers.clear();
+        party.members.clear();
+        this.game.parties.delete(party.id);
+    }
 
     /**
      * Gets the moderator associated with the given member, or creates one if it doesn't already exist.

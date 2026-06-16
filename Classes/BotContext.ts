@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import { ActivityType } from "discord.js";
 import PrettyPrinter from "./PrettyPrinter.ts";
 import BotInteractableManager from "./BotInteractableManager.ts";
@@ -10,6 +14,18 @@ import EligibleCommand from "./EligibleCommand.ts";
 import type { Client, Collection } from "discord.js";
 
 /**
+ * Represents a log entry for a command executed in the game.
+ */
+interface CommandLogEntry {
+    /** The date and time when the command was executed. */
+    timestamp: Date;
+    /** Who issued the command. */
+    author: string;
+    /** The content of the command. */
+    content: string;
+}
+
+/**
  * Represents the bot as a singleton.
  */
 export default class BotContext {
@@ -17,11 +33,11 @@ export default class BotContext {
 	 * The single instance of the bot that can exist.
 	 */
 	static #instance: BotContext;
-	/** 
+	/**
 	 * The Discord Client associated with the bot.
 	 */
 	readonly client: Client;
-	/** 
+	/**
 	 * All commands usable by the bot itself.
 	 */
 	readonly botCommands: Collection<string, BotCommand>;
@@ -112,7 +128,7 @@ export default class BotContext {
         return BotContext.#instance;
     }
 
-    /** 
+    /**
      * An array of the most recently-issued commands. Used by the dumplog command for debugging purposes.
      */
     public get commandLog() {

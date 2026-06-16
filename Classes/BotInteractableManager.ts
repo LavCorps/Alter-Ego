@@ -1,4 +1,8 @@
-import { ButtonStyle, Collection } from "discord.js";
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
+import { ButtonStyle, Collection, type Snowflake } from "discord.js";
 import ButtonInteractable from "./Interactables/ButtonInteractable.ts";
 import PageNextInteractable from "./Interactables/PageNextInteractable.ts";
 import PagePrevInteractable from "./Interactables/PagePrevInteractable.ts";
@@ -12,6 +16,7 @@ import Fixture from "../Data/Fixture.ts";
 import type Game from "../Data/Game.ts";
 import type Interactable from "./Interactables/Interactable.ts";
 import InventoryItem from "../Data/InventoryItem.ts";
+import ItemInstance from "../Data/ItemInstance.ts";
 import type Exit from "../Data/Exit.ts";
 import Moderator from "../Data/Moderator.ts";
 import Recipe from "../Data/Recipe.ts";
@@ -30,6 +35,8 @@ import UnequipAction from "../Data/Actions/UnequipAction.ts";
 import CraftAction from "../Data/Actions/CraftAction.ts";
 import UncraftAction from "../Data/Actions/UncraftAction.ts";
 import UseAction from "../Data/Actions/UseAction.ts";
+import ActivateAction from "../Data/Actions/ActivateAction.ts";
+import DeactivateAction from "../Data/Actions/DeactivateAction.ts";
 import InstantiateInventoryItemAction from "../Data/Actions/InstantiateInventoryItemAction.ts";
 import InstantiateRoomItemAction from "../Data/Actions/InstantiateRoomItemAction.ts";
 import DestroyInventoryItemAction from "../Data/Actions/DestroyInventoryItemAction.ts";
@@ -37,9 +44,8 @@ import DestroyRoomItemAction from "../Data/Actions/DestroyRoomItemAction.ts";
 import FindAction from "../Data/Actions/FindAction.ts";
 import ViewAction, { type EntityField } from "../Data/Actions/ViewAction.ts";
 import { removeInteractablesFromMessage } from "../Modules/messageHandler.js";
-import { ActionPriority} from "../Modules/enums.js";
+import { ActionPriority } from "../Modules/enums.js";
 import { capitalizeFirstLetter, getSortedItems } from "../Modules/helpers.ts";
-import ItemInstance from "../Data/ItemInstance.ts";
 
 class InteractableOptions<T extends Action> {
     actionDirective: ActionDirective<T>;
@@ -54,6 +60,16 @@ class InteractableOptions<T extends Action> {
         this.description = description;
         this.respondWithModal = respondWithModal;
     }
+}
+
+/**
+ * A message with Interactables on it that has been cached for tracking.
+ */
+interface InteractableMessage {
+    /** The ID of the channel the message is in. */
+    channelId: Snowflake;
+    /** The ID of the message. */
+    messageId: Snowflake;
 }
 
 /**
@@ -273,7 +289,7 @@ export default class BotInteractableManager {
      * @param user - The user these interactables are being created for. Defaults to the given player.
      */
     async createStopActionInteractable(player: Player, user: User = player): Promise<ButtonInteractable[]> {
-        if (player.hasBehaviorAttribute("disable stop") || player.hasBehaviorAttribute("disable all") && !player.hasBehaviorAttribute("enable stop")) return [];
+        if (!player.canUseCommand("stop")) return [];
         const actionDirective = await this.#createActionDirective(StopAction, [], player, user);
         const interactableOptions = new InteractableOptions(actionDirective, `Stop`);
         return [this.#createButtonInteractable(interactableOptions, ButtonStyle.Danger, ActionPriority.STOP)];
@@ -286,7 +302,7 @@ export default class BotInteractableManager {
      * @param user - The user these interactables are being created for. Defaults to the given player.
 	 */
 	async createInspectActionInteractable(entities: Inspectable[], player: Player, user: User = player): Promise<StringSelectMenuInteractable[]> {
-		if (player.hasBehaviorAttribute("disable inspect") || player.hasBehaviorAttribute("disable all") && !player.hasBehaviorAttribute("enable inspect")) return [];
+        if (!player.canUseCommand("inspect")) return [];
         const interactableOptions: InteractableOptions<InspectAction>[] = [];
 		for (const entity of entities) {
             const actionDirective = await this.#createActionDirective(InspectAction, entity.getInspectActionDirectiveArgs(), player, user);
@@ -310,7 +326,7 @@ export default class BotInteractableManager {
      * @param user - The user these interactables are being created for. Defaults to the given player.
 	 */
 	async createTakeActionInteractable(entities: RoomItem[], player: Player, user: User = player): Promise<(ButtonInteractable | StringSelectMenuInteractable)[]> {
-		if (player.hasBehaviorAttribute("disable take") || player.hasBehaviorAttribute("disable all") && !player.hasBehaviorAttribute("enable take")) return [];
+        if (!player.canUseCommand("take")) return [];
 		const interactableOptions: InteractableOptions<TakeAction>[] = [];
         for (const entity of entities) {
             const actionDirective = await this.#createActionDirective(TakeAction, entity.getTakeActionDirectiveArgs(), player, user);
@@ -337,7 +353,7 @@ export default class BotInteractableManager {
      * @param user - The user these interactables are being created for. Defaults to the given player.
 	 */
 	async createDropActionInteractables(entities: InventoryItem[], player: Player, container: RoomItemContainer, user: User = player): Promise<(ButtonInteractable | StringSelectMenuInteractable)[]> {
-		if (player.hasBehaviorAttribute("disable drop") || player.hasBehaviorAttribute("disable all") && !player.hasBehaviorAttribute("enable drop")) return [];
+        if (!player.canUseCommand("drop")) return [];
 		const interactableOptions: InteractableOptions<DropAction>[] = [];
         for (const entity of entities) {
             const containerType = container instanceof RoomItem ? 'RoomItem' : container instanceof Fixture ? 'Fixture' : 'Puzzle';
@@ -375,7 +391,7 @@ export default class BotInteractableManager {
      * @param user - The user these interactables are being created for. Defaults to the given player.
 	 */
 	async createStashActionInteractables(entities: InventoryItem[], player: Player, viableContainers: Map<InventoryItem, string[]>, user: User = player): Promise<(ButtonInteractable | StringSelectMenuInteractable)[]> {
-		if (player.hasBehaviorAttribute("disable stash") || player.hasBehaviorAttribute("disable all") && !player.hasBehaviorAttribute("enable stash")) return [];
+        if (!player.canUseCommand("stash")) return [];
         const interactableOptions: InteractableOptions<StashAction>[] = [];
         for (const entity of entities) {
             for (const [container, inventorySlots] of viableContainers.entries()) {
@@ -406,7 +422,7 @@ export default class BotInteractableManager {
      * @param user - The user these interactables are being created for. Defaults to the given player.
 	 */
 	async createUnstashActionInteractables(entities: InventoryItem[], player: Player, user: User = player): Promise<(ButtonInteractable | StringSelectMenuInteractable)[]> {
-		if (player.hasBehaviorAttribute("disable unstash") || player.hasBehaviorAttribute("disable all") && !player.hasBehaviorAttribute("enable unstash")) return [];
+        if (!player.canUseCommand("unstash")) return [];
 		const interactableOptions: InteractableOptions<UnstashAction>[] = [];
         for (const entity of entities) {
             const actionDirective = await this.#createActionDirective(UnstashAction, entity.getUnstashActionDirectiveArgs(), player, user);
@@ -433,7 +449,7 @@ export default class BotInteractableManager {
      * @param user - The user these interactables are being created for. Defaults to the given player.
 	 */
     async createEquipActionInteractables(equippableItems: Map<InventoryItem, string[]>, player: Player, user: User = player): Promise<(ButtonInteractable | StringSelectMenuInteractable)[]> {
-        if (player.hasBehaviorAttribute("disable equip") || player.hasBehaviorAttribute("disable all") && !player.hasBehaviorAttribute("enable equip")) return [];
+        if (!player.canUseCommand("equip")) return [];
         const interactableOptions: InteractableOptions<EquipAction>[] = [];
         for (const [heldItem, equipmentSlots] of equippableItems.entries()) {
             for (const equipmentSlotId of equipmentSlots) {
@@ -460,7 +476,7 @@ export default class BotInteractableManager {
      * @param user - The user these interactables are being created for. Defaults to the given player.
      */
     async createUnequipActionInteractables(unequippableItems: InventoryItem[], player: Player, user: User = player): Promise<StringSelectMenuInteractable[]> {
-        if (player.hasBehaviorAttribute("disable unequip") || player.hasBehaviorAttribute("disable all") && !player.hasBehaviorAttribute("enable unequip")) return [];
+        if (!player.canUseCommand("unequip")) return [];
         const interactableOptions: InteractableOptions<UnequipAction>[] = [];
         for (const item of unequippableItems) {
             const actionDirective = await this.#createActionDirective(UnequipAction, item.getUnequipActionDirectiveArgs(), player, user);
@@ -477,7 +493,7 @@ export default class BotInteractableManager {
      * @param user - The user these interactables are being created for. Defaults to the given player.
      */
     async createCraftActionInteractables(recipe: Recipe, player: Player, user: User = player): Promise<ButtonInteractable[]> {
-        if (player.hasBehaviorAttribute("disable craft") || player.hasBehaviorAttribute("disable all") && !player.hasBehaviorAttribute("enable craft")) return [];
+        if (!player.canUseCommand("craft")) return [];
         const heldItems = getSortedItems(this.#game.entityFinder.getPlayerHands(player).filter(hand => hand.equippedItem !== null).map(hand => hand.equippedItem));
         const actionDirective = await this.#createActionDirective(CraftAction, player.getCraftActionDirectiveArgs(heldItems[0], heldItems[1], recipe), player, user);
         const interactableOptions = new InteractableOptions(actionDirective, `Craft ${heldItems[0].name} and ${heldItems[1].name}`);
@@ -491,7 +507,7 @@ export default class BotInteractableManager {
      * @param user - The user these interactables are being created for. Defaults to the given player.
      */
     async createUncraftActionInteractables(recipe: Recipe, player: Player, user: User = player): Promise<ButtonInteractable[]> {
-        if (player.hasBehaviorAttribute("disable uncraft") || player.hasBehaviorAttribute("disable all") && !player.hasBehaviorAttribute("enable uncraft")) return [];
+        if (!player.canUseCommand("uncraft")) return [];
         const heldItems = getSortedItems(this.#game.entityFinder.getPlayerHands(player).filter(hand => hand.equippedItem !== null).map(hand => hand.equippedItem));
         const actionDirective = await this.#createActionDirective(UncraftAction, player.getUncraftActionDirectiveArgs(heldItems[0], recipe), player, user);
         const interactableOptions = new InteractableOptions(actionDirective, `Uncraft ${heldItems[0].name}`);
@@ -505,7 +521,7 @@ export default class BotInteractableManager {
      * @param user - The user these interactables are being created for. Defaults to the given player.
 	 */
     async createUseActionInteractables(usableItems: InventoryItem[], player: Player, user: User = player): Promise<StringSelectMenuInteractable[]> {
-        if (player.hasBehaviorAttribute("disable use") || player.hasBehaviorAttribute("disable all") && !player.hasBehaviorAttribute("enable use")) return [];
+        if (!player.canUseCommand("use")) return [];
         const interactableOptions: InteractableOptions<UseAction>[] = [];
         for (const item of usableItems) {
             const actionDirective = await this.#createActionDirective(UseAction, item.getUseActionDirectiveArgs(player), player, user);
@@ -516,6 +532,32 @@ export default class BotInteractableManager {
         }
         const actionDirective = await this.#createActionDirective(UseAction, ["UseAction Menu"], player, user);
         return this.#createStringSelectMenuInteractable(actionDirective, interactableOptions, "Use", ActionPriority.USE);
+    }
+
+    /**
+     * Creates Interactables for an activatable fixture and adds them to the cache.
+     * @param fixture - The fixture that can be activated.
+     * @param player - The player these interactables are being created for.
+     * @param user - The user these interactables are being created for. Defaults to the given player.
+     */
+    async createActivateInteractables(fixture: Fixture, player: Player, user: User = player): Promise<ButtonInteractable[]> {
+        if (!player.canUseCommand("use")) return [];
+        const actionDirective = await this.#createActionDirective(ActivateAction, fixture.getActivateOrDeactivateActionDirectiveArgs(true), player, user);
+        const interactableOptions = new InteractableOptions(actionDirective, `Activate ${fixture.name}`);
+        return [this.#createButtonInteractable(interactableOptions, ButtonStyle.Secondary, ActionPriority.ACTIVATE)];
+    }
+
+    /**
+     * Creates Interactables for a deactivatable fixture and adds them to the cache.
+     * @param fixture - The fixture that can be deactivated.
+     * @param player - The player these interactables are being created for.
+     * @param user - The user these interactables are being created for. Defaults to the given player.
+     */
+    async createDeactivateInteractables(fixture: Fixture, player: Player, user: User = player): Promise<ButtonInteractable[]> {
+        if (!player.canUseCommand("use")) return [];
+        const actionDirective = await this.#createActionDirective(DeactivateAction, fixture.getActivateOrDeactivateActionDirectiveArgs(true), player, user);
+        const interactableOptions = new InteractableOptions(actionDirective, `Deactivate ${fixture.name}`);
+        return [this.#createButtonInteractable(interactableOptions, ButtonStyle.Secondary, ActionPriority.DEACTIVATE)];
     }
 
     /**
@@ -851,6 +893,17 @@ export default class BotInteractableManager {
             // Get stash interactables.
             for (const heldItem of heldItems) {
                 for (const containerItem of playerContainerItems) {
+                    // Ensure an inventory item can't be stashed inside an inventory item that it contains.
+                    let container = containerItem.container;
+                    let causesLoop = false;
+                    while (container !== null) {
+                        if (container.row === heldItem.row) {
+                            causesLoop = true;
+                            break;
+                        }
+                        container = container.container;
+                    }
+                    if (causesLoop) continue;
                     const viableInventorySlots: string[] = [];
                     for (const inventorySlot of containerItem.inventory.values()) {
                         if (inventorySlot.willBeOverFilledBy(heldItem)) continue;
@@ -979,6 +1032,26 @@ export default class BotInteractableManager {
         const usableItems = heldItems.filter(item => item.uses !== 0 && item.prefab.usable && item.usableOn(player));
         if (usableItems.length > 0) {
             interactables = interactables.concat(await this.createUseActionInteractables(usableItems, player, user));
+        }
+        return interactables;
+    }
+
+    /**
+     * Generates an array of activate or deactivate interactables for a given fixture. Usually this is just one interactable.
+     * @param fixture - The fixture the player can activate or deactivate.
+     * @param player - The player who can perform an activate or deactivate action.
+     * @param activated - Whether or not the fixture is activated. Defaults to the fixture's current activation state.
+     * @param user - The user these interactables are being created for. Defaults to the given player.
+     */
+    async getActivateOrDeactivateInteractables(fixture: Fixture, player: Player, activated = fixture.activated, user: User = player): Promise<Interactable[]> {
+        let interactables: Interactable[] = [];
+        // If there is a puzzle in the room with an identical name, we can't simply activate or deactivate it.
+        const matchingPuzzle = this.#game.entityFinder.getPuzzle(fixture.name, fixture.location.id);
+        if (fixture.recipeTag !== "" && !matchingPuzzle && (fixture.activatable || user instanceof Moderator)) {
+            if (activated)
+                interactables = interactables.concat(await this.createDeactivateInteractables(fixture, player, user));
+            else
+                interactables = interactables.concat(await this.createActivateInteractables(fixture, player, user));
         }
         return interactables;
     }

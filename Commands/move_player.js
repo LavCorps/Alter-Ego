@@ -1,6 +1,10 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import QueueMoveAction from '../Data/Actions/QueueMoveAction.ts';
 
-/** @import GameSettings from '../Classes/GameSettings.js' */
+/** @import GameSettings from '../Classes/GameSettings.ts' */
 /** @import Game from '../Data/Game.ts' */
 /** @import Player from '../Data/Player.ts' */
 
@@ -48,14 +52,18 @@ export function usage(settings) {
  */
 export async function execute(game, message, command, args, player) {
     if (args.length === 0)
-        return game.communicationHandler.reply(message, `You need to specify a room. Usage:\n${usage(game.settings)}`);
+        return game.communicationHandler.reply(message, game.errorMessageGenerator.generateSpecifyErrorWithUsage("a room or exit", usage));
 
     const status = player.getBehaviorAttributeStatusEffects("disable move");
-    if (status.length > 0) return game.communicationHandler.reply(message, `You cannot do that because you are **${status[0].id}**.`);
+    if (status.length > 0) return game.communicationHandler.reply(message, game.errorMessageGenerator.generateCommandDisabledError(status[0]));
+    if (player.speed <= 0) return game.communicationHandler.reply(message, game.errorMessageGenerator.generateCannotMoveWithNoSpeedError(player, "Player"));
+    if (player.party && !player.party.canMove(false)) return game.communicationHandler.reply(message, game.errorMessageGenerator.generatePartyCannotMoveError(player, false, "Player"));
 
-    if (player.isMoving) return game.communicationHandler.reply(message, `You cannot do that because you are already moving.`);
+    if (player.isMoving) return game.communicationHandler.reply(message, game.errorMessageGenerator.generateAlreadyMovingError());
+    if (player.followedPlayer)
+        return game.communicationHandler.reply(message, game.errorMessageGenerator.generateCannotMoveAlreadyFollowingPlayerError(player));
 
     player.moveQueue = args.join(" ").split(">");
     const action = new QueueMoveAction(game, message, player, player.location, false);
-    action.performQueueMove(false, player.moveQueue[0]);
+    await action.performQueueMove(false, player.moveQueue[0]);
 }

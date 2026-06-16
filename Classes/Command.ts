@@ -1,4 +1,8 @@
-import type GameSettings from "./GameSettings.js";
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
+import type GameSettings from "./GameSettings.ts";
 
 export default abstract class Command implements ICommand {
     /**

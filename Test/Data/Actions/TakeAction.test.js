@@ -1,4 +1,7 @@
-import UnstashAction from '../../../Data/Actions/UnstashAction.ts';
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import DropAction from "../../../Data/Actions/DropAction.ts";
 import UnequipAction from "../../../Data/Actions/UnequipAction.ts";
 import TakeAction from "../../../Data/Actions/TakeAction.ts";
@@ -68,7 +71,7 @@ describe('TakeAction test', () => {
         {
             const coffee = hand.equippedItem;
             const dropAction = new DropAction(game, createMockMessage(), kyra, kyra.location, false);
-            dropAction.performDrop(coffee, hand, floor, null);
+            await dropAction.performDrop(coffee, hand, floor, null);
         }
 
         // step 1 validation
@@ -92,7 +95,7 @@ describe('TakeAction test', () => {
             unequipAction.performUnequip(jacket,game.entityFinder.getPlayerEquipmentSlotWithEquippedItem(kyra, jacket.getIdentifier()),hand);
             jacket = game.entityFinder.getInventoryItem("KYRAS LAB COAT", kyra.name);
             const dropAction = new DropAction(game, createMockMessage(), kyra, kyra.location, false);
-            dropAction.performDrop(jacket, hand, floor, null);
+            await dropAction.performDrop(jacket, hand, floor, null);
         }
 
         // step 2 validation
@@ -113,7 +116,7 @@ describe('TakeAction test', () => {
         {
             const coffee = game.entityFinder.getRoomItem("MUG OF COFFEE", kyra.location.id);
             const takeAction = new TakeAction(game, createMockMessage(), kyra, kyra.location, false);
-            takeAction.performTake(coffee, hand, floor, null);
+            await takeAction.performTake(coffee, hand, floor, null);
         }
 
         // step 3 validation
@@ -136,7 +139,7 @@ describe('TakeAction test', () => {
             const jacket = game.entityFinder.getRoomItem("KYRAS LAB COAT", kyra.location.id);
             const pocket = jacket.inventory.get("RIGHT POCKET")
             const dropAction = new DropAction(game, createMockMessage(), kyra, kyra.location, false);
-            dropAction.performDrop(coffee, hand, jacket, pocket);
+            await dropAction.performDrop(coffee, hand, jacket, pocket);
         }
 
         // step 4 validation
@@ -168,7 +171,7 @@ describe('TakeAction test', () => {
         {
             const jacket = game.entityFinder.getRoomItem("KYRAS LAB COAT", kyra.location.id);
             const takeAction = new TakeAction(game, createMockMessage(), kyra, kyra.location, false);
-            takeAction.performTake(jacket, hand, floor, null);
+            await takeAction.performTake(jacket, hand, floor, null);
         }
 
         // step 5 validation
@@ -202,7 +205,7 @@ describe('TakeAction test', () => {
             const drawer = game.entityFinder.getRoomItem("TOP DRAWER 9", kyra.location.id)
             const container = drawer.inventory.get("TOP DRAWER");
             const dropAction = new DropAction(game, createMockMessage(), kyra, kyra.location, false);
-            dropAction.performDrop(jacket, hand, drawer, container);
+            await dropAction.performDrop(jacket, hand, drawer, container);
         }
 
         // step 6 validation
@@ -246,7 +249,7 @@ describe('TakeAction test', () => {
             const drawer = game.entityFinder.getRoomItem("TOP DRAWER 9", kyra.location.id);
             const nightstand = game.entityFinder.getFixture("NIGHTSTAND", "suite-9")
             const takeAction = new TakeAction(game, createMockMessage(), kyra, kyra.location, false);
-            takeAction.performTake(drawer, hand, nightstand, null);
+            await takeAction.performTake(drawer, hand, nightstand, null);
         }
 
         // step 7 validation

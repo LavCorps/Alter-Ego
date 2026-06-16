@@ -1,4 +1,9 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import { generatePlayerListString } from "../Modules/helpers.ts";
+import { WhisperType } from "../Modules/enums.js";
 import type Action from "./Action.ts";
 import type Fixture from "./Fixture.ts";
 import type Game from "./Game.ts";
@@ -7,6 +12,12 @@ import type Player from "./Player.ts";
 import type Room from "./Room.ts";
 import Whisper from "./Whisper.ts";
 
+/**
+ * Represents a fixture that players can hide in. A fixture can have one or no hiding spots.
+ * Each hiding spot has a capacity that indicates how many players can hide in it at once.
+ *
+ * @see https://msvblank.github.io/Alter-Ego/reference/data_structures/hiding_spot.html
+ */
 export default class HidingSpot extends GameEntity {
     /**
      * The name of the hiding spot.
@@ -53,7 +64,7 @@ export default class HidingSpot extends GameEntity {
 		if (player.canSee()) this.deleteWhisper();
 		this.occupants.push(player);
 		player.hidingSpot = this.name;
-		this.whisper = await this.getGame().entityLoader.createWhisper(this.occupants, this.name);
+		this.whisper = await this.getGame().entityLoader.createWhisper(this.occupants, this.name, WhisperType.HIDING_SPOT);
 	}
 
 	/**
@@ -90,6 +101,13 @@ export default class HidingSpot extends GameEntity {
      */
     getContainingPhrase(): string {
         return `the ${this.name}`;
+    }
+
+    /**
+     * Gets a preposition to use when referring to the hiding spot's fixture.
+     */
+    getPreposition(): string {
+        return "in";
     }
 
 	/**

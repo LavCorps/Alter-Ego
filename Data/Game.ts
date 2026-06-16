@@ -1,15 +1,20 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import { Collection } from "discord.js";
 import { DateTime } from "luxon";
 import BotContext from "../Classes/BotContext.ts";
 import GameCommunicationHandler from "../Classes/GameCommunicationHandler.ts";
 import GameConstants from "../Classes/GameConstants.ts";
-import GameEntityFinder from "../Classes/GameEntityFinder.js";
-import GameEntityLoader from "../Classes/GameEntityLoader.js";
+import GameEntityFinder from "../Classes/GameEntityFinder.ts";
+import GameEntityLoader from "../Classes/GameEntityLoader.ts";
 import GameEntitySaver from "../Classes/GameEntitySaver.ts";
+import GameErrorMessageGenerator from "../Classes/GameErrorMessageGenerator.ts";
 import GameLogHandler from "../Classes/GameLogHandler.ts";
 import GameNarrationHandler from "../Classes/GameNarrationHandler.ts";
 import GameNotificationGenerator from "../Classes/GameNotificationGenerator.ts";
-import type GameSettings from "../Classes/GameSettings.js";
+import type GameSettings from "../Classes/GameSettings.ts";
 import type GuildContext from "../Classes/GuildContext.ts";
 import PriorityQueue from "../Classes/PriorityQueue.ts";
 import TriggerAction from "./Actions/TriggerAction.ts";
@@ -18,6 +23,7 @@ import type Fixture from "./Fixture.ts";
 import type Flag from "./Flag.ts";
 import type Gesture from "./Gesture.ts";
 import type InventoryItem from "./InventoryItem.ts";
+import type Party from "./Party.ts";
 import type Player from "./Player.ts";
 import type Prefab from "./Prefab.ts";
 import type Puzzle from "./Puzzle.ts";
@@ -70,6 +76,10 @@ export default class Game {
 	 * A set of functions to send messages to the game's log channel.
 	 */
 	readonly logHandler: GameLogHandler;
+    /**
+     * A set of functions to generate error messages to send to users.
+     */
+    readonly errorMessageGenerator: GameErrorMessageGenerator;
 	/**
 	 * A set of functions to generate notifications to send to players.
 	 */
@@ -177,6 +187,10 @@ export default class Game {
 	 */
 	whispers: Collection<string, Whisper>;
     /**
+     * A collection of all parties in the game, where the key is the party's ID. These are not saved to the sheet.
+     */
+    parties: Collection<string, Party>;
+    /**
      * A collection of all moderators in the game, where the key is the moderator's Discord user ID.
      * These are created the first time a user with the moderator role sends a message in the game server.
      */
@@ -197,6 +211,10 @@ export default class Game {
 	 * A timeout that checks for events that should be triggered every minute.
 	 */
 	#eventTriggerInterval: NodeJS.Timeout;
+    /**
+     * A constant value that determines how long an in-game tick is. To be used in timers.
+     */
+    public static readonly tick = 100;
 
 	/**
 	 * @param guildContext - The guild this game is occurring in.
@@ -211,6 +229,7 @@ export default class Game {
 		this.entityLoader = new GameEntityLoader(this);
 		this.entitySaver = new GameEntitySaver(this);
 		this.logHandler = new GameLogHandler(this);
+        this.errorMessageGenerator = new GameErrorMessageGenerator(this);
 		this.notificationGenerator = new GameNotificationGenerator(this);
 		this.narrationHandler = new GameNarrationHandler(this);
 		this.inProgress = false;
@@ -237,6 +256,7 @@ export default class Game {
 		this.gestures = new Collection();
 		this.flags = new Collection();
 		this.whispers = new Collection();
+        this.parties = new Collection();
         this.moderators = new Collection();
 		this.messageQueue = new PriorityQueue();
 

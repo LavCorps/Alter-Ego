@@ -1,5 +1,19 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import { Collection } from 'discord.js';
 import StackQueue from './StackQueue.ts';
+
+/**
+ * Represents a queue entry for a message waiting to be sent in one of the priority queue's stack queues.
+ */
+interface MessageQueueEntry {
+    fire: () => Promise<void>;
+    destination: string;
+}
+
+type PriorityQueuePriority = "mod" | "tell" | "mechanic" | "log" | "spectator";
 
 /**
  * Five-priority queue system for use by the message handler.

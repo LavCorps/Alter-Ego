@@ -1,4 +1,8 @@
-import { destroyInventoryItem } from "../../Modules/itemManager.js";
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
+import { destroyInventoryItem } from "../../Modules/itemManager.ts";
 import Action from "../Action.ts";
 import InventoryItem from "../InventoryItem.ts";
 import ItemInstance from "../ItemInstance.ts";

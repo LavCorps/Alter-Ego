@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import {createMockMessage} from "../../__mocks__/libs/discord.js";
 import ActivateAction from "../../../Data/Actions/ActivateAction.ts";
 import Fixture from "../../../Data/Fixture.ts";
@@ -28,16 +32,16 @@ describe('ActivateAction test', () => {
             fixtureActivateSpy = vi.spyOn(Fixture.prototype, 'activate');
         });
 
-        test('performed should be true', () => {
+        test('performed should be true', async () => {
             let action = new ActivateAction(game, message, player, location, false);
-            action.performActivate(fixture, true);
+            await action.performActivate(fixture, true);
             // @ts-ignore
             expect(action.performed).toBe(true);
         });
 
-        test('fixture activate should be called', () => {
+        test('fixture activate should be called', async () => {
             let action = new ActivateAction(game, message, player, location, false);
-            action.performActivate(fixture, true);
+            await action.performActivate(fixture, true);
             expect(fixtureActivateSpy).toHaveBeenCalled();
         });
     });

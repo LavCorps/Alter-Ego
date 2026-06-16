@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import Action from "../Action.ts";
 import type Exit from "../Exit.js";
 import type Room from "../Room.ts";
@@ -23,9 +27,25 @@ export default class EnterAction extends Action {
 		destinationRoom.addPlayer(this.player, entrance);
 		await this.getGame().narrationHandler.narrateEnter(this, this.player, destinationRoom, entrance, isMovingFreely);
         this.player.moveQueue.splice(0, 1);
-        if (this.player.moveQueue.length > 0) {
+        const followedPlayer = this.player.followedPlayer;
+        if (!followedPlayer && this.player.moveQueue.length > 0) {
             const queueMoveAction = new QueueMoveAction(this.player.getGame(), undefined, this.player, this.player.location, this.forced);
             await queueMoveAction.performQueueMove(isRunning, this.player.moveQueue[0]);
+        }
+
+        const followedPlayerIsVisible = followedPlayer && destinationRoom.occupants.includes(followedPlayer)
+            && destinationRoom.generateOccupantsStringExcluding(this.player).includes(this.player.followedPlayerDisplayName);
+        if (followedPlayer && !followedPlayerIsVisible) {
+            // We need a new Action so the message gets communicated properly, since we've already sent a notification with this one.
+            // We aren't going to actually do anything with it otherwise.
+            const lostPlayerAction = new EnterAction(this.getGame(), this.message, this.player, this.player.location, this.forced);
+            this.getGame().narrationHandler.narrateLostFollowedPlayer(lostPlayerAction, this.player);
+            this.player.stopFollowing();
+        }
+        else if (followedPlayerIsVisible && followedPlayer.isMoving && this.player.moveQueue.length === 0) {
+            this.player.moveQueue = [followedPlayer.moveQueue[0]];
+            const queueMoveAction = new QueueMoveAction(this.getGame(), undefined, this.player, this.player.location, this.forced);
+            await queueMoveAction.performQueueMove(followedPlayer.isRunning, this.player.moveQueue[0], this.player.getFollowingSpeed());
         }
 	}
 }

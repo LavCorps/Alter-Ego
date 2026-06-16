@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import type Interactable from "../Classes/Interactables/Interactable.ts";
 import { MessageDisplayType } from "../Modules/enums.js";
 import { createDocument, parseDescription, stringify } from "../Modules/parser.js";
@@ -136,8 +140,11 @@ export default class Description extends GameConstruct {
 			inspectableEntities = inspectableEntities.concat(selectableInteractableGameEntities[0]);
 			interactables = interactables.concat(await this.getGame().botContext.interactableManager.createInspectActionInteractable(inspectableEntities, player));
 			if (container instanceof Fixture || container instanceof RoomItem || container instanceof Puzzle) {
-                interactables = interactables.concat((await this.getGame().botContext.interactableManager.getTakeInteractables(container, selectableInteractableGameEntities[1], player)));
-                interactables = interactables.concat((await this.getGame().botContext.interactableManager.getDropInteractables(container, player)));
+                interactables = interactables.concat(await this.getGame().botContext.interactableManager.getTakeInteractables(container, selectableInteractableGameEntities[1], player));
+                interactables = interactables.concat(await this.getGame().botContext.interactableManager.getDropInteractables(container, player));
+                if (container instanceof Fixture) {
+                    interactables = interactables.concat(await this.getGame().botContext.interactableManager.getActivateOrDeactivateInteractables(container, player));
+                }
 			}
 			player.sendDescription(parsedDescription, container, this.messageDisplayType ?? MessageDisplayType.PLAIN_TEXT, interactables);
 		}

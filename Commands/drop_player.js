@@ -1,9 +1,13 @@
-﻿import DropAction from '../Data/Actions/DropAction.ts';
+﻿// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
+import DropAction from '../Data/Actions/DropAction.ts';
 import Fixture from "../Data/Fixture.ts";
 import RoomItem from "../Data/RoomItem.ts";
 import Puzzle from "../Data/Puzzle.ts";
 
-/** @import GameSettings from '../Classes/GameSettings.js' */
+/** @import GameSettings from '../Classes/GameSettings.ts' */
 /** @import EquipmentSlot from '../Data/EquipmentSlot.ts' */
 /** @import Game from '../Data/Game.ts' */
 /** @import InventoryItem from '../Data/InventoryItem.ts' */
@@ -180,5 +184,5 @@ export async function execute(game, message, command, args, player) {
     }
 
     const action = new DropAction(game, message, player, player.location, false);
-    action.performDrop(item, hand, container, slot);
+    await action.performDrop(item, hand, container, slot);
 }

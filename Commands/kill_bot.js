@@ -1,7 +1,11 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import DieAction from '../Data/Actions/DieAction.ts';
 import Event from "../Data/Event.ts";
 
-/** @import GameSettings from '../Classes/GameSettings.js' */
+/** @import GameSettings from '../Classes/GameSettings.ts' */
 /** @import Game from '../Data/Game.ts' */
 /** @import Player from '../Data/Player.ts' */
 
@@ -85,6 +89,6 @@ export async function execute(game, command, args, player, callee) {
 
     for (let i = 0; i < players.length; i++) {
         const action = new DieAction(game, undefined, players[i], players[i].location, true);
-        action.performDie();
+        await action.performDie();
     }
 }

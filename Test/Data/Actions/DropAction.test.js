@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import DropAction from "../../../Data/Actions/DropAction.ts";
 import UnequipAction from "../../../Data/Actions/UnequipAction.ts";
 import { clearQueue } from "../../../Modules/messageHandler.js";
@@ -26,7 +30,7 @@ describe("DropAction test", () => {
         {
             const coffee = kyraHand.equippedItem;
             const dropAction = new DropAction(game, createMockMessage(), kyra, kyra.location, false);
-            dropAction.performDrop(coffee, kyraHand, kyraFloor, null);
+            await dropAction.performDrop(coffee, kyraHand, kyraFloor, null);
         }
 
         {
@@ -35,7 +39,7 @@ describe("DropAction test", () => {
             unequipAction.performUnequip(quiver,game.entityFinder.getPlayerEquipmentSlotWithEquippedItem(vivian, quiver.getIdentifier()),vivianHand);
             quiver = game.entityFinder.getInventoryItem("VIVIANS QUIVER");
             const dropAction = new DropAction(game, createMockMessage(), vivian, vivian.location, false);
-            dropAction.performDrop(quiver, vivianHand, vivianFloor, null);
+            await dropAction.performDrop(quiver, vivianHand, vivianFloor, null);
         }
 
         const coffee = game.entityFinder.getRoomItem("MUG OF COFFEE", kyra.location.id, "FIXTURE", kyraFloor.name);

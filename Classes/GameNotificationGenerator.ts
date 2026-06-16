@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import { capitalizeFirstLetter, endsWithPunctuation } from "../Modules/helpers.ts";
 import type Dialog from "../Data/Dialog.ts";
 import type Fixture from "../Data/Fixture.ts";
@@ -41,7 +45,7 @@ export default class GameNotificationGenerator {
 	generateHearDialogNotification(dialog: Dialog, player: Player) {
 		const playerAndSpeakerAreHidingTogether = dialog.speaker.isHidden() && player.isHidden() && dialog.speaker.hidingSpot === player.hidingSpot;
 		const playerCanSeeSpeaker = player.canSee() && (!dialog.speaker.isHidden() || playerAndSpeakerAreHidingTogether);
-		
+
 		let speakerString = "";
 		if (!dialog.isOOCMessage && player.knows(dialog.speakerRecognitionName) && !dialog.isMimicking(player))
 			speakerString = dialog.speakerDisplayNameIsDifferent && playerCanSeeSpeaker ? `${dialog.speaker.displayName}, with ${dialog.speakerVoiceString} you recognize as ${dialog.speakerRecognitionName}'s,` : `${dialog.speakerRecognitionName}`;
@@ -62,18 +66,18 @@ export default class GameNotificationGenerator {
 	 * @param player - The player referred to in this notification.
 	 */
 	generateHearWhisperNotification(dialog: Dialog, player: Player) {
-		const hidingSpot = dialog.getGame().entityFinder.getFixture(dialog.whisper?.hidingSpotName, dialog.location.id);
-		const hidingSpotPhrase = hidingSpot ? ` in ${hidingSpot.getContainingPhrase()}` : ``;
+        const associatedEntity = dialog.whisper?.associatedEntity;
+		const entityPhrase = associatedEntity ? ` ${associatedEntity.getPreposition()} ${associatedEntity.getContainingPhrase()}` : ``;
 		let speakerString = "";
 		if (!dialog.isOOCMessage && player.knows(dialog.speakerRecognitionName))
 			speakerString = player.canSee() ? `${dialog.speaker.displayName}, with ${dialog.speakerVoiceString} you recognize as ${dialog.speakerRecognitionName}'s,` : `${dialog.speakerRecognitionName}`;
 		else if (player.knows(dialog.speakerRecognitionName) && !dialog.isMimicking(player) && !dialog.speakerDisplayNameIsDifferent && !player.canSee())
 			speakerString = `${dialog.speakerRecognitionName}`;
 		else if (!player.canSee())
-			speakerString = dialog.isMimicking(player) ? `someone${hidingSpotPhrase}` : `someone${hidingSpotPhrase} with ${dialog.speakerVoiceString}`;
+			speakerString = dialog.isMimicking(player) ? `someone${entityPhrase}` : `someone${entityPhrase} with ${dialog.speakerVoiceString}`;
 		else
 			speakerString = `${dialog.speakerDisplayName}`;
-		const contentAffix = hidingSpotPhrase !== `` && !speakerString.includes(hidingSpotPhrase) ? `${hidingSpotPhrase}` : ``;
+		const contentAffix = entityPhrase !== `` && !speakerString.includes(entityPhrase) ? `${entityPhrase}` : ``;
 		const punctuation = dialog.isMimicking(player) && !dialog.isOOCMessage ? `${contentAffix} in your voice!` : contentAffix === `` && endsWithPunctuation(dialog.unformattedContent) ? `` : `${contentAffix}.`;
 		return `${capitalizeFirstLetter(speakerString)} whispers "${dialog.unformattedContent}"${punctuation}`;
 	}
@@ -148,7 +152,7 @@ export default class GameNotificationGenerator {
 	}
 
 	/**
-	 * Generates a notification indicating that a player heard dialog through a player with the `receiver` behavior attribute. 
+	 * Generates a notification indicating that a player heard dialog through a player with the `receiver` behavior attribute.
 	 * @param dialog - The dialog that was spoken.
 	 * @param receiver - The player with the `receiver` behavior attribute.
 	 * @param receiverItemName - The name of the inventory item that gave the player the `receiver` behavior attribute. Defaults to "receiver".
@@ -254,6 +258,127 @@ export default class GameNotificationGenerator {
 		const verb = secondPerson ? `stop` : `stops`;
 		return `${subject} ${verb} moving.`;
 	}
+
+    /**
+     * Generates a notification indicating the player began following someone.
+     * @param player - The player referred to in this notification.
+     * @param secondPerson - Whether or not the player should be referred to in second person.
+     * @param targetDisplayName - The display name of the player being followed.
+     */
+    generateFollowNotification(player: Player, secondPerson: boolean, targetDisplayName: string) {
+        const subject = secondPerson ? `You` : capitalizeFirstLetter(player.displayName);
+        const verb = secondPerson ? `begin following` : `begins following`;
+        return `${subject} ${verb} ${targetDisplayName}.`;
+    }
+
+    /**
+     * Generates a notification indicating the player is being followed.
+     * @param followerDisplayName - The display name of the player following the player being addressed.
+     */
+    generateBeingFollowedNotification(followerDisplayName: string) {
+        return `${capitalizeFirstLetter(followerDisplayName)} is following you.`;
+    }
+
+    /**
+     * Generates a notification indicating the player has stopped following the given target.
+     * @param player - The player referred to in this notification.
+     * @param secondPerson - Whether or not the player should be referred to in second person.
+     * @param targetDisplayName - The display name of the player that they were following.
+     */
+    generateStopFollowingNotification(player: Player, secondPerson: boolean, targetDisplayName: string) {
+        const displayName = player.party && targetDisplayName === "you" ? player.party.getMemberDisplayName(player) : player.displayName;
+        const subject = secondPerson ? `You` : capitalizeFirstLetter(displayName);
+        const verb = secondPerson ? `stop following` : `stops following`;
+        return `${subject} ${verb} ${targetDisplayName}.`;
+    }
+
+    /**
+     * Generates a notification indicating the player has lost track of the player they were following.
+     * @param targetDisplayName - The display name of the player that they were following.
+     */
+    generateLostFollowedPlayerNotification(targetDisplayName: string) {
+        return `You can't find ${targetDisplayName} here.`;
+    }
+
+    /**
+     * Generates a notification indicating the player has begun leading other players.
+     * @param player - The player referred to in this notification.
+     * @param secondPerson - Whether or not the player should be referred to in second person.
+     * @param followerListString - A list of the players being led.
+     */
+    generateLeadNotification(player: Player, secondPerson: boolean, followerListString: string) {
+        const subject = secondPerson ? `You` : capitalizeFirstLetter(player.displayName);
+        const verb = secondPerson ? `begin leading` : `begins leading`;
+        return `${subject} ${verb} ${followerListString}.`;
+    }
+
+    /**
+     * Generates a notification indicating the player is being led.
+     * @param leaderDisplayName - The display name of the player leading the player being addressed.
+     * @param followerListString - A list of the players being led by the same leader.
+     */
+    generateBeingLedNotification(leaderDisplayName: string, followerListString: string) {
+        return `${capitalizeFirstLetter(leaderDisplayName)} is now leading ${followerListString}.`;
+    }
+
+    /**
+     * Generates a notification indicating that the player has stopped leading the given followers.
+     * @param player - The player referred to in this notification.
+     * @param secondPerson - Whether or not the player should be referred to in second person.
+     * @param followerListString - A list of the players that they have stopped leading.
+     */
+    generateDismissNotification(player: Player, secondPerson: boolean, followerListString: string) {
+        const subject = secondPerson ? `You` : capitalizeFirstLetter(player.displayName);
+        const verb = secondPerson ? `stop leading` : `stops leading`;
+        return `${subject} ${verb} ${followerListString}.`;
+    }
+
+    /**
+     * Generates a notification indicating that the player is no longer being led.
+     * @param leaderDisplayName - The display name of the player that was leading the player being addressed.
+     * @param followerListString - A list of the players that were being led by the same leader as the player being addressed.
+     */
+    generateNoLongerBeingLedNotification(leaderDisplayName: string, followerListString: string) {
+        return `${capitalizeFirstLetter(leaderDisplayName)} stops leading ${followerListString}.`;
+    }
+
+    /**
+     * Generates a notification indicating that the player has disbanded their party.
+     * @param player - The player referred to in this notification.
+     * @param secondPerson - Whether or not the player should be referred to in second person.
+     * @param stopFollowing - Whether or not the followers stopped following the leader as a result of the party being disbanded.
+     * @param followerListString - A list of the followers that were in the disbanded party.
+     */
+    generateDisbandPartyNotification(player: Player, secondPerson: boolean, stopFollowing: boolean, followerListString: string) {
+        const subject = secondPerson ? `You` : capitalizeFirstLetter(player.displayName);
+        const verb1 = secondPerson ? `disband` : `disbands`;
+        const dpos = secondPerson ? `your` : `${player.pronouns.dpos}`;
+        const verb2 = followerListString.includes(" and ") ? `are` : `is`;
+        const obj = secondPerson ? `you` : `${player.pronouns.obj}`;
+        const addendum = stopFollowing ? `` : `, but ${followerListString} ${verb2} still following ${obj}`;
+        return `${subject} ${verb1} ${dpos} party${addendum}.`;
+    }
+
+    /**
+     * Generates a notification indicating that the player's party has been disbanded by their leader.
+     * @param leader - The leader that disbanded the party of the player being addressed.
+     * @param stopFollowing - Whether or not the followers stopped following the leader as a result of the party being disbanded.
+     */
+    generatePartyDisbandedNotification(leader: Player, stopFollowing: boolean) {
+        const addendum = stopFollowing ? `. You are no longer following ${leader.pronouns.obj}` : `, but you are still following ${leader.pronouns.obj}`;
+        return `${capitalizeFirstLetter(leader.displayName)} has disbanded your party${addendum}.`;
+    }
+
+    /**
+     * Generates a notification indicating that the player's party has been disbanded because their leader has a status effect.
+     * @param leader - The leader that disbanded the party of the player being addressed.
+     * @param statusId - The ID of the status effect that caused the party to be disbanded.
+     * @param stopFollowing - Whether or not the followers stopped following the leader as a result of the party being disbanded.
+     */
+    generatePartyDisbandedByStatusNotification(leader: Player, statusId: string, stopFollowing: boolean) {
+        const addendum = stopFollowing ? `. You are no longer following ${leader.pronouns.obj}` : `, but you are still following ${leader.pronouns.obj}`;
+        return `Your party has been disbanded because ${leader.party.getMemberDisplayName(leader)} is ${statusId}${addendum}.`;
+    }
 
 	/**
 	 * Generates a notification indicating the player cannot move to an exit because it is locked.
@@ -461,7 +586,7 @@ export default class GameNotificationGenerator {
 	generateFoundHiddenPlayersNotification(hiddenPlayersList: string, hidingSpotPhrase: string) {
 		return `You find ${hiddenPlayersList} hiding in ${hidingSpotPhrase}!`;
 	}
-	
+
 	/**
 	 * Generates a notification indicating the player knocked on an exit.
 	 * @param player - The player referred to in this notification.
@@ -527,7 +652,7 @@ export default class GameNotificationGenerator {
 	/**
 	 * Generates a notification indicating the player can no longer whisper
 	 * because they were inflicted with a status effect with the `no channel` behavior attribute.
-	 * @param player - The player referred to in this notification. 
+	 * @param player - The player referred to in this notification.
 	 * @param statusId - The ID of the status effect that made the player unable to whisper.
 	 */
 	generateNoChannelLeaveWhisperNotification(player: Player, statusId: string) {
@@ -577,7 +702,7 @@ export default class GameNotificationGenerator {
 
 	/**
 	 * Generates a notification indicating the player took off their mask.
-	 * @param maskName - The name of the inventory item the player took off. 
+	 * @param maskName - The name of the inventory item the player took off.
 	 * @param playerDisplayName - The display name of the player.
 	 */
 	generateConcealedCuredNotification(maskName: string, playerDisplayName: string) {
@@ -1047,7 +1172,7 @@ export default class GameNotificationGenerator {
 	 * @param player - The player referred to in this notification.
 	 * @param secondPerson - Whether or not the player should be referred to in second person.
 	 * @param puzzle - The puzzle that was solved.
-	 * @param outcome - The puzzle's outcome. 
+	 * @param outcome - The puzzle's outcome.
 	 * @param item - The item the puzzle was solved with, if applicable.
 	 */
 	generateSolvePuzzleNotification(player: Player, secondPerson: boolean, puzzle: Puzzle, outcome: string, item?: ItemInstance) {

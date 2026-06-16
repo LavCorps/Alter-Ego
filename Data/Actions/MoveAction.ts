@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import Action from "../Action.ts";
 import type Exit from "../Exit.js";
 import type Room from "../Room.ts";
@@ -21,7 +25,7 @@ export default class MoveAction extends Action {
 	 * @param entrance - The exit the player will enter the destination room from.
 	 * @param isMovingFreely - Whether or not the player is performing free movement. False by default.
 	 */
-	performMove(isRunning: boolean, currentRoom: Room, destinationRoom: Room, exit: Exit, entrance: Exit, isMovingFreely: boolean = false): void {
+	async performMove(isRunning: boolean, currentRoom: Room, destinationRoom: Room, exit: Exit, entrance: Exit, isMovingFreely: boolean = false): Promise<void> {
 		if (this.performed) return;
 		super.perform();
 
@@ -45,7 +49,7 @@ export default class MoveAction extends Action {
 		exitAction.performExit(currentRoom, exit, isMovingFreely);
 		// Enter the destination room.
 		const enterAction = new EnterAction(this.getGame(), this.message, this.player, this.location, this.forced, this.whisper);
-		enterAction.performEnter(destinationRoom, entrance, isMovingFreely, isRunning);
+		await enterAction.performEnter(destinationRoom, entrance, isMovingFreely, isRunning);
 		// Send log message.
 		this.getGame().logHandler.logMove(isRunning, destinationRoom, this.player, this.forced);
         this.successMessage = `Successfully moved ${this.player.name} to ${destinationRoom.channel}.`;

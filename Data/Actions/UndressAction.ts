@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import { generateListString, getSortedItemsString } from "../../Modules/helpers.ts";
 import Action from "../Action.ts";
 import type Fixture from "../Fixture.ts";
@@ -20,7 +24,7 @@ export default class UndressAction extends Action {
 	 * @param container - The container to put the items in.
 	 * @param inventorySlot - The inventory slot to put the items in, if applicable.
 	 */
-	performUndress(container: Puzzle | Fixture | RoomItem, inventorySlot: InventorySlot<RoomItem>): void {
+	async performUndress(container: Puzzle | Fixture | RoomItem, inventorySlot: InventorySlot<RoomItem>): Promise<void> {
 		if (this.performed) return;
 		super.perform();
 		// First, drop the items in the player's hands.
@@ -28,11 +32,11 @@ export default class UndressAction extends Action {
 		const leftHand = this.player.inventory.get("LEFT HAND");
 		if (rightHand && rightHand.equippedItem !== null) {
 			const rightHandDropAction = new DropAction(this.getGame(), undefined, this.player, this.location, this.forced);
-			rightHandDropAction.performDrop(rightHand.equippedItem, rightHand, container, inventorySlot, true);
+			await rightHandDropAction.performDrop(rightHand.equippedItem, rightHand, container, inventorySlot, true);
 		}
 		if (leftHand && leftHand.equippedItem !== null) {
 			const leftHandDropAction = new DropAction(this.getGame(), undefined, this.player, this.location, this.forced);
-			leftHandDropAction.performDrop(leftHand.equippedItem, leftHand, container, inventorySlot, true);
+			await leftHandDropAction.performDrop(leftHand.equippedItem, leftHand, container, inventorySlot, true);
 		}
 		const droppedItems: InventoryItem[] = [];
 		for (const equipmentSlot of this.player.inventory.values()) {

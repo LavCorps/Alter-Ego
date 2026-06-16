@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import Description from "../Data/Description.ts";
 import Fixture from "../Data/Fixture.ts";
 import InventoryItem from "../Data/InventoryItem.ts";
@@ -9,7 +13,7 @@ import DieAction from "../Data/Actions/DieAction.ts";
 import NarrateAction from "../Data/Actions/NarrateAction.ts";
 import { MessageDisplayType } from "../Modules/enums.js";
 import { parseDescription } from "../Modules/parser.js";
-import { capitalizeFirstLetter, generateListString } from "../Modules/helpers.ts";
+import { capitalizeFirstLetter, generateListString, generatePlayerListString } from "../Modules/helpers.ts";
 import { Collection } from "discord.js";
 import type Interactable from "./Interactables/Interactable.ts";
 import type Action from "../Data/Action.ts";
@@ -227,17 +231,130 @@ export default class GameNarrationHandler {
 	 * @param player - The player performing the stop action.
 	 * @param exitLocked - Whether or not the action was initiated because the destination exit was locked.
 	 * @param exit - The exit the player tried to move to, if applicable.
+     * @param stopFollowing - Whether or not the player stopped following someone. Defaults to false.
      * @param interactables - An array of interactables to send to the player alongside their notification. Optional.
 	 */
-	narrateStop(action: Action, player: Player, exitLocked: boolean, exit?: Exit, interactables: Interactable[] = []) {
+	narrateStop(action: Action, player: Player, exitLocked: boolean, exit?: Exit, stopFollowing = false, interactables: Interactable[] = []) {
 		const messageType = MessageDisplayType.MINOR;
 		const notification = exitLocked ? this.#game.notificationGenerator.generateExitLockedNotification(player, true, exit.getDoorPhrase())
-			: this.#game.notificationGenerator.generateStopNotification(player, true);
+			: player.followedPlayer && stopFollowing ? this.#game.notificationGenerator.generateStopFollowingNotification(player, true, player.followedPlayerDisplayName)
+                : this.#game.notificationGenerator.generateStopNotification(player, true);
 		const narration = exitLocked ? this.#game.notificationGenerator.generateExitLockedNotification(player, false, exit.getDoorPhrase())
-			: this.#game.notificationGenerator.generateStopNotification(player, false);
+            : player.followedPlayer && stopFollowing ? this.#game.notificationGenerator.generateStopFollowingNotification(player, false, player.followedPlayerDisplayName)
+			    : this.#game.notificationGenerator.generateStopNotification(player, false);
 		this.sendNotification(player, action, notification, exitLocked ? MessageDisplayType.WARNING : messageType, undefined, undefined, interactables);
+        if (player.followedPlayer && stopFollowing) {
+            const followedPlayerNotification = this.#game.notificationGenerator.generateStopFollowingNotification(player, false, "you");
+            this.sendNotification(player.followedPlayer, action, followedPlayerNotification, MessageDisplayType.STANDARD);
+        }
 		this.#sendNarration(messageType, action, player, narration);
 	}
+
+    /**
+     * Narrates a follow action.
+     * @param action - The action that initiated this narration.
+     * @param player - The player performing the follow action.
+     * @param target - The player being followed.
+     * @param interactables - An array of interactables to send to the player alongside their notification. Optional.
+     */
+    narrateFollow(action: Action, player: Player, target: Player, interactables: Interactable[] = []) {
+        const messageType = MessageDisplayType.MINOR;
+        const playerNotification = this.#game.notificationGenerator.generateFollowNotification(player, true, target.displayName);
+        const targetNotification = this.#game.notificationGenerator.generateBeingFollowedNotification(player.displayName);
+        const narration = this.#game.notificationGenerator.generateFollowNotification(player, false, target.displayName);
+        this.sendNotification(player, action, playerNotification, MessageDisplayType.STANDARD);
+        this.sendNotification(target, action, targetNotification, MessageDisplayType.WARNING, true, undefined, interactables);
+        this.#sendNarration(messageType, action, player, narration);
+    }
+
+    /**
+     * Narrates that a player has lost track of the player they were following.
+     * @param action - The action that initiated this narration.
+     * @param player - The player who performed the follow action.
+     * @param interactables - An array of interactables to send to the player alongside their notification. Optional.
+     */
+    narrateLostFollowedPlayer(action: Action, player: Player, interactables: Interactable[] = []) {
+        const messageType = MessageDisplayType.STANDARD;
+        const notification = this.#game.notificationGenerator.generateLostFollowedPlayerNotification(player.followedPlayerDisplayName);
+        this.sendNotification(player, action, notification, messageType, true, undefined, interactables);
+    }
+
+    /**
+     * Narrates a lead action.
+     * @param action - The action that initiated this narration.
+     * @param leader - The player performing the lead action.
+     * @param ledPlayers - The players being led.
+     * @param interactables - An array of interactables to send to the leader alongside their notification. Optional.
+     */
+    narrateLead(action: Action, leader: Player, ledPlayers: Player[], interactables: Interactable[] = []) {
+        const messageType = MessageDisplayType.MINOR;
+        const followerListString = generatePlayerListString(ledPlayers);
+        const leaderNotification = this.#game.notificationGenerator.generateLeadNotification(leader, true, followerListString);
+        this.sendNotification(leader, action, leaderNotification, MessageDisplayType.STANDARD, undefined, undefined, interactables);
+        for (const ledPlayer of ledPlayers) {
+            const tailoredFollowers = ledPlayers.filter(player => player.name !== ledPlayer.name).map(player => player.displayName).concat("you");
+            const tailoredFollowerListString = generateListString(tailoredFollowers);
+            const ledPlayerNotification = this.#game.notificationGenerator.generateBeingLedNotification(leader.displayName, tailoredFollowerListString);
+            this.sendNotification(ledPlayer, action, ledPlayerNotification, MessageDisplayType.STANDARD);
+        }
+        const narration = this.#game.notificationGenerator.generateLeadNotification(leader, false, followerListString);
+        this.#sendNarration(messageType, action, leader, narration);
+    }
+
+    /**
+     * Narrates a dismiss action.
+     * @param action - The action that initiated this narration.
+     * @param leader - The player who was leading.
+     * @param removedLedPlayers - The players who are no longer being led.
+     * @param interactables - An array of interactables to send to the leader alongside their notification. Optional.
+     */
+    narrateDismiss(action: Action, leader: Player, removedLedPlayers: Player[], interactables: Interactable[] = []) {
+        const messageType = MessageDisplayType.MINOR;
+        const followerListString = generatePlayerListString(removedLedPlayers);
+        const leaderNotification = this.#game.notificationGenerator.generateDismissNotification(leader, true, followerListString);
+        this.sendNotification(leader, action, leaderNotification, MessageDisplayType.STANDARD, undefined, undefined, interactables);
+        for (const removedLedPlayer of removedLedPlayers) {
+            const tailoredFollowers = removedLedPlayers.filter(player => player.name !== removedLedPlayer.name).map(player => player.displayName).concat("you");
+            const tailoredFollowerListString = generateListString(tailoredFollowers);
+            const removedLedPlayerNotification = this.#game.notificationGenerator.generateNoLongerBeingLedNotification(leader.displayName, tailoredFollowerListString);
+            this.sendNotification(removedLedPlayer, action, removedLedPlayerNotification, MessageDisplayType.STANDARD);
+        }
+        const narration = this.#game.notificationGenerator.generateDismissNotification(leader, false, followerListString);
+        this.#sendNarration(messageType, action, leader, narration);
+    }
+
+    /**
+     * Narrates a disband party action.
+     * @param action - The action that initiated this narration.
+     * @param leader - The player who was leading.
+     * @param followers - The players who were following.
+     * @param stopFollowing - Whether or not the players stopped following the leader as a result of the party being disbanded. Defaults to false.
+     * @param customNarration - A custom narration to send instead of the default narration. Optional.
+     * @param customLeaderNotification - A custom notification to send to the leader instead of the default notification. Optional.
+     * @param customFollowerNotification - A custom notification to send to the followers instead of the default notification. Optional.
+     * @param interactables - An array of interactables to send to the leader alongside their notification. Optional.
+     */
+    narrateDisbandParty(action: Action, leader: Player, followers: Player[], stopFollowing: boolean = false, customNarration?: string, customLeaderNotification?: string, customFollowerNotification?: string, interactables: Interactable[] = []) {
+        const narrationMessageType = action instanceof DieAction ? MessageDisplayType.ALERT : MessageDisplayType.MINOR;
+        const notificationMessageType = action instanceof DieAction ? MessageDisplayType.ALERT : MessageDisplayType.STANDARD;
+        const followerListString = generatePlayerListString(followers);
+        let leaderNotification = customLeaderNotification;
+        let narration = customNarration;
+        if (leaderNotification === undefined)
+            leaderNotification = this.#game.notificationGenerator.generateDisbandPartyNotification(leader, true, stopFollowing, followerListString);
+        if (leaderNotification) this.sendNotification(leader, action, leaderNotification, notificationMessageType, undefined, undefined, interactables);
+
+        let followerNotification = customFollowerNotification;
+        if (followerNotification === undefined)
+            followerNotification = this.#game.notificationGenerator.generatePartyDisbandedNotification(leader, stopFollowing);
+        if (followerNotification) {
+            for (const follower of followers)
+                this.sendNotification(follower, action, followerNotification, notificationMessageType);
+        }
+        if (narration === undefined)
+            narration = this.#game.notificationGenerator.generateDisbandPartyNotification(leader, false, stopFollowing, followerListString);
+        this.#sendNarration(narrationMessageType, action, leader, narration);
+    }
 
 	/**
 	 * Narrates an inspect action.

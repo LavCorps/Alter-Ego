@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import * as finder from './finder.js';
 import * as helpers from './helpers.ts';
 
@@ -87,6 +91,7 @@ export const SCRIPT_SCOPE_OPTIONS = {
         'entityLoader',
         'entitySaver',
         'logHandler',
+        'errorMessageGenerator',
         'notificationGenerator',
         'narrationHandler',
         'loadedEntitiesWithErrors',
@@ -170,8 +175,11 @@ export const SCRIPT_SCOPE_OPTIONS = {
         'setInventory',
         'moveTimer',
 		'queueMovement',
+        'doAfterDelay',
 		'move',
         'stopMoving',
+        'startFollowing',
+        'stopFollowing',
 		'calculateMoveTime',
 		'regenerateStamina',
         'restoreStamina',
@@ -289,7 +297,7 @@ export default function evaluate (scriptText, container, player) {
 
 /**
  * Converts a script from plain text into an evaluatable expression.
- * @param {string} scriptText - The script to convert. 
+ * @param {string} scriptText - The script to convert.
  * @returns {import('acorn').Expression}
  */
 function parseExpression(scriptText) {
@@ -330,7 +338,7 @@ function replaceThisExpressions(node) {
 
 /**
  * Modify calls to finder functions to automatically insert the container into the function's arguments.
- * @param {any} node 
+ * @param {any} node
  */
 function replaceFinderCallArguments(node) {
 	if (!node || typeof node !== 'object') return;
@@ -356,7 +364,7 @@ function replaceFinderCallArguments(node) {
 
 /**
  * Returns true if the name of the property is blocked from being accessed.
- * @param {string} name - The name of the property. 
+ * @param {string} name - The name of the property.
  */
 function isBlockedProp(name) {
 	if (!name || typeof name !== 'string') return false;
@@ -367,7 +375,7 @@ function isBlockedProp(name) {
 const proxyCache = new WeakMap();
 /**
  * Create read-only proxies for objects so script evaluation cannot modify them.
- * @param {import('acorn').Node} val 
+ * @param {import('acorn').Node} val
  */
 function makeReadOnly(val) {
 	if (val === null) return null;
@@ -412,10 +420,10 @@ function makeReadOnly(val) {
 
 /**
  * Recursively validates and evaluates a script expression.
- * @param {any} node - The node to evaluate. 
+ * @param {any} node - The node to evaluate.
  * @param {ScriptEvaluationContext} context - Variables in the script's context.
  * @param {number} nodeCount - The total number of nodes that have been traversed since we began evaluating.
- * @returns 
+ * @returns
  */
 function validateAndEval(node, context, nodeCount) {
 	nodeCount++;

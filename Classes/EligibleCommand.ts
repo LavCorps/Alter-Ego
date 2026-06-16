@@ -1,6 +1,10 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import Command from "./Command.ts";
 import type Game from "../Data/Game.ts";
-import type GameSettings from "./GameSettings.js";
+import type GameSettings from "./GameSettings.ts";
 
 /**
  * A command usable by someone with the eligible role.

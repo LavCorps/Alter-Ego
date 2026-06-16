@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import DieAction from "../../../Data/Actions/DieAction.ts";
 import Player from "../../../Data/Player.ts";
 import { createMockMessage } from "../../__mocks__/libs/discord.js";
@@ -11,13 +15,13 @@ describe('DieAction test', () => {
         game.entityLoader.clearAll()
     })
 
-    test('DieAction perform', () => {
+    test('DieAction perform', async () => {
         const mockMessage = createMockMessage();
         const player = game.entityFinder.getLivingPlayer("???");
         expect(player).toBeInstanceOf(Player);
         // @ts-ignore
         const death = new DieAction(game, mockMessage, player, player.location, true);
-        death.performDie();
+        await death.performDie();
         expect(player.alive).toBeFalsy()
     })
 })

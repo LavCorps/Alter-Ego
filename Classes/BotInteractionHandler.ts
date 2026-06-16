@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import type Action from "../Data/Action.ts";
 import InspectAction from "../Data/Actions/InspectAction.ts";
 import QueueMoveAction from "../Data/Actions/QueueMoveAction.ts";
@@ -11,6 +15,8 @@ import UnequipAction from "../Data/Actions/UnequipAction.ts";
 import CraftAction from "../Data/Actions/CraftAction.ts";
 import UncraftAction from "../Data/Actions/UncraftAction.ts";
 import UseAction from "../Data/Actions/UseAction.ts";
+import ActivateAction from "../Data/Actions/ActivateAction.ts";
+import DeactivateAction from "../Data/Actions/DeactivateAction.ts";
 import InstantiateInventoryItemAction from "../Data/Actions/InstantiateInventoryItemAction.ts";
 import InstantiateRoomItemAction from "../Data/Actions/InstantiateRoomItemAction.ts";
 import DestroyInventoryItemAction from "../Data/Actions/DestroyInventoryItemAction.ts";
@@ -148,13 +154,16 @@ export default class BotInteractionHandler {
 		if (action instanceof QueueMoveAction) {
 			const args = interactable.actionDirective.getArgs();
 			const parsedArgs = action.parseInteractionArgs(args);
-			const validatedArgs = action.validateInteractionArgs(parsedArgs);
-			if (validatedArgs.length === 2) {
-				await action.performQueueMove(validatedArgs[0], validatedArgs[1]);
-				this.#replyOrDeleteActionResponse(action, interaction, reply);
-                this.#logInteraction("QueueMoveAction", author, timestamp, validatedArgs);
-				return true;
-			}
+            try {
+                const validatedArgs = action.validateInteractionArgs(parsedArgs);
+                if (validatedArgs.length === 2) {
+                    await action.performQueueMove(validatedArgs[0], validatedArgs[1]);
+                    this.#replyOrDeleteActionResponse(action, interaction, reply);
+                    this.#logInteraction("QueueMoveAction", author, timestamp, validatedArgs);
+                    return true;
+                }
+            }
+            catch (error) { throw new Error(error.message); }
 		}
         if (action instanceof StopAction) {
             if (player && player.isMoving) {
@@ -191,7 +200,7 @@ export default class BotInteractionHandler {
 			const parsedArgs = action.parseInteractionArgs(args);
 			const validatedArgs = action.validateInteractionArgs(parsedArgs);
 			if (validatedArgs.length === 4) {
-				action.performDrop(validatedArgs[0], validatedArgs[1], validatedArgs[2], validatedArgs[3]);
+				await action.performDrop(validatedArgs[0], validatedArgs[1], validatedArgs[2], validatedArgs[3]);
 				this.#replyOrDeleteActionResponse(action, interaction, reply);
                 this.#logInteraction("DropAction", author, timestamp, validatedArgs);
 				return true;
@@ -273,6 +282,34 @@ export default class BotInteractionHandler {
                 this.#logInteraction("UseAction", author, timestamp, validatedArgs);
                 return true;
             }
+        }
+        if (action instanceof ActivateAction) {
+            const args = interactable.actionDirective.getArgs();
+            const parsedArgs = action.parseInteractionArgs(args);
+            try {
+                const validatedArgs = action.validateInteractionArgs(parsedArgs);
+                if (validatedArgs.length === 2) {
+                    await action.performActivate(validatedArgs[0], validatedArgs[1]);
+                    this.#replyOrDeleteActionResponse(action, interaction, reply);
+                    this.#logInteraction("ActivateAction", author, timestamp, validatedArgs);
+                    return true;
+                }
+            }
+            catch (error) { throw new Error(error.message); }
+        }
+        if (action instanceof DeactivateAction) {
+            const args = interactable.actionDirective.getArgs();
+            const parsedArgs = action.parseInteractionArgs(args);
+            try {
+                const validatedArgs = action.validateInteractionArgs(parsedArgs);
+                if (validatedArgs.length === 2) {
+                    await action.performDeactivate(validatedArgs[0], validatedArgs[1]);
+                    this.#replyOrDeleteActionResponse(action, interaction, reply);
+                    this.#logInteraction("DeactivateAction", author, timestamp, validatedArgs);
+                    return true;
+                }
+            }
+            catch (error) { throw new Error(error.message); }
         }
         if (action instanceof InstantiateInventoryItemAction) {
             if (interaction instanceof ModalSubmitInteraction) {
