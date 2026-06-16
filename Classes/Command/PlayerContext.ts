@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { getChildItems } from "../../Modules/itemManager.js";
+import { getChildItems } from "../../Modules/itemManager.ts";
 import type { Collection } from "discord.js";
 import type Exit from "../../Data/Exit.ts";
 import type Fixture from "../../Data/Fixture.ts";

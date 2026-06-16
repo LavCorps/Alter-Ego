@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import type GameSettings from "../GameSettings.js";
+import type GameSettings from "../GameSettings.ts";
 import type Pattern from "./Pattern.ts"
 
 /**
