@@ -3,6 +3,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import { getChildItems } from "../../Modules/itemManager.js";
 import type { Collection } from "discord.js";
 import type Exit from "../../Data/Exit.ts";
 import type Fixture from "../../Data/Fixture.ts";
@@ -54,6 +55,16 @@ export default class PlayerContext extends Context {
     readonly heldItems: Array<InventoryItem>;
 
     /**
+     * The inventory items equipped by the player.
+     */
+    readonly equippedItems: Array<InventoryItem>;
+
+    /**
+     * The inventory items stashed by the player.
+     */
+    readonly stashedItems: Array<InventoryItem>;
+
+    /**
      * The room the player occupies.
      */
     readonly room: Room;
@@ -86,14 +97,20 @@ export default class PlayerContext extends Context {
      *
      */
     private constructor(game: Game, player: Player, invoked: string, message: UserMessage) {
-        super()
+        super();
         this.invokedAlias = invoked;
         this.message = message;
         this.game = game;
         this.player = player;
         this.equipmentSlots = this.player.inventory;
-        this.inventoryItems = this.player.getContainedItems().filter(item => item !== null);
-        this.heldItems = this.game.entityFinder.getPlayerHands(this.player).map(slot => slot.equippedItem).filter(item => item !== null);
+        this.inventoryItems = this.player.getContainedItems().filter((item) => item !== null);
+        const hands = this.game.entityFinder.getPlayerHands(this.player);
+        const handIDs = new Set(hands.map((hand) => hand.id));
+        const notHands = this.player.inventory.filter((slot) => !handIDs.has(slot.id));
+        this.heldItems = hands.map((slot) => slot.equippedItem).filter((item) => item !== null);
+        this.equippedItems = notHands.map((slot) => slot.equippedItem).filter((item) => item !== null);
+        this.stashedItems = [];
+        this.inventoryItems.forEach((item) => getChildItems(this.stashedItems, item));
         this.room = this.player.location;
         this.players = this.room.occupants.filter((roomPlayer) => roomPlayer !== this.player);
         this.exits = this.room.exits;
