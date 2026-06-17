@@ -23,6 +23,37 @@ describe("PlayerContext class from NG Commands", () => {
         vi.resetAllMocks();
     });
 
+    describe("constructor()", () => {
+        test("verify that stashedItems does not include top-level items", async () => {
+            const context = new PlayerContext(game, kyra, "test", createMockMessage());
+            /** @type {Set<import("../../../Data/InventoryItem.ts").default>} */
+            const noStash = new Set();
+            /** @type {Set<import("../../../Data/InventoryItem.ts").default>} */
+            const stash = new Set();
+
+            for (const item of context.heldItems) noStash.add(item);
+            for (const item of context.equippedItems) noStash.add(item);
+            for (const item of context.stashedItems) stash.add(item);
+
+            for (const item of stash) expect(noStash.has(item)).toBeFalsy();
+            for (const item of noStash) expect(stash.has(item)).toBeFalsy();
+        });
+
+        test("verify that stashedItems are not duplicated", async () => {
+            const context = new PlayerContext(game, kyra, "test", createMockMessage());
+            let stashCount = 0;
+            /** @type {Set<import("../../../Data/InventoryItem.ts").default>} */
+            const stash = new Set();
+
+            for (const item of context.stashedItems) {
+                stash.add(item);
+                stashCount += 1;
+            }
+
+            expect(stash.size).toStrictEqual(stashCount);
+        });
+    });
+
     describe("getLexicon()", () => {
         test("feed Kyra Context to Trie", async () => {
             const start = process.hrtime.bigint();

@@ -121,12 +121,6 @@ export default class PlayerContext extends Context {
         this.heldItems = hands.map((slot) => slot.equippedItem).filter((item) => item !== null);
         this.equippedItems = notHands.map((slot) => slot.equippedItem).filter((item) => item !== null);
         this.stashedItems = [];
-        /**
-         * @privateRemarks
-         * Verify in testing that the following code doesn't include the top-level inventoryItems (i.e. the equipped inventoryItems).
-         * Also verify that it doesn't include any duplicates.
-         * - DM
-         */
         this.inventoryItems.forEach((item) => getChildItems(this.stashedItems, item));
         this.room = this.player.location;
         this.otherOccupants = this.room.occupants.filter((roomPlayer) => roomPlayer !== this.player);
