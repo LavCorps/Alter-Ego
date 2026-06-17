@@ -21,8 +21,7 @@ describe("Trie class from NG Commands", () => {
         vi.resetAllMocks();
     });
 
-    /** @type Trie */
-    let trie;
+    let trie: Trie;
 
     describe("data loading", () => {
         test("1", async () => {
@@ -42,8 +41,7 @@ describe("Trie class from NG Commands", () => {
 
     describe("input tokenization", () => {
         beforeEach(async () => {
-            /** @type string[] */
-            const data = ["Last one in is a **{rotten egg}!**"];
+            const data: string[] = ["Last one in is a **{rotten egg}!**"];
             for (const line of data) {
                 trie.insert(line, new ConstantToken(line));
             }
@@ -74,8 +72,7 @@ describe("Trie class from NG Commands", () => {
 
     describe("benchmarking", () => {
         test("load all loadable game data into trie", async () => {
-            /** @type Set<string> */
-            const prepositions = new Set();
+            const prepositions: Set<string> = new Set();
             const start = process.hrtime.bigint();
             for (const player of game.players.values()) {
                 trie.insert(player.displayName, new EntityToken(player.displayName, player));

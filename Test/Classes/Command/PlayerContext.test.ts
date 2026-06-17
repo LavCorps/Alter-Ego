@@ -1,6 +1,8 @@
 import PlayerContext from "../../../Classes/Command/PlayerContext.ts";
 import Trie from "../../../Classes/Command/Trie.ts";
 import PrettyPrinter from "../../../Classes/PrettyPrinter.ts";
+import type InventoryItem from "../../../Data/InventoryItem.ts";
+import type Player from "../../../Data/Player.ts";
 import { clearQueue } from "../../../Modules/messageHandler.js";
 import { createMockMessage } from "../../__mocks__/libs/discord.js";
 
@@ -13,8 +15,7 @@ describe("PlayerContext class from NG Commands", () => {
         kyra = game.entityFinder.getPlayer("Kyra");
     });
 
-    /** @type {import("../../../Data/Player.ts").default} */
-    let kyra;
+    let kyra: Player;
 
     const printer = new PrettyPrinter();
 
@@ -26,10 +27,8 @@ describe("PlayerContext class from NG Commands", () => {
     describe("constructor()", () => {
         test("verify that stashedItems does not include top-level items", async () => {
             const context = new PlayerContext(game, kyra, "test", createMockMessage());
-            /** @type {Set<import("../../../Data/InventoryItem.ts").default>} */
-            const noStash = new Set();
-            /** @type {Set<import("../../../Data/InventoryItem.ts").default>} */
-            const stash = new Set();
+            const noStash: Set<InventoryItem> = new Set();
+            const stash: Set<InventoryItem> = new Set();
 
             for (const item of context.heldItems) noStash.add(item);
             for (const item of context.equippedItems) noStash.add(item);
@@ -42,8 +41,7 @@ describe("PlayerContext class from NG Commands", () => {
         test("verify that stashedItems are not duplicated", async () => {
             const context = new PlayerContext(game, kyra, "test", createMockMessage());
             let stashCount = 0;
-            /** @type {Set<import("../../../Data/InventoryItem.ts").default>} */
-            const stash = new Set();
+            const stash: Set<InventoryItem> = new Set();
 
             for (const item of context.stashedItems) {
                 stash.add(item);
