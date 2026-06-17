@@ -17,7 +17,7 @@ export default class BotContext extends Context {
     /**
      * @param invoked - The alias the command was invoked with.
      */
-    private constructor(invoked: string) {
+    constructor(invoked: string) {
         super()
         this.invokedAlias = invoked;
     }

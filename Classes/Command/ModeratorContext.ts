@@ -24,7 +24,7 @@ export default class ModeratorContext extends Context {
      * @param message - The message that invoked the command.
      *
      */
-    private constructor(invoked: string, message: UserMessage) {
+    constructor(invoked: string, message: UserMessage) {
         super();
         this.invokedAlias = invoked;
         this.message = message;
