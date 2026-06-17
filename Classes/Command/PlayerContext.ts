@@ -49,22 +49,22 @@ export default class PlayerContext extends Context {
     /**
      * The inventory items held, equipped, or stashed by the player.
      */
-    readonly inventoryItems: Array<InventoryItem>;
+    readonly inventoryItems: InventoryItem[];
 
     /**
      * The inventory items held by the player.
      */
-    readonly heldItems: Array<InventoryItem>;
+    readonly heldItems: InventoryItem[];
 
     /**
      * The inventory items equipped by the player.
      */
-    readonly equippedItems: Array<InventoryItem>;
+    readonly equippedItems: InventoryItem[];
 
     /**
      * The inventory items stashed by the player.
      */
-    readonly stashedItems: Array<InventoryItem>;
+    readonly stashedItems: InventoryItem[];
 
     /**
      * The room the player occupies.
@@ -74,7 +74,7 @@ export default class PlayerContext extends Context {
     /**
      * The other players in the same room as the player.
      */
-    readonly players: Array<Player>;
+    readonly otherOccupants: Player[];
 
     /**
      * The exits within the room.
@@ -84,32 +84,32 @@ export default class PlayerContext extends Context {
     /**
      * The rooms adjacent to the player's location.
      */
-    readonly adjacentRooms: Array<Room>;
+    readonly adjacentRooms: Room[];
 
     /**
      * The fixtures within the room.
      */
-    readonly fixtures: Array<Fixture>;
+    readonly fixtures: Fixture[];
 
     /**
      * The puzzles within the room.
      */
-    readonly puzzles: Array<Puzzle>;
+    readonly puzzles: Puzzle[];
 
     /**
      * The room items within the room.
      */
-    readonly roomItems: Array<RoomItem>;
+    readonly roomItems: RoomItem[];
 
     /**
      * @param game - The game to construct the context within.
      * @param player - The player to construct the context for.
-     * @param invoked - The alias the command was invoked with.
+     * @param invokedAlias - The alias the command was invoked with.
      * @param message - The message that invoked the command.
      */
-    constructor(game: Game, player: Player, invoked: string, message: UserMessage) {
+    constructor(game: Game, player: Player, invokedAlias: string, message: UserMessage) {
         super();
-        this.invokedAlias = invoked;
+        this.invokedAlias = invokedAlias;
         this.message = message;
         this.game = game;
         this.player = player;
@@ -121,13 +121,38 @@ export default class PlayerContext extends Context {
         this.heldItems = hands.map((slot) => slot.equippedItem).filter((item) => item !== null);
         this.equippedItems = notHands.map((slot) => slot.equippedItem).filter((item) => item !== null);
         this.stashedItems = [];
+        /**
+         * @privateRemarks
+         * Verify in testing that the following code doesn't include the top-level inventoryItems (i.e. the equipped inventoryItems).
+         * Also verify that it doesn't include any duplicates.
+         * - DM
+         */
         this.inventoryItems.forEach((item) => getChildItems(this.stashedItems, item));
         this.room = this.player.location;
-        this.players = this.room.occupants.filter((roomPlayer) => roomPlayer !== this.player);
+        this.otherOccupants = this.room.occupants.filter((roomPlayer) => roomPlayer !== this.player);
         this.exits = this.room.exits;
         this.adjacentRooms = this.exits.map((exit) => exit.dest);
-        this.fixtures = this.game.entityFinder.getFixtures(null, this.room.id).filter((fixture) => fixture.accessible);
-        this.puzzles = this.game.entityFinder.getPuzzles(null, this.room.id).filter((puzzle) => puzzle.accessible);
+        /**
+         * @privateRemarks
+         * It is actually intentional that players can attempt Puzzles that are not currently accessible.
+         * Puzzle accessibility is evaluated dynamically based on its requirements, so they should not be filtered out.
+         *
+         * Fixtures should be filtered out if they are inaccessible, but according to the use_player command, they can
+         * be activated or deactivated even if they are inaccessible, even if they cannot be inspected. This may or may
+         * not be a bug. It makes little sense to allow players to (de)activate fixtures that they can't inspect, but
+         * this may prevent a different bug from occurring when a Fixture that shares a name with a
+         * Puzzle (a shower, for example) is used. When this occurs, if the accessibility of the Fixture and the Puzzle
+         * contradict, and they are supposed to be in a synchronized state (activated when solved and deactivated when
+         * unsolved), they may end up not being synchronized. We will likely need a solution for this conundrum.
+         *
+         * Filtering inaccessible roomItems out is fine, but now I wonder if it might be nice to simply determine that
+         * dynamically, if their top-level container is a Puzzle. We could potentially use a get function for this, so
+         * that their accessibility can be evaluated dynamically without moderators needing to issue a bot command every
+         * time a puzzle is solved. This would be a good time to make such a change.
+         * - DM
+         */
+        this.fixtures = this.game.entityFinder.getFixtures(undefined, this.room.id).filter((fixture) => fixture.accessible);
+        this.puzzles = this.game.entityFinder.getPuzzles(undefined, this.room.id);
         this.roomItems = this.room.getContainedItems().filter((item) => item.accessible);
     }
 
