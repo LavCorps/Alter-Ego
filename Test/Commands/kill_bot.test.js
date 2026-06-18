@@ -4,7 +4,7 @@
 
 import BotCommand from "../../Classes/BotCommand.ts";
 import { usage, execute, config } from '../../Commands/kill_bot.js'
-import { clearQueue, sendQueuedMessages } from "../../Modules/messageHandler.js";
+import { clearQueue, sendQueuedMessages } from "../../Modules/messageHandler.ts";
 import { createMockMessage } from "../__mocks__/libs/discord.js";
 
 describe('kill_bot command', () => {
@@ -14,6 +14,6 @@ describe('kill_bot command', () => {
     });
 
     const kill_bot = new BotCommand(config, usage, execute);
-        
+
     test('', async () => {});
 });

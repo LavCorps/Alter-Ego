@@ -5,7 +5,7 @@
 import PlayerCommand from "../../Classes/PlayerCommand.ts";
 import { usage, execute, config } from "../../Commands/unstash_player.js";
 import UnstashAction from "../../Data/Actions/UnstashAction.ts";
-import { clearQueue, sendQueuedMessages } from "../../Modules/messageHandler.js";
+import { clearQueue, sendQueuedMessages } from "../../Modules/messageHandler.ts";
 import { createMockMessage } from "../__mocks__/libs/discord.js";
 
 describe("unstash_player command", () => {

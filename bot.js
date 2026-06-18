@@ -11,7 +11,7 @@ import EligibleCommand from './Classes/EligibleCommand.ts';
 
 import {createServerConfigFileIfNotExists, loadServerConfig, validateServerConfig} from './Modules/serverManager.ts';
 import { default as autoUpdate } from './Modules/updateHandler.js';
-import { editSpectatorMessage, deleteSpectatorMessage, processIncomingMessage } from './Modules/messageHandler.js';
+import { editSpectatorMessage, deleteSpectatorMessage, processIncomingMessage } from './Modules/messageHandler.ts';
 import { executeCommand } from './Modules/commandHandler.ts';
 
 import { Client, Collection, ChannelType, Events, GatewayIntentBits, Partials, TextChannel, Role, PermissionFlagsBits } from 'discord.js';

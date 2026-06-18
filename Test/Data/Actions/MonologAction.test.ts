@@ -5,7 +5,7 @@
 import MonologAction from "../../../Data/Actions/MonologAction.ts";
 import type Player from "../../../Data/Player.ts";
 import type Room from "../../../Data/Room.ts";
-import { sendQueuedMessages } from "../../../Modules/messageHandler.js";
+import { sendQueuedMessages } from "../../../Modules/messageHandler.ts";
 
 describe('MonologAction test', () => {
 	let kyra: Player;

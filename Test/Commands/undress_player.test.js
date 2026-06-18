@@ -5,7 +5,7 @@
 import PlayerCommand from "../../Classes/PlayerCommand.ts";
 import { usage, execute, config } from '../../Commands/undress_player.js'
 import UndressAction from "../../Data/Actions/UndressAction.ts";
-import { clearQueue, sendQueuedMessages } from "../../Modules/messageHandler.js";
+import { clearQueue, sendQueuedMessages } from "../../Modules/messageHandler.ts";
 import { createMockMessage } from "../__mocks__/libs/discord.js";
 
 describe('undress_player command', () => {

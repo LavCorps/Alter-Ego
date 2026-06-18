@@ -4,7 +4,7 @@
 
 import PlayerCommand from "../../Classes/PlayerCommand.ts";
 import { usage, execute, config } from '../../Commands/recipes_player.js'
-import { clearQueue, sendQueuedMessages } from "../../Modules/messageHandler.js";
+import { clearQueue, sendQueuedMessages } from "../../Modules/messageHandler.ts";
 import { createMockMessage } from "../__mocks__/libs/discord.js";
 
 describe('recipes_player command', () => {
@@ -14,6 +14,6 @@ describe('recipes_player command', () => {
     });
 
     const recipes_player = new PlayerCommand(config, usage, execute);
-        
+
     test('', async () => {});
 });

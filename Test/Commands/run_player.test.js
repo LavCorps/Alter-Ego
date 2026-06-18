@@ -4,7 +4,7 @@
 
 import PlayerCommand from "../../Classes/PlayerCommand.ts";
 import { usage, execute, config } from '../../Commands/run_player.js'
-import { clearQueue, sendQueuedMessages } from "../../Modules/messageHandler.js";
+import { clearQueue, sendQueuedMessages } from "../../Modules/messageHandler.ts";
 import { createMockMessage } from "../__mocks__/libs/discord.js";
 
 describe('run_player command', () => {
@@ -14,6 +14,6 @@ describe('run_player command', () => {
     });
 
     const run_player = new PlayerCommand(config, usage, execute);
-        
+
     test('', async () => {});
 });

@@ -5,7 +5,7 @@
 import DropAction from "../../../Data/Actions/DropAction.ts";
 import UnequipAction from "../../../Data/Actions/UnequipAction.ts";
 import TakeAction from "../../../Data/Actions/TakeAction.ts";
-import { clearQueue } from "../../../Modules/messageHandler.js";
+import { clearQueue } from "../../../Modules/messageHandler.ts";
 import { createMockMessage } from "../../__mocks__/libs/discord.js";
 
 type MockItem = {

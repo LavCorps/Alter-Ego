@@ -4,7 +4,7 @@
 
 import BotCommand from "../../Classes/BotCommand.ts";
 import { usage, execute, config } from '../../Commands/tag_bot.js'
-import { clearQueue, sendQueuedMessages } from "../../Modules/messageHandler.js";
+import { clearQueue, sendQueuedMessages } from "../../Modules/messageHandler.ts";
 import { createMockMessage } from "../__mocks__/libs/discord.js";
 
 describe('tag_bot command', () => {
@@ -14,6 +14,6 @@ describe('tag_bot command', () => {
     });
 
     const tag_bot = new BotCommand(config, usage, execute);
-        
+
     test('', async () => {});
 });

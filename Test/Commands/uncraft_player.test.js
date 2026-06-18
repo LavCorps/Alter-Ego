@@ -4,7 +4,7 @@
 
 import PlayerCommand from '../../Classes/PlayerCommand.ts';
 import { usage, execute, config } from '../../Commands/uncraft_player.js';
-import { clearQueue } from '../../Modules/messageHandler.js';
+import { clearQueue } from '../../Modules/messageHandler.ts';
 
 describe('uncraft_player command', () => {
     afterEach(async () => {

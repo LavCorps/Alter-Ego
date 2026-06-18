@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import type Interactable from '../Classes/Interactables/Interactable.ts';
 import StringSelectMenuInteractable from '../Classes/Interactables/StringSelectMenuInteractable.ts';
 import type Game from '../Data/Game.ts';
@@ -17,10 +21,12 @@ import {
     ContainerBuilder,
     SeparatorBuilder,
     SeparatorSpacingSize,
+    type MessageCreateOptions,
     MessageFlags,
     MediaGalleryBuilder,
     MediaGalleryItemBuilder,
-    StringSelectMenuBuilder
+    StringSelectMenuBuilder,
+    type WebhookMessageCreateOptions
 } from 'discord.js';
 
 type Flags = BitFieldResolvable<"SuppressEmbeds" | "SuppressNotifications" | "IsComponentsV2", MessageFlags.SuppressEmbeds | MessageFlags.SuppressNotifications | MessageFlags.IsComponentsV2>
@@ -36,7 +42,7 @@ type TopLevelComponent = TextDisplayBuilder | ContainerBuilder | MediaGalleryBui
  * @param interactables - An array of interactables. Optional.
  * @param embeds - An array of embeds. Optional.
  */
-export function generateMessageDisplayCreateOptions(messageDisplayType: MessageDisplayType, game: Game, messageText: string, player?: Player, files: string[] = [], interactables: Interactable[] = [], embeds: (Embed | EmbedBuilder)[] = []) {
+export function generateMessageDisplayCreateOptions(messageDisplayType: MessageDisplayType, game: Game, messageText: string, player?: Player, files: string[] = [], interactables: Interactable[] = [], embeds: (Embed | EmbedBuilder)[] = []): MessageCreateOptions {
     return {
         content: messageDisplayType === MessageDisplayType.PLAIN_TEXT ? messageText : '',
         components: messageDisplayType === MessageDisplayType.PLAIN_TEXT ? generateActionRows(interactables) : createNarrateComponents(messageDisplayType, game, messageText, player, [], interactables),
@@ -58,7 +64,7 @@ export function generateMessageDisplayCreateOptions(messageDisplayType: MessageD
  * @param player - The player the message is about. Optional.
  *
  */
-export function generateWebhookMessageDisplayCreateOptions(messageDisplayType: MessageDisplayType, game: Game, messageText: string, username: string, avatarURL: string, embeds: Embed[] = [], files: string[] = [], player?: Player) {
+export function generateWebhookMessageDisplayCreateOptions(messageDisplayType: MessageDisplayType, game: Game, messageText: string, username: string, avatarURL: string, embeds: Embed[] = [], files: string[] = [], player?: Player): WebhookMessageCreateOptions {
     return {
         content: messageDisplayType === MessageDisplayType.PLAIN_TEXT ? messageText : '',
         username: username,

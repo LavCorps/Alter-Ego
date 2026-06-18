@@ -4,7 +4,7 @@
 
 import EligibleCommand from '../../Classes/EligibleCommand.ts';
 import { usage, execute, config } from '../../Commands/play_eligible.js'
-import { clearQueue } from '../../Modules/messageHandler.js';
+import { clearQueue } from '../../Modules/messageHandler.ts';
 
 describe('play_eligible command', () => {
     afterEach(async () => {
@@ -13,6 +13,6 @@ describe('play_eligible command', () => {
     });
 
     const play_eligible = new EligibleCommand(config, usage, execute);
-        
+
     test('', async () => {});
 });

@@ -43,7 +43,7 @@ import DestroyInventoryItemAction from "../Data/Actions/DestroyInventoryItemActi
 import DestroyRoomItemAction from "../Data/Actions/DestroyRoomItemAction.ts";
 import FindAction from "../Data/Actions/FindAction.ts";
 import ViewAction, { type EntityField } from "../Data/Actions/ViewAction.ts";
-import { removeInteractablesFromMessage } from "../Modules/messageHandler.js";
+import { removeInteractablesFromMessage } from "../Modules/messageHandler.ts";
 import { ActionPriority } from "../Modules/enums.js";
 import { capitalizeFirstLetter, getSortedItems } from "../Modules/helpers.ts";
 

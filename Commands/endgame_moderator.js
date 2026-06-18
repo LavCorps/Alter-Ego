@@ -1,4 +1,4 @@
-﻿import { clearQueue } from '../Modules/messageHandler.js';
+﻿import { clearQueue } from '../Modules/messageHandler.ts';
 
 /** @import Moderator from '../Data/Moderator.ts' */
 /** @import GameSettings from '../Classes/GameSettings.ts' */

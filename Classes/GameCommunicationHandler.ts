@@ -13,7 +13,7 @@ import type Notification from "../Data/Notification.ts";
 import type Player from "../Data/Player.ts";
 import type Room from "../Data/Room.ts";
 import { MessageDisplayType } from "../Modules/enums.js";
-import * as messageHandler from "../Modules/messageHandler.js";
+import * as messageHandler from "../Modules/messageHandler.ts";
 import { capitalizeFirstLetter } from "../Modules/helpers.ts";
 import { ChannelType, Collection } from "discord.js";
 import type { Attachment, Embed, EmbedBuilder, Snowflake, TextChannel } from "discord.js";

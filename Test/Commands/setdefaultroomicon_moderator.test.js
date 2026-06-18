@@ -4,7 +4,7 @@
 
 import ModeratorCommand from "../../Classes/ModeratorCommand.ts";
 import { usage, execute, config } from '../../Commands/setdefaultroomicon_moderator.js'
-import { clearQueue, sendQueuedMessages } from "../../Modules/messageHandler.js";
+import { clearQueue, sendQueuedMessages } from "../../Modules/messageHandler.ts";
 import { createMockMessage } from "../__mocks__/libs/discord.js";
 
 describe('setdefaultroomicon_moderator command', () => {
