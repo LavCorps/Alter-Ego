@@ -1087,7 +1087,6 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
 
     /**
      * Returns true if the player has a status with the specified behavior attribute.
-     *
      * @param behaviorAttribute - The name of the behavior attribute.
      */
     hasBehaviorAttribute(behaviorAttribute: string): boolean {
@@ -1106,7 +1105,6 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
 
     /**
      * Returns list of status effects the player has with the specified behavior attribute.
-     *
      * @param behaviorAttribute - The name of the behavior attribute.
      */
     getBehaviorAttributeStatusEffects(behaviorAttribute: string): Status[] {
@@ -1115,7 +1113,6 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
 
     /**
      * Returns list of status effects the player has with the specified behavior attribute.
-     *
      * @deprecated Use getBehaviorAttributeStatusEffects instead.
      * @param attribute - The name of the behavior attribute.
      */
@@ -1133,6 +1130,18 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
         if (this.hasBehaviorAttribute(`disable ${command}`)) return false;
         if (this.hasBehaviorAttribute("disable all") && !this.hasBehaviorAttribute(`enable ${command}`)) return false;
         return true;
+    }
+
+    /**
+     * Returns list of status effects the player has that disable the given command.
+     * @param command - The command being disabled.
+     */
+    getStatusEffectsDisablingCommand(command: string): Status[] {
+        if (this.hasBehaviorAttribute(`disable ${command}`))
+            return this.getBehaviorAttributeStatusEffects(`disable ${command}`);
+        if (this.hasBehaviorAttribute("disable all") && !this.hasBehaviorAttribute(`enable ${command}`))
+            return this.getBehaviorAttributeStatusEffects("disable all");
+        return [];
     }
 
     /**

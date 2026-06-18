@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import Action from "../Action.ts";
 import EquipmentSlot from "../EquipmentSlot.ts";
 import InventoryItem from "../InventoryItem.ts";
@@ -8,7 +12,7 @@ import InventoryItem from "../InventoryItem.ts";
  * @see https://msvblank.github.io/Alter-Ego/reference/data_structures/action.html#equip-action
  */
 export default class EquipAction extends Action {
-	/**
+    /**
      * Performs an equip action.
      *
      * @param item - The inventory item to equip.
@@ -16,19 +20,19 @@ export default class EquipAction extends Action {
      * @param handEquipmentSlot - The hand equipment slot that the inventory item is currently in.
      * @param notify - Whether or not to notify the player that they equipped the inventory item. Defaults to true.
      */
-	performEquip(item: InventoryItem, equipmentSlot: EquipmentSlot, handEquipmentSlot: EquipmentSlot, notify: boolean = true): void {
-		if (this.performed) return;
-		super.perform();
-		this.getGame().narrationHandler.narrateEquip(this, item, this.player, notify);
-		this.getGame().logHandler.logEquip(item, this.player, equipmentSlot, this.forced);
-		this.player.equip(item, equipmentSlot, handEquipmentSlot);
-		equipmentSlot.equippedItem.executeEquippedCommands();
+    performEquip(item: InventoryItem, equipmentSlot: EquipmentSlot, handEquipmentSlot: EquipmentSlot, notify: boolean = true): void {
+        if (this.performed) return;
+        super.perform();
+        this.getGame().narrationHandler.narrateEquip(this, item, this.player, notify);
+        this.getGame().logHandler.logEquip(item, this.player, equipmentSlot, this.forced);
+        this.player.equip(item, equipmentSlot, handEquipmentSlot);
+        equipmentSlot.equippedItem.executeEquippedCommands();
         this.successMessage = `Successfully equipped ${item.getIdentifier()} to ${this.player.name}'s ${equipmentSlot.id}.`;
-	}
+    }
 
     /**
      * Finds the required inventory item and equipment slot to call performEquip.
-     * 
+     *
      * @param args - The args as strings.
      */
     parseInteractionArgs(args: string[]): [InventoryItem, EquipmentSlot, EquipmentSlot] {
@@ -39,15 +43,15 @@ export default class EquipAction extends Action {
 
     /**
      * Validates the parsed args. The results can be passed directly into performEquip.
-     * 
+     *
      * @param args - The args after being parsed.
      */
     validateInteractionArgs(args: [InventoryItem, EquipmentSlot, EquipmentSlot]): [InventoryItem, EquipmentSlot, EquipmentSlot] | [] {
         if (args.length !== 3) return [];
         if (!args[0] || !(args[0] instanceof InventoryItem) || args[0].prefab === null) return [];
         const item = args[0];
-        if (this.player.hasBehaviorAttribute("disable equip")) return [];
-        if (this.player.hasBehaviorAttribute("disable all") && !this.player.hasBehaviorAttribute("enable equip")) return [];
+        const disabledStatusEffects = this.player.getStatusEffectsDisablingCommand("equip");
+        if (disabledStatusEffects.length > 0) return [];
         if (!args[1] || !(args[1] instanceof EquipmentSlot)) return [];
         const equipmentSlot = args[1];
         if (!args[2] || !(args[2] instanceof EquipmentSlot) || args[2].equippedItem === null) return [];
