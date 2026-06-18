@@ -1,10 +1,15 @@
+import type Interactable from '../Classes/Interactables/Interactable.ts';
 import StringSelectMenuInteractable from '../Classes/Interactables/StringSelectMenuInteractable.ts';
+import type Game from '../Data/Game.ts';
+import type Player from '../Data/Player.ts';
+import type Room from '../Data/Room.ts';
 import { InteractableType, MessageDisplayType } from './enums.js';
 import { capitalizeFirstLetter, makeCopyable } from './helpers.ts';
 import {
     ActionRowBuilder,
+    type BitFieldResolvable,
     ButtonBuilder,
-    Embed,
+    type Embed,
     EmbedBuilder,
     TextDisplayBuilder,
     ThumbnailBuilder,
@@ -18,25 +23,20 @@ import {
     StringSelectMenuBuilder
 } from 'discord.js';
 
-/**
- * @import Interactable from "../Classes/Interactables/Interactable.ts"
- * @import Game from "../Data/Game.ts"
- * @import Player from "../Data/Player.ts"
- * @import Room from "../Data/Room.ts";
- * @typedef {import('discord.js').BitFieldResolvable<"SuppressEmbeds" | "SuppressNotifications" | "IsComponentsV2", MessageFlags.SuppressEmbeds | MessageFlags.SuppressNotifications | MessageFlags.IsComponentsV2>} Flags
- */
+type Flags = BitFieldResolvable<"SuppressEmbeds" | "SuppressNotifications" | "IsComponentsV2", MessageFlags.SuppressEmbeds | MessageFlags.SuppressNotifications | MessageFlags.IsComponentsV2>
+type TopLevelComponent = TextDisplayBuilder | ContainerBuilder | MediaGalleryBuilder | SeparatorBuilder | ActionRowBuilder<ButtonBuilder|StringSelectMenuBuilder>;
 
 /**
  * Generates the message create options for a narration or notification.
- * @param {MessageDisplayType} messageDisplayType - The display type of the message to send.
- * @param {Game} game - The game the message is for.
- * @param {string} messageText - The text content of the message. 
- * @param {Player} [player] - The player the message is about. Optional.
- * @param {string[]} [files] - An array of file URLs to send. Optional.
- * @param {Interactable[]} [interactables] - An array of interactables. Optional.
- * @param {(Embed|EmbedBuilder)[]} [embeds] - An array of embeds. Optional.
+ * @param messageDisplayType - The display type of the message to send.
+ * @param game - The game the message is for.
+ * @param messageText - The text content of the message.
+ * @param player - The player the message is about. Optional.
+ * @param files - An array of file URLs to send. Optional.
+ * @param interactables - An array of interactables. Optional.
+ * @param embeds - An array of embeds. Optional.
  */
-export function generateMessageDisplayCreateOptions(messageDisplayType, game, messageText, player, files = [], interactables = [], embeds = []) {
+export function generateMessageDisplayCreateOptions(messageDisplayType: MessageDisplayType, game: Game, messageText: string, player?: Player, files: string[] = [], interactables: Interactable[] = [], embeds: (Embed | EmbedBuilder)[] = []) {
     return {
         content: messageDisplayType === MessageDisplayType.PLAIN_TEXT ? messageText : '',
         components: messageDisplayType === MessageDisplayType.PLAIN_TEXT ? generateActionRows(interactables) : createNarrateComponents(messageDisplayType, game, messageText, player, [], interactables),
@@ -48,17 +48,17 @@ export function generateMessageDisplayCreateOptions(messageDisplayType, game, me
 
 /**
  * Generates the message create options for a narration or notification.
- * @param {MessageDisplayType} messageDisplayType - The display type of the message to send.
- * @param {Game} game - The game the message is for.
- * @param {string} messageText - The text content of the message. 
- * @param {string} username - The username of the webhook message. 
- * @param {string} avatarURL - The URL of the icon to use for the webhook message.
- * @param {Embed[]} [embeds] - An array of embeds to send in the message. Optional. 
- * @param {string[]} [files] - An array of file URLs to send. Optional. 
- * @param {Player} [player] - The player the message is about. Optional.
- * 
+ * @param messageDisplayType - The display type of the message to send.
+ * @param game - The game the message is for.
+ * @param messageText - The text content of the message.
+ * @param username - The username of the webhook message.
+ * @param avatarURL - The URL of the icon to use for the webhook message.
+ * @param embeds - An array of embeds to send in the message. Optional.
+ * @param files - An array of file URLs to send. Optional.
+ * @param player - The player the message is about. Optional.
+ *
  */
-export function generateWebhookMessageDisplayCreateOptions(messageDisplayType, game, messageText, username, avatarURL, embeds = [], files = [], player) {
+export function generateWebhookMessageDisplayCreateOptions(messageDisplayType: MessageDisplayType, game: Game, messageText: string, username: string, avatarURL: string, embeds: Embed[] = [], files: string[] = [], player?: Player) {
     return {
         content: messageDisplayType === MessageDisplayType.PLAIN_TEXT ? messageText : '',
         username: username,
@@ -72,57 +72,56 @@ export function generateWebhookMessageDisplayCreateOptions(messageDisplayType, g
 
 /**
  * Creates a flag bit field for a message based on its display type.
- * @param {MessageDisplayType} messageDisplayType 
+ * @param messageDisplayType
  */
-function generateFlags(messageDisplayType) {
-    /** @type {Flags} */
-    let flags;
+function generateFlags(messageDisplayType: MessageDisplayType): Flags {
+    let flags: Flags;
     if (messageDisplayType === MessageDisplayType.MINOR) flags = MessageFlags.IsComponentsV2 | MessageFlags.SuppressNotifications;
-    else if (messageDisplayType !== MessageDisplayType.PLAIN_TEXT) flags = MessageFlags.IsComponentsV2; 
+    else if (messageDisplayType !== MessageDisplayType.PLAIN_TEXT) flags = MessageFlags.IsComponentsV2;
     return flags;
 }
 
+
+
 /**
  * Creates an array of components for a narration.
- * @param {MessageDisplayType} messageDisplayType - The display type of the message to send.
- * @param {Game} game - The game the narration is for.
- * @param {string} messageText - The text content of the narration.
- * @param {Player} [player] - The player the narration is about. Optional.
- * @param {string[]} [files] - An array of file URLs to send. Optional. 
- * @param {Interactable[]} [interactables] - An array of interactables. Optional.
+ * @param messageDisplayType - The display type of the message to send.
+ * @param game - The game the narration is for.
+ * @param messageText - The text content of the narration.
+ * @param player - The player the narration is about. Optional.
+ * @param files - An array of file URLs to send. Optional.
+ * @param interactables - An array of interactables. Optional.
  */
-function createNarrateComponents(messageDisplayType, game, messageText, player, files, interactables = []) {
-    /** @type {MediaGalleryBuilder} */
-    let mediaGalleryBuilder;
+function createNarrateComponents(messageDisplayType: MessageDisplayType, game: Game, messageText: string, player?: Player, files?: string[], interactables: Interactable[] = []): TopLevelComponent[] {
+    let mediaGalleryBuilder: MediaGalleryBuilder;
     [mediaGalleryBuilder, messageText] = getMediaGalleryComponents(messageText, files);
 
-    /** @type {(TextDisplayBuilder | ContainerBuilder | MediaGalleryBuilder | ActionRowBuilder<ButtonBuilder|StringSelectMenuBuilder>)[]} */
-    let components = [];
+    let components: TopLevelComponent[] = [];
     switch (messageDisplayType) {
-		case MessageDisplayType.STANDARD:
-			components = createStandardNarrationComponents(game, messageText);
+        case MessageDisplayType.STANDARD:
+            components = createStandardNarrationComponents(game, messageText);
             break;
         case MessageDisplayType.WARNING:
             components = createWarningNarrationComponents(game, messageText);
             break;
-		case MessageDisplayType.ALERT:
-			components = createAlertNarrationComponents(game, messageText);
+        case MessageDisplayType.ALERT:
+            components = createAlertNarrationComponents(game, messageText);
             break;
-		case MessageDisplayType.MINOR:
-			components = createMinorNarrationComponents(game, messageText);
+        case MessageDisplayType.MINOR:
+            components = createMinorNarrationComponents(game, messageText);
             break;
-		case MessageDisplayType.PLAYER:
-			components = createPlayerNarrationComponents(game, messageText, player);
+        case MessageDisplayType.PLAYER:
+            components = createPlayerNarrationComponents(game, messageText, player);
             break;
         case MessageDisplayType.MONOLOG:
             components = createMonologNarrationComponents(game, messageText, player);
             break;
-		default:
-			components = createStandardNarrationComponents(game, messageText);
+        default:
+            components = createStandardNarrationComponents(game, messageText);
             break;
-	}
+    }
     if (mediaGalleryBuilder.items.length !== 0) components.push(mediaGalleryBuilder);
-	if (interactables.length > 0) {
+    if (interactables.length > 0) {
         const actionRows = generateActionRows(interactables);
         components = components.concat(actionRows);
     }
@@ -132,55 +131,55 @@ function createNarrateComponents(messageDisplayType, game, messageText, player, 
 
 /**
  * Creates the components for a standard narration.
- * @param {Game} game - The game the narration is for.
- * @param {string} messageText - The text content of the narration.
+ * @param game - The game the narration is for.
+ * @param messageText - The text content of the narration.
  */
-function createStandardNarrationComponents(game, messageText) {
-	return [
-		new ContainerBuilder()
+function createStandardNarrationComponents(game: Game, messageText: string): TopLevelComponent[] {
+    return [
+        new ContainerBuilder()
             .setAccentColor(Number(`0x${game.settings.standardMessageDisplayAccentColor}`))
             .addTextDisplayComponents(
                 new TextDisplayBuilder().setContent(messageText),
-        )
-	];
+            )
+    ];
 }
 
 /**
  * Creates the components for a warning narration.
- * @param {Game} game - The game the narration is for.
- * @param {string} messageText - The text content of the narration.
+ * @param game - The game the narration is for.
+ * @param messageText - The text content of the narration.
  */
-function createWarningNarrationComponents(game, messageText) {
-	return [
-		new ContainerBuilder()
+function createWarningNarrationComponents(game: Game, messageText: string): TopLevelComponent[] {
+    return [
+        new ContainerBuilder()
             .setAccentColor(Number(`0x${game.settings.warningMessageDisplayAccentColor}`))
             .addTextDisplayComponents(
                 new TextDisplayBuilder().setContent(messageText),
-        )
-	];
+            )
+    ];
 }
 
 /**
  * Creates the components for an alert narration.
- * @param {Game} game - The game the narration is for.
- * @param {string} messageText - The text content of the narration.
+ * @param game - The game the narration is for.
+ * @param messageText - The text content of the narration.
  */
-function createAlertNarrationComponents(game, messageText) {
-	return [
-		new ContainerBuilder()
+function createAlertNarrationComponents(game: Game, messageText: string): TopLevelComponent[] {
+    return [
+        new ContainerBuilder()
             .setAccentColor(Number(`0x${game.settings.alertMessageDisplayAccentColor}`))
             .addTextDisplayComponents(
                 new TextDisplayBuilder().setContent(messageText),
-        )
-	];
+            )
+    ];
 }
 
 /**
  * Creates the components for a minor narration.
- * @param {Game} game - The game the narration is for.
- * @param {string} messageText - The text content of the narration.
+ * @param game - The game the narration is for.
+ * @param messageText - The text content of the narration.
  */
-function createMinorNarrationComponents(game, messageText) {
+function createMinorNarrationComponents(game: Game, messageText: string): TopLevelComponent[] {
     const indent = `> `;
     const smallHeader = `-# `;
     let messageLines = messageText.split('\n');
@@ -188,58 +187,56 @@ function createMinorNarrationComponents(game, messageText) {
         if (!messageLines[i].startsWith(smallHeader)) messageLines[i] = `${smallHeader}${messageLines[i]}`;
         if (!messageLines[i].startsWith(indent)) messageLines[i] = `${indent}${messageLines[i]}`;
     }
-	return [
-		new TextDisplayBuilder().setContent(messageLines.join('\n'))
-	];
+    return [
+        new TextDisplayBuilder().setContent(messageLines.join('\n'))
+    ];
 }
 
 /**
  * Creates the components for a player narration.
- * @param {Game} game - The game the narration is for.
- * @param {string} messageText - The text content of the narration.
- * @param {Player} player - The player the narration is about.
+ * @param game - The game the narration is for.
+ * @param messageText - The text content of the narration.
+ * @param player - The player the narration is about.
  */
-function createPlayerNarrationComponents(game, messageText, player) {
-	return [
-		new ContainerBuilder()
+function createPlayerNarrationComponents(game: Game, messageText: string, player: Player): TopLevelComponent[] {
+    return [
+        new ContainerBuilder()
             .setAccentColor(Number(`0x${game.settings.standardMessageDisplayAccentColor}`))
             .addTextDisplayComponents(
                 new TextDisplayBuilder().setContent(messageText),
-        )
-	];
+            )
+    ];
 }
 
 /**
  * Creates the components for a player monolog.
- * @param {Game} game - The game the narration is for.
- * @param {string} messageText - The text content of the narration.
- * @param {Player} player - The player the narration is about.
+ * @param game - The game the narration is for.
+ * @param messageText - The text content of the narration.
+ * @param player - The player the narration is about.
  */
-function createMonologNarrationComponents(game, messageText, player) {
+function createMonologNarrationComponents(game: Game, messageText: string, player: Player): TopLevelComponent[] {
     return [
-		new ContainerBuilder()
+        new ContainerBuilder()
             .addTextDisplayComponents(
                 new TextDisplayBuilder().setContent(messageText),
-        )
-	];
+            )
+    ];
 }
 
 /**
  * Creates an array of components for a room description.
- * @param {Room} location - The room to be displayed.
- * @param {string} descriptionText - The description of the room to send. 
- * @param {string} occupantsString - The list of occupants in the room.
- * @param {string} defaultDropFixtureText - The description of the default drop fixture in this room. 
- * @param {string} color - The color as a hex code.
- * @param {Interactable[]} interactables - An array of interactables.
+ * @param location - The room to be displayed.
+ * @param descriptionText - The description of the room to send.
+ * @param occupantsString - The list of occupants in the room.
+ * @param defaultDropFixtureText - The description of the default drop fixture in this room.
+ * @param color - The color as a hex code.
+ * @param interactables - An array of interactables.
  */
-export function createRoomDescriptionComponents(location, descriptionText, occupantsString, defaultDropFixtureText, color, interactables = []) {
-    /** @type {MediaGalleryBuilder} */
-    let mediaGalleryBuilder;
+export function createRoomDescriptionComponents(location: Room, descriptionText: string, occupantsString: string, defaultDropFixtureText: string, color: string, interactables: Interactable[] = []): TopLevelComponent[] {
+    let mediaGalleryBuilder: MediaGalleryBuilder;
     [mediaGalleryBuilder, descriptionText] = getMediaGalleryComponents(descriptionText);
 
-    /** @type {(TextDisplayBuilder | ContainerBuilder | MediaGalleryBuilder | SeparatorBuilder | ActionRowBuilder<ButtonBuilder|StringSelectMenuBuilder>)[]} */
-    let components = [];
+    let components: TopLevelComponent[] = [];
     components.push(new ContainerBuilder()
         .setAccentColor(Number(`0x${color}`))
         .addSectionComponents(
@@ -273,14 +270,14 @@ export function createRoomDescriptionComponents(location, descriptionText, occup
 
 /**
  * Creates a media gallery builder using linked images and videos in the message. Can only contain up to 3 gallery items.
- * @param {string} originalMessageText - The original text of the message.
- * @param {string[]} [fileURLs] - An array of file URLs to send. Optional. 
- * @returns {[MediaGalleryBuilder, string]} - A media gallery builder and the message text after removing links that have been inserted into it.
+ * @param originalMessageText - The original text of the message.
+ * @param fileURLs - An array of file URLs to send. Optional.
+ * @returns A media gallery builder and the message text after removing links that have been inserted into it.
  */
-function getMediaGalleryComponents(originalMessageText, fileURLs = []) {
+function getMediaGalleryComponents(originalMessageText: string, fileURLs: string[] = []): [MediaGalleryBuilder, string] {
     const mediaGalleryBuilder = new MediaGalleryBuilder();
     const imageURLRegex = /(http(s?):\/\/.*?\.(jpg|jpeg|png|gif|webp|avif|mp4|webm))(?:\?[^#\s]*)?/g;
-    let match;
+    let match: RegExpExecArray;
     let messageText = originalMessageText;
     while (match = imageURLRegex.exec(originalMessageText)) {
         fileURLs.push(match[0]);
@@ -295,25 +292,29 @@ function getMediaGalleryComponents(originalMessageText, fileURLs = []) {
     return [mediaGalleryBuilder, messageText];
 }
 
+interface ActionRowIntermediary {
+    actionRow: ActionRowBuilder<ButtonBuilder|StringSelectMenuBuilder>,
+    priority: number
+}
+
+interface ButtonIntermediary {
+    button: ButtonBuilder,
+    priority: number
+}
+
 /**
  * Returns an array of action row components to attach to the message.
- * @param {Interactable[]} interactables - An array of interactables.
- * @param {number} [componentCount] - The number of components already in the message. Defaults to 0.
+ * @param interactables - An array of interactables.
+ * @param componentCount - The number of components already in the message. Defaults to 0.
  */
-function generateActionRows(interactables, componentCount = 0) {
-    /** @typedef {{actionRow: ActionRowBuilder<ButtonBuilder|StringSelectMenuBuilder>, priority: number}} ActionRowIntermediary */
-    /** @typedef {{button: ButtonBuilder, priority: number}} ButtonIntermediary */
-    
+function generateActionRows(interactables: Interactable[], componentCount: number = 0): ActionRowBuilder<ButtonBuilder | StringSelectMenuBuilder>[] {
     const maxComponentCount = 40;
     const buttonInteractables = interactables.filter(interactable => interactable.type === InteractableType.BUTTON);
     const stringSelectInteractables = interactables.filter(interactable => interactable.type === InteractableType.STRING_SELECT_MENU);
 
-    /** @type {ActionRowIntermediary[]} */
-    const actionRows = [];
-    /** @type {Set<string>} */
-    const includedInteractables = new Set();
-    /** @type {ButtonIntermediary[]} */
-    let buttons = [];
+    const actionRows: ActionRowIntermediary[] = [];
+    const includedInteractables: Set<string> = new Set();
+    let buttons: ButtonIntermediary[] = [];
     for (let i = 0; i < buttonInteractables.length && includedInteractables.size < 25; i++) {
         const interactable = buttonInteractables[i];
         if (componentCount < maxComponentCount && !includedInteractables.has(interactable.customId) && (interactable.component instanceof ButtonBuilder)) {
@@ -323,8 +324,7 @@ function generateActionRows(interactables, componentCount = 0) {
         }
         if (i === buttonInteractables.length - 1 || buttons.length === 5 || componentCount === 40) {
             buttons.sort((a, b) => a.priority - b.priority);
-            /** @type {ActionRowBuilder<ButtonBuilder>} */
-            const actionRow = new ActionRowBuilder();
+            const actionRow = new ActionRowBuilder<ButtonBuilder>();
             let priority = buttons.reduce((value, button) => value + button.priority, 0) / buttons.length;
             actionRow.addComponents(buttons.map((button) => button.button));
             actionRows.push({ actionRow: actionRow, priority: priority });
@@ -340,8 +340,7 @@ function generateActionRows(interactables, componentCount = 0) {
                 const excess = maxComponentCount - componentCount - 1;
                 interactable.component.options.splice(excess);
             }
-            /** @type {ActionRowBuilder<StringSelectMenuBuilder>} */
-            const actionRow = new ActionRowBuilder();
+            const actionRow = new ActionRowBuilder<StringSelectMenuBuilder>();
             actionRow.addComponents(interactable.component);
             componentCount += 1 + interactable.component.options.length;
             includedInteractables.add(interactable.customId);
@@ -354,15 +353,15 @@ function generateActionRows(interactables, componentCount = 0) {
 
 /**
  * Creates an array of components for a command help display.
- * @param {string} title - The title of the help display. Should include the name of the command.
- * @param {string} description - The description of the command.
- * @param {string} aliasString - A comma-separated list of aliases for the command.
- * @param {string} usage - A newline-separated list of examples of the command's usage.
- * @param {string} details - Details about the command's usage.
- * @param {string} thumbnailURL - The URL of an image to use as the thumbnail of the display.
- * @param {string} color - The color as a hex code.
+ * @param title - The title of the help display. Should include the name of the command.
+ * @param description - The description of the command.
+ * @param aliasString - A comma-separated list of aliases for the command.
+ * @param usage - A newline-separated list of examples of the command's usage.
+ * @param details - Details about the command's usage.
+ * @param thumbnailURL - The URL of an image to use as the thumbnail of the display.
+ * @param color - The color as a hex code.
  */
-export function createCommandHelpComponents(title, description, aliasString, usage, details, thumbnailURL, color) {
+export function createCommandHelpComponents(title: string, description: string, aliasString: string, usage: string, details: string, thumbnailURL: string, color: string) {
     return [
         new ContainerBuilder()
             .setAccentColor(Number(`0x${color}`))
@@ -399,15 +398,14 @@ export function createCommandHelpComponents(title, description, aliasString, usa
 
 /**
  * Creates an array of components for an entity view display.
- * @param {PersistentGameEntityName} entityType - The type of entity this view is for.
- * @param {number} entityRow - The row number of this entity.
- * @param {ViewField[]} fields - An array of view fields to convert into components. 
- * @param {string} color - The color as a hex code.
- * @param {Interactable[]} [interactables] - An array of interactables. Optional.
+ * @param entityType - The type of entity this view is for.
+ * @param entityRow - The row number of this entity.
+ * @param fields - An array of view fields to convert into components.
+ * @param color - The color as a hex code.
+ * @param interactables - An array of interactables. Optional.
  */
-export function createEntityViewComponents(entityType, entityRow, fields, color, interactables) {
-    /** @type {(TextDisplayBuilder | ContainerBuilder | ActionRowBuilder<ButtonBuilder|StringSelectMenuBuilder>)[]} */
-    let components = [];
+export function createEntityViewComponents(entityType: PersistentGameEntityName, entityRow: number, fields: ViewField[], color: string, interactables?: Interactable[]): TopLevelComponent[] {
+    let components: TopLevelComponent[] = [];
     components.push(new ContainerBuilder()
         .setAccentColor(Number(`0x${color}`))
         .addTextDisplayComponents(
@@ -429,26 +427,28 @@ export function createEntityViewComponents(entityType, entityRow, fields, color,
     return components;
 }
 
+type GetFieldFunction = (entryIndex: number) => string;
+
 /**
  * Creates a page of an embed.
- * @param {Game} game - The game context.
- * @param {number} page - The current page number.
- * @param {*[][]} pages - All of the entries, divided into pages.
- * @param {string} authorName - The title of the embed.
- * @param {string} authorIcon - The thumbnail URL to display for the embed.
- * @param {string} description - The description of the embed.
- * @param {(entryIndex: number) => string} getFieldName - A function to generate the name of each field in the embed.
- * @param {(entryIndex: number) => string} getFieldValue - A function to generate the value of each field in the embed.
+ * @param game - The game context.
+ * @param page - The current page number.
+ * @param pages - All of the entries, divided into pages.
+ * @param authorName - The title of the embed.
+ * @param authorIcon - The thumbnail URL to display for the embed.
+ * @param description - The description of the embed.
+ * @param getFieldName - A function to generate the name of each field in the embed.
+ * @param getFieldValue - A function to generate the value of each field in the embed.
  */
-export function createPaginatedEmbed(game, page, pages, authorName, authorIcon, description, getFieldName, getFieldValue) {
-	let embed = new EmbedBuilder()
-		.setColor(Number(`0x${game.settings.embedAccentColor}`))
-		.setAuthor({ name: authorName, iconURL: authorIcon })
-		.setDescription(description)
-		.setFooter({ text: `Page ${page + 1}/${pages.length}` });
-	let fields = [];
-	for (let entryIndex = 0; entryIndex < pages[page].length; entryIndex++)
-		fields.push({ name: getFieldName(entryIndex), value: getFieldValue(entryIndex) });
-	embed.addFields(fields);
-	return embed;
+export function createPaginatedEmbed(game: Game, page: number, pages: any[][], authorName: string, authorIcon: string, description: string, getFieldName: GetFieldFunction, getFieldValue: GetFieldFunction): EmbedBuilder {
+    let embed = new EmbedBuilder()
+        .setColor(Number(`0x${game.settings.embedAccentColor}`))
+        .setAuthor({ name: authorName, iconURL: authorIcon })
+        .setDescription(description)
+        .setFooter({ text: `Page ${page + 1}/${pages.length}` });
+    let fields = [];
+    for (let entryIndex = 0; entryIndex < pages[page].length; entryIndex++)
+        fields.push({ name: getFieldName(entryIndex), value: getFieldValue(entryIndex) });
+    embed.addFields(fields);
+    return embed;
 }

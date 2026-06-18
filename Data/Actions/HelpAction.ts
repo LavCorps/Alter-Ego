@@ -1,6 +1,10 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import Action from "../Action.ts";
 import type Command from "../../Classes/Command.ts";
-import { createPaginatedEmbed } from "../../Modules/discordUtils.js";
+import { createPaginatedEmbed } from "../../Modules/discordUtils.ts";
 import { addPages } from "../../Modules/helpers.ts";
 import type { ButtonInteraction, Collection } from "discord.js";
 type CommandHelp = { command: string, description: string };
