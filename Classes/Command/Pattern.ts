@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import type { Invocation } from "./Invocation.ts";
 import type { Token } from "./Token.ts";
 
 /** Convenience alias for -1 in defining a Pattern. */
@@ -75,10 +76,6 @@ export type SlotTypes =
     | typeof FLAG
     | typeof PREFAB
     | typeof STATUS;
-
-type PatternValidationPassed = { passed: true; arguments: Map<string, any> };
-type PatternValidationFailed = { passed: false; errors: string[] };
-type PatternValidation = PatternValidationPassed | PatternValidationFailed;
 
 /**
  * Base interface representing a pattern element.
@@ -198,6 +195,11 @@ export interface Multislot extends PatternElement {
     readonly kind: typeof MULTISLOT;
 
     /**
+     * The name to refer to the Multislot with. Inherited by any Tokens that fit the Slot.
+     */
+    readonly name?: string;
+
+    /**
      * The types of the Multislot. Tokens must match one of these types to fit into the Slot.
      */
     readonly types: Set<SlotTypes>;
@@ -206,12 +208,12 @@ export interface Multislot extends PatternElement {
 /**
  * Helper function for constructing Multislot pattern elements.
  */
-export function multislot(types: SlotTypes[]): Multislot {
-    return { kind: MULTISLOT, types: new Set(types) };
+export function multislot(types: SlotTypes[], name?: string): Multislot {
+    return { kind: MULTISLOT, types: new Set(types), name: name };
 }
 
 /** Type union for valid grammar pattern elements. */
-export type grammarElement = Constant | Slot | Preposition | Glob |  Multislot | Pattern
+export type grammarElement = Constant | Slot | Preposition | Glob | Multislot | Pattern;
 
 /**
  * Grammar pattern representing a command syntax.
@@ -243,7 +245,7 @@ export default class Pattern {
         this.optional = optional;
     }
 
-    validate(tokens: Token[][]): PatternValidation {
+    match(streams: Token[][]): Invocation {
         throw new Error("NOT IMPLEMENTED");
     }
 }
@@ -253,9 +255,6 @@ export default class Pattern {
  * @param grammar - The grammar of the pattern. This is an ordered array, containing pattern elements, as well as other patterns.
  * @param optional - Whether the fulfillment of this Pattern is optional or not. This is most useful for optional sub-patterns.
  */
-export function pattern(
-    grammar: Array<grammarElement>,
-    optional: boolean = false,
-): Pattern {
+export function pattern(grammar: Array<grammarElement>, optional: boolean = false): Pattern {
     return new Pattern(grammar, optional);
 }

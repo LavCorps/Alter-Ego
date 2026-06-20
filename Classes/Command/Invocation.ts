@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import type { Collection } from "discord.js";
+import type { Token } from "./Token.ts";
 
 abstract class BaseInvocation<T extends boolean> {
     protected _valid: T;
@@ -19,10 +20,12 @@ abstract class BaseInvocation<T extends boolean> {
 
 export class ValidInvocation extends BaseInvocation<true> {
     args: Collection<string, any>;
+    raw: Token[][];
 
-    constructor(args: Collection<string, any>) {
+    constructor(args: Collection<string, any>, raw: Token[][]) {
         super(true);
         this.args = args;
+        this.raw = raw;
     }
 }
 
