@@ -21,5 +21,5 @@ export default abstract class Command {
     /**
      * Grammar patterns for the command.
      */
-    abstract readonly patterns: Array<Pattern>;
+    abstract readonly patterns: Pattern[];
 }
