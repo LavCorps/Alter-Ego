@@ -19,7 +19,10 @@ export default class Trie {
     }
 
     insert(phrase: string, value: Token): void {
-        const words = phrase.toLocaleLowerCase().trim().split(/[^\S\n]/);
+        const words = phrase
+            .toLocaleLowerCase()
+            .trim()
+            .split(/[^\S\n]/);
         let node = this.root;
 
         for (const word of words) {
@@ -50,7 +53,7 @@ export default class Trie {
                 }
             }
             if (longestMatch !== null) {
-                output.push(longestMatch);
+                output.push(longestMatch.concat(new SentinelToken(input.slice(i, j).map(word => word.original).join(" "))));
                 i += longestLen;
             } else {
                 output.push([new SentinelToken(input[i].original)]);

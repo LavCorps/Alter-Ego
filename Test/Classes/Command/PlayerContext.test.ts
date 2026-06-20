@@ -96,7 +96,7 @@ describe("PlayerContext class from NG Commands", () => {
             expect(streams.length).toBe(3);
             for (const stream of streams) {
                 // this is a simple test, and will break if a second valid tokenization for "coffee" is ever introduced to the environment kyra resides within
-                expect(stream.length).toBe(1);
+                expect(stream.length).toBe(2);
             }
             // ItemContainerToken: should be COFFEE, with empty preposition string
             const coffee = streams[0][0] as ItemContainerToken<InventoryItem>;
