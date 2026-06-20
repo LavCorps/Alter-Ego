@@ -1,3 +1,8 @@
+// SPDX-FileCopyrightText: 2026 LavCorps <lavcorps@protonmail.com>
+// SPDX-FileCopyrightText: 2026 Ms. VBLANK <alteregomolly@pm.me>
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import PlayerContext from "../../../Classes/Command/PlayerContext.ts";
 import { ItemContainerToken, PrepositionToken } from "../../../Classes/Command/Token.ts";
 import Trie from "../../../Classes/Command/Trie.ts";
@@ -93,15 +98,18 @@ describe("PlayerContext class from NG Commands", () => {
                 // this is a simple test, and will break if a second valid tokenization for "coffee" is ever introduced to the environment kyra resides within
                 expect(stream.length).toBe(1);
             }
-            // ItemContainerToken: should be COFFEE, type -1, with empty preposition string
+            // ItemContainerToken: should be COFFEE, with empty preposition string
             const coffee = streams[0][0] as ItemContainerToken<InventoryItem>;
+            expect(coffee instanceof ItemContainerToken).toBeTruthy();
             expect(coffee.value).toBe("COFFEE");
             expect(coffee.preposition).toBe("");
-            // PrepositionToken: should be "on", type -2,
+            // PrepositionToken: should be "on"
             const preposition = streams[1][0] as PrepositionToken;
+            expect(preposition instanceof PrepositionToken).toBeTruthy();
             expect(preposition.value).toBe("on");
-            // ItemContainerToken: should be FLOOR, type -1, with preposition "on"
+            // ItemContainerToken: should be FLOOR, with preposition "on"
             const floor = streams[2][0] as ItemContainerToken<Fixture>;
+            expect(floor instanceof ItemContainerToken).toBeTruthy();
             expect(floor.value).toBe("FLOOR");
             expect(floor.preposition).toBe("on");
         });

@@ -1,8 +1,13 @@
+// SPDX-FileCopyrightText: 2026 LavCorps <lavcorps@protonmail.com>
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import {
     ConstantToken,
     EntityToken,
     ItemContainerToken,
-    PrepositionToken
+    PrepositionToken,
+    SentinelToken
 } from "../../../Classes/Command/Token.ts";
 import Trie from "../../../Classes/Command/Trie.ts";
 import { clearQueue } from "../../../Modules/messageHandler.js";
@@ -48,24 +53,24 @@ describe("Trie class from NG Commands", () => {
         });
         test("1", async () => {
             const stream = trie.tokenize(["Last", "one", "in", "is", "a", "**{rotten", "egg}!**"]);
-            expect(stream[0][0].type).toBe(-1);
+            expect(stream[0][0] instanceof ConstantToken).toBeTruthy();
             expect(stream[0][0].value).toBe("Last one in is a **{rotten egg}!**");
         });
         test("2", async () => {
             const stream = trie.tokenize(["Last", "one", "in", "is", "a", "rotten", "egg!"]);
-            expect(stream[0][0].type).toBe(-999);
+            expect(stream[0][0] instanceof SentinelToken).toBeTruthy();
             expect(stream[0][0].value).toBe("Last");
-            expect(stream[1][0].type).toBe(-999);
+            expect(stream[1][0] instanceof SentinelToken).toBeTruthy();
             expect(stream[1][0].value).toBe("one");
-            expect(stream[2][0].type).toBe(-999);
+            expect(stream[2][0] instanceof SentinelToken).toBeTruthy();
             expect(stream[2][0].value).toBe("in");
-            expect(stream[3][0].type).toBe(-999);
+            expect(stream[3][0] instanceof SentinelToken).toBeTruthy();
             expect(stream[3][0].value).toBe("is");
-            expect(stream[4][0].type).toBe(-999);
+            expect(stream[4][0] instanceof SentinelToken).toBeTruthy();
             expect(stream[4][0].value).toBe("a");
-            expect(stream[5][0].type).toBe(-999);
+            expect(stream[5][0] instanceof SentinelToken).toBeTruthy();
             expect(stream[5][0].value).toBe("rotten");
-            expect(stream[6][0].type).toBe(-999);
+            expect(stream[6][0] instanceof SentinelToken).toBeTruthy();
             expect(stream[6][0].value).toBe("egg!");
         });
     });
