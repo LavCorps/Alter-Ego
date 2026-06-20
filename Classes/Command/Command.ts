@@ -1,12 +1,11 @@
-// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
 // SPDX-FileCopyrightText: 2026 LavCorps <lavcorps@protonmail.com>
+// SPDX-FileCopyrightText: 2026 Ms. VBLANK <alteregomolly@pm.me>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import type GameSettings from "../GameSettings.ts";
 import type Context from "./Context.ts";
-import type { Invocation } from "./Invocation.ts";
-import type Pattern from "./Pattern.ts";
+import type { Pattern } from "./Pattern.ts";
 
 /**
  * Abstract base class for all new-generation commands.

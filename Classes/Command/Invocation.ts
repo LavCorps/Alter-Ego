@@ -7,7 +7,7 @@ import type { Collection } from "discord.js";
 import type { Token } from "./Token.ts";
 
 abstract class BaseInvocation<T extends boolean> {
-    protected _valid: T;
+    private readonly _valid: T;
 
     protected constructor(valid: T) {
         this._valid = valid;

@@ -1,8 +1,9 @@
 // SPDX-FileCopyrightText: 2026 LavCorps <lavcorps@protonmail.com>
+// SPDX-FileCopyrightText: 2026 Ms. VBLANK <alteregomolly@pm.me>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { SENTINEL, type SentinelToken, type Token } from "./Token.ts";
+import { SentinelToken, type Token } from "./Token.ts";
 import TrieNode from "./TrieNode.ts";
 
 type Word = {
@@ -52,8 +53,7 @@ export default class Trie {
                 output.push(longestMatch);
                 i += longestLen;
             } else {
-                const sentinel: SentinelToken = { value: input[i].original, type: SENTINEL };
-                output.push([sentinel]);
+                output.push([new SentinelToken(input[i].original)]);
                 i++;
             }
         }
