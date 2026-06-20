@@ -5,13 +5,12 @@
 
 import Command from "./Command.ts";
 import type EligibleContext from "./EligibleContext.ts";
+import type { Invocation, ValidInvocation } from "./Invocation.ts";
 
 /**
  * Abstract new-generation command usable by a Discord user with the eligible role.
  */
 export default abstract class EligibleCommand extends Command {
-    /**
-     * The code to execute when the command is called.
-     */
+    abstract override validate(context: EligibleContext, invocation: ValidInvocation): Promise<Invocation>;
     abstract override execute(context: EligibleContext): Promise<void>;
 }
