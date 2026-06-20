@@ -13,5 +13,5 @@ export default abstract class ModeratorCommand extends Command {
     /**
      * The code to execute when the command is called.
      */
-    abstract execute(context: ModeratorContext): Promise<void>;
+    abstract override execute(context: ModeratorContext): Promise<void>;
 }

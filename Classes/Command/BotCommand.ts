@@ -13,5 +13,5 @@ export default abstract class BotCommand extends Command {
     /**
      * The code to execute when the command is called.
      */
-    abstract execute(context: BotContext): Promise<void>;
+    abstract override execute(context: BotContext): Promise<void>;
 }
