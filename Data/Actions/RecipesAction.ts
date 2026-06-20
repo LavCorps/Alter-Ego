@@ -191,7 +191,7 @@ export default class RecipesAction extends Action {
             embed = createPaginatedEmbed(this.getGame(), page, pages, embedAuthorName, embedAuthorIcon, fieldDescription, fieldName, fieldValue);
             interaction.update({ embeds: [embed] });
         };
-        let interactables = this.getGame().botContext.interactableManager.createPaginationInteractables(this, prevPageCallback, nextPageCallback);
+        let interactables = this.getGame().clientContext.interactableManager.createPaginationInteractables(this, prevPageCallback, nextPageCallback);
         this.getGame().communicationHandler.sendToChannel(this.player.notificationChannel, "", [embed], interactables);
     }
 }

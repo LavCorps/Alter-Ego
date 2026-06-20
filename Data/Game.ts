@@ -4,7 +4,7 @@
 
 import { Collection } from "discord.js";
 import { DateTime } from "luxon";
-import BotContext from "../Classes/BotContext.ts";
+import ClientContext from "../Classes/ClientContext.ts";
 import GameCommunicationHandler from "../Classes/GameCommunicationHandler.ts";
 import GameConstants from "../Classes/GameConstants.ts";
 import GameEntityFinder from "../Classes/GameEntityFinder.ts";
@@ -47,7 +47,7 @@ export default class Game {
 	/**
 	 * The bot managing the game.
 	 */
-	botContext: BotContext;
+	clientContext: ClientContext;
 	/**
 	 * All of the settings for the game.
 	 */
@@ -299,8 +299,8 @@ export default class Game {
 		}, 60 * 1000);
 	}
 
-	setBotContext(): void {
-		this.botContext = BotContext.instance;
+	setClientContext(): void {
+		this.clientContext = ClientContext.instance;
 	}
 
 	/**

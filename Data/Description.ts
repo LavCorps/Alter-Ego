@@ -130,20 +130,20 @@ export default class Description extends GameConstruct {
 			const exits: Exit[] = [];
 			for (const potentialGameEntity of potentialGameEntities)
 				if (container.exits.has(potentialGameEntity)) exits.push(container.exits.get(potentialGameEntity));
-			interactables = interactables.concat(await this.getGame().botContext.interactableManager.createQueueMoveActionInteractables(exits, player));
-			interactables = interactables.concat(await this.getGame().botContext.interactableManager.createInspectActionInteractable(inspectableEntities, player));
+			interactables = interactables.concat(await this.getGame().clientContext.interactableManager.createQueueMoveActionInteractables(exits, player));
+			interactables = interactables.concat(await this.getGame().clientContext.interactableManager.createInspectActionInteractable(inspectableEntities, player));
 			player.sendRoomDescription(container, parsedDescription, occupantsString, defaultDropFixtureString, interactables);
 		}
 		else {
 			potentialGameEntities = potentialGameEntities.concat(Description.getPotentialGameEntities(parsedDescription));
 			const selectableInteractableGameEntities = this.getGame().entityFinder.getSelectableInteractableGameEntities(potentialGameEntities, container, player);
 			inspectableEntities = inspectableEntities.concat(selectableInteractableGameEntities[0]);
-			interactables = interactables.concat(await this.getGame().botContext.interactableManager.createInspectActionInteractable(inspectableEntities, player));
+			interactables = interactables.concat(await this.getGame().clientContext.interactableManager.createInspectActionInteractable(inspectableEntities, player));
 			if (container instanceof Fixture || container instanceof RoomItem || container instanceof Puzzle) {
-                interactables = interactables.concat(await this.getGame().botContext.interactableManager.getTakeInteractables(container, selectableInteractableGameEntities[1], player));
-                interactables = interactables.concat(await this.getGame().botContext.interactableManager.getDropInteractables(container, player));
+                interactables = interactables.concat(await this.getGame().clientContext.interactableManager.getTakeInteractables(container, selectableInteractableGameEntities[1], player));
+                interactables = interactables.concat(await this.getGame().clientContext.interactableManager.getDropInteractables(container, player));
                 if (container instanceof Fixture) {
-                    interactables = interactables.concat(await this.getGame().botContext.interactableManager.getActivateOrDeactivateInteractables(container, player));
+                    interactables = interactables.concat(await this.getGame().clientContext.interactableManager.getActivateOrDeactivateInteractables(container, player));
                 }
 			}
 			player.sendDescription(parsedDescription, container, this.messageDisplayType ?? MessageDisplayType.PLAIN_TEXT, interactables);

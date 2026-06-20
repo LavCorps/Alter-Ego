@@ -39,7 +39,7 @@ export default class CraftAction extends Action {
 
     async #getInteractables(createdItems: InventoryItem[]): Promise<Interactable[]> {
         let interactables: Interactable[] = [];
-        const interactableManager = this.getGame().botContext.interactableManager;
+        const interactableManager = this.getGame().clientContext.interactableManager;
         interactables = interactables.concat(await interactableManager.createInspectActionInteractable(createdItems, this.player))
         interactables = interactables.concat(await interactableManager.getCraftInteractables(this.player));
         interactables = interactables.concat(await interactableManager.getUncraftInteractables(this.player, this.user));

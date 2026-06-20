@@ -30,7 +30,7 @@ vi.mock(import('discord.js'), async (importOriginal) => {
 
 import GuildContext from '../Classes/GuildContext.ts';
 import Game from '../Data/Game.ts';
-import BotContext from '../Classes/BotContext.ts';
+import ClientContext from '../Classes/ClientContext.ts';
 import { ChannelType, Collection } from 'discord.js';
 import {DEFAULT_GAME_SETTINGS} from "../Modules/settingsLoader.ts";
 
@@ -101,7 +101,7 @@ beforeAll(() => {
         spectatorRole
     );
 
-    // Initialize game and bot context with empty command collections.
+    // Initialize game and client context with empty command collections.
     const game = new Game(guildContext, DEFAULT_GAME_SETTINGS);
     /** @type {Collection<string, BotCommand>} */
     const botCommands = new Collection();
@@ -112,11 +112,11 @@ beforeAll(() => {
     /** @type {Collection<string, EligibleCommand>} */
     const eligibleCommands = new Collection();
 
-    // Create BotContext singleton and attach to game.
-    BotContext.Instance(client, botCommands, moderatorCommands, playerCommands, eligibleCommands, game);
-    game.setBotContext();
+    // Create ClientContext singleton and attach to game.
+    ClientContext.Instance(client, botCommands, moderatorCommands, playerCommands, eligibleCommands, game);
+    game.setClientContext();
     // Ensure presence update doesn't throw during tests.
-    try { BotContext.instance.updatePresence(); } catch (e) { }
+    try { ClientContext.instance.updatePresence(); } catch (e) { }
     globalThis.game = game;
     game.messageQueue.manual = true;
 });

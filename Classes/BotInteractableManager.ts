@@ -178,7 +178,7 @@ export default class BotInteractableManager {
      * @param interactableMessage - The message to fetch, represented by its channel ID and message ID.
      */
     async #getInteractableMessage(interactableMessage: InteractableMessage) {
-        const channel = await this.#game.botContext.client.channels.fetch(interactableMessage.channelId);
+        const channel = await this.#game.clientContext.client.channels.fetch(interactableMessage.channelId);
         if (!channel.isTextBased()) return;
         return await channel.messages.fetch(interactableMessage.messageId);
     }

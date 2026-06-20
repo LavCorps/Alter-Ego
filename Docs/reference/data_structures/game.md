@@ -20,9 +20,9 @@ This is a class which contains a reference to the
 as well as all of the parts of it that are relevant to Alter Ego. This includes all of the
 [Roles](../settings.md#role-ids) and [Channels](../settings.md#category-and-channel-ids) Alter Ego uses.
 
-### Bot Context
+### Client Context
 
-- Class attribute: BotContext `this.botContext`
+- Class attribute: ClientContext `this.clientContext`
 
 This is a [singleton](https://en.wikipedia.org/wiki/Singleton_pattern) class which contains a reference to Alter Ego's
 [Client](https://discord.js.org/docs/packages/discord.js/14.25.1/Client:Class), and a number of attributes and functions

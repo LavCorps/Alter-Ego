@@ -62,7 +62,7 @@ export default class GestureAction extends Action {
             embed = createPaginatedEmbed(this.getGame(), page, pages, embedAuthorName, embedAuthorIcon, embedDescription, fieldName, fieldValue);
             interaction.update({ embeds: [embed] });
         };
-        let interactables = this.getGame().botContext.interactableManager.createPaginationInteractables(this, prevPageCallback, nextPageCallback);
+        let interactables = this.getGame().clientContext.interactableManager.createPaginationInteractables(this, prevPageCallback, nextPageCallback);
         const channel = this.forced ? this.getGame().guildContext.commandChannel : this.player.notificationChannel;
         this.getGame().communicationHandler.sendToChannel(channel, undefined, [embed], interactables);
     }

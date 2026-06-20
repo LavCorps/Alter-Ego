@@ -8,7 +8,7 @@ import {
     loadGameSettings,
     loadPlayerDefaults
 } from "../../Modules/settingsLoader.ts";
-import BotContext from "../../Classes/BotContext.ts";
+import ClientContext from "../../Classes/ClientContext.ts";
 
 describe("settingsLoader tests", () => {
     beforeEach(() => {
@@ -51,7 +51,7 @@ describe("settingsLoader tests", () => {
         test("When environment variables set, load settings from environment variables", () => {
             stubGameSettingsEnv();
             let [gs, errs] = loadGameSettings();
-            let customActivity = BotContext.getActivityType("CUSTOM");
+            let customActivity = ClientContext.getActivityType("CUSTOM");
 
             expect(errs.length).toBe(0);
             expect(gs.commandPrefix).toBe("!");

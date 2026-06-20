@@ -352,7 +352,7 @@ export default class FindAction extends Action {
         page.push(header);
 
         const widestEntryLength = [...headerEntryLength];
-        
+
         for (let i = 0, pageNo = 0; i < results.length; i++) {
             // Create a new row.
             const row = [];
@@ -442,7 +442,7 @@ export default class FindAction extends Action {
                 resultsDisplay = '```' + table(pages[page]) + '```';
                 interaction.update(resultCountString + pageString + resultsDisplay);
             };
-            interactables = interactables.concat(this.getGame().botContext.interactableManager.createPaginationInteractables(this, prevPageCallback, nextPageCallback));
+            interactables = interactables.concat(this.getGame().clientContext.interactableManager.createPaginationInteractables(this, prevPageCallback, nextPageCallback));
         }
         else {
             interactables = interactables.concat(await this.#getInteractables(results));
@@ -452,7 +452,7 @@ export default class FindAction extends Action {
 
     async #getInteractables<T extends PersistentGameEntity>(results: T[]): Promise<Interactable[]> {
         let interactables: Interactable[] = [];
-        const interactableManager = this.getGame().botContext.interactableManager;
+        const interactableManager = this.getGame().clientContext.interactableManager;
         interactables = await interactableManager.getViewInteractables(undefined, [], results, this.user);
         if (results.every(result => result instanceof Fixture || result instanceof RoomItem || result instanceof Puzzle)) {
             interactables = interactables.concat(await interactableManager.getInstantiateRoomItemInteractables(results, this.user));

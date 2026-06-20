@@ -24,16 +24,16 @@ export async function executeCommand(commandStr: string, game: Game, message?: U
     const commandSplit = commandStr?.split(/[^\S\n]/).filter(arg => arg !== "");
     const commandAlias = commandSplit[0] ? commandSplit[0].toLocaleLowerCase() : "";
     let args = commandSplit.slice(1);
-    const command = game.botContext.getCommand(commandType, commandAlias);
+    const command = game.clientContext.getCommand(commandType, commandAlias);
     if (!command) return false;
 
     // Execute the command based on who issued it.
     if (command instanceof BotCommand) {
         command.execute(game, commandAlias, args, player, callee);
-        game.botContext.logCommand(game.botContext.client.user.username, commandStr, timestamp);
+        game.clientContext.logCommand(game.clientContext.client.user.username, commandStr, timestamp);
         return true;
     }
-    else if (command instanceof ModeratorCommand && game.botContext.commandIssuedInValidChannel(command, message)) {
+    else if (command instanceof ModeratorCommand && game.clientContext.commandIssuedInValidChannel(command, message)) {
         if (command.config.requiresGame && !game.inProgress) {
             if (message.channel.id === game.guildContext.commandChannel.id) {
                 message.reply("There is no game currently running.");
@@ -56,10 +56,10 @@ export async function executeCommand(commandStr: string, game: Game, message?: U
         command.execute(game, message, commandAlias, args, moderator);
         if (message.channel.id !== game.guildContext.commandChannel.id)
             message.delete();
-        game.botContext.logCommand(message.author.username, message.content, timestamp);
+        game.clientContext.logCommand(message.author.username, message.content, timestamp);
         return true;
     }
-    else if (command instanceof PlayerCommand && game.botContext.commandIssuedInValidChannel(command, message)) {
+    else if (command instanceof PlayerCommand && game.clientContext.commandIssuedInValidChannel(command, message)) {
         if (command.config.requiresGame && !game.inProgress) {
             message.reply("There is no game currently running.");
             return false;
@@ -87,7 +87,7 @@ export async function executeCommand(commandStr: string, game: Game, message?: U
         }
 
         player.setOnline();
-        
+
         if (command.config.whitespaceSensitive) {
             args = commandStr.split(" ").slice(1);
         }
@@ -96,10 +96,10 @@ export async function executeCommand(commandStr: string, game: Game, message?: U
             if (!game.settings.debug && commandName !== "say" && !game.guildContext.sentInDMChannel(message))
                 message.delete().catch();
         });
-        game.botContext.logCommand(player.name, message.content, timestamp);
+        game.clientContext.logCommand(player.name, message.content, timestamp);
         return true;
     }
-    else if (command instanceof EligibleCommand && game.botContext.commandIssuedInValidChannel(command, message)) {
+    else if (command instanceof EligibleCommand && game.clientContext.commandIssuedInValidChannel(command, message)) {
         if (command.config.requiresGame && !game.inProgress) {
             message.reply("There is no game currently running.");
             return false;
@@ -108,7 +108,7 @@ export async function executeCommand(commandStr: string, game: Game, message?: U
             if (!game.settings.debug && !game.guildContext.sentInDMChannel(message))
                 message.delete().catch();
         });
-        game.botContext.logCommand(message.author.username, message.content, timestamp);
+        game.clientContext.logCommand(message.author.username, message.content, timestamp);
         return true;
     }
 

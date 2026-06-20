@@ -61,7 +61,7 @@ export default class DropAction extends Action {
     async #getInteractables(container: RoomItemContainer): Promise<Interactable[]> {
         let interactables: Interactable[] = [];
         if (container instanceof Fixture) {
-            interactables = interactables.concat(await this.getGame().botContext.interactableManager.getActivateOrDeactivateInteractables(container, this.player));
+            interactables = interactables.concat(await this.getGame().clientContext.interactableManager.getActivateOrDeactivateInteractables(container, this.player));
         }
         return interactables;
     }

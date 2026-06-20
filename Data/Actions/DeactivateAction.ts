@@ -33,7 +33,7 @@ export default class DeactivateAction extends Action {
 
     async #getInteractables(fixture: Fixture): Promise<Interactable[]> {
         let interactables: Interactable[] = [];
-        const interactableManager = this.getGame().botContext.interactableManager;
+        const interactableManager = this.getGame().clientContext.interactableManager;
         interactables = interactables.concat(await interactableManager.createInspectActionInteractable([fixture], this.player));
         interactables = interactables.concat(await interactableManager.getActivateOrDeactivateInteractables(fixture, this.player, false));
         return interactables;

@@ -233,7 +233,7 @@ export function sendNotification(
                         discordUtils.generateMessageDisplayCreateOptions(messageDisplayType, player.getGame(), messageText, player, files, interactables),
                     );
                     if (message && interactables.length > 0)
-                        player.getGame().botContext.interactableManager.addInteractableMessage(player.notificationChannel.id, message.id, interactables.map(interactable => interactable.customId));
+                        player.getGame().clientContext.interactableManager.addInteractableMessage(player.notificationChannel.id, message.id, interactables.map(interactable => interactable.customId));
                 },
                 destination: player.notificationChannel.id
             },
@@ -274,7 +274,7 @@ export function sendRoomDescription(
                             flags: MessageFlags.IsComponentsV2,
                         });
                         if (message && interactables.length > 0)
-                            player.getGame().botContext.interactableManager.addInteractableMessage(player.notificationChannel.id, message.id, interactables.map(interactable => interactable.customId));
+                            player.getGame().clientContext.interactableManager.addInteractableMessage(player.notificationChannel.id, message.id, interactables.map(interactable => interactable.customId));
                     },
                     destination: player.notificationChannel.id
                 },
@@ -363,7 +363,7 @@ export function sendEntityView(
                     flags: MessageFlags.IsComponentsV2
                 });
                 if (message && interactables.length > 0)
-                    game.botContext.interactableManager.addInteractableMessage(channel.id, message.id, interactables.map(interactable => interactable.customId));
+                    game.clientContext.interactableManager.addInteractableMessage(channel.id, message.id, interactables.map(interactable => interactable.customId));
             },
             destination: channel.id
         },
@@ -409,7 +409,7 @@ export function sendGameMechanicMessage(
             fire: async () => {
                 const message = await channel.send(messageCreateOptions);
                 if (message && interactables.length > 0)
-                    game.botContext.interactableManager.addInteractableMessage(channel.id, message.id, interactables.map(interactable => interactable.customId));
+                    game.clientContext.interactableManager.addInteractableMessage(channel.id, message.id, interactables.map(interactable => interactable.customId));
             },
             destination: channel.id
         },

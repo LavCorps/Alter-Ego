@@ -54,7 +54,7 @@ export default class ViewAction extends Action {
         let entityType: PersistentGameEntityName;
         let views: ViewField[] = [];
         let interactables: Interactable[] = [];
-        this.#interactableManager = this.getGame().botContext.interactableManager;
+        this.#interactableManager = this.getGame().clientContext.interactableManager;
         if (entity instanceof Room) {
             entityType = "Room";
             views = this.#getRoomView(entity, field as RoomField);

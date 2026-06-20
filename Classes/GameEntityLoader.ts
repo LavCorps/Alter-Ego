@@ -130,7 +130,7 @@ export default class GameEntityLoader extends GameEntityManager {
                     this.game.inProgress = true;
                     this.game.canJoin = false;
                     if (!this.game.settings.debug)
-                        this.game.botContext.updatePresence();
+                        this.game.clientContext.updatePresence();
                     if (sendPlayerRoomDescriptions) {
                         this.game.livingPlayers.forEach(player => {
                             player.location.description.parseAndSendTo(player, player.location);
@@ -2411,12 +2411,12 @@ export default class GameEntityLoader extends GameEntityManager {
     #printData(data: PersistentGameEntity[] | Map<string, PersistentGameEntity>): void {
         if (data instanceof Array) {
             for (let i = 0; i < data.length; i++) {
-                console.log(this.game.botContext.prettyPrinter.prettyObject(data[i]));
+                console.log(this.game.clientContext.prettyPrinter.prettyObject(data[i]));
             }
         }
         else if (data instanceof Map) {
             data.forEach(entry => {
-                console.log(this.game.botContext.prettyPrinter.prettyObject(entry));
+                console.log(this.game.clientContext.prettyPrinter.prettyObject(entry));
             });
         }
     }
