@@ -260,77 +260,90 @@ describe("Pattern file from NG Commands", () => {
     });
 
     describe("Pattern class from NG Commands", () => {
-        test("Pattern.match(1)", async () => {
+        beforeEach(async () => {
             const prepositions: Set<string> = new Set();
-            const trie = new Trie();
-            {
-                for (const player of game.players.values()) {
-                    trie.insert(player.displayName, new EntityToken(player.displayName, player));
-                }
-                for (const item of game.inventoryItems) {
-                    if (item.prefab !== null && item.quantity > 0) {
-                        trie.insert(item.prefab.id, new ItemContainerToken(item.prefab.id, item));
-                        if (!prepositions.has(item.getPreposition())) {
-                            const preposition = item.getPreposition();
-                            prepositions.add(preposition);
-                            trie.insert(preposition, new PrepositionToken(preposition));
-                        }
-                    }
-                }
-                for (const item of game.roomItems) {
-                    if (item.prefab !== null && item.quantity > 0) {
-                        trie.insert(item.prefab.id, new ItemContainerToken(item.prefab.id, item));
-                        if (!prepositions.has(item.getPreposition())) {
-                            const preposition = item.getPreposition();
-                            prepositions.add(preposition);
-                            trie.insert(preposition, new PrepositionToken(preposition));
-                        }
-                    }
-                }
-                for (const fixture of game.fixtures) {
-                    trie.insert(fixture.name, new ItemContainerToken(fixture.name, fixture));
-                    if (!prepositions.has(fixture.getPreposition())) {
-                        const preposition = fixture.getPreposition();
+            trie = new Trie();
+            for (const player of game.players.values()) {
+                trie.insert(player.displayName, new EntityToken(player.displayName, player));
+            }
+            for (const item of game.inventoryItems) {
+                if (item.prefab !== null && item.quantity > 0) {
+                    trie.insert(item.prefab.id, new ItemContainerToken(item.prefab.id, item));
+                    if (!prepositions.has(item.getPreposition())) {
+                        const preposition = item.getPreposition();
                         prepositions.add(preposition);
                         trie.insert(preposition, new PrepositionToken(preposition));
                     }
                 }
-                for (const puzzle of game.puzzles) {
-                    trie.insert(puzzle.name, new ItemContainerToken(puzzle.name, puzzle));
-                }
-                for (const player of game.players.values()) {
-                    for (const slot of player.inventory.values()) {
-                        trie.insert(slot.id, new EntityToken(slot.id, slot));
-                    }
-                }
-                for (const room of game.rooms.values()) {
-                    trie.insert(room.id, new EntityToken(room.id, room));
-                }
-                for (const room of game.rooms.values()) {
-                    for (const exit of room.exits.values()) {
-                        trie.insert(exit.name, new EntityToken(exit.name, exit));
-                    }
-                }
-                for (const event of game.events.values()) {
-                    trie.insert(event.id, new EntityToken(event.id, event));
-                }
-                for (const flag of game.flags.values()) {
-                    trie.insert(flag.id, new EntityToken(flag.id, flag));
-                }
-                for (const prefab of game.prefabs.values()) {
-                    trie.insert(prefab.id, new EntityToken(prefab.id, prefab));
-                }
-                for (const status of game.statusEffects.values()) {
-                    trie.insert(status.id, new EntityToken(status.id, status));
-                }
-                trie.insert("and", new ConstantToken("and"));
             }
+            for (const item of game.roomItems) {
+                if (item.prefab !== null && item.quantity > 0) {
+                    trie.insert(item.prefab.id, new ItemContainerToken(item.prefab.id, item));
+                    if (!prepositions.has(item.getPreposition())) {
+                        const preposition = item.getPreposition();
+                        prepositions.add(preposition);
+                        trie.insert(preposition, new PrepositionToken(preposition));
+                    }
+                }
+            }
+            for (const fixture of game.fixtures) {
+                trie.insert(fixture.name, new ItemContainerToken(fixture.name, fixture));
+                if (!prepositions.has(fixture.getPreposition())) {
+                    const preposition = fixture.getPreposition();
+                    prepositions.add(preposition);
+                    trie.insert(preposition, new PrepositionToken(preposition));
+                }
+            }
+            for (const puzzle of game.puzzles) {
+                trie.insert(puzzle.name, new ItemContainerToken(puzzle.name, puzzle));
+            }
+            for (const player of game.players.values()) {
+                for (const slot of player.inventory.values()) {
+                    trie.insert(slot.id, new EntityToken(slot.id, slot));
+                }
+            }
+            for (const room of game.rooms.values()) {
+                trie.insert(room.id, new EntityToken(room.id, room));
+            }
+            for (const room of game.rooms.values()) {
+                for (const exit of room.exits.values()) {
+                    trie.insert(exit.name, new EntityToken(exit.name, exit));
+                }
+            }
+            for (const event of game.events.values()) {
+                trie.insert(event.id, new EntityToken(event.id, event));
+            }
+            for (const flag of game.flags.values()) {
+                trie.insert(flag.id, new EntityToken(flag.id, flag));
+            }
+            for (const prefab of game.prefabs.values()) {
+                trie.insert(prefab.id, new EntityToken(prefab.id, prefab));
+            }
+            for (const status of game.statusEffects.values()) {
+                trie.insert(status.id, new EntityToken(status.id, status));
+            }
+        });
+
+        let trie: Trie;
+
+        test("Pattern.match(1)", async () => {
+            trie.insert("and", new ConstantToken("and"));
             const pattern = new Pattern([
                 new Slot(InventoryItem, "item1"),
                 new Constant("and"),
                 new Slot(InventoryItem, "item2"),
             ]);
             pattern.match(trie.tokenize(["MUG", "OF", "COFFEE", "and", "PACK", "OF", "TOILET", "PAPER"]));
+        });
+
+        test("Pattern.match(2)", async () => {
+            trie.insert("and", new ConstantToken("and"));
+            const pattern = new Pattern([
+                new Slot(InventoryItem, "item1"),
+                new Constant("and"),
+                new Slot(InventoryItem, "item2"),
+            ]);
+            pattern.match(trie.tokenize(["MG", "F", "CFF", "and", "PACK", "OF", "TOILET", "PAPER"]));
         });
     });
 });
