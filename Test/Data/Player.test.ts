@@ -24,7 +24,15 @@ describe('Player test', () => {
          * Fourth number: expected move rate (running).
          *
          * @remarks
-         * All of these values were calculated with a TI-84 Plus CE.
+         * All of these values were calculated with a TI-84 Plus CE, using the following equations and variables:
+         *
+         * Y₁=(0.018x(RX)²+0.005RX+0.916)Y₂
+         *
+         * Y₂=min(max(15/C,0.25),1)
+         *
+         * R=1 if player is walking, 2 if player is running
+         *
+         * C=player carry weight
          */
         const rateData = [
             // Carry weight: 1
@@ -103,7 +111,31 @@ describe('Player test', () => {
          * Fifth number: expected move time in milliseconds (running).
          *
          * @remarks
-         * All of these values were calculated with a TI-84 Plus CE.
+         * All of these values were calculated with a TI-84 Plus CE, using the following equations and variables:
+         *
+         * Y₁=(0.018x(RX)²+0.005RX+0.916)Y₂
+         *
+         * Y₂=min(max(15/C,0.25),1)
+         *
+         * Y₃=Y₁-SY₁
+         *
+         * Y₄=D/Y₃*1000 [calculated time in milliseconds when flat distance is not 0]
+         *
+         * Y₅=(2*sqrt(2(I/2)²))/(Y₆*Y₁)*2*1000 [calculated time in milliseconds when flat distance is 0 but rise is not 0]
+         *
+         * Y₆=1-(I/abs(I)/3) [2/3rds if rise is positive, 4/3rds if rise is negative]
+         *
+         * R=1 if player is walking, 2 if player is running
+         *
+         * C=player carry weight
+         *
+         * D=[X distance in pixels]
+         *
+         * P=25 (pixels per meter)
+         *
+         * I=[Y distance in pixels]/P (rise in meters)
+         *
+         * S=I/D (slope)
          */
         const timeData = [
             // X distance: 1000, Y distance: 0
@@ -181,7 +213,30 @@ describe('Player test', () => {
             [10, 1000, -1000,  7153.076,  2399.232],
             [15, 1000, -1000,  3915.04,   1140.511],
             [20, 1000, -1000,  2399.232,   657.981],
-            // TODO: Test stairwell time calculation
+            // X distance: 0, Y distance: 100 (stairwell calculation)
+            [1,  0, 100, 18067.244, 16984.150],
+            [5,  0, 100, 12134.832,  6069.586],
+            [10, 0, 100,  6069.586,  2035.816],
+            [15, 0, 100,  3322.025,   967.756],
+            [20, 0, 100,  2035.816,   558.316],
+            // X distance: 0, Y distance: -100 (stairwell calculation)
+            [1,  0, -100, 9033.622, 8492.075],
+            [5,  0, -100, 6067.416, 3034.793],
+            [10, 0, -100, 3034.793, 1017.908],
+            [15, 0, -100, 1661.012,  483.878],
+            [20, 0, -100, 1017.908,  279.158],
+            // X distance: 0, Y distance: 500 (stairwell calculation)
+            [1,  0, 500, 90336.222, 84920.750],
+            [5,  0, 500, 60674.161, 30347.931],
+            [10, 0, 500, 30347.931, 10179.080],
+            [15, 0, 500, 16610.123,  4838.778],
+            [20, 0, 500, 10179.080,  2791.578],
+            // X distance: 0, Y distance: -500 (stairwell calculation)
+            [1,  0, -500, 45168.111, 42460.375],
+            [5,  0, -500, 30337.080, 15173.965],
+            [10, 0, -500, 15173.965,  5089.540],
+            [15, 0, -500,  8305.062,  2419.389],
+            [20, 0, -500,  5089.540,  1395.789]
         ];
 
         beforeAll(() => {

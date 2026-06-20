@@ -733,8 +733,6 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
             const slope = rise / distance;
             // Prevent division errors.
             rate = !isNaN(slope) && slope * rate !== rate ? rate - slope * rate : rate;
-            // TODO: I don't remember why this was here. Make sure this does break anything before fully removing it:
-            //if (distance < rate) distance = 0;
             time = distance / rate * 1000;
         }
         if (time < 0 || isNaN(time)) time = 0;
