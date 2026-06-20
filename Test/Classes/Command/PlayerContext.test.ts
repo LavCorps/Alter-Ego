@@ -1,6 +1,8 @@
 import PlayerContext from "../../../Classes/Command/PlayerContext.ts";
+import { ItemContainerToken, PrepositionToken } from "../../../Classes/Command/Token.ts";
 import Trie from "../../../Classes/Command/Trie.ts";
 import PrettyPrinter from "../../../Classes/PrettyPrinter.ts";
+import type Fixture from "../../../Data/Fixture.ts";
 import type InventoryItem from "../../../Data/InventoryItem.ts";
 import type Player from "../../../Data/Player.ts";
 import { clearQueue } from "../../../Modules/messageHandler.js";
@@ -85,7 +87,26 @@ describe("PlayerContext class from NG Commands", () => {
                     trie.insert(token.value, token);
                 }
             }
-            console.log(trie.tokenize(["coffee", "on", "floor"]));
+            const streams = trie.tokenize(["coffee", "on", "floor"]);
+            expect(streams.length).toBe(3);
+            for (const stream of streams) {
+                // this is a simple test, and will break if a second valid tokenization for "coffee" is ever introduced to the environment kyra resides within
+                expect(stream.length).toBe(1);
+            }
+            // ItemContainerToken: should be COFFEE, type -1, with empty preposition string
+            const coffee = streams[0][0] as ItemContainerToken<InventoryItem>;
+            expect(coffee.value).toBe("COFFEE");
+            expect(coffee.type).toBe(-1);
+            expect(coffee.preposition).toBe("");
+            // PrepositionToken: should be "on", type -2,
+            const preposition = streams[1][0] as PrepositionToken;
+            expect(preposition.value).toBe("on");
+            expect(preposition.type).toBe(-2);
+            // ItemContainerToken: should be FLOOR, type -1, with preposition "on"
+            const floor = streams[2][0] as ItemContainerToken<Fixture>;
+            expect(floor.value).toBe("FLOOR");
+            expect(floor.type).toBe(-1);
+            expect(floor.preposition).toBe("on");
         });
     });
 });
