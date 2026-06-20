@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import type { Invocation } from "./Invocation.ts";
-import { EntityToken, PrepositionToken, SentinelToken, type Token } from "./Token.ts";
+import { ConstantToken, EntityToken, PrepositionToken, SentinelToken, type Token } from "./Token.ts";
 import type GameEntity from "../../Data/GameEntity.ts";
 import { Collection } from "discord.js";
 
@@ -33,7 +33,7 @@ export class Constant implements PatternElement {
         this.value = value;
     }
 
-    satisfiedBy(token: Constant): boolean {
+    satisfiedBy(token: ConstantToken): boolean {
         return token.value === this.value;
     }
 }
@@ -163,19 +163,25 @@ export class Pattern implements PatternElement {
             stream = streams[streamIndex];
 
             if (element instanceof Constant) {
+                console.log("hit Constant match");
                 for (const token of stream) {
-                    if (token instanceof Constant && element.satisfiedBy(token)) {
+                    console.log(`    hit token with value ${token.value}`);
+                    console.log(`    token ${token instanceof ConstantToken ? "IS" : "IS NOT"} Constant`);
+                    console.log(`    token ${token instanceof Constant && element.satisfiedBy(token) ? "DOES" : "DOES NOT"} satisfy Element`);
+                    if (token instanceof ConstantToken && element.satisfiedBy(token)) {
                         matches.set(element, [token]);
                         break;
                     }
                 }
             } else if (element instanceof Slot || element instanceof Multislot) {
+                console.log("hit Slot or Multislot match");
                 let elementMatches: Token[] = [];
                 for (const token of stream) {
                     if (token instanceof EntityToken && element.satisfiedBy(token)) elementMatches.push(token);
                 }
                 if (elementMatches.length > 0) matches.set(element, elementMatches);
             } else if (element instanceof Preposition) {
+                console.log("hit Preposition match");
                 for (const token of stream) {
                     if (token instanceof PrepositionToken) {
                         matches.set(element, [token]);
@@ -183,6 +189,7 @@ export class Pattern implements PatternElement {
                     }
                 }
             } else if (element instanceof Glob) {
+                console.log("hit Glob match");
                 let globbed = false;
                 while (!globbed) {
                     for (const token of stream) {
@@ -196,18 +203,27 @@ export class Pattern implements PatternElement {
                     } else streamIndex++;
                 }
             } else if (element instanceof Pattern) {
+                console.log("hit Pattern match");
                 // TODO: recursive pattern matching with optional handling
             }
 
+            console.log(`${matches.has(element) ? "SUCCESSFULLY matched" : "FAILED to match"} token to pattern element`)
+
             if (!matches.has(element) && !(element instanceof Pattern)) {
-                // TODO: error state: what pattern did we miss? what input was given that did not tokenize correctly? after determining this information, step grammar and stream indices forward until we are back in alignment
-            } else if (grammarIndex === this.grammar.length || streamIndex === streams.length) finished = true;
-            else {
-                grammarIndex++;
-                streamIndex++;
+                console.log(element);
+                console.log(stream);
+                console.log(matches);
+                throw new Error("match() ERROR STATE: NOT IMPLEMENTED");
+                // TODO: error state: what pattern did we miss? what input was given that did not tokenize correctly? after determining this information and loading it into the `errors` array, step grammar and/or stream indices forward until we are back in alignment...?
             }
+
+            grammarIndex++;
+            streamIndex++;
+
+            if (grammarIndex >= this.grammar.length || streamIndex >= streams.length) finished = true;
         }
 
-        throw new Error("NOT IMPLEMENTED");
+        console.log(matches);
+        throw new Error("match() RETURN: NOT IMPLEMENTED");
     }
 }

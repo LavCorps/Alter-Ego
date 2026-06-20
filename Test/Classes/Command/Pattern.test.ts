@@ -2,8 +2,9 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { Slot } from "../../../Classes/Command/Pattern.ts";
-import { EntityToken, ItemContainerToken } from "../../../Classes/Command/Token.ts";
+import { Constant, Pattern, Slot } from "../../../Classes/Command/Pattern.ts";
+import { ConstantToken, EntityToken, ItemContainerToken, PrepositionToken } from "../../../Classes/Command/Token.ts";
+import Trie from "../../../Classes/Command/Trie.ts";
 import EquipmentSlot from "../../../Data/EquipmentSlot.ts";
 import Event from "../../../Data/Event.ts";
 import Exit from "../../../Data/Exit.ts";
@@ -27,11 +28,17 @@ describe("Pattern file from NG Commands", () => {
         kyra = game.entityFinder.getPlayer("Kyra");
         playerToken = new EntityToken("Kyra", kyra);
         inventoryItemToken = new ItemContainerToken("COFFEE", kyra.inventory.get("RIGHT HAND").equippedItem);
-        roomItemToken = new ItemContainerToken("SIGN IN SHEET", game.entityFinder.getRoomItem("SIGN IN SHEET", "lobby"));
+        roomItemToken = new ItemContainerToken(
+            "SIGN IN SHEET",
+            game.entityFinder.getRoomItem("SIGN IN SHEET", "lobby"),
+        );
         fixtureToken = new ItemContainerToken("FLOOR", game.entityFinder.getFixture("FLOOR", "lobby"));
         puzzleToken = new ItemContainerToken("SCALE", game.entityFinder.getPuzzle("SCALE", "fitness-room"));
         roomToken = new EntityToken("lobby", game.entityFinder.getRoom("lobby"));
-        exitToken = new EntityToken("REVOLVING DOOR 1", game.entityFinder.getExit(game.entityFinder.getRoom("lobby"), "REVOLVING DOOR 1"));
+        exitToken = new EntityToken(
+            "REVOLVING DOOR 1",
+            game.entityFinder.getExit(game.entityFinder.getRoom("lobby"), "REVOLVING DOOR 1"),
+        );
         equipmentSlotToken = new EntityToken("RIGHT HAND", kyra.inventory.get("RIGHT HAND"));
         eventToken = new EntityToken("PROLOGUE", game.entityFinder.getEvent("PROLOGUE"));
         flagToken = new EntityToken("CHAPTER", game.entityFinder.getFlag("CHAPTER"));
@@ -249,6 +256,81 @@ describe("Pattern file from NG Commands", () => {
             expect(slot.satisfiedBy(flagToken)).toBeFalsy();
             expect(slot.satisfiedBy(prefabToken)).toBeFalsy();
             expect(slot.satisfiedBy(statusToken)).toBeTruthy();
+        });
+    });
+
+    describe("Pattern class from NG Commands", () => {
+        test("Pattern.match(1)", async () => {
+            const prepositions: Set<string> = new Set();
+            const trie = new Trie();
+            {
+                for (const player of game.players.values()) {
+                    trie.insert(player.displayName, new EntityToken(player.displayName, player));
+                }
+                for (const item of game.inventoryItems) {
+                    if (item.prefab !== null && item.quantity > 0) {
+                        trie.insert(item.prefab.id, new ItemContainerToken(item.prefab.id, item));
+                        if (!prepositions.has(item.getPreposition())) {
+                            const preposition = item.getPreposition();
+                            prepositions.add(preposition);
+                            trie.insert(preposition, new PrepositionToken(preposition));
+                        }
+                    }
+                }
+                for (const item of game.roomItems) {
+                    if (item.prefab !== null && item.quantity > 0) {
+                        trie.insert(item.prefab.id, new ItemContainerToken(item.prefab.id, item));
+                        if (!prepositions.has(item.getPreposition())) {
+                            const preposition = item.getPreposition();
+                            prepositions.add(preposition);
+                            trie.insert(preposition, new PrepositionToken(preposition));
+                        }
+                    }
+                }
+                for (const fixture of game.fixtures) {
+                    trie.insert(fixture.name, new ItemContainerToken(fixture.name, fixture));
+                    if (!prepositions.has(fixture.getPreposition())) {
+                        const preposition = fixture.getPreposition();
+                        prepositions.add(preposition);
+                        trie.insert(preposition, new PrepositionToken(preposition));
+                    }
+                }
+                for (const puzzle of game.puzzles) {
+                    trie.insert(puzzle.name, new ItemContainerToken(puzzle.name, puzzle));
+                }
+                for (const player of game.players.values()) {
+                    for (const slot of player.inventory.values()) {
+                        trie.insert(slot.id, new EntityToken(slot.id, slot));
+                    }
+                }
+                for (const room of game.rooms.values()) {
+                    trie.insert(room.id, new EntityToken(room.id, room));
+                }
+                for (const room of game.rooms.values()) {
+                    for (const exit of room.exits.values()) {
+                        trie.insert(exit.name, new EntityToken(exit.name, exit));
+                    }
+                }
+                for (const event of game.events.values()) {
+                    trie.insert(event.id, new EntityToken(event.id, event));
+                }
+                for (const flag of game.flags.values()) {
+                    trie.insert(flag.id, new EntityToken(flag.id, flag));
+                }
+                for (const prefab of game.prefabs.values()) {
+                    trie.insert(prefab.id, new EntityToken(prefab.id, prefab));
+                }
+                for (const status of game.statusEffects.values()) {
+                    trie.insert(status.id, new EntityToken(status.id, status));
+                }
+                trie.insert("and", new ConstantToken("and"));
+            }
+            const pattern = new Pattern([
+                new Slot(InventoryItem, "item1"),
+                new Constant("and"),
+                new Slot(InventoryItem, "item2"),
+            ]);
+            pattern.match(trie.tokenize(["MUG", "OF", "COFFEE", "and", "PACK", "OF", "TOILET", "PAPER"]));
         });
     });
 });
