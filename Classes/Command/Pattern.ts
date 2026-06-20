@@ -4,8 +4,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import type { Invocation } from "./Invocation.ts";
-import { EntityToken, type Token } from "./Token.ts";
+import { EntityToken, PrepositionToken, SentinelToken, type Token } from "./Token.ts";
 import type GameEntity from "../../Data/GameEntity.ts";
+import { Collection } from "discord.js";
 
 /**
  * Base interface representing a pattern element.
@@ -30,6 +31,10 @@ export class Constant implements PatternElement {
      */
     constructor(value: string) {
         this.value = value;
+    }
+
+    satisfiedBy(token: Constant): boolean {
+        return token.value === this.value;
     }
 }
 
@@ -142,6 +147,67 @@ export class Pattern implements PatternElement {
     }
 
     match(streams: Token[][]): Invocation {
+        const errors: string[] = [];
+        const matches: Collection<PatternElement, Token[]> = new Collection();
+        const glob: string[] = [];
+
+        let finished = false;
+
+        let grammarIndex = 0;
+        let element: PatternElement;
+        let streamIndex = 0;
+        let stream: Token[];
+
+        while (!finished) {
+            element = this.grammar[grammarIndex];
+            stream = streams[streamIndex];
+
+            if (element instanceof Constant) {
+                for (const token of stream) {
+                    if (token instanceof Constant && element.satisfiedBy(token)) {
+                        matches.set(element, [token]);
+                        break;
+                    }
+                }
+            } else if (element instanceof Slot || element instanceof Multislot) {
+                let elementMatches: Token[] = [];
+                for (const token of stream) {
+                    if (token instanceof EntityToken && element.satisfiedBy(token)) elementMatches.push(token);
+                }
+                if (elementMatches.length > 0) matches.set(element, elementMatches);
+            } else if (element instanceof Preposition) {
+                for (const token of stream) {
+                    if (token instanceof PrepositionToken) {
+                        matches.set(element, [token]);
+                        break;
+                    }
+                }
+            } else if (element instanceof Glob) {
+                let globbed = false;
+                while (!globbed) {
+                    for (const token of stream) {
+                        if (token instanceof SentinelToken) {
+                            glob.push(token.value);
+                            break;
+                        }
+                    }
+                    if (streamIndex === streams.length) {
+                        globbed = true;
+                    } else streamIndex++;
+                }
+            } else if (element instanceof Pattern) {
+                // TODO: recursive pattern matching with optional handling
+            }
+
+            if (!matches.has(element) && !(element instanceof Pattern)) {
+                // TODO: error state: what pattern did we miss? what input was given that did not tokenize correctly? after determining this information, step grammar and stream indices forward until we are back in alignment
+            } else if (grammarIndex === this.grammar.length || streamIndex === streams.length) finished = true;
+            else {
+                grammarIndex++;
+                streamIndex++;
+            }
+        }
+
         throw new Error("NOT IMPLEMENTED");
     }
 }
