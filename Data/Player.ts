@@ -716,7 +716,7 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
         let time = 0;
         // If distance is 0, we'll treat it like a staircase and just use the rise to calculate the time.
         if (distance === 0 && rise !== 0) {
-            const uphill = rise > 0 ? true : false;
+            const uphill = rise > 0;
             // Assume that the staircase is a right triangle leading to another right triangle flipped horizontally.
             const legs = rise / 2;
             // Calculate the length of the hypotenuse of these right triangles.
@@ -731,11 +731,16 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
         }
         else {
             const slope = rise / distance;
-            rate = !isNaN(slope) ? rate - slope * rate : rate;
-            if (distance < rate) distance = 0;
+            // Prevent division errors.
+            rate = !isNaN(slope) && slope * rate !== rate ? rate - slope * rate : rate;
+            // TODO: I don't remember why this was here. Make sure this does break anything before fully removing it:
+            //if (distance < rate) distance = 0;
             time = distance / rate * 1000;
         }
-        if (time < 0) time = 0;
+        if (time < 0 || isNaN(time)) time = 0;
+        // Cap out the maximum length of time at 1 hour.
+        const maxLength = 60 * 60 * 1000;
+        if (time > maxLength) time = maxLength;
         return time;
     }
 
