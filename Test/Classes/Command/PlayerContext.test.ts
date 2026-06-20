@@ -71,7 +71,21 @@ describe("PlayerContext class from NG Commands", () => {
             console.log(`  lexicon building took ${Number(getLexiconConclude - contextInitConclude) / 1000000}ms`);
             console.log(`  trie loading took ${Number(trieLoadConclude - getLexiconConclude) / 1000000}ms`);
             console.log(`final trie size is ${trie.size()}`);
-            console.log(printer.prettyString(trie))
+            console.log(printer.prettyString(trie));
+        });
+    });
+
+    describe("lexicon usage tests", () => {
+        test("kyra: (drop) coffee on floor", async () => {
+            const trie = new Trie();
+            {
+                const context = new PlayerContext(game, kyra, "test", createMockMessage());
+                const tokens = context.getLexicon();
+                for (const token of tokens) {
+                    trie.insert(token.value, token);
+                }
+            }
+            console.log(trie.tokenize(["coffee", "on", "floor"]));
         });
     });
 });
