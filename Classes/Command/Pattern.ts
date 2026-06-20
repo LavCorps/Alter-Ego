@@ -81,6 +81,13 @@ export class Multislot implements PatternElement {
         this.slots = slots;
         this.name = name;
     }
+
+    satisfiedBy(token: EntityToken<GameEntity>): boolean {
+        for (const slot of this.slots) {
+            if (slot.satisfiedBy(token)) return true;
+        }
+        return false;
+    }
 }
 
 /**
