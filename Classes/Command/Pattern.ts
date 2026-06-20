@@ -4,6 +4,9 @@
 
 import type { Token } from "./Token.ts";
 
+/** Convenience alias for -1 in defining a Pattern. */
+export const PATTERN = -1;
+
 /** Convenience alias for 0 in defining Constant pattern elements. */
 export const CONSTANT = 0;
 
@@ -225,6 +228,11 @@ export default class Pattern {
      * Whether the fulfillment of this Pattern is optional or not. This is most useful for optional sub-patterns.
      */
     readonly optional: boolean;
+
+    /**
+     * Patterns are kind -1.
+     */
+    readonly kind: typeof PATTERN = PATTERN;
 
     /**
      * @param grammar - The grammar of the pattern. This is an ordered array, containing pattern elements, as well as other patterns.
