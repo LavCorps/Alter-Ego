@@ -16,8 +16,11 @@ export const PREPOSITION = 2;
 /** Convenience alias for 3 in defining Glob pattern elements. */
 export const GLOB = 3;
 
+/** Convenience alias for 4 in defining Multislot pattern elements. */
+export const MULTISLOT = 4;
+
 /** Type union for PatternElement types */
-export type ElementTypes = typeof CONSTANT | typeof SLOT | typeof PREPOSITION | typeof GLOB;
+export type ElementTypes = typeof CONSTANT | typeof SLOT | typeof PREPOSITION | typeof GLOB | typeof MULTISLOT;
 
 /** Convenience alias for 0 in defining Player Slot pattern elements. */
 export const PLAYER = 0;
@@ -79,7 +82,7 @@ type PatternValidation = PatternValidationPassed | PatternValidationFailed;
  */
 export interface PatternElement {
     /**
-     * The "kind" of the PatternElement. Should be either 0 (constant), 1 (slot), or 2 (dynamic)
+     * The "kind" of the PatternElement. Should be either 0 (constant), 1 (slot), 2 (dynamic), 3 (glob), or 4 (multislot).
      */
     readonly kind: ElementTypes;
 }
@@ -148,7 +151,7 @@ export interface Preposition extends PatternElement {
     readonly kind: typeof PREPOSITION;
 
     /**
-     * The name of the Slot that the Dynamic refers to.
+     * The name of the Slot that the Preposition refers to.
      */
     readonly name: string;
 }
@@ -162,7 +165,7 @@ export function preposition(name: string): Preposition {
 }
 
 /**
- * Preposition interface representing a piece of a grammar pattern that represents a Glob.
+ * Glob interface representing a piece of a grammar pattern that represents a Glob.
  *
  * Globs must ALWAYS be the final Element of a Pattern!
  */
@@ -183,6 +186,31 @@ export function glob(): Glob {
 }
 
 /**
+ * Multislot interface representing a piece of a grammar pattern that represents a Multislot.
+ */
+export interface Multislot extends PatternElement {
+    /**
+     * Multislots are kind 4 of PatternElement.
+     */
+    readonly kind: typeof MULTISLOT;
+
+    /**
+     * The types of the Multislot. Tokens must match one of these types to fit into the Slot.
+     */
+    readonly types: Set<SlotTypes>;
+}
+
+/**
+ * Helper function for constructing Multislot pattern elements.
+ */
+export function multislot(types: SlotTypes[]): Multislot {
+    return { kind: MULTISLOT, types: new Set(types) };
+}
+
+/** Type union for valid grammar pattern elements. */
+export type grammarElement = Constant | Slot | Preposition | Glob |  Multislot | Pattern
+
+/**
  * Grammar pattern representing a command syntax.
  */
 export default class Pattern {
@@ -191,7 +219,7 @@ export default class Pattern {
      *
      * This is an ordered Array, containing Constants, Slots, and other Patterns representing the grammar pattern of a desired command syntax.
      */
-    readonly grammar: Array<Constant | Slot | Preposition | Glob | Pattern>;
+    readonly grammar: Array<grammarElement>;
 
     /**
      * Whether the fulfillment of this Pattern is optional or not. This is most useful for optional sub-patterns.
@@ -202,7 +230,7 @@ export default class Pattern {
      * @param grammar - The grammar of the pattern. This is an ordered array, containing pattern elements, as well as other patterns.
      * @param optional - Whether the fulfillment of this Pattern is optional or not. This is most useful for optional sub-patterns.
      */
-    constructor(grammar: Array<Constant | Slot | Preposition | Glob | Pattern>, optional: boolean = false) {
+    constructor(grammar: Array<grammarElement>, optional: boolean = false) {
         this.grammar = grammar;
         this.optional = optional;
     }
@@ -218,7 +246,7 @@ export default class Pattern {
  * @param optional - Whether the fulfillment of this Pattern is optional or not. This is most useful for optional sub-patterns.
  */
 export function pattern(
-    grammar: Array<Constant | Slot | Preposition | Glob | Pattern>,
+    grammar: Array<grammarElement>,
     optional: boolean = false,
 ): Pattern {
     return new Pattern(grammar, optional);
