@@ -22,14 +22,14 @@ describe("PlayerContext class from NG Commands", () => {
         kyra = game.entityFinder.getPlayer("Kyra");
     });
 
-    let kyra: Player;
-
-    const printer = new PrettyPrinter();
-
     afterEach(async () => {
         clearQueue(game);
         vi.resetAllMocks();
     });
+
+    let kyra: Player;
+
+    const printer = new PrettyPrinter();
 
     describe("constructor()", () => {
         test("verify that stashedItems does not include top-level items", async () => {
