@@ -267,6 +267,11 @@ export default class ClientContext {
      * Loads all of the commands from disk.
      */
     public async loadCommands(): Promise<void> {
+        ClientContext.#botCommands.clear();
+        ClientContext.#moderatorCommands.clear();
+        ClientContext.#playerCommands.clear();
+        ClientContext.#eligibleCommands.clear();
+
         const commandsDir = path.join(ClientContext.__dirname, "..", "Commands");
         try {
             const files = await readdir(commandsDir);
