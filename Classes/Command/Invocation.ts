@@ -6,45 +6,68 @@
 import type { Collection } from "discord.js";
 import type GameEntity from "../../Data/GameEntity.ts";
 
+/** Abstract class representing all Invocations. */
 abstract class BaseInvocation<M extends boolean, V extends boolean> {
     private readonly _matched: M;
+
     private readonly _validated: V;
 
+    /**
+     * @param matched - Whether this Invocation is a Matched invocation.
+     * @param validated - Whether this Invocation is a Validated invocation.
+     */
     protected constructor(matched: M, validated: V) {
         this._matched = matched;
         this._validated = validated;
     }
 
+    /** Whether this Invocation is Matched. */
     public get matched(): M {
         return this._matched;
     }
 
+    /** Whether this Invocation is Validated. */
     public get validated(): V {
         return this._validated;
     }
 }
 
+/** Invocation whose arguments have been validated. */
 export class ValidatedInvocation extends BaseInvocation<true, true> {
-    args: Collection<string, GameEntity[]>;
+    /** The key-value pairs of slot names to Game Entities. One Game Entity per key. */
+    args: Collection<string, GameEntity>;
 
-    constructor(args: Collection<string, GameEntity[]>) {
+    /**
+     * @param args - The key-value pairs of slot names to Game Entities. One Game Entity per key.
+     */
+    constructor(args: Collection<string, GameEntity>) {
         super(true, true);
         this.args = args;
     }
 }
 
+/** Invocation whose arguments have been matched. */
 export class MatchedInvocation extends BaseInvocation<true, false> {
+    /** The key-value pairs of slot names to Game Entities. Multiple Game Entities allowed per key. */
     args: Collection<string, GameEntity[]>;
 
+    /**
+     * @param args - The key-value pairs of slot names to Game Entities. Multiple Game Entities allowed per key.
+     */
     constructor(args: Collection<string, GameEntity[]>) {
         super(true, false);
         this.args = args;
     }
 }
 
+/** Invocation whose arguments have been invalidated. */
 export class InvalidInvocation extends BaseInvocation<false, false> {
+    /** The list of errors in the Invocation. */
     errors: string[];
 
+    /**
+     * @param errors - The list of errors in the Invocation.
+     */
     constructor(errors: string[]) {
         super(false, false);
         this.errors = errors;

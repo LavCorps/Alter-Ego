@@ -7,22 +7,28 @@ import { SentinelToken, type Token } from "./Token.ts";
 import TrieNode from "./TrieNode.ts";
 
 type Word = {
+    /** Cleaned word, with all letters converted to locale lower case. */
     clean: string;
+
+    /** Original word. */
     original: string;
 };
 
 export default class Trie {
+    /** The root TrieNode on this Trie. Contains all other TrieNodes, or their ancestors. */
     root: TrieNode;
 
     constructor() {
         this.root = new TrieNode();
     }
 
+    /**
+     * Insert a new phrase into the Trie, with the value of the given token.
+     * @param phrase - Phrase to insert into the Trie. Can be arbitrary, and will be split according to the regex `[^\S\n]`.
+     * @param value - Token to insert into the Trie. Not deduplicated.
+     */
     insert(phrase: string, value: Token): void {
-        const words = phrase
-            .toLocaleLowerCase()
-            .trim()
-            .split(/[^\S\n]/);
+        const words = phrase.toLocaleLowerCase().trim().split(/[^\S\n]/);
         let node = this.root;
 
         for (const word of words) {
@@ -32,6 +38,9 @@ export default class Trie {
         node.imbue(value);
     }
 
+    /**
+     * 
+     */
     tokenize(words: string[]): Token[][] {
         const input: Word[] = words.map((word) => {
             return { clean: word.toLocaleLowerCase(), original: word };
@@ -53,7 +62,13 @@ export default class Trie {
                 }
             }
             if (longestMatch !== null) {
-                output.push(longestMatch.concat(new SentinelToken(input.slice(i, j).map(word => word.original).join(" "))));
+                output.push(
+                    longestMatch.concat(
+                        new SentinelToken(
+                            input.slice(i, j).map((word) => word.original).join(" "),
+                        ),
+                    ),
+                );
                 i += longestLen;
             } else {
                 output.push([new SentinelToken(input[i].original)]);

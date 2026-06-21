@@ -31,6 +31,10 @@ export class Constant implements PatternElement {
         this.value = value;
     }
 
+    /**
+     * Returns whether this Constant is satisfied by the given token.
+     * @param token - The token to check against this Constant.
+     */
     satisfiedBy(token: ConstantToken): boolean {
         return token.value === this.value;
     }
@@ -58,6 +62,10 @@ export class Slot<T extends GameEntity = GameEntity> implements PatternElement {
         this.name = name;
     }
 
+    /**
+     * Returns whether this Slot is satisfied by the given token.
+     * @param token - The token to check against this Slot.
+     */
     satisfiedBy(token: EntityToken<GameEntity>): boolean {
         return this.type.name === token.reference.getEntityType();
     }
@@ -85,6 +93,10 @@ export class Multislot implements PatternElement {
         this.name = name;
     }
 
+    /**
+     * Returns whether this Multislot is satisfied by the given token.
+     * @param token - The token to check against this Multislot.
+     */
     satisfiedBy(token: EntityToken<GameEntity>): boolean {
         for (const slot of this.slots) {
             if (slot.satisfiedBy(token)) return true;
@@ -175,6 +187,7 @@ class MatchData {
         this.streamIndex = i;
     }
 
+    /** Return a clone of this MatchData. */
     clone(): MatchData {
         const data = new MatchData(this.streams);
         data.index = this.index;
@@ -240,6 +253,12 @@ export class Pattern implements PatternElement {
         this.optional = optional;
     }
 
+    /**
+     * Internal error-pushing function to consolidate formatting.
+     * @param element - The PatternElement that a match failure was encountered on.
+     * @param nearMatch - The string that was found instead of a valid token to fit PatternElement.
+     * @param data - The MatchData of the matching function thus far.
+     */
     private pushError(element: PatternElement, nearMatch: string, data: MatchData): MatchData {
         if (element instanceof Slot) {
             // this scary regex replaces all upper case characters with a space, then the lowercase version of that character.
@@ -263,6 +282,10 @@ export class Pattern implements PatternElement {
         return data;
     }
 
+    /**
+     * Internal matching function for Patterns. Used for recursive pattern matching.
+     * @param base - MatchData for the innerMatch to use. This is cloned, and if the pattern is both optional and fails to match, is returned as-is.
+     */
     protected innerMatch(base: MatchData): MatchData {
         let data = base.clone();
 
@@ -412,6 +435,10 @@ export class Pattern implements PatternElement {
         return data;
     }
 
+    /**
+     * Match a stream of tokens to this pattern. Returns a MatchedInvocation on success, or an InvalidInvocation on error.
+     * @param streams - The stream of tokens to attempt to match to the pattern.
+     */
     match(streams: Token[][]): MatchResult {
         const data = this.innerMatch(new MatchData(streams));
         console.log(data);
