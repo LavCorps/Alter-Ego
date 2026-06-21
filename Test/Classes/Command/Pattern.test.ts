@@ -333,7 +333,7 @@ describe("Pattern file from NG Commands", () => {
                 new Constant("and"),
                 new Slot(InventoryItem, "item2"),
             ]);
-            pattern.match(trie.tokenize(["MUG", "OF", "COFFEE", "and", "PACK", "OF", "TOILET", "PAPER"]));
+            console.log(pattern.match(trie.tokenize(["MUG", "OF", "COFFEE", "and", "PACK", "OF", "TOILET", "PAPER"])));
         });
 
         test("Pattern.match(2)", async () => {
@@ -343,7 +343,7 @@ describe("Pattern file from NG Commands", () => {
                 new Constant("and"),
                 new Slot(InventoryItem, "item2"),
             ]);
-            pattern.match(trie.tokenize(["MG", "F", "CFF", "and", "PACK", "OF", "TOILET", "PAPER"]));
+            console.log(pattern.match(trie.tokenize(["MG", "F", "CFF", "and", "PACK", "OF", "TOILET", "PAPER"])));
         });
     });
 });

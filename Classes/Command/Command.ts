@@ -5,7 +5,7 @@
 
 import type GameSettings from "../GameSettings.ts";
 import type Context from "./Context.ts";
-import type { Invocation, ValidInvocation } from "./Invocation.ts";
+import type { Invocation, MatchedInvocation, ValidatedInvocation, ValidationResult } from "./Invocation.ts";
 import type { Pattern } from "./Pattern.ts";
 
 /**
@@ -30,10 +30,10 @@ export default abstract class Command {
     /**
      * The code to execute when the command is called, inputs matched to at least one pattern, but the invocation is not yet validated.
      */
-    abstract validate(context: Context, invocation: ValidInvocation): Promise<Invocation>;
+    abstract validate(context: Context, invocation: MatchedInvocation): Promise<ValidationResult>;
 
     /**
      * The code to execute when the command is called, and the invocation has been validated.
      */
-    abstract execute(context: Context, invocation: ValidInvocation): Promise<void>;
+    abstract execute(context: Context, invocation: ValidatedInvocation): Promise<void>;
 }

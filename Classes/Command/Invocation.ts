@@ -4,38 +4,53 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import type { Collection } from "discord.js";
-import type { Token } from "./Token.ts";
+import type GameEntity from "../../Data/GameEntity.ts";
 
-abstract class BaseInvocation<T extends boolean> {
-    private readonly _valid: T;
+abstract class BaseInvocation<M extends boolean, V extends boolean> {
+    private readonly _matched: M;
+    private readonly _validated: V;
 
-    protected constructor(valid: T) {
-        this._valid = valid;
+    protected constructor(matched: M, validated: V) {
+        this._matched = matched;
+        this._validated = validated;
     }
 
-    public get valid(): T {
-        return this._valid;
+    public get matched(): M {
+        return this._matched;
+    }
+
+    public get validated(): V {
+        return this._validated;
     }
 }
 
-export class ValidInvocation extends BaseInvocation<true> {
-    args: Collection<string, any>;
-    raw: Token[][];
+export class ValidatedInvocation extends BaseInvocation<true, true> {
+    args: Collection<string, GameEntity[]>;
 
-    constructor(args: Collection<string, any>, raw: Token[][]) {
-        super(true);
+    constructor(args: Collection<string, GameEntity[]>) {
+        super(true, true);
         this.args = args;
-        this.raw = raw;
     }
 }
 
-export class InvalidInvocation extends BaseInvocation<false> {
+export class MatchedInvocation extends BaseInvocation<true, false> {
+    args: Collection<string, GameEntity[]>;
+
+    constructor(args: Collection<string, GameEntity[]>) {
+        super(true, false);
+        this.args = args;
+    }
+}
+
+export class InvalidInvocation extends BaseInvocation<false, false> {
     errors: string[];
 
     constructor(errors: string[]) {
-        super(false);
+        super(false, false);
         this.errors = errors;
     }
 }
 
-export type Invocation = ValidInvocation | InvalidInvocation;
+export type MatchResult = MatchedInvocation | InvalidInvocation;
+export type ValidationResult = ValidatedInvocation | InvalidInvocation;
+export type Invocation = ValidatedInvocation | MatchedInvocation | InvalidInvocation;

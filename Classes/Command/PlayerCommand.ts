@@ -4,13 +4,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import Command from "./Command.ts";
-import type { Invocation, ValidInvocation } from "./Invocation.ts";
+import type { MatchedInvocation, ValidatedInvocation, ValidationResult } from "./Invocation.ts";
 import type PlayerContext from "./PlayerContext.ts";
 
 /**
  * Abstract new-generation command usable by a player.
  */
 export default abstract class PlayerCommand extends Command {
-    abstract override validate(context: PlayerContext, invocation: ValidInvocation): Promise<Invocation>;
-    abstract override execute(context: PlayerContext): Promise<void>;
+    abstract override validate(context: PlayerContext, invocation: MatchedInvocation): Promise<ValidationResult>;
+    abstract override execute(context: PlayerContext, invocation: ValidatedInvocation): Promise<void>;
 }

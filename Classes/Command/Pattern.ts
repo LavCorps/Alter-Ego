@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import type { Invocation } from "./Invocation.ts";
+import { InvalidInvocation, MatchedInvocation, type MatchResult } from "./Invocation.ts";
 import { ConstantToken, EntityToken, PrepositionToken, SentinelToken, type Token } from "./Token.ts";
 import type GameEntity from "../../Data/GameEntity.ts";
 import { Collection } from "discord.js";
@@ -117,6 +117,104 @@ export class Preposition implements PatternElement {
  */
 export class Glob implements PatternElement {}
 
+/** Internal-use class for passing runtime pattern matching data between innerMatch calls. */
+class MatchData {
+    /** Array of errors encountered while matching, such as slots that cannot be filled, or missing prepositions or constants. */
+    errors: string[];
+
+    /** Collection of PatternElements to Tokens, representing the tokens that have been successfully matched to pattern elements. */
+    matches: Collection<PatternElement, Token[]>;
+
+    /** Array of strings representing globbed user input. */
+    glob: string[];
+
+    /**
+     * Array of token arrays.
+     *
+     * The outer array is indexed by the position of user input, while the inner array is each possible token for that position.
+     */
+    readonly streams: Token[][];
+
+    /**
+     * Index of the outer token array.
+     *
+     * This is stored in MatchData to keep token stream consumption synchronized even when sub-patterns are matched.
+     */
+    private streamIndex: number;
+
+    constructor(streams: Token[][]) {
+        this.errors = [];
+        this.matches = new Collection();
+        this.glob = [];
+        this.streams = streams;
+        this.streamIndex = 0;
+    }
+
+    /** Returns a boolean representing whether or not the token stream has been exhausted. */
+    get exhausted(): boolean {
+        return this.index >= this.streams.length;
+    }
+
+    /** Returns the current token stream for the current stream index. */
+    get stream(): Token[] {
+        return this.streams[this.index];
+    }
+
+    /** Moves to the stream index forward by 1, returning that token stream. This should only be used after verifying that `this.exhausted === false`. */
+    next(): Token[] {
+        return this.streams[++this.index];
+    }
+
+    /** Returns the current stream index. */
+    get index(): number {
+        return this.streamIndex;
+    }
+
+    /** Sets the stream index to an arbitrary number. Use sparingly! */
+    set index(i: number) {
+        this.streamIndex = i;
+    }
+
+    clone(): MatchData {
+        const data = new MatchData(this.streams);
+        data.index = this.index;
+        data.glob = this.glob.map((o) => o);
+        data.errors = this.errors.map((o) => o);
+        for (const entry of this.matches) {
+            data.matches.set(entry[0], entry[1]);
+        }
+        return data;
+    }
+
+    /**
+     * Merge two MatchData objects.
+     * @param data1 - Base MatchData. Will have duplicate data overwritten by data2.
+     * @param data2 - New MatchData. Will overwrite duplicate data of data1.
+     */
+    static merge(data1: MatchData, data2: MatchData): MatchData {
+        /**
+         * @privateRemarks
+         * This is subject to future deletion before merging.
+         * I am currently unsure if this is necessary, due to the smart clone-return logic of optional pattern matching.
+         * - AC
+         */
+        const data = new MatchData(data1.streams);
+        for (const entry of data1.matches) {
+            data.matches.set(entry[0], entry[1]);
+        }
+        for (const entry of data2.matches) {
+            data.matches.set(entry[0], entry[1]);
+        }
+        data.glob.concat(data2.glob);
+        data.errors.concat(data1.errors);
+        data2.errors.forEach((error) => {
+            if (data.errors.find((e) => e === error) === undefined) data.errors.push(error);
+        });
+        data.index = data2.index;
+        return data;
+    }
+}
+
 /**
  * Grammar pattern representing a command syntax.
  */
@@ -142,14 +240,36 @@ export class Pattern implements PatternElement {
         this.optional = optional;
     }
 
-    match(streams: Token[][]): Invocation {
-        const errors: string[] = [];
-        const matches: Collection<PatternElement, Token[]> = new Collection();
-        const glob: string[] = [];
+    private pushError(element: PatternElement, nearMatch: string, data: MatchData): MatchData {
+        if (element instanceof Slot) {
+            // this scary regex replaces all upper case characters with a space, then the lowercase version of that character.
+            // for example, "InventoryItem" will become " inventory item". the leading space is obviously not desired, so the string is then trimmed.
+            const slotType: string = element.type.name.replace(/([A-Z])/g, (match) => " " + match.toLowerCase()).trim();
+
+            data.errors.push(`Couldn't find ${slotType} "${nearMatch}" in your input.`);
+        } else if (element instanceof Multislot) {
+            const slotTypes: string[] = [];
+            for (const slot of element.slots) {
+                slotTypes.push(slot.type.name.replace(/([A-Z])/g, (match) => " " + match.toLowerCase()).trim());
+            }
+
+            data.errors.push(`Couldn't find any ${slotTypes.join("/")} "${nearMatch}" in your input.`);
+        } else if (element instanceof Preposition) {
+            data.errors.push(`Couldn't find a valid preposition in your input, instead found ${nearMatch}.`);
+        } else if (element instanceof Constant) {
+            data.errors.push(`Couldn't find a required "${element.value}" in your input, instead found ${nearMatch}.`);
+        }
+
+        return data;
+    }
+
+    protected innerMatch(base: MatchData): MatchData {
+        let data = base.clone();
+
         const unmatchedIndices: Set<number> = new Set();
         const matchedIndices: Set<number> = new Set();
         const neverMatchedIndices: Set<number> = new Set();
-        const nearMatchIndices: Collection<number, string> = new Collection();
+        const nearMatchIndices: Collection<number, string[]> = new Collection();
 
         this.grammar.forEach((_, index) => {
             unmatchedIndices.add(index);
@@ -159,72 +279,68 @@ export class Pattern implements PatternElement {
 
         let grammarIndex = 0;
         let element: PatternElement;
-        let streamIndex = 0;
-        let stream: Token[];
 
         while (!finished) {
             element = this.grammar[grammarIndex];
-            stream = streams[streamIndex];
 
             if (element instanceof Constant) {
-                for (const token of stream) {
+                for (const token of data.stream) {
                     if (token instanceof ConstantToken && element.satisfiedBy(token)) {
-                        matches.set(element, [token]);
+                        data.matches.set(element, [token]);
                         matchedIndices.add(grammarIndex);
                         break;
                     }
                 }
             } else if (element instanceof Slot || element instanceof Multislot) {
                 let elementMatches: Token[] = [];
-                for (const token of stream) {
+                for (const token of data.stream) {
                     if (token instanceof EntityToken && element.satisfiedBy(token)) {
                         elementMatches.push(token);
                         matchedIndices.add(grammarIndex);
                     }
                 }
-                if (elementMatches.length > 0) matches.set(element, elementMatches);
+                if (elementMatches.length > 0) data.matches.set(element, elementMatches);
             } else if (element instanceof Preposition) {
-                for (const token of stream) {
+                for (const token of data.stream) {
                     if (token instanceof PrepositionToken) {
-                        matches.set(element, [token]);
+                        data.matches.set(element, [token]);
                         break;
                     }
                 }
             } else if (element instanceof Glob) {
                 let globbed = false;
+                let stream = data.stream;
                 while (!globbed) {
                     for (const token of stream) {
                         if (token instanceof SentinelToken) {
-                            glob.push(token.value);
+                            data.glob.push(token.value);
                             break;
                         }
                     }
-                    if (streamIndex === streams.length) {
+                    if (data.index === data.streams.length) {
                         globbed = true;
-                    } else streamIndex++;
+                    } else stream = data.next();
                 }
             } else if (element instanceof Pattern) {
-                throw new Error("match() PATTERN RECURSION: NOT IMPLEMENTED");
-                // TODO: recursive pattern matching with optional handling
+                data = element.innerMatch(data);
             }
 
-            console.log(
-                `${matches.has(element) ? "SUCCESSFULLY matched" : "FAILED to match"} token to pattern element`,
-            );
-
-            if (!matches.has(element) && !(element instanceof Pattern)) {
+            if (!data.matches.has(element) && !(element instanceof Pattern) && !(element instanceof Glob)) {
+                // this is an error state. if this pattern is optional, we should simply abandon matching this pattern.
+                if (this.optional) return base;
                 // this is an error state: we have gone over all possibilities, and the element has not been matched.
                 // this kind of error severs the anchor between the token streams and the grammar pattern, even if there are still valid tokens to match to the pattern.
                 // this section of code is tasked with the unenviable job of finding the nearest anchor for reorientation.
                 // for this task, we will find the distance to the closest preposition or constant, and consider everything between here and there "unrecoverable".
+                // no matter what, this now concludes with errors. the purpose of this is to minimize those errors.
                 let searchingPattern = true;
                 let searchingStream = true;
                 let preposition = false;
                 let constant = false;
                 let patternSearchIndex = grammarIndex + 1;
-                let streamSearchIndex = streamIndex + 1;
-                let patternAnchorIndex;
-                let streamAnchorIndex;
+                let streamSearchIndex = data.index + 1;
+                let patternAnchorIndex: number;
+                let streamAnchorIndex: number;
 
                 while (searchingPattern) {
                     if (patternSearchIndex >= this.grammar.length) searchingPattern = false;
@@ -239,9 +355,9 @@ export class Pattern implements PatternElement {
                     } else patternSearchIndex++;
                 }
                 while (searchingStream) {
-                    if (streamSearchIndex >= streams.length) searchingStream = false;
+                    if (streamSearchIndex >= data.streams.length) searchingStream = false;
                     else if (
-                        streams[streamSearchIndex].filter(
+                        data.streams[streamSearchIndex].filter(
                             (token) =>
                                 (preposition && token instanceof PrepositionToken) ||
                                 (constant && token instanceof ConstantToken),
@@ -253,22 +369,39 @@ export class Pattern implements PatternElement {
                 }
 
                 if (patternAnchorIndex === undefined || streamAnchorIndex === undefined) {
-                    throw new Error("match() UNRECOVERABLE ERROR STATE: NOT IMPLEMENTED")
-                } else {
-                    let recovering = true;
-
-                    while (recovering) {
-                        recovering = false;
+                    // this is the worst error state of this block. we are completely misaligned, and cannot realign ourselves.
+                    // since this pattern is not optional, we need to do a little bit of extra work to load in errors before returning.
+                    const nearMatchGlob: string[] = [];
+                    while (!data.exhausted) {
+                        nearMatchGlob.push(data.stream.find((token) => token instanceof SentinelToken).value);
+                        data.next();
                     }
+
+                    return this.pushError(element, nearMatchGlob.join(" "), data);
+                } else {
+                    const nearMatchGlob: string[] = [];
+                    // currentIndex must not be rolled into the for loop, or else iteration will run half as long as desired.
+                    const currentIndex = data.index;
+
+                    for (let i = 0; i < streamAnchorIndex - currentIndex; i++) {
+                        // the logic here might be a little confusing. the streamAnchorIndex is our anchor to return to "normalcy".
+                        // in order to provide reasonably detailed and accurate error messages, we should "glob" everything between here and one index before the stream anchor.
+                        // we can then use this to provide an error message that says a required command argument was unfulfilled.
+                        nearMatchGlob.push(data.stream.find((token) => token instanceof SentinelToken).value);
+                        data.next();
+                    }
+
+                    nearMatchIndices.set(grammarIndex, nearMatchGlob);
                 }
 
-                throw new Error("match() ERROR STATE: NOT IMPLEMENTED");
-                // TODO: error state: what pattern did we miss? what input was given that did not tokenize correctly? after determining this information and loading it into the `errors` array, step grammar and/or stream indices forward until we are back in alignment...?
+                data = this.pushError(element, nearMatchIndices.get(grammarIndex).join(" "), data);
+
+                grammarIndex = patternAnchorIndex;
             } else {
                 grammarIndex++;
-                streamIndex++;
+                data.next();
 
-                if (grammarIndex >= this.grammar.length || streamIndex >= streams.length) finished = true;
+                finished = grammarIndex >= this.grammar.length || data.exhausted;
             }
         }
 
@@ -276,9 +409,23 @@ export class Pattern implements PatternElement {
             if (!matchedIndices.has(index)) neverMatchedIndices.add(index);
         }
 
-        console.log(neverMatchedIndices);
+        return data;
+    }
 
-        console.log(matches);
-        throw new Error("match() RETURN: NOT IMPLEMENTED");
+    match(streams: Token[][]): MatchResult {
+        const data = this.innerMatch(new MatchData(streams));
+        console.log(data);
+        if (data.errors.length > 0) return new InvalidInvocation(data.errors);
+        else {
+            const args: Collection<string, GameEntity[]> = new Collection();
+            data.matches.forEach((val, key) => {
+                if (key instanceof Slot || key instanceof Multislot)
+                    args.set(
+                        key.name,
+                        val.map((token: EntityToken<GameEntity>) => token.reference),
+                    );
+            });
+            return new MatchedInvocation(args);
+        }
     }
 }
