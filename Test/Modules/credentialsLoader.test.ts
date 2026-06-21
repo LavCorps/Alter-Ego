@@ -2,27 +2,27 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import {
-    type Credentials,
-    loadCredentials,
-    parseCredentialsFile,
-    readCredentialsEnv
-} from "../../Modules/credentialsLoader.js";
-import {readFile} from "fs/promises";
+vi.mock("fs", () => ({
+    readFileSync: vi.fn()
+}));
+
 import {readFileSync} from "fs";
-
-vi.mock("node:fs/promises");
-vi.mock("node:fs");
-
-const mockedReadFile = vi.mocked(readFile);
 const mockedReadFileSync = vi.mocked(readFileSync);
 
+import type { Credentials } from "../../Modules/credentialsLoader.ts";
+let loadCredentials: typeof import("../../Modules/credentialsLoader.ts").loadCredentials;
+let parseCredentialsFile: typeof import("../../Modules/credentialsLoader.ts").parseCredentialsFile;
+let readCredentialsEnv: typeof import("../../Modules/credentialsLoader.ts").readCredentialsEnv;
+
 describe("credentialsLoader tests", () => {
-    beforeEach(() => {
-        mockedReadFile.mockReset();
-        mockedReadFileSync.mockReset();
+    beforeEach(async () => {
         vi.unstubAllEnvs();
         mockEmptyCredentialsEnv();
+        vi.resetModules();
+        const module = await import("../../Modules/credentialsLoader.ts");
+        loadCredentials = module.loadCredentials;
+        parseCredentialsFile = module.parseCredentialsFile;
+        readCredentialsEnv = module.readCredentialsEnv;
     });
 
     afterAll(() => {
