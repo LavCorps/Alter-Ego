@@ -4,7 +4,7 @@
 
 import PlayerCommand from "../../Classes/PlayerCommand.ts";
 import {usage, execute, config} from "../../Commands/status_player.js";
-import {clearQueue, sendQueuedMessages} from "../../Modules/messageHandler.js";
+import {clearQueue, sendQueuedMessages} from "../../Modules/messageHandler.ts";
 import {createMockMessage} from "../__mocks__/libs/discord.js";
 import GameCommunicationHandler from "../../Classes/GameCommunicationHandler.ts";
 import Status from "../../Data/Status.ts";

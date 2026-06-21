@@ -52,7 +52,7 @@ export default class BotInteractionHandler {
 	 * @param customId
 	 */
 	getInteractable(customId: string): Interactable {
-		return this.#game.botContext.interactableManager.getInteractableByCustomId(customId);
+		return this.#game.clientContext.interactableManager.getInteractableByCustomId(customId);
 	}
 
 	/**
@@ -333,7 +333,7 @@ export default class BotInteractionHandler {
             else {
                 const args = interactable.actionDirective.getArgs();
                 if (args.length === 5 && args[0] === "II") {
-                    const modal = await this.#game.botContext.interactableManager.createInstantiateInventoryItemActionModalInteractable(args as [string, string, string, string], player, user);
+                    const modal = await this.#game.clientContext.interactableManager.createInstantiateInventoryItemActionModalInteractable(args as [string, string, string, string], player, user);
                     await interaction.showModal(modal.component);
                     return true;
                 }
@@ -361,7 +361,7 @@ export default class BotInteractionHandler {
             else {
                 const args = interactable.actionDirective.getArgs();
                 if (args.length >= 4 && (args[0] === "F" || args[0] === "RI" || args[0] === "PZ")) {
-                    const modal = await this.#game.botContext.interactableManager.createInstantiateRoomItemActionModalInteractable(args, user);
+                    const modal = await this.#game.clientContext.interactableManager.createInstantiateRoomItemActionModalInteractable(args, user);
                     await interaction.showModal(modal.component);
                     return true;
                 }
@@ -473,6 +473,6 @@ export default class BotInteractionHandler {
      * @param args - The array of validated arguments for the interaction.
      */
     #logInteraction(type: string, author: string, timestamp: Date, args: any[]): void {
-        this.#game.botContext.logCommand(author, `${type} Interactable: ${args.map((value) => this.#game.botContext.prettyPrinter.miniString(value)).join(",")}`, timestamp);
+        this.#game.clientContext.logCommand(author, `${type} Interactable: ${args.map((value) => this.#game.clientContext.prettyPrinter.miniString(value)).join(",")}`, timestamp);
     }
 }

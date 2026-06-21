@@ -43,7 +43,7 @@ import DestroyInventoryItemAction from "../Data/Actions/DestroyInventoryItemActi
 import DestroyRoomItemAction from "../Data/Actions/DestroyRoomItemAction.ts";
 import FindAction from "../Data/Actions/FindAction.ts";
 import ViewAction, { type EntityField } from "../Data/Actions/ViewAction.ts";
-import { removeInteractablesFromMessage } from "../Modules/messageHandler.js";
+import { removeInteractablesFromMessage } from "../Modules/messageHandler.ts";
 import { ActionPriority } from "../Modules/enums.js";
 import { capitalizeFirstLetter, getSortedItems } from "../Modules/helpers.ts";
 
@@ -76,112 +76,112 @@ interface InteractableMessage {
  * A set of functions for creating and managing Interactables.
  */
 export default class BotInteractableManager {
-	/**
-	 * The game this belongs to.
-	 */
+    /**
+     * The game this belongs to.
+     */
     readonly #game: Game;
-	/**
-	 * A cache of recently-created Interactables, indexed by their custom IDs.
-	 * This is used to look up Interactables when an interaction is received.
-	 */
-	readonly #interactableCache: Collection<string, Interactable>;
-	/**
-	 * The maximum number of Interactables to keep in the cache at once. If the cache exceeds this size, the oldest Interactable will be removed.
-	 */
-	readonly #interactableCacheSizeLimit = 500;
-	/**
-	 * A cache of messages with Interactables, indexed by message ID. This is used to keep track of which messages have interactables on them, so that we can disable those interactables when they're no longer valid.
-	 */
+    /**
+     * A cache of recently-created Interactables, indexed by their custom IDs.
+     * This is used to look up Interactables when an interaction is received.
+     */
+    readonly #interactableCache: Collection<string, Interactable>;
+    /**
+     * The maximum number of Interactables to keep in the cache at once. If the cache exceeds this size, the oldest Interactable will be removed.
+     */
+    readonly #interactableCacheSizeLimit = 500;
+    /**
+     * A cache of messages with Interactables, indexed by message ID. This is used to keep track of which messages have interactables on them, so that we can disable those interactables when they're no longer valid.
+     */
     readonly #interactableMessageCache: Collection<InteractableMessage, string[]>;
-	/**
-	 * The maximum number of Interactable messages to keep in the cache at once. If the cache exceeds this size, the oldest message will be removed.
-	 */
+    /**
+     * The maximum number of Interactable messages to keep in the cache at once. If the cache exceeds this size, the oldest message will be removed.
+     */
     readonly #interactableMessageCacheSizeLimit = 50;
     /**
      * The maximum amount of time that interactables are valid for.
      */
     readonly interactableValidTime = 5 * 60 * 1000;
 
-	/**
-	 * @param game - The game this belongs to.
-	 */
-	constructor(game: Game) {
-		this.#game = game;
-		this.#interactableCache = new Collection();
-		this.#interactableMessageCache = new Collection();
-	}
+    /**
+     * @param game - The game this belongs to.
+     */
+    constructor(game: Game) {
+        this.#game = game;
+        this.#interactableCache = new Collection();
+        this.#interactableMessageCache = new Collection();
+    }
 
-	/**
-	 * Gets an interactable from the cache by its custom ID.
-	 * @param customId
-	 */
-	getInteractableByCustomId(customId: string) {
-		return this.#interactableCache.get(customId);
-	}
+    /**
+     * Gets an interactable from the cache by its custom ID.
+     * @param customId
+     */
+    getInteractableByCustomId(customId: string) {
+        return this.#interactableCache.get(customId);
+    }
 
-	/**
-	 * Adds an interactable to the cache, removing the oldest one if the cache size limit is exceeded.
-	 * Interactables are valid for 5 minutes after being added. They are automatically removed from the cache after this time.
-	 * @param interactable
-	 */
-	addInteractable(interactable: Interactable) {
-		if (this.#interactableCache.size >= this.#interactableCacheSizeLimit)
-			this.disableInteractable(this.#interactableCache.firstKey());
-		if (this.#interactableCache.has(interactable.customId))
-			this.disableInteractable(interactable.customId);
-		this.#interactableCache.set(interactable.customId, interactable);
-	}
+    /**
+     * Adds an interactable to the cache, removing the oldest one if the cache size limit is exceeded.
+     * Interactables are valid for 5 minutes after being added. They are automatically removed from the cache after this time.
+     * @param interactable
+     */
+    addInteractable(interactable: Interactable) {
+        if (this.#interactableCache.size >= this.#interactableCacheSizeLimit)
+            this.disableInteractable(this.#interactableCache.firstKey());
+        if (this.#interactableCache.has(interactable.customId))
+            this.disableInteractable(interactable.customId);
+        this.#interactableCache.set(interactable.customId, interactable);
+    }
 
-	/**
-	 * Disables an interactable and removes it from the cache by its custom ID.
-	 * @param customId
-	 */
-	disableInteractable(customId: string) {
-		const interactable = this.#interactableCache.get(customId);
-		if (interactable) {
-			this.#interactableCache.delete(customId);
-		}
-	}
+    /**
+     * Disables an interactable and removes it from the cache by its custom ID.
+     * @param customId
+     */
+    disableInteractable(customId: string) {
+        const interactable = this.#interactableCache.get(customId);
+        if (interactable) {
+            this.#interactableCache.delete(customId);
+        }
+    }
 
-	/**
-	 * Adds an interactable message to the cache, removing the oldest one if the cache size limit is exceeded.
-	 * @param channelId - The ID of the channel the message is in.
-	 * @param messageId - The ID of the message with interactables on it.
-	 * @param interactableCustomIds - The custom IDs of the interactables on the message.
-	 */
-	addInteractableMessage(channelId: string, messageId: string, interactableCustomIds: string[]) {
-		const key = { channelId: channelId, messageId: messageId };
-		if (this.#interactableMessageCache.size >= this.#interactableMessageCacheSizeLimit)
-			this.disableInteractableMessage(this.#interactableMessageCache.firstKey());
-		this.#interactableMessageCache.set(key, interactableCustomIds);
-		setTimeout(() => this.disableInteractableMessage(key), this.interactableValidTime);
-	}
+    /**
+     * Adds an interactable message to the cache, removing the oldest one if the cache size limit is exceeded.
+     * @param channelId - The ID of the channel the message is in.
+     * @param messageId - The ID of the message with interactables on it.
+     * @param interactableCustomIds - The custom IDs of the interactables on the message.
+     */
+    addInteractableMessage(channelId: string, messageId: string, interactableCustomIds: string[]) {
+        const key = { channelId: channelId, messageId: messageId };
+        if (this.#interactableMessageCache.size >= this.#interactableMessageCacheSizeLimit)
+            this.disableInteractableMessage(this.#interactableMessageCache.firstKey());
+        this.#interactableMessageCache.set(key, interactableCustomIds);
+        setTimeout(() => this.disableInteractableMessage(key), this.interactableValidTime);
+    }
 
-	/**
-	 * Disables all interactables associated with a message and removes the message from the cache.
-	 * @param interactableMessage - The message with interactables on it to disable.
-	 */
-	async disableInteractableMessage(interactableMessage: InteractableMessage) {
-		const message = await this.#getInteractableMessage(interactableMessage);
-		if (message) removeInteractablesFromMessage(message);
-		const interactableCustomIds = this.#interactableMessageCache.get(interactableMessage);
-		if (interactableCustomIds) {
-			for (const customId of interactableCustomIds) {
-				this.disableInteractable(customId);
-			}
-			this.#interactableMessageCache.delete(interactableMessage);
-		}
-	}
+    /**
+     * Disables all interactables associated with a message and removes the message from the cache.
+     * @param interactableMessage - The message with interactables on it to disable.
+     */
+    async disableInteractableMessage(interactableMessage: InteractableMessage) {
+        const message = await this.#getInteractableMessage(interactableMessage);
+        if (message) removeInteractablesFromMessage(message);
+        const interactableCustomIds = this.#interactableMessageCache.get(interactableMessage);
+        if (interactableCustomIds) {
+            for (const customId of interactableCustomIds) {
+                this.disableInteractable(customId);
+            }
+            this.#interactableMessageCache.delete(interactableMessage);
+        }
+    }
 
-	/**
-	 * Fetches a message from Discord by its channel ID and message ID, and returns it if it exists.
-	 * @param interactableMessage - The message to fetch, represented by its channel ID and message ID.
-	 */
-	async #getInteractableMessage(interactableMessage: InteractableMessage) {
-		const channel = await this.#game.botContext.client.channels.fetch(interactableMessage.channelId);
-		if (!channel.isTextBased()) return;
-		return await channel.messages.fetch(interactableMessage.messageId);
-	}
+    /**
+     * Fetches a message from Discord by its channel ID and message ID, and returns it if it exists.
+     * @param interactableMessage - The message to fetch, represented by its channel ID and message ID.
+     */
+    async #getInteractableMessage(interactableMessage: InteractableMessage) {
+        const channel = await this.#game.clientContext.client.channels.fetch(interactableMessage.channelId);
+        if (!channel.isTextBased()) return;
+        return await channel.messages.fetch(interactableMessage.messageId);
+    }
 
     /**
      * Creates an action directive for the given action class and arguments, and generates a custom ID for it based on the player it's being created for.
@@ -259,29 +259,29 @@ export default class BotInteractableManager {
         return [pagePrevButton, pageNextButton];
     }
 
-	/**
-	 * Creates QueueMoveAction interactables for a list of exits and adds them to the cache.
-	 * @param exits - A list of exits to create interactables for.
-	 * @param player - The player these interactables are being created for. This is used to determine which exits the player can use.
+    /**
+     * Creates QueueMoveAction interactables for a list of exits and adds them to the cache.
+     * @param exits - A list of exits to create interactables for.
+     * @param player - The player these interactables are being created for. This is used to determine which exits the player can use.
      * @param user - The user these interactables are being created for. Defaults to the given player.
-	 */
-	async createQueueMoveActionInteractables(exits: Exit[], player: Player, user: User = player): Promise<ButtonInteractable[]> {
-		const moveButtons: ButtonInteractable[] = [];
-		const runButtons: ButtonInteractable[] = [];
-		for (const exit of exits) {
-			if (!player.hasBehaviorAttribute("disable move")) {
+     */
+    async createQueueMoveActionInteractables(exits: Exit[], player: Player, user: User = player): Promise<ButtonInteractable[]> {
+        const moveButtons: ButtonInteractable[] = [];
+        const runButtons: ButtonInteractable[] = [];
+        for (const exit of exits) {
+            if (player.canUseCommand("move")) {
                 const actionDirective = await this.#createActionDirective(QueueMoveAction, exit.getQueueMoveActionDirectiveArgs(player.location, false), player, user);
-				const buttonOptions = new InteractableOptions(actionDirective, `Move ${exit.name}`);
+                const buttonOptions = new InteractableOptions(actionDirective, `Move ${exit.name}`);
                 moveButtons.push(this.#createButtonInteractable(buttonOptions, ButtonStyle.Primary, ActionPriority.QUEUE_MOVE));
-			}
-			if (!player.hasBehaviorAttribute("disable run")) {
+            }
+            if (player.canUseCommand("run")) {
                 const actionDirective = await this.#createActionDirective(QueueMoveAction, exit.getQueueMoveActionDirectiveArgs(player.location, true), player, user);
                 const buttonOptions = new InteractableOptions(actionDirective, `Run ${exit.name}`);
                 runButtons.push(this.#createButtonInteractable(buttonOptions, ButtonStyle.Danger, ActionPriority.QUEUE_RUN));
-			}
-		}
-		return moveButtons.concat(runButtons);
-	}
+            }
+        }
+        return moveButtons.concat(runButtons);
+    }
 
     /**
      * Creates a StopAction interactable and adds it to the cache.
@@ -295,39 +295,39 @@ export default class BotInteractableManager {
         return [this.#createButtonInteractable(interactableOptions, ButtonStyle.Danger, ActionPriority.STOP)];
     }
 
-	/**
-	 * Creates StringSelectMenuInteractable for a list of inspectable game entities and adds it to the cache.
-	 * @param entities - A list of inspectable game entities to create StringSelectMenuOptionInteractables for.
-	 * @param player - The player these interactables are being created for.
+    /**
+     * Creates StringSelectMenuInteractable for a list of inspectable game entities and adds it to the cache.
+     * @param entities - A list of inspectable game entities to create StringSelectMenuOptionInteractables for.
+     * @param player - The player these interactables are being created for.
      * @param user - The user these interactables are being created for. Defaults to the given player.
-	 */
-	async createInspectActionInteractable(entities: Inspectable[], player: Player, user: User = player): Promise<StringSelectMenuInteractable[]> {
+     */
+    async createInspectActionInteractable(entities: Inspectable[], player: Player, user: User = player): Promise<StringSelectMenuInteractable[]> {
         if (!player.canUseCommand("inspect")) return [];
         const interactableOptions: InteractableOptions<InspectAction>[] = [];
-		for (const entity of entities) {
+        for (const entity of entities) {
             const actionDirective = await this.#createActionDirective(InspectAction, entity.getInspectActionDirectiveArgs(), player, user);
-			const label = entity instanceof Player ? entity.displayName : entity.name;
-			const containerString = entity instanceof ItemInstance  && entity.container ?
-				entity.container instanceof ItemInstance && entity.container.inventory.size > 1 ?
-					` ${entity.container.getPreposition()} ${entity.slot} of ${entity.container.name}`
-					: ` ${entity.container.getPreposition()} ${entity.container.name}`
-				: "";
+            const label = entity instanceof Player ? entity.displayName : entity.name;
+            const containerString = entity instanceof ItemInstance && entity.container ?
+                entity.container instanceof ItemInstance && entity.container.inventory.size > 1 ?
+                    ` ${entity.container.getPreposition()} ${entity.slot} of ${entity.container.name}`
+                    : ` ${entity.container.getPreposition()} ${entity.container.name}`
+                : "";
             const description = `Inspect ${label}${containerString}`;
             interactableOptions.push(new InteractableOptions(actionDirective, label, label, description));
-		}
+        }
         const actionDirective = await this.#createActionDirective(InspectAction, ["InspectAction Menu"], player, user);
         return this.#createStringSelectMenuInteractable(actionDirective, interactableOptions, "Inspect", ActionPriority.INSPECT);
-	}
+    }
 
-	/**
-	 * Creates Interactables for a list of takeable room items and adds them to the cache.
-	 * @param entities - A list of takeable room items to create StringSelectMenuOptionInteractables for.
-	 * @param player - The player these interactables are being created for.
+    /**
+     * Creates Interactables for a list of takeable room items and adds them to the cache.
+     * @param entities - A list of takeable room items to create StringSelectMenuOptionInteractables for.
+     * @param player - The player these interactables are being created for.
      * @param user - The user these interactables are being created for. Defaults to the given player.
-	 */
-	async createTakeActionInteractable(entities: RoomItem[], player: Player, user: User = player): Promise<(ButtonInteractable | StringSelectMenuInteractable)[]> {
+     */
+    async createTakeActionInteractable(entities: RoomItem[], player: Player, user: User = player): Promise<(ButtonInteractable | StringSelectMenuInteractable)[]> {
         if (!player.canUseCommand("take")) return [];
-		const interactableOptions: InteractableOptions<TakeAction>[] = [];
+        const interactableOptions: InteractableOptions<TakeAction>[] = [];
         for (const entity of entities) {
             const actionDirective = await this.#createActionDirective(TakeAction, entity.getTakeActionDirectiveArgs(), player, user);
             const containerString = entity.container instanceof RoomItem && entity.container.inventory.size > 1 ?
@@ -341,20 +341,20 @@ export default class BotInteractableManager {
         if (interactableOptions.length > 2) {
             const actionDirective = await this.#createActionDirective(TakeAction, ["TakeAction Menu"], player, user);
             return this.#createStringSelectMenuInteractable(actionDirective, interactableOptions, "Take", ActionPriority.TAKE);
-		}
-		else return this.#createButtonInteractables(interactableOptions, ButtonStyle.Primary, ActionPriority.TAKE);
-	}
+        }
+        else return this.#createButtonInteractables(interactableOptions, ButtonStyle.Primary, ActionPriority.TAKE);
+    }
 
-	/**
-	 * Creates Interactables for a list of droppable inventory items and adds them to the cache.
-	 * @param entities - A list of takeable room items to create Interactables for.
-	 * @param player - The player these interactables are being created for.
-	 * @param container - The fixture or room item the player is dropping the items into.
+    /**
+     * Creates Interactables for a list of droppable inventory items and adds them to the cache.
+     * @param entities - A list of takeable room items to create Interactables for.
+     * @param player - The player these interactables are being created for.
+     * @param container - The fixture or room item the player is dropping the items into.
      * @param user - The user these interactables are being created for. Defaults to the given player.
-	 */
-	async createDropActionInteractables(entities: InventoryItem[], player: Player, container: RoomItemContainer, user: User = player): Promise<(ButtonInteractable | StringSelectMenuInteractable)[]> {
+     */
+    async createDropActionInteractables(entities: InventoryItem[], player: Player, container: RoomItemContainer, user: User = player): Promise<(ButtonInteractable | StringSelectMenuInteractable)[]> {
         if (!player.canUseCommand("drop")) return [];
-		const interactableOptions: InteractableOptions<DropAction>[] = [];
+        const interactableOptions: InteractableOptions<DropAction>[] = [];
         for (const entity of entities) {
             const containerType = container instanceof RoomItem ? 'RoomItem' : container instanceof Fixture ? 'Fixture' : 'Puzzle';
             const buttonLabel = `Drop ${entity.name}`;
@@ -381,16 +381,16 @@ export default class BotInteractableManager {
             return this.#createStringSelectMenuInteractable(actionDirective, interactableOptions, "Drop", ActionPriority.DROP);
         }
         else return this.#createButtonInteractables(interactableOptions, ButtonStyle.Primary, ActionPriority.DROP);
-	}
+    }
 
-	/**
-	 * Creates Interactables for a list of stashable inventory items and adds them to the cache.
-	 * @param entities - A list of stashable inventory items to create Interactables for.
-	 * @param player - The player these interactables are being created for.
-	 * @param viableContainers - A map of viable stash containers to the inventory slots the item can be stashed into. This is used to determine which stash options to create for each item.
+    /**
+     * Creates Interactables for a list of stashable inventory items and adds them to the cache.
+     * @param entities - A list of stashable inventory items to create Interactables for.
+     * @param player - The player these interactables are being created for.
+     * @param viableContainers - A map of viable stash containers to the inventory slots the item can be stashed into. This is used to determine which stash options to create for each item.
      * @param user - The user these interactables are being created for. Defaults to the given player.
-	 */
-	async createStashActionInteractables(entities: InventoryItem[], player: Player, viableContainers: Map<InventoryItem, string[]>, user: User = player): Promise<(ButtonInteractable | StringSelectMenuInteractable)[]> {
+     */
+    async createStashActionInteractables(entities: InventoryItem[], player: Player, viableContainers: Map<InventoryItem, string[]>, user: User = player): Promise<(ButtonInteractable | StringSelectMenuInteractable)[]> {
         if (!player.canUseCommand("stash")) return [];
         const interactableOptions: InteractableOptions<StashAction>[] = [];
         for (const entity of entities) {
@@ -411,19 +411,19 @@ export default class BotInteractableManager {
         if (viableContainers.values().reduce((sum, inventorySlots) => sum + inventorySlots.length, 0) > 2) {
             const actionDirective = await this.#createActionDirective(StashAction, ["StashAction Menu"], player, user);
             return this.#createStringSelectMenuInteractable(actionDirective, interactableOptions, "Stash", ActionPriority.STASH);
-		}
-		else return this.#createButtonInteractables(interactableOptions, ButtonStyle.Primary, ActionPriority.STASH);
-	}
+        }
+        else return this.#createButtonInteractables(interactableOptions, ButtonStyle.Primary, ActionPriority.STASH);
+    }
 
-	/**
-	 * Creates Interactables for a list of unstashable inventory items and adds them to the cache.
-	 * @param entities - A list of unstashable inventory items to create Interactables for.
-	 * @param player - The player these interactables are being created for.
+    /**
+     * Creates Interactables for a list of unstashable inventory items and adds them to the cache.
+     * @param entities - A list of unstashable inventory items to create Interactables for.
+     * @param player - The player these interactables are being created for.
      * @param user - The user these interactables are being created for. Defaults to the given player.
-	 */
-	async createUnstashActionInteractables(entities: InventoryItem[], player: Player, user: User = player): Promise<(ButtonInteractable | StringSelectMenuInteractable)[]> {
+     */
+    async createUnstashActionInteractables(entities: InventoryItem[], player: Player, user: User = player): Promise<(ButtonInteractable | StringSelectMenuInteractable)[]> {
         if (!player.canUseCommand("unstash")) return [];
-		const interactableOptions: InteractableOptions<UnstashAction>[] = [];
+        const interactableOptions: InteractableOptions<UnstashAction>[] = [];
         for (const entity of entities) {
             const actionDirective = await this.#createActionDirective(UnstashAction, entity.getUnstashActionDirectiveArgs(), player, user);
             const stringSelectLabel = `${entity.name}`;
@@ -435,19 +435,19 @@ export default class BotInteractableManager {
             interactableOptions.push(new InteractableOptions(actionDirective, buttonLabel, stringSelectLabel, description));
         }
         const uniqueEntityNames = new Set(entities.map(entity => entity.name));
-		if (entities.length > 4 || uniqueEntityNames.size !== entities.length) {
+        if (entities.length > 4 || uniqueEntityNames.size !== entities.length) {
             const actionDirective = await this.#createActionDirective(UnstashAction, ["UnstashAction Menu"], player, user);
             return this.#createStringSelectMenuInteractable(actionDirective, interactableOptions, "Unstash", ActionPriority.UNSTASH);
-		}
-		else return this.#createButtonInteractables(interactableOptions, ButtonStyle.Primary, ActionPriority.UNSTASH);
-	}
+        }
+        else return this.#createButtonInteractables(interactableOptions, ButtonStyle.Primary, ActionPriority.UNSTASH);
+    }
 
     /**
-	 * Creates Interactables for a list of equippable inventory items and adds them to the cache.
+     * Creates Interactables for a list of equippable inventory items and adds them to the cache.
      * @param equippableItems - A map of equippable items and the IDs of equipment slots they can be equipped to.
-	 * @param player - The player these interactables are being created for.
+     * @param player - The player these interactables are being created for.
      * @param user - The user these interactables are being created for. Defaults to the given player.
-	 */
+     */
     async createEquipActionInteractables(equippableItems: Map<InventoryItem, string[]>, player: Player, user: User = player): Promise<(ButtonInteractable | StringSelectMenuInteractable)[]> {
         if (!player.canUseCommand("equip")) return [];
         const interactableOptions: InteractableOptions<EquipAction>[] = [];
@@ -465,8 +465,8 @@ export default class BotInteractableManager {
         if (equippableItems.values().reduce((sum, equipmentSlots) => sum + equipmentSlots.length, 0) > 1) {
             const actionDirective = await this.#createActionDirective(EquipAction, ["EquipAction Menu"], player, user);
             return this.#createStringSelectMenuInteractable(actionDirective, interactableOptions, "Equip", ActionPriority.EQUIP);
-		}
-		else return this.#createButtonInteractables(interactableOptions, ButtonStyle.Secondary, ActionPriority.EQUIP);
+        }
+        else return this.#createButtonInteractables(interactableOptions, ButtonStyle.Secondary, ActionPriority.EQUIP);
     }
 
     /**
@@ -515,11 +515,11 @@ export default class BotInteractableManager {
     }
 
     /**
-	 * Creates Interactables for a list of usable inventory items and adds them to the cache.
+     * Creates Interactables for a list of usable inventory items and adds them to the cache.
      * @param usableItems - An array of usable inventory items in the player's hands.
-	 * @param player - The player these interactables are being created for.
+     * @param player - The player these interactables are being created for.
      * @param user - The user these interactables are being created for. Defaults to the given player.
-	 */
+     */
     async createUseActionInteractables(usableItems: InventoryItem[], player: Player, user: User = player): Promise<StringSelectMenuInteractable[]> {
         if (!player.canUseCommand("use")) return [];
         const interactableOptions: InteractableOptions<UseAction>[] = [];
@@ -774,7 +774,7 @@ export default class BotInteractableManager {
      * @param container - The container to search in.
      * @param user - The user these interactables are being created for.
      */
-    async createFindContainedItemsActionInteractables(container: RoomItemContainer|InventoryItem, user: User): Promise<(ButtonInteractable | StringSelectMenuInteractable)[]> {
+    async createFindContainedItemsActionInteractables(container: RoomItemContainer | InventoryItem, user: User): Promise<(ButtonInteractable | StringSelectMenuInteractable)[]> {
         const interactableOptions: InteractableOptions<FindAction>[] = [];
         let inventorySlotIDs: string[] = [undefined];
         if ((container instanceof RoomItem || container instanceof InventoryItem) && container.inventory.size > 1) {
@@ -806,7 +806,7 @@ export default class BotInteractableManager {
      * @param user - The user these interactables are being created for.
      * @returns An array of button interactables, if the number of fields is less than or equal to 5. Otherwise, returns an array containing one string select menu interactable.
      */
-    async createViewFieldActionInteractables<T extends PersistentGameEntity>(entity: T, fields: EntityField<T>[], user: User): Promise<(ButtonInteractable|StringSelectMenuInteractable)[]> {
+    async createViewFieldActionInteractables<T extends PersistentGameEntity>(entity: T, fields: EntityField<T>[], user: User): Promise<(ButtonInteractable | StringSelectMenuInteractable)[]> {
         const interactableOptions: InteractableOptions<ViewAction>[] = [];
         for (const field of fields) {
             const actionDirective = await this.#createActionDirective(ViewAction, [entity.getEntityType(), entity.row, field], undefined, user);
@@ -1143,7 +1143,7 @@ export default class BotInteractableManager {
      * @param container - The container to search in.
      * @param user - The user these interactables are being created for.
      */
-    async getFindContainedItemsInteractables(container: RoomItemContainer|InventoryItem, user: User): Promise<Interactable[]> {
+    async getFindContainedItemsInteractables(container: RoomItemContainer | InventoryItem, user: User): Promise<Interactable[]> {
         let interactables: Interactable[] = [];
         if (container && !container.containsNoItems())
             interactables = interactables.concat(await this.createFindContainedItemsActionInteractables(container, user));

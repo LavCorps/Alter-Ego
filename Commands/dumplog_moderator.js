@@ -41,8 +41,8 @@ export function usage(settings) {
  * @param {Moderator} moderator - The moderator who issued the command.
  */
 export async function execute(game, message, command, args, moderator) {
-    const dataGame = game.botContext.prettyPrinter.prettyString(game);
-    const dataLog = game.botContext.prettyPrinter.prettyString(game.botContext.commandLog);
+    const dataGame = game.clientContext.prettyPrinter.prettyString(game);
+    const dataLog = game.clientContext.prettyPrinter.prettyString(game.clientContext.commandLog);
 
     let bufferGame = null
     let bufferLog = null

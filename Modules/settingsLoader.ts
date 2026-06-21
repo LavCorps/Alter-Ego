@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import GameSettings from "../Classes/GameSettings.ts";
-import BotContext from "../Classes/BotContext.ts";
+import ClientContext from "../Classes/ClientContext.ts";
 import { type Activity } from "../Classes/GameSettings.ts";
 
 export interface PlayerDefaults {
@@ -40,15 +40,15 @@ export const DEFAULT_GAME_SETTINGS: GameSettings = {
     autoLoad: false,
     onlineActivity: {
         name: "Waiting for commands...",
-        type: BotContext.getActivityType("CUSTOM")
+        type: ClientContext.getActivityType("CUSTOM")
     },
     debugModeActivity: {
         name: "Debug Mode",
-        type: BotContext.getActivityType("PLAYING")
+        type: ClientContext.getActivityType("PLAYING")
     },
     gameInProgressActivity: {
         name: "NWP",
-        type: BotContext.getActivityType("STREAMING"),
+        type: ClientContext.getActivityType("STREAMING"),
         url: "https://www.twitch.tv/twitch"
     },
     readMessageHistory: false
@@ -154,7 +154,7 @@ export function loadGameSettings(): [GameSettings, string[]] {
     const onlineActivityString = process.env.ONLINE_ACTIVITY_STRING ?? DEFAULT_GAME_SETTINGS.onlineActivity.name;
     const onlineActivityType = () => {
         if (process.env.ONLINE_ACTIVITY_TYPE === undefined) return DEFAULT_GAME_SETTINGS.onlineActivity.type;
-        else return BotContext.getActivityType(process.env.ONLINE_ACTIVITY_TYPE);
+        else return ClientContext.getActivityType(process.env.ONLINE_ACTIVITY_TYPE);
     };
     const onlineActivity: Activity = {
         name: onlineActivityString,
@@ -164,7 +164,7 @@ export function loadGameSettings(): [GameSettings, string[]] {
     const debugModeActivityString = process.env.DEBUG_MODE_ACTIVITY_STRING ?? DEFAULT_GAME_SETTINGS.debugModeActivity.name;
     const debugModeActivityType = () => {
         if (process.env.DEBUG_MODE_ACTIVITY_TYPE === undefined) return DEFAULT_GAME_SETTINGS.debugModeActivity.type;
-        else return BotContext.getActivityType(process.env.DEBUG_MODE_ACTIVITY_TYPE);
+        else return ClientContext.getActivityType(process.env.DEBUG_MODE_ACTIVITY_TYPE);
     };
     const debugModeActivity: Activity = {
         name: debugModeActivityString,
@@ -174,7 +174,7 @@ export function loadGameSettings(): [GameSettings, string[]] {
     const gameInProgressActivityString = process.env.GAME_IN_PROGRESS_ACTIVITY_STRING ?? DEFAULT_GAME_SETTINGS.gameInProgressActivity.name;
     const gameInProgressActivityType = () => {
         if (process.env.GAME_IN_PROGRESS_ACTIVITY_TYPE === undefined) return DEFAULT_GAME_SETTINGS.gameInProgressActivity.type;
-        else return BotContext.getActivityType(process.env.GAME_IN_PROGRESS_ACTIVITY_TYPE);
+        else return ClientContext.getActivityType(process.env.GAME_IN_PROGRESS_ACTIVITY_TYPE);
     }
     const gameInProgressActivityUrl = process.env.GAME_IN_PROGRESS_ACTIVITY_URL ?? DEFAULT_GAME_SETTINGS.gameInProgressActivity.url;
     const gameInProgressActivity: Activity = {

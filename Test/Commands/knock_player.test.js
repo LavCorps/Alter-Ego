@@ -5,7 +5,7 @@
 import PlayerCommand from '../../Classes/PlayerCommand.ts';
 import { usage, execute, config } from '../../Commands/knock_player.js'
 import KnockAction from '../../Data/Actions/KnockAction.ts';
-import { clearQueue, sendQueuedMessages } from '../../Modules/messageHandler.js';
+import { clearQueue, sendQueuedMessages } from '../../Modules/messageHandler.ts';
 import { createMockMessage } from '../__mocks__/libs/discord.js';
 
 describe('knock_player command', () => {

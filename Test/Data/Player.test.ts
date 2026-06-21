@@ -2,10 +2,287 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import type Player from "../../Data/Player.ts";
+import type Exit from "../../Data/Exit.ts";
+
 describe('Player test', () => {
 	beforeAll(async () => {
 		if (!game.inProgress) await game.entityLoader.loadAll();
 	});
+
+    describe('Movement speed', () => {
+        let player: Player;
+        let exit: Exit;
+        let originalExitPos: Pos;
+        /**
+         * First number: speed stat.
+         *
+         * Second number: carry weight.
+         *
+         * Third number: expected move rate (walking).
+         *
+         * Fourth number: expected move rate (running).
+         *
+         * @remarks
+         * All of these values were calculated with a TI-84 Plus CE, using the following equations and variables:
+         *
+         * Y₁=(0.018x(RX)²+0.005RX+0.916)Y₂
+         *
+         * Y₂=min(max(15/C,0.25),1)
+         *
+         * R=1 if player is walking, 2 if player is running
+         *
+         * C=player carry weight
+         */
+        const rateData = [
+            // Carry weight: 1
+            [1,  1, 0.9393,  0.9992],
+            [2,  1, 0.9992,  1.2288],
+            [3,  1, 1.0957,  1.6048],
+            [4,  1, 1.2288,  2.1272],
+            [5,  1, 1.3985,  2.7960],
+            [6,  1, 1.6048,  3.6112],
+            [7,  1, 1.8477,  4.5728],
+            [8,  1, 2.1272,  5.6808],
+            [9,  1, 2.4433,  6.9352],
+            [10, 1, 2.7960,  8.3360],
+            [11, 1, 3.1853,  9.8832],
+            [12, 1, 3.6112, 11.5768],
+            [13, 1, 4.0737, 13.4168],
+            [14, 1, 4.5728, 15.4032],
+            [15, 1, 5.1085, 17.5360],
+            [16, 1, 5.6808, 19.8152],
+            [17, 1, 6.2897, 22.2408],
+            [18, 1, 6.9352, 24.8128],
+            [19, 1, 7.6173, 27.5312],
+            [20, 1, 8.3360, 30.3960],
+            // Carry weight: 30
+            [1,  30, 0.4697,  0.4996],
+            [2,  30, 0.4996,  0.6144],
+            [3,  30, 0.5479,  0.8024],
+            [4,  30, 0.6144,  1.0636],
+            [5,  30, 0.6993,  1.3980],
+            [6,  30, 0.8024,  1.8056],
+            [7,  30, 0.9239,  2.2864],
+            [8,  30, 1.0636,  2.8404],
+            [9,  30, 1.2217,  3.4676],
+            [10, 30, 1.3980,  4.1680],
+            [11, 30, 1.5927,  4.9416],
+            [12, 30, 1.8056,  5.7884],
+            [13, 30, 2.0369,  6.7084],
+            [14, 30, 2.2864,  7.7016],
+            [15, 30, 2.5543,  8.7680],
+            [16, 30, 2.8404,  9.9076],
+            [17, 30, 3.1449, 11.1204],
+            [18, 30, 3.4676, 12.4064],
+            [19, 30, 3.8087, 13.7656],
+            [20, 30, 4.1680, 15.1980],
+            // Carry weight: 100
+            [1,  100, 0.2348, 0.2498],
+            [2,  100, 0.2498, 0.3072],
+            [3,  100, 0.2739, 0.4012],
+            [4,  100, 0.3072, 0.5318],
+            [5,  100, 0.3496, 0.6990],
+            [6,  100, 0.4012, 0.9028],
+            [7,  100, 0.4619, 1.1432],
+            [8,  100, 0.5318, 1.4202],
+            [9,  100, 0.6108, 1.7338],
+            [10, 100, 0.6990, 2.0840],
+            [11, 100, 0.7963, 2.4708],
+            [12, 100, 0.9028, 2.8942],
+            [13, 100, 1.0184, 3.3542],
+            [14, 100, 1.1432, 3.8508],
+            [15, 100, 1.2771, 4.3840],
+            [16, 100, 1.4202, 4.9538],
+            [17, 100, 1.5724, 5.5602],
+            [18, 100, 1.7338, 6.2032],
+            [19, 100, 1.9043, 6.8828],
+            [20, 100, 2.0840, 7.5990]
+        ];
+        /**
+         * First number: speed stat.
+         *
+         * Second number: X distance.
+         *
+         * Third number: Y distance.
+         *
+         * Fourth number: expected move time in milliseconds (walking).
+         *
+         * Fifth number: expected move time in milliseconds (running).
+         *
+         * @remarks
+         * All of these values were calculated with a TI-84 Plus CE, using the following equations and variables:
+         *
+         * Y₁=(0.018x(RX)²+0.005RX+0.916)Y₂
+         *
+         * Y₂=min(max(15/C,0.25),1)
+         *
+         * Y₃=Y₁-SY₁
+         *
+         * Y₄=D/Y₃*1000 [calculated time in milliseconds when flat distance is not 0]
+         *
+         * Y₅=(2*sqrt(2(I/2)²))/(Y₆*Y₁)*2*1000 [calculated time in milliseconds when flat distance is 0 but rise is not 0]
+         *
+         * Y₆=1-(I/abs(I)/3) [2/3rds if rise is positive, 4/3rds if rise is negative]
+         *
+         * R=1 if player is walking, 2 if player is running
+         *
+         * C=player carry weight
+         *
+         * D=[X distance in pixels]
+         *
+         * P=25 (pixels per meter)
+         *
+         * I=[Y distance in pixels]/P (rise in meters)
+         *
+         * S=I/D (slope)
+         */
+        const timeData = [
+            // X distance: 1000, Y distance: 0
+            [1,  1000, 0, 42584.904, 40032.026],
+            [2,  1000, 0, 40032.026, 32552.083],
+            [3,  1000, 0, 36506.343, 24925.224],
+            [4,  1000, 0, 32552.083, 18804.062],
+            [5,  1000, 0, 28602.074, 14306.152],
+            [6,  1000, 0, 24925.224, 11076.650],
+            [7,  1000, 0, 21648.536,  8747.376],
+            [8,  1000, 0, 18804.062,  7041.262],
+            [9,  1000, 0, 16371.301,  5767.678],
+            [10, 1000, 0, 14306.152,  4798.465],
+            [11, 1000, 0, 12557.687,  4047.272],
+            [12, 1000, 0, 11076.650,  3455.186],
+            [13, 1000, 0,  9819.083,  2981.337],
+            [14, 1000, 0,  8747.376,  2596.863],
+            [15, 1000, 0,  7830.087,  2281.022],
+            [16, 1000, 0,  7041.262,  2018.652],
+            [17, 1000, 0,  6359.604,  1798.497],
+            [18, 1000, 0,  5767.678,  1612.071],
+            [19, 1000, 0,  5251.205,  1452.897],
+            [20, 1000, 0,  4798.465,  1315.963],
+            // X distance: 2000, Y distance: 0
+            [1,  2000, 0, 85169.807, 80064.051],
+            [5,  2000, 0, 57204.147, 28612.303],
+            [10, 2000, 0, 28612.303,  9596.929],
+            [15, 2000, 0, 15660.174,  4562.044],
+            [20, 2000, 0,  9596.929,  2631.925],
+            // X distance: 5000, Y distance: 0
+            [1,  5000, 0, 212924.518, 200160.128],
+            [5,  5000, 0, 143010.368,  71530.758],
+            [10, 5000, 0,  71530.758,  23992.322],
+            [15, 5000, 0,  39150.436,  11405.109],
+            [20, 5000, 0,  23992.322,   6579.813],
+            // X distance: 1000, Y distance: 100
+            [1,  1000, 100, 47316.560, 44480.028],
+            [5,  1000, 100, 31780.082, 15895.724],
+            [10, 1000, 100, 15895.724,  5331.627],
+            [15, 1000, 100,  8700.097,  2534.469],
+            [20, 1000, 100,  5331.627,  1462.181],
+            // X distance: 1000, Y distance: -100
+            [1,  1000, -100, 38713.549, 36392.751],
+            [5,  1000, -100, 26001.885, 13005.592],
+            [10, 1000, -100, 13005.592,  4362.240],
+            [15, 1000, -100,  7118.261,  2073.656],
+            [20, 1000, -100,  4362.240,  1196.330],
+            // X distance: 1000, Y distance: 500
+            [1,  1000, 500, 85169.807, 80064.051],
+            [5,  1000, 500, 57204.147, 28612.303],
+            [10, 1000, 500, 28612.303,  9596.928],
+            [15, 1000, 500, 15660.174,  4562.044],
+            [20, 1000, 500,  9596.929,  2631.925],
+            // X distance: 1000, Y distance: -500
+            [1,  1000, -500, 28389.936, 26688.017],
+            [5,  1000, -500, 19068.049,  9537.434],
+            [10, 1000, -500,  9537.434,  3198.976],
+            [15, 1000, -500,  5220.058,  1520.681],
+            [20, 1000, -500,  3198.976,   877.308],
+            // X distance: 1000, Y distance: approaching 1000
+            [1, 1000,  900,  425849.037,  400320.256],
+            [1, 1000,  950,  851698.073,  800640.512],
+            [1, 1000,  999, 3600000.000, 3600000.000],
+            // X distance: 1000, Y distance: 1000
+            // We can expect the final rate to equal 0, which would cause a division by 0 error.
+            // As a fallback, these are treated as if the slope is 0.
+            [1,  1000, 1000, 42584.904, 40032.026],
+            [5,  1000, 1000, 28602.074, 14306.152],
+            [10, 1000, 1000, 14306.152,  4798.465],
+            [15, 1000, 1000,  7830.087,  2281.022],
+            [20, 1000, 1000,  4798.465,  1315.963],
+            // X distance: 1000, Y distance: -1000
+            [1,  1000, -1000, 21292.452, 20016.013],
+            [5,  1000, -1000, 14301.037,  7153.076],
+            [10, 1000, -1000,  7153.076,  2399.232],
+            [15, 1000, -1000,  3915.04,   1140.511],
+            [20, 1000, -1000,  2399.232,   657.981],
+            // X distance: 0, Y distance: 100 (stairwell calculation)
+            [1,  0, 100, 18067.244, 16984.150],
+            [5,  0, 100, 12134.832,  6069.586],
+            [10, 0, 100,  6069.586,  2035.816],
+            [15, 0, 100,  3322.025,   967.756],
+            [20, 0, 100,  2035.816,   558.316],
+            // X distance: 0, Y distance: -100 (stairwell calculation)
+            [1,  0, -100, 9033.622, 8492.075],
+            [5,  0, -100, 6067.416, 3034.793],
+            [10, 0, -100, 3034.793, 1017.908],
+            [15, 0, -100, 1661.012,  483.878],
+            [20, 0, -100, 1017.908,  279.158],
+            // X distance: 0, Y distance: 500 (stairwell calculation)
+            [1,  0, 500, 90336.222, 84920.750],
+            [5,  0, 500, 60674.161, 30347.931],
+            [10, 0, 500, 30347.931, 10179.080],
+            [15, 0, 500, 16610.123,  4838.778],
+            [20, 0, 500, 10179.080,  2791.578],
+            // X distance: 0, Y distance: -500 (stairwell calculation)
+            [1,  0, -500, 45168.111, 42460.375],
+            [5,  0, -500, 30337.080, 15173.965],
+            [10, 0, -500, 15173.965,  5089.540],
+            [15, 0, -500,  8305.062,  2419.389],
+            [20, 0, -500,  5089.540,  1395.789]
+        ];
+
+        beforeAll(() => {
+            player = game.entityFinder.getPlayer("Kyra");
+            exit = player.location.exits.at(0);
+            originalExitPos = exit.pos;
+        });
+
+        beforeEach(() => {
+            player.pos.x = 0;
+            player.pos.y = 0;
+            player.pos.z = 0;
+        });
+
+        afterEach(() => {
+            player.updateCarryWeight();
+        });
+
+        afterAll(() => {
+            player.pos.x = originalExitPos.x;
+            player.pos.y = originalExitPos.y;
+            player.pos.z = originalExitPos.z;
+        });
+
+        test.for(rateData)('calculateMoveRate for speed %i and carryWeight %i = %f (walking) and %f (running)',
+        ([speed, carryWeight, expectedWalkingRate, expectedRunningRate]) => {
+            player.carryWeight = carryWeight;
+            const walkingRate = player.calculateMoveRate(false, speed);
+            const runningRate = player.calculateMoveRate(true, speed);
+            expect(walkingRate).toBeCloseTo(expectedWalkingRate, 3);
+            expect(runningRate).toBeCloseTo(expectedRunningRate, 3);
+        });
+
+        test.for(timeData)('calculateMoveTime for speed %i, x distance %i, y distance %i = %f (walking) and %f (running)',
+        ([speed, xDist, yDist, expectedWalkingTime, expectedRunningTime]) => {
+            game.settings.pixelsPerMeter = 25;
+            player.carryWeight = 1;
+            exit.pos.x = xDist;
+            exit.pos.y = yDist;
+            exit.pos.z = 0;
+            const walkingTime = player.calculateMoveTime(exit, false, speed);
+            const runningTime = player.calculateMoveTime(exit, true, speed);
+            expect(walkingTime).toBeCloseTo(expectedWalkingTime, 2);
+            expect(runningTime).toBeCloseTo(expectedRunningTime, 2);
+        });
+    });
 
 	describe('Crafting', () => {
 		afterEach(async () => {

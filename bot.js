@@ -1,6 +1,6 @@
 'use strict';
 
-import BotContext from './Classes/BotContext.ts';
+import ClientContext from './Classes/ClientContext.ts';
 import GuildContext from './Classes/GuildContext.ts';
 import Game from './Data/Game.ts';
 
@@ -11,7 +11,7 @@ import EligibleCommand from './Classes/EligibleCommand.ts';
 
 import {createServerConfigFileIfNotExists, loadServerConfig, validateServerConfig} from './Modules/serverManager.ts';
 import { default as autoUpdate } from './Modules/updateHandler.js';
-import { editSpectatorMessage, deleteSpectatorMessage, processIncomingMessage } from './Modules/messageHandler.js';
+import { editSpectatorMessage, deleteSpectatorMessage, processIncomingMessage } from './Modules/messageHandler.ts';
 import { executeCommand } from './Modules/commandHandler.ts';
 
 import { Client, Collection, ChannelType, Events, GatewayIntentBits, Partials, TextChannel, Role, PermissionFlagsBits } from 'discord.js';
@@ -46,8 +46,8 @@ const client = new Client({
     ]
 });
 
-/** @type {BotContext} */
-let botContext;
+/** @type {ClientContext} */
+let clientContext;
 /** @type {GuildContext} */
 let guildContext;
 /** @type {Game} */
@@ -244,14 +244,14 @@ client.on('clientReady', async () => {
     await checkVersion();
     await autoUpdate(gameSettings);
     game = new Game(guildContext, gameSettings);
-    botContext = BotContext.Instance(client, botCommands, moderatorCommands, playerCommands, eligibleCommands, game);
-    game.setBotContext();
-    botContext.updatePresence();
+    clientContext = ClientContext.Instance(client, botCommands, moderatorCommands, playerCommands, eligibleCommands, game);
+    game.setClientContext();
+    clientContext.updatePresence();
     if (doSendFirstBootMessage) await sendFirstBootMessage(gameSettings);
     if (game.settings.autoLoad) {
         // Commands seem to need time to "settle". The snippet below breaks if run synchronously.
         setTimeout(() => {
-            let loadCommand = botContext.moderatorCommands.get("load_moderator");
+            let loadCommand = clientContext.moderatorCommands.get("load_moderator");
             if (loadCommand)
                 loadCommand.execute(game, undefined, "lar", []);
         }, 0);
@@ -312,7 +312,7 @@ client.on('messageDelete', async (message) => {
 
 client.on(Events.InteractionCreate, async (interaction) => {
     if (!initialized) return;
-    botContext.interactionHandler.interceptInteraction(interaction);
+    clientContext.interactionHandler.interceptInteraction(interaction);
 });
 
 process.on('unhandledRejection', error => {

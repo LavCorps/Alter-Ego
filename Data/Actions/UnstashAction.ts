@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import Action from "../Action.ts";
 import type EquipmentSlot from "../EquipmentSlot.ts";
 import InventoryItem from "../InventoryItem.ts";
@@ -45,8 +49,8 @@ export default class UnstashAction extends Action {
         if (args.length !== 1) return [];
         if (!args[0] || !(args[0] instanceof InventoryItem) || args[0].prefab === null) return [];
         const item = args[0];
-        if (this.player.hasBehaviorAttribute("disable unstash")) return [];
-        if (this.player.hasBehaviorAttribute("disable all") && !this.player.hasBehaviorAttribute("enable unstash")) return [];
+        const disabledStatusEffects = this.player.getStatusEffectsDisablingCommand("unstash");
+        if (disabledStatusEffects.length > 0) return [];
         if (item.quantity === 0) return [];
         const freeHand = this.getGame().entityFinder.getPlayerFreeHand(this.player);
         if (!freeHand) return [];

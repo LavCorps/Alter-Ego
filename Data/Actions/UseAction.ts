@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import Action from "../Action.ts";
 import InventoryItem from "../InventoryItem.ts";
 import Player from "../Player.ts";
@@ -8,27 +12,27 @@ import Player from "../Player.ts";
  * @see https://msvblank.github.io/Alter-Ego/reference/data_structures/action.html#use-action
  */
 export default class UseAction extends Action {
-	/**
-	 * Performs a use action.
-	 * @param item - The inventory item to use.
-	 * @param target - The target the player should use the inventory item on. Defaults to themself.
-	 * @param customNarration - The custom text of the narration. Optional.
-	 */
-	performUse(item: InventoryItem, target: Player = this.player, customNarration?: string): void {
-		if (this.performed) return;
-		super.perform();
-		this.getGame().narrationHandler.narrateUse(this, item, this.player, target, customNarration);
-		this.getGame().logHandler.logUse(item, this.player, target, this.forced);
+    /**
+     * Performs a use action.
+     * @param item - The inventory item to use.
+     * @param target - The target the player should use the inventory item on. Defaults to themself.
+     * @param customNarration - The custom text of the narration. Optional.
+     */
+    performUse(item: InventoryItem, target: Player = this.player, customNarration?: string): void {
+        if (this.performed) return;
+        super.perform();
+        this.getGame().narrationHandler.narrateUse(this, item, this.player, target, customNarration);
+        this.getGame().logHandler.logUse(item, this.player, target, this.forced);
         const itemIdentifier = item.getIdentifier();
-		this.player.use(item, target);
+        this.player.use(item, target);
         const targetString = target.name !== this.player.name ? `on ${target.name} ` : ``;
         this.successMessage = `Successfully used ${itemIdentifier} ${targetString}for ${this.player.name}.`;
-	}
+    }
 
     /**
      * Finds the required inventory item and target to call performUse.
-     * 
-     * @param args - The args as strings. 
+     *
+     * @param args - The args as strings.
      */
     parseInteractionArgs(args: string[]): [InventoryItem, Player] {
         const hand = this.getGame().entityFinder.getPlayerHandHoldingItem(this.player, args[0], args[2]);
@@ -38,15 +42,15 @@ export default class UseAction extends Action {
 
     /**
      * Validates the parsed args. The results can be passed directly into performUse.
-     * 
-     * @param args - The args after being parsed. 
+     *
+     * @param args - The args after being parsed.
      */
     validateInteractionArgs(args: [InventoryItem, Player]): [InventoryItem, Player] | [] {
         if (args.length !== 2) return [];
         if (!args[0] || !(args[0] instanceof InventoryItem) || args[0].prefab === null) return [];
         const item = args[0];
-        if (this.player.hasBehaviorAttribute("disable use")) return [];
-        if (this.player.hasBehaviorAttribute("disable all") && !this.player.hasBehaviorAttribute("enable use")) return [];
+        const disabledStatusEffects = this.player.getStatusEffectsDisablingCommand("use");
+        if (disabledStatusEffects.length > 0) return [];
         if (!args[1] || !(args[1] instanceof Player)) return [];
         const target = args[1];
         if (item.container !== null) return [];

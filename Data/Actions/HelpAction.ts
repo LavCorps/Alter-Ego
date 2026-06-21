@@ -1,6 +1,10 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import Action from "../Action.ts";
 import type Command from "../../Classes/Command.ts";
-import { createPaginatedEmbed } from "../../Modules/discordUtils.js";
+import { createPaginatedEmbed } from "../../Modules/discordUtils.ts";
 import { addPages } from "../../Modules/helpers.ts";
 import type { ButtonInteraction, Collection } from "discord.js";
 type CommandHelp = { command: string, description: string };
@@ -47,22 +51,22 @@ export default class HelpAction extends Action {
     async #getRoleCommands(role: "Bot" | "Moderator" | "Player" | "Eligible"): Promise<Collection<string, Command>> {
         let roleCommands: Collection<string, Command>;
         if (role === "Bot") {
-            roleCommands = this.getGame().botContext.botCommands;
+            roleCommands = this.getGame().clientContext.botCommands;
             this.#roleName = "Bot";
             this.#channel = this.getGame().guildContext.commandChannel;
         }
         else if (role === "Moderator") {
-            roleCommands = this.getGame().botContext.moderatorCommands;
+            roleCommands = this.getGame().clientContext.moderatorCommands;
             this.#roleName = this.getGame().guildContext.moderatorRole.name;
             this.#channel = this.getGame().guildContext.commandChannel;
         }
         else if (role === "Player") {
-            roleCommands = this.getGame().botContext.playerCommands;
+            roleCommands = this.getGame().clientContext.playerCommands;
             this.#roleName = this.getGame().guildContext.playerRole.name;
             this.#channel = this.player ? this.player.notificationChannel : await this.message.author.createDM();
         }
         else if (role === "Eligible") {
-            roleCommands = this.getGame().botContext.eligibleCommands;
+            roleCommands = this.getGame().clientContext.eligibleCommands;
             this.#roleName = this.getGame().settings.debug ? this.getGame().guildContext.testerRole.name : this.getGame().guildContext.eligibleRole.name;
             this.#channel = await this.message.author.createDM();
         }
@@ -122,7 +126,7 @@ export default class HelpAction extends Action {
             embed = createPaginatedEmbed(this.getGame(), page, commandListPages, embedAuthorName, embedAuthorIcon, embedDescription, fieldName, fieldValue);
             interaction.update({ embeds: [embed] });
         };
-        let interactables = this.getGame().botContext.interactableManager.createPaginationInteractables(this, prevPageCallback, nextPageCallback);
+        let interactables = this.getGame().clientContext.interactableManager.createPaginationInteractables(this, prevPageCallback, nextPageCallback);
         this.getGame().communicationHandler.sendToChannel(this.#channel, undefined, [embed], interactables);
     }
 }

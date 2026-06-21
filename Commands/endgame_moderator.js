@@ -1,4 +1,4 @@
-﻿import { clearQueue } from '../Modules/messageHandler.js';
+﻿import { clearQueue } from '../Modules/messageHandler.ts';
 
 /** @import Moderator from '../Data/Moderator.ts' */
 /** @import GameSettings from '../Classes/GameSettings.ts' */
@@ -59,7 +59,7 @@ export async function execute(game, message, command, args, moderator) {
     game.canJoin = false;
     clearQueue(game);
     if (!game.settings.debug)
-        game.botContext.updatePresence();
+        game.clientContext.updatePresence();
     game.entityLoader.clearAll();
     let channel;
     if (game.settings.debug) channel = game.guildContext.testingChannel;

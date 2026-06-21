@@ -9,7 +9,7 @@ import AttemptAction from "../../Data/Actions/AttemptAction.ts";
 import DeactivateAction from "../../Data/Actions/DeactivateAction.ts";
 import UseAction from "../../Data/Actions/UseAction.ts";
 import { createMockMessage, createMockUser } from "../__mocks__/libs/discord.js";
-import { sendQueuedMessages, clearQueue } from "../../Modules/messageHandler.js";
+import { sendQueuedMessages, clearQueue } from "../../Modules/messageHandler.ts";
 
 describe("use_player command", () => {
     beforeAll(async () => {

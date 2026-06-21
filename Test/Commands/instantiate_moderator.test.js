@@ -5,7 +5,7 @@
 import ModeratorCommand from '../../Classes/ModeratorCommand.ts';
 import { usage, execute, config } from '../../Commands/instantiate_moderator.js'
 import InstantiateInventoryItemAction from '../../Data/Actions/InstantiateInventoryItemAction.ts';
-import { clearQueue } from '../../Modules/messageHandler.js';
+import { clearQueue } from '../../Modules/messageHandler.ts';
 import { createMockMessage } from '../__mocks__/libs/discord.js';
 import { createMockModerator } from '../__mocks__/utility.ts';
 

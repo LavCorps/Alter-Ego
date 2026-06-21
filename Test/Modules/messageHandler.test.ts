@@ -7,7 +7,7 @@ import * as DialogClass from "../../Data/Dialog.ts";
 import AnnounceAction from "../../Data/Actions/AnnounceAction.ts";
 import SayAction from "../../Data/Actions/SayAction.ts";
 import SolveAction from "../../Data/Actions/SolveAction.ts";
-import * as messageHandler from "../../Modules/messageHandler.js";
+import * as messageHandler from "../../Modules/messageHandler.ts";
 import { instantiateInventoryItem, destroyInventoryItem } from "../../Modules/itemManager.ts";
 import { Message, MessageFlags, TextChannel } from "discord.js";
 import type Player from "../../Data/Player.ts";

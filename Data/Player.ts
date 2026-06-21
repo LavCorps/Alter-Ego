@@ -241,6 +241,12 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
      */
     status: Collection<string, Status>;
     /**
+     * All behavior attributes the player currently has as a collection.
+     * The key is the name of the behavior attribute, and the value is an array of status effects inflicting it.
+     * Every time a status is inflicted or cured, this collection is built from scratch.
+     */
+    #behaviorAttributes: Collection<string, Status[]>;
+    /**
      * All of the player's {@link EquipmentSlot | equipment slots}. The key is the equipment slot's ID.
      */
     inventory: Collection<string, EquipmentSlot>;
@@ -399,6 +405,7 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
         this.pos = { x: 0, y: 0, z: 0 };
         this.hidingSpot = hidingSpot;
         this.status = new Collection();
+        this.#behaviorAttributes = new Collection();
         this.statusDisplays = statusDisplays;
         this.statusString = "";
         this.inventory = inventory;
@@ -709,7 +716,7 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
         let time = 0;
         // If distance is 0, we'll treat it like a staircase and just use the rise to calculate the time.
         if (distance === 0 && rise !== 0) {
-            const uphill = rise > 0 ? true : false;
+            const uphill = rise > 0;
             // Assume that the staircase is a right triangle leading to another right triangle flipped horizontally.
             const legs = rise / 2;
             // Calculate the length of the hypotenuse of these right triangles.
@@ -724,11 +731,14 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
         }
         else {
             const slope = rise / distance;
-            rate = !isNaN(slope) ? rate - slope * rate : rate;
-            if (distance < rate) distance = 0;
+            // Prevent division errors.
+            rate = !isNaN(slope) && slope * rate !== rate ? rate - slope * rate : rate;
             time = distance / rate * 1000;
         }
-        if (time < 0) time = 0;
+        if (time < 0 || isNaN(time)) time = 0;
+        // Cap out the maximum length of time at 1 hour.
+        const maxLength = 60 * 60 * 1000;
+        if (time > maxLength) time = maxLength;
         return time;
     }
 
@@ -990,6 +1000,7 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
 
         this.status.set(status.id, statusInstance);
         this.#recalculateStats();
+        this.#setBehaviorAttributes();
         // If the player's new speed is less than or equal to 0, stop them from moving.
         if (this.speed <= 0 && (this.isMoving || this.followedPlayer)) {
             const stopAction = new StopAction(this.getGame(), undefined, this, this.location, true);
@@ -1010,6 +1021,7 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
             statusInstance.timer.stop();
         this.status.delete(status.id);
         this.#recalculateStats();
+        this.#setBehaviorAttributes();
         this.statusDisplays = this.#generateStatusDisplays(true, true);
     }
 
@@ -1062,14 +1074,26 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
     }
 
     /**
+     * Sets the collection of the player's behavior attributes based on their current status effects.
+     */
+    #setBehaviorAttributes(): void {
+        this.#behaviorAttributes.clear();
+        for (const status of this.status.values()) {
+            for (const behaviorAttribute of status.behaviorAttributes) {
+                if (this.#behaviorAttributes.has(behaviorAttribute))
+                    this.#behaviorAttributes.get(behaviorAttribute).push(status);
+                else
+                    this.#behaviorAttributes.set(behaviorAttribute, [status]);
+            }
+        }
+    }
+
+    /**
      * Returns true if the player has a status with the specified behavior attribute.
-     *
      * @param behaviorAttribute - The name of the behavior attribute.
      */
     hasBehaviorAttribute(behaviorAttribute: string): boolean {
-        for (const status of this.status.values())
-            if (status.behaviorAttributes.has(behaviorAttribute)) return true;
-        return false;
+        return this.#behaviorAttributes.has(behaviorAttribute);
     }
 
     /**
@@ -1084,21 +1108,14 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
 
     /**
      * Returns list of status effects the player has with the specified behavior attribute.
-     *
      * @param behaviorAttribute - The name of the behavior attribute.
      */
     getBehaviorAttributeStatusEffects(behaviorAttribute: string): Status[] {
-        let statusEffects: Status[] = [];
-        for (const status of this.status.values()) {
-            if (status.behaviorAttributes.has(behaviorAttribute))
-                statusEffects.push(status);
-        }
-        return statusEffects;
+        return this.#behaviorAttributes.get(behaviorAttribute) ?? [];
     }
 
     /**
      * Returns list of status effects the player has with the specified behavior attribute.
-     *
      * @deprecated Use getBehaviorAttributeStatusEffects instead.
      * @param attribute - The name of the behavior attribute.
      */
@@ -1113,11 +1130,21 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
      * @param command - The command to check.
      */
     canUseCommand(command: string): boolean {
-        for (const status of this.status.values()) {
-            if (status.behaviorAttributes.has(`disable ${command}`)) return false;
-            if (status.behaviorAttributes.has("disable all") && !this.hasBehaviorAttribute(`enable ${command}`)) return false;
-        }
+        if (this.hasBehaviorAttribute(`disable ${command}`)) return false;
+        if (this.hasBehaviorAttribute("disable all") && !this.hasBehaviorAttribute(`enable ${command}`)) return false;
         return true;
+    }
+
+    /**
+     * Returns list of status effects the player has that disable the given command.
+     * @param command - The command being disabled.
+     */
+    getStatusEffectsDisablingCommand(command: string): Status[] {
+        if (this.hasBehaviorAttribute(`disable ${command}`))
+            return this.getBehaviorAttributeStatusEffects(`disable ${command}`);
+        if (this.hasBehaviorAttribute("disable all") && !this.hasBehaviorAttribute(`enable ${command}`))
+            return this.getBehaviorAttributeStatusEffects("disable all");
+        return [];
     }
 
     /**

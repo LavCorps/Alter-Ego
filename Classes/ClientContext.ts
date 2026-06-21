@@ -28,11 +28,11 @@ interface CommandLogEntry {
 /**
  * Represents the bot as a singleton.
  */
-export default class BotContext {
+export default class ClientContext {
 	/**
 	 * The single instance of the bot that can exist.
 	 */
-	static #instance: BotContext;
+	static #instance: ClientContext;
 	/**
 	 * The Discord Client associated with the bot.
 	 */
@@ -108,7 +108,7 @@ export default class BotContext {
 	}
 
     /**
-     * Gets the bot context, or creates it if it doesn't exist.
+     * Gets the client context, or creates it if it doesn't exist.
      * @param client - The Discord Client associated with the bot.
 	 * @param botCommands - All commands usable by the bot itself.
 	 * @param moderatorCommands - All commands usable by moderators.
@@ -116,8 +116,8 @@ export default class BotContext {
 	 * @param eligibleCommands - All commands usable by members with the eligible role.
 	 * @param game - The game the bot is managing.
      */
-    public static Instance(client: Client, botCommands: Collection<string, BotCommand>, moderatorCommands: Collection<string, ModeratorCommand>, playerCommands: Collection<string, PlayerCommand>, eligibleCommands: Collection<string, EligibleCommand>, game: Game): BotContext {
-        if (BotContext.#instance) return BotContext.#instance;
+    public static Instance(client: Client, botCommands: Collection<string, BotCommand>, moderatorCommands: Collection<string, ModeratorCommand>, playerCommands: Collection<string, PlayerCommand>, eligibleCommands: Collection<string, EligibleCommand>, game: Game): ClientContext {
+        if (ClientContext.#instance) return ClientContext.#instance;
         else return this.#instance = new this(client, botCommands, moderatorCommands, playerCommands, eligibleCommands, game);
     }
 
@@ -125,7 +125,7 @@ export default class BotContext {
      * The single instance of the bot that can exist.
      */
     public static get instance() {
-        return BotContext.#instance;
+        return ClientContext.#instance;
     }
 
     /**

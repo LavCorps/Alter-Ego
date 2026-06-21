@@ -5,7 +5,7 @@
 import ModeratorCommand from '../../Classes/ModeratorCommand.ts';
 import { usage, execute, config } from '../../Commands/destroy_moderator.js'
 import DestroyInventoryItemAction from '../../Data/Actions/DestroyInventoryItemAction.ts';
-import { clearQueue, sendQueuedMessages } from '../../Modules/messageHandler.js';
+import { clearQueue, sendQueuedMessages } from '../../Modules/messageHandler.ts';
 import { createMockMessage } from '../__mocks__/libs/discord.js';
 import { createMockModerator } from '../__mocks__/utility.ts';
 

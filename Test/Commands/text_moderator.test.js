@@ -4,7 +4,7 @@
 
 import ModeratorCommand from "../../Classes/ModeratorCommand.ts";
 import { usage, execute, config } from '../../Commands/text_moderator.js'
-import { clearQueue, sendQueuedMessages } from "../../Modules/messageHandler.js";
+import { clearQueue, sendQueuedMessages } from "../../Modules/messageHandler.ts";
 import { createMockMessage } from "../__mocks__/libs/discord.js";
 
 describe('text_moderator command', () => {
@@ -14,6 +14,6 @@ describe('text_moderator command', () => {
     });
 
     const text_moderator = new ModeratorCommand(config, usage, execute);
-        
+
     test('', async () => {});
 });

@@ -4,7 +4,7 @@
 
 import EligibleCommand from '../../Classes/EligibleCommand.ts';
 import { usage, execute, config } from '../../Commands/help_eligible.js'
-import { clearQueue } from '../../Modules/messageHandler.js';
+import { clearQueue } from '../../Modules/messageHandler.ts';
 
 describe('help_eligible command', () => {
     afterEach(async () => {
@@ -13,6 +13,6 @@ describe('help_eligible command', () => {
     });
 
     const help_eligible = new EligibleCommand(config, usage, execute);
-        
+
     test('', async () => {});
 });

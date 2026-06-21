@@ -4,7 +4,7 @@
 
 import ModeratorCommand from "../../Classes/ModeratorCommand.ts";
 import { usage, execute, config } from '../../Commands/equip_moderator.js'
-import { clearQueue, sendQueuedMessages } from "../../Modules/messageHandler.js";
+import { clearQueue, sendQueuedMessages } from "../../Modules/messageHandler.ts";
 import { createMockMessage } from "../__mocks__/libs/discord.js";
 
 describe('equip_moderator command', () => {
@@ -14,6 +14,6 @@ describe('equip_moderator command', () => {
     });
 
     const equip_moderator = new ModeratorCommand(config, usage, execute);
-        
+
     test('', async () => {});
 });

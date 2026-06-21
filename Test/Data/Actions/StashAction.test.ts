@@ -5,7 +5,7 @@
 import TakeAction from '../../../Data/Actions/TakeAction.ts';
 import StashAction from '../../../Data/Actions/StashAction.ts';
 import RoomItem from '../../../Data/RoomItem.ts';
-import { clearQueue } from '../../../Modules/messageHandler.js';
+import { clearQueue } from '../../../Modules/messageHandler.ts';
 import { createMockMessage } from '../../__mocks__/libs/discord.js';
 
 describe('StashAction test', () => {

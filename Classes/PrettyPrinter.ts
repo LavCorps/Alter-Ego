@@ -6,7 +6,7 @@ import Status from '../Data/Status.ts';
 import Gesture from '../Data/Gesture.ts';
 import Player from '../Data/Player.ts';
 import Room from '../Data/Room.ts';
-import BotContext from './BotContext.ts';
+import ClientContext from './ClientContext.ts';
 import Puzzle from '../Data/Puzzle.ts';
 import Description from '../Data/Description.ts';
 import Prefab from '../Data/Prefab.ts';
@@ -118,13 +118,13 @@ export class GesturePlugin implements AEPlugin<Gesture> {
 	}
 }
 
-export class BotContextPlugin implements AEPlugin<BotContext> {
+export class ClientContextPlugin implements AEPlugin<ClientContext> {
 	test(value: unknown) {
-		return value instanceof BotContext;
+		return value instanceof ClientContext;
 	}
 
 	serialize() {
-		return `<BotContext>`;
+		return `<ClientContext>`;
 	}
 }
 
@@ -657,8 +657,8 @@ const plugins = [
 	new TimeoutPlugin(),
 	new TimerPlugin(),
 	new GesturePlugin(),
-	new BotContextPlugin(),
-    new DescriptionPlugin(),
+	new ClientContextPlugin(),
+	new DescriptionPlugin(),
     new TriePlugin(),
     new TrieNodePlugin(),
     new ConstantTokenPlugin(),

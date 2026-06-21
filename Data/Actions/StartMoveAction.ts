@@ -30,7 +30,7 @@ export default class StartMoveAction extends Action {
         this.player.currentMovingSpeed = speed;
 		const time = this.player.calculateMoveTime(exit, isRunning, speed);
 		if (time > 1000) {
-            const interactables = await this.getGame().botContext.interactableManager.createStopActionInteractable(this.player, this.user);
+            const interactables = await this.getGame().clientContext.interactableManager.createStopActionInteractable(this.player, this.user);
             this.getGame().narrationHandler.narrateStartMove(this, isRunning, exit, this.player, interactables);
         }
 		this.player.move(isRunning, currentRoom, destinationRoom, exit, entrance, time, this.forced);

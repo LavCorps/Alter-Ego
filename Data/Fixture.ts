@@ -464,7 +464,7 @@ export default class Fixture extends RecipeProcessor implements PersistentGameEn
 		if (player && player.alive && player.location.id === this.location.id) {
 			const completedDescription = this.process.recipe.completedDescription.parseFor(player, this);
 			const messageDisplayType = this.process.recipe.completedDescription.messageDisplayType ?? MessageDisplayType.STANDARD;
-			const interactables = await this.getGame().botContext.interactableManager.createInspectActionInteractable([this], player);
+			const interactables = await this.getGame().clientContext.interactableManager.createInspectActionInteractable([this], player);
 			player.sendDescription(completedDescription, this, messageDisplayType, interactables);
 		}
 	}

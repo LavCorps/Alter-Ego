@@ -24,7 +24,7 @@ export default class InventoryAction extends Action {
 
     async #getInteractables(): Promise<Interactable[]> {
         let interactables: Interactable[] = [];
-        const interactableManager = this.getGame().botContext.interactableManager;
+        const interactableManager = this.getGame().clientContext.interactableManager;
         if (this.forced) {
             interactables = interactables.concat(await interactableManager.getInstantiateInventoryItemInteractables(this.player, this.user));
             interactables = interactables.concat(await interactableManager.getDestroyInventoryItemInteractables(this.player, this.user));

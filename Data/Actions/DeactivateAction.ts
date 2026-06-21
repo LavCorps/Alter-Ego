@@ -12,28 +12,28 @@ import type Interactable from "../../Classes/Interactables/Interactable.ts";
  * @see https://msvblank.github.io/Alter-Ego/reference/data_structures/action.html#deactivate-action
  */
 export default class DeactivateAction extends Action {
-	/**
-	 * Performs a deactivate action.
+    /**
+     * Performs a deactivate action.
      *
-	 * @param fixture - The fixture to deactivate.
-	 * @param narrate - Whether or not to narrate the fixture's deactivation.
-	 * @param customNarration - The custom text of the narration. Optional.
-	 */
-	async performDeactivate(fixture: Fixture, narrate: boolean, customNarration?: string): Promise<void> {
-		if (this.performed) return;
-		super.perform();
-		const player = this.player && this.player.location.id === fixture.location.id && this.player.isConscious() && !this.player.isHidden() ? this.player : undefined;
+     * @param fixture - The fixture to deactivate.
+     * @param narrate - Whether or not to narrate the fixture's deactivation.
+     * @param customNarration - The custom text of the narration. Optional.
+     */
+    async performDeactivate(fixture: Fixture, narrate: boolean, customNarration?: string): Promise<void> {
+        if (this.performed) return;
+        super.perform();
+        const player = this.player && this.player.location.id === fixture.location.id && this.player.isConscious() && !this.player.isHidden() ? this.player : undefined;
         const interactables = player ? await this.#getInteractables(fixture) : [];
-		if (narrate)
-			this.getGame().narrationHandler.narrateDeactivate(this, fixture, player, customNarration, interactables);
-		this.getGame().logHandler.logDeactivate(fixture, player, this.forced);
-		fixture.deactivate();
+        if (narrate)
+            this.getGame().narrationHandler.narrateDeactivate(this, fixture, player, customNarration, interactables);
+        this.getGame().logHandler.logDeactivate(fixture, player, this.forced);
+        fixture.deactivate();
         this.successMessage = `Successfully deactivated ${fixture.name} at ${fixture.location.getEntityID()}${this.player ? ` for ${this.player.name}` : ``}.`;
-	}
+    }
 
     async #getInteractables(fixture: Fixture): Promise<Interactable[]> {
         let interactables: Interactable[] = [];
-        const interactableManager = this.getGame().botContext.interactableManager;
+        const interactableManager = this.getGame().clientContext.interactableManager;
         interactables = interactables.concat(await interactableManager.createInspectActionInteractable([fixture], this.player));
         interactables = interactables.concat(await interactableManager.getActivateOrDeactivateInteractables(fixture, this.player, false));
         return interactables;
@@ -57,10 +57,9 @@ export default class DeactivateAction extends Action {
      */
     validateInteractionArgs(args: [Fixture, boolean]): [Fixture, boolean] {
         const errorMessageGenerator = this.getGame().errorMessageGenerator;
-        if (this.player.hasBehaviorAttribute("disable use"))
-            throw new Error(errorMessageGenerator.generateCommandDisabledError(this.player.getBehaviorAttributeStatusEffects("disable use")[0]));
-        if (this.player.hasBehaviorAttribute("disable all") && !this.player.hasBehaviorAttribute("enable use"))
-            throw new Error(errorMessageGenerator.generateCommandDisabledError(this.player.getBehaviorAttributeStatusEffects("disable all")[0]));
+        const disabledStatusEffects = this.player.getStatusEffectsDisablingCommand("use");
+        if (disabledStatusEffects.length > 0)
+            throw new Error(errorMessageGenerator.generateCommandDisabledError(disabledStatusEffects[0]));
         if (args.length !== 2) throw new Error(errorMessageGenerator.generateInsufficientArgumentsError());
         if (!args[0] || !args[0]?.accessible) throw new Error(errorMessageGenerator.generateInvalidEntityError("Fixture"));
         if (args[0].location.id !== this.player.location.id) throw new Error(errorMessageGenerator.generatePlayerLocationMismatchError());

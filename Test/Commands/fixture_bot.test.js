@@ -4,7 +4,7 @@
 
 import BotCommand from "../../Classes/BotCommand.ts";
 import { usage, execute, config } from '../../Commands/fixture_bot.js'
-import { clearQueue, sendQueuedMessages } from "../../Modules/messageHandler.js";
+import { clearQueue, sendQueuedMessages } from "../../Modules/messageHandler.ts";
 import { createMockMessage } from "../__mocks__/libs/discord.js";
 
 describe('fixture_bot command', () => {

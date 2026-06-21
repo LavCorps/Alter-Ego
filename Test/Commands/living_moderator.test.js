@@ -5,7 +5,7 @@
 import ModeratorCommand from "../../Classes/ModeratorCommand.ts";
 import { usage, execute, config } from "../../Commands/living_moderator.js";
 import { createMockMessage } from "../__mocks__/libs/discord.js";
-import { sendQueuedMessages } from "../../Modules/messageHandler.js";
+import { sendQueuedMessages } from "../../Modules/messageHandler.ts";
 import { createMockModerator } from "../__mocks__/utility.ts";
 
 describe("living_moderator command", () => {

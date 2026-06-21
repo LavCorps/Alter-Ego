@@ -51,7 +51,7 @@ export async function execute(game, message, command, args, moderator) {
         }).then((messages) => {
             let size = messages.size;
             if (user) {
-                const filterBy = user ? user.id : game.botContext.client.user.id;
+                const filterBy = user ? user.id : game.clientContext.client.user.id;
                 messages = messages.filter(message => message.author.id === filterBy);
                 const actualMessages = [...messages.values()].slice(0, amount);
                 size = actualMessages.length;
