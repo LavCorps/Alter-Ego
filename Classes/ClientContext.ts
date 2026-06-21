@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { ActivityType, Client, Collection, GatewayIntentBits, Partials } from "discord.js";
+import { ActivityType, Client, type ClientUser, Collection, GatewayIntentBits, Partials } from "discord.js";
 import { readdir } from "fs";
 import path from "node:path";
 import ClientEventHandler from "./ClientEventHandler.ts";
@@ -400,4 +400,11 @@ export default class ClientContext {
 				return ActivityType.Custom;
 		}
 	}
+
+    /**
+     * The client's user account.
+     */
+    public get user(): ClientUser {
+        return this.client.user;
+    }
 }
