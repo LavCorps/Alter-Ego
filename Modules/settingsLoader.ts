@@ -88,6 +88,27 @@ export const DEFAULT_PLAYER_DEFAULTS: PlayerDefaults = {
 }
 
 /**
+ * Loads game settings and player defaults.
+ *
+ * @returns The loaded game settings.
+ */
+export function loadGameSettingsAndPlayerDefaults(): GameSettings {
+    let errors: string[] = [];
+
+    let [gs, gsErr] = loadGameSettings();
+    errors.push(...gsErr);
+
+    let [, pdErr] = loadPlayerDefaults();
+    errors.push(...pdErr);
+
+    if (errors.length > 0) {
+        throw new Error(errors.join('\n'));
+    }
+
+    return gs;
+}
+
+/**
  * Loads game settings from environment variables.
  *
  * @returns Array with GameSettings object and an array of errors encountered during loading.

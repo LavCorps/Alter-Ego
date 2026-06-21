@@ -101,19 +101,10 @@ beforeAll(() => {
         spectatorRole
     );
 
-    // Initialize game and client context with empty command collections.
+    // Initialize game.
     const game = new Game(guildContext, DEFAULT_GAME_SETTINGS);
-    /** @type {Collection<string, BotCommand>} */
-    const botCommands = new Collection();
-    /** @type {Collection<string, ModeratorCommand>} */
-    const moderatorCommands = new Collection();
-    /** @type {Collection<string, PlayerCommand>} */
-    const playerCommands = new Collection();
-    /** @type {Collection<string, EligibleCommand>} */
-    const eligibleCommands = new Collection();
-
     // Create ClientContext singleton and attach to game.
-    ClientContext.Instance(client, botCommands, moderatorCommands, playerCommands, eligibleCommands, game);
+    ClientContext.Instance(client, game);
     game.setClientContext();
     // Ensure presence update doesn't throw during tests.
     try { ClientContext.instance.updatePresence(); } catch (e) { }

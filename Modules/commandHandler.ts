@@ -1,4 +1,8 @@
-﻿import type Game from '../Data/Game.ts';
+﻿// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
+import type Game from '../Data/Game.ts';
 import BotCommand from "../Classes/BotCommand.ts";
 import ModeratorCommand from "../Classes/ModeratorCommand.ts";
 import PlayerCommand from "../Classes/PlayerCommand.ts";
@@ -6,6 +10,14 @@ import EligibleCommand from "../Classes/EligibleCommand.ts";
 import type Player from '../Data/Player.ts';
 import Puzzle from '../Data/Puzzle.ts';
 import Flag from '../Data/Flag.ts';
+
+export type CommandType = "Bot" | "Moderator" | "Player" | "Eligible";
+export type CommandOf<T extends CommandType> =
+    T extends "Bot" ? BotCommand
+        : T extends "Moderator" ? ModeratorCommand
+            : T extends "Player" ? PlayerCommand
+                : T extends "Eligible" ? EligibleCommand
+                    : undefined;
 
 /**
  * Finds the right command file for the user and executes it.
@@ -161,7 +173,7 @@ function sleep(seconds: number) {
  * @param game - The game in which the command is being executed.
  * @param message - The message in which the command was issued, if applicable.
  */
-function getCommandType(game: Game, message: UserMessage): "Bot" | "Moderator" | "Player" | "Eligible" {
+function getCommandType(game: Game, message: UserMessage): CommandType {
     if (!message) return "Bot";
     else {
         // Don't attempt to find the member who sent this message if it was sent by a webhook.
