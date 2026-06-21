@@ -2,6 +2,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import { InvalidInvocation, MatchedInvocation } from "../../../Classes/Command/Invocation.ts";
 import { Constant, Pattern, Slot } from "../../../Classes/Command/Pattern.ts";
 import { ConstantToken, EntityToken, ItemContainerToken, PrepositionToken } from "../../../Classes/Command/Token.ts";
 import Trie from "../../../Classes/Command/Trie.ts";
@@ -333,7 +334,21 @@ describe("Pattern file from NG Commands", () => {
                 new Constant("and"),
                 new Slot(InventoryItem, "item2"),
             ]);
-            console.log(pattern.match(trie.tokenize(["MUG", "OF", "COFFEE", "and", "PACK", "OF", "TOILET", "PAPER"])));
+            const invocation = pattern.match(trie.tokenize(["MUG", "OF", "COFFEE", "and", "PACK", "OF", "TOILET", "PAPER"])) as MatchedInvocation;
+            expect(invocation).toBeInstanceOf(MatchedInvocation);
+            expect(invocation.args.size).toBe(2);
+            expect(invocation.args.get("item1")).not.toBeUndefined();
+            expect(invocation.args.get("item1").length).toBe(1);
+            invocation.args.get("item1").forEach((item: InventoryItem) => {
+                expect(item).toBeInstanceOf(InventoryItem);
+                expect(item.prefabId).toBe("MUG OF COFFEE");
+            });
+            expect(invocation.args.get("item2")).not.toBeUndefined();
+            expect(invocation.args.get("item2").length).toBe(2);
+            invocation.args.get("item2").forEach((item: InventoryItem) => { 
+                expect(item).toBeInstanceOf(InventoryItem);
+                expect(item.prefabId).toBe("PACK OF TOILET PAPER");
+            });
         });
 
         test("Pattern.match(2)", async () => {
@@ -343,7 +358,10 @@ describe("Pattern file from NG Commands", () => {
                 new Constant("and"),
                 new Slot(InventoryItem, "item2"),
             ]);
-            console.log(pattern.match(trie.tokenize(["MG", "F", "CFF", "and", "PACK", "OF", "TOILET", "PAPER"])));
+            const invocation = pattern.match(trie.tokenize(["MG", "F", "CFF", "and", "PACK", "OF", "TOILET", "PAPER"])) as InvalidInvocation;
+            expect(invocation).toBeInstanceOf(InvalidInvocation);
+            expect(invocation.errors).toBeLength(1);
+            expect(invocation.errors[0]).toBe("Couldn't find inventory item \"MG F CFF\" in your input.")
         });
     });
 });
