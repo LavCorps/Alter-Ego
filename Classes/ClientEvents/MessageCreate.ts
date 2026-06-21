@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { ChannelType, Events } from "discord.js";
-import ClientEvent from "./ClientEvent.ts";
+import ClientEvent from "../ClientEvent.ts";
 import { executeCommand } from "../../Modules/commandHandler.ts";
 import { processIncomingMessage } from "../../Modules/messageHandler.ts";
 

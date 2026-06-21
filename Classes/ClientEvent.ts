@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import type { ClientEvents } from "discord.js";
-import ClientContext from "../ClientContext.ts";
+import ClientContext from "./ClientContext.ts";
 
 type ClientEventCallback = (...args: any) => Promise<void>;
 

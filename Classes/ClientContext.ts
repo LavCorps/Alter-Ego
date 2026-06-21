@@ -3,10 +3,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { ActivityType, Client, type ClientUser, Collection, GatewayIntentBits, Partials } from "discord.js";
-import { readdir } from "fs";
+import { readdir } from "node:fs/promises";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import ClientEventHandler from "./ClientEventHandler.ts";
-import ClientEvent from "./ClientEvents/ClientEvent.ts";
+import ClientEvent from "./ClientEvent.ts";
 import PrettyPrinter from "./PrettyPrinter.ts";
 import BotInteractableManager from "./BotInteractableManager.ts";
 import BotInteractionHandler from "./BotInteractionHandler.ts";
@@ -34,6 +35,10 @@ interface CommandLogEntry {
  * Represents the bot as a singleton.
  */
 export default class ClientContext {
+    /**
+     * The directory of this file.
+     */
+    private static __dirname = path.dirname(fileURLToPath(import.meta.url));
     /**
      * Whether or not the client has already logged in.
      */
@@ -119,14 +124,10 @@ export default class ClientContext {
 
     /**
      * Logs the client into Discord.
-     *
-     * @returns The logged in client.
      */
-    public static async login(): Promise<Client> {
-        if (ClientContext.#loggedIn) {
-            if (ClientContext.#instance) return ClientContext.#instance.client;
-            else throw new Error("Client has already logged in, but has not yet been initialized.");
-        }
+    public static async login(): Promise<void> {
+        if (ClientContext.#loggedIn)
+            throw new Error("Client has already logged in, but has not yet been initialized.");
         const credentials = loadCredentials();
         const client = new Client({
             partials: [
@@ -152,7 +153,6 @@ export default class ClientContext {
         await ClientContext.#loadClientEvents();
         await client.login(credentials.discord.token);
         ClientContext.#loggedIn = true;
-        return client;
     }
 
     /**
@@ -176,9 +176,9 @@ export default class ClientContext {
      * Loads all of the client events from disk and passes them to the ClientEventHandler.
      */
     static async #loadClientEvents(): Promise<void> {
-        const eventsDir = path.join(__dirname, "ClientEvents");
-        readdir(eventsDir, async (error, files) => {
-            if (error) console.log(error);
+        const eventsDir = path.join(ClientContext.__dirname, "ClientEvents");
+        try {
+            const files = await readdir(eventsDir);
 
             if (files.length <= 0) {
                 console.error(`Couldn't find events in ${eventsDir}.`);
@@ -205,7 +205,10 @@ export default class ClientContext {
             })).then(() => {
                 console.log(`Loaded ${eventCount} client events.`);
             });
-        });
+        }
+        catch (error) {
+            console.error(error);
+        }
     }
 
     /**
@@ -214,6 +217,7 @@ export default class ClientContext {
     public initialize(): void {
         if (ClientContext.#initialized) return;
         ClientContext.#initialized = true;
+        console.log(`${this.client.user.username} is ready for use.`);
     }
 
     /**
@@ -263,10 +267,9 @@ export default class ClientContext {
      * Loads all of the commands from disk.
      */
     public async loadCommands(): Promise<void> {
-        const commandsDir = path.join(__dirname, "..", "Commands");
-        readdir(commandsDir, async (error, files) => {
-            if (error) console.log(error);
-
+        const commandsDir = path.join(ClientContext.__dirname, "..", "Commands");
+        try {
+            const files = await readdir(commandsDir);
             const commandFiles = files.filter(filename => filename.split('.').pop() === 'js');
             if (commandFiles.length <= 0) {
                 console.log("Error: Couldn't find commands.");
@@ -292,7 +295,10 @@ export default class ClientContext {
                 const commandCount = ClientContext.#botCommands.size + ClientContext.#moderatorCommands.size + ClientContext.#playerCommands.size + ClientContext.#eligibleCommands.size;
                 console.log(`Loaded ${commandCount} commands.`);
             });
-        });
+        }
+        catch (error) {
+            console.error(error);
+        }
     }
 
     /**

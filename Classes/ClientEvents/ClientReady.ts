@@ -4,8 +4,10 @@
 
 import { Client, Events, PermissionFlagsBits } from "discord.js";
 import { readFileSync } from "fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import ClientContext from "../ClientContext.ts";
-import ClientEvent from "./ClientEvent.ts";
+import ClientEvent from "../ClientEvent.ts";
 import type GuildContext from "../GuildContext.ts";
 import Game from "../../Data/Game.ts";
 import type GameSettings from "../GameSettings.ts";
@@ -19,7 +21,7 @@ export default new ClientEvent({
     execute: async (client: Client) => {
         const [guildContext, doSendFirstBootMessage] = await createGuildContext(client);
         const gameSettings = loadGameSettingsAndPlayerDefaults();
-        console.log(`${client.user.username} is online in ${client.guilds.cache.first().name}.`);
+        console.log(`${client.user.username} is online in ${client.guilds.cache.first().name}. Initializing...`);
         await checkVersion(guildContext);
         await autoUpdate(gameSettings);
         const game = new Game(guildContext, gameSettings);
@@ -29,28 +31,25 @@ export default new ClientEvent({
         clientContext.updatePresence();
         if (doSendFirstBootMessage) await sendFirstBootMessage(guildContext, gameSettings);
 
-        // If the AUTO_LOAD setting is true, load all game data now.
-        if (gameSettings.autoLoad) {
-            // Commands seem to need time to "settle". The snippet below breaks if run synchronously.
-            setTimeout(() => {
-                let loadCommand = clientContext.getCommand("Moderator", "load");
-                if (loadCommand)
-                    loadCommand.execute(game, undefined, "lar", []);
-            }, 0);
+        // Synchronize the guild with the READ_MESSAGE_HISTORY setting.
+        const everyone = guildContext.guild.roles.everyone;
+        if (everyone.permissions.has(PermissionFlagsBits.ReadMessageHistory) !== game.settings.readMessageHistory) {
+            if (game.settings.readMessageHistory) {
+                await everyone.setPermissions(everyone.permissions.add(PermissionFlagsBits.ReadMessageHistory));
+            } else {
+                await everyone.setPermissions(everyone.permissions.remove(PermissionFlagsBits.ReadMessageHistory));
+            }
         }
 
-        // Synchronize the guild with the READ_MESSAGE_HISTORY setting.
-        setTimeout(async () => {
-            const everyone = guildContext.guild.roles.everyone;
-            if (everyone.permissions.has(PermissionFlagsBits.ReadMessageHistory) !== game.settings.readMessageHistory) {
-                if (game.settings.readMessageHistory) {
-                    await everyone.setPermissions(everyone.permissions.add(PermissionFlagsBits.ReadMessageHistory));
-                } else {
-                    await everyone.setPermissions(everyone.permissions.remove(PermissionFlagsBits.ReadMessageHistory));
-                }
-            }
-        }, 0);
+        // If the AUTO_LOAD setting is true, load all game data now.
+        if (gameSettings.autoLoad) {
+            console.log("The AUTO_LOAD setting is enabled. Loading and resuming game...");
+            let loadCommand = clientContext.getCommand("Moderator", "load");
+            if (loadCommand)
+                await loadCommand.execute(game, undefined, "lar", []);
+        }
 
+        // Set the bot as finished initializing.
         clientContext.initialize();
     }
 });
@@ -63,7 +62,8 @@ export default new ClientEvent({
 async function checkVersion(guildContext: GuildContext): Promise<void> {
     const masterPackageSource = "https://raw.githubusercontent.com/MsVBLANK/Alter-Ego/master/package.json";
     const masterPackage = await fetch(masterPackageSource).then(response => response.json()).catch();
-    const localPackage = JSON.parse(readFileSync("../../package.json").toString());
+    const localPackagePath = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "package.json");
+    const localPackage = JSON.parse(readFileSync(localPackagePath).toString());
     const repoUrl = "https://github.com/MsVBLANK/Alter-Ego";
     if (masterPackage.version !== localPackage.version && !localPackage.version.endsWith("d")) {
         await guildContext.commandChannel.send(

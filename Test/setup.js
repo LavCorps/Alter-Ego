@@ -23,15 +23,10 @@ vi.mock(import('discord.js'), async (importOriginal) => {
 
 });
 
-/** @import BotCommand from '../Classes/BotCommand.ts' */
-/** @import ModeratorCommand from '../Classes/ModeratorCommand.ts' */
-/** @import PlayerCommand from '../Classes/PlayerCommand.ts' */
-/** @import EligibleCommand from '../Classes/EligibleCommand.ts' */
-
 import GuildContext from '../Classes/GuildContext.ts';
 import Game from '../Data/Game.ts';
 import ClientContext from '../Classes/ClientContext.ts';
-import { ChannelType, Collection } from 'discord.js';
+import { ChannelType } from 'discord.js';
 import {DEFAULT_GAME_SETTINGS} from "../Modules/settingsLoader.ts";
 
 vi.mock('../Configs/demodata.json', () => ({ default: demodata }));

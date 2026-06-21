@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import type { Client } from "discord.js";
-import type ClientEvent from "./ClientEvents/ClientEvent.ts";
+import type ClientEvent from "./ClientEvent.ts";
 
 /**
  * Represents the client event handler as a singleton.
