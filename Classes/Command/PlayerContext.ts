@@ -14,7 +14,7 @@ import type RoomItem from "../../Data/RoomItem.ts";
 import type Game from "../../Data/Game.ts";
 import type EquipmentSlot from "../../Data/EquipmentSlot.ts";
 import Context from "./Context.ts";
-import { EntityToken, ItemContainerToken, PrepositionToken, type Token } from "./Token.ts";
+import { EntityToken, ItemContainerToken, PocketToken, PrepositionToken, type Token } from "./Token.ts";
 import type Puzzle from "../../Data/Puzzle.ts";
 
 /**
@@ -145,7 +145,9 @@ export default class PlayerContext extends Context {
          * time a puzzle is solved. This would be a good time to make such a change.
          * - DM
          */
-        this.fixtures = this.game.entityFinder.getFixtures(undefined, this.room.id).filter((fixture) => fixture.accessible);
+        this.fixtures = this.game.entityFinder
+            .getFixtures(undefined, this.room.id)
+            .filter((fixture) => fixture.accessible);
         this.puzzles = this.game.entityFinder.getPuzzles(undefined, this.room.id);
         this.roomItems = this.room.getContainedItems().filter((item) => item.accessible);
     }
@@ -162,6 +164,8 @@ export default class PlayerContext extends Context {
             if (item.prefab !== null && item.quantity > 0) {
                 const preposition = item.getPreposition();
                 tokens.push(new ItemContainerToken(item.name, item));
+                for (const [key, val] of item.inventory)
+                    tokens.push(new PocketToken(key, val, item));
                 if (item.pluralName !== "") tokens.push(new ItemContainerToken(item.pluralName, item));
                 if (!prepositions.has(preposition) && preposition !== "") {
                     prepositions.add(preposition);
@@ -174,6 +178,9 @@ export default class PlayerContext extends Context {
             if (item.prefab !== null && item.quantity > 0) {
                 const preposition = item.getPreposition();
                 tokens.push(new ItemContainerToken(item.name, item));
+                for (const [key, val] of item.inventory) {
+                    tokens.push(new PocketToken(key, val, item));
+                }
                 if (item.pluralName !== "") tokens.push(new ItemContainerToken(item.pluralName, item));
                 if (!prepositions.has(preposition) && preposition !== "") {
                     prepositions.add(preposition);

@@ -4,7 +4,7 @@
 
 import { InvalidInvocation, MatchedInvocation } from "../../../Classes/Command/Invocation.ts";
 import { Constant, Pattern, Slot } from "../../../Classes/Command/Pattern.ts";
-import { ConstantToken, EntityToken, ItemContainerToken, PrepositionToken } from "../../../Classes/Command/Token.ts";
+import { ConstantToken, EntityToken, ItemContainerToken, PocketToken, PrepositionToken } from "../../../Classes/Command/Token.ts";
 import Trie from "../../../Classes/Command/Trie.ts";
 import EquipmentSlot from "../../../Data/EquipmentSlot.ts";
 import Event from "../../../Data/Event.ts";
@@ -270,6 +270,8 @@ describe("Pattern file from NG Commands", () => {
             for (const item of game.inventoryItems) {
                 if (item.prefab !== null && item.quantity > 0) {
                     trie.insert(item.prefab.id, new ItemContainerToken(item.prefab.id, item));
+                    for (const [key, val] of item.inventory)
+                        trie.insert(key, new PocketToken(key, val, item));
                     if (!prepositions.has(item.getPreposition())) {
                         const preposition = item.getPreposition();
                         prepositions.add(preposition);
@@ -280,6 +282,8 @@ describe("Pattern file from NG Commands", () => {
             for (const item of game.roomItems) {
                 if (item.prefab !== null && item.quantity > 0) {
                     trie.insert(item.prefab.id, new ItemContainerToken(item.prefab.id, item));
+                    for (const [key, val] of item.inventory)
+                        trie.insert(key, new PocketToken(key, val, item));
                     if (!prepositions.has(item.getPreposition())) {
                         const preposition = item.getPreposition();
                         prepositions.add(preposition);

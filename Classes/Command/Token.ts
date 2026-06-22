@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import type GameEntity from "../../Data/GameEntity.ts";
+import InventorySlot from "../../Data/InventorySlot.ts";
 import type ItemInstance from "../../Data/ItemInstance.ts";
 
 export abstract class Token {
@@ -47,5 +48,14 @@ export class ItemContainerToken<T extends RoomItemContainer | ItemInstance> exte
     constructor(value: string, reference: T) {
         super(value, reference);
         this.preposition = reference.getPreposition();
+    }
+}
+
+export class PocketToken<T extends ItemInstance> extends EntityToken<InventorySlot<T>> {
+    parent: T;
+
+    constructor(value: string, reference: InventorySlot<T>, parent: T) {
+        super(value, reference);
+        this.parent = parent;
     }
 }
