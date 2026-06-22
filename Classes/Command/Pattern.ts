@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { InvalidInvocation, MatchedInvocation, type MatchResult } from "./Invocation.ts";
-import { ConstantToken, EntityToken, PocketToken, PrepositionToken, SentinelToken, type Token } from "./Token.ts";
+import { ConstantToken, EntityToken, ItemContainerToken, PocketToken, PrepositionToken, SentinelToken, type Token } from "./Token.ts";
 import type GameEntity from "../../Data/GameEntity.ts";
 import { Collection } from "discord.js";
 import type ItemInstance from "../../Data/ItemInstance.ts";
@@ -268,6 +268,11 @@ export class Pattern implements PatternElement {
     readonly mandatory: boolean;
 
     /**
+     * Whether this pattern, or the children of this pattern, are mandatory.
+     */
+    readonly mandatoryOrMandatoryChildren: boolean;
+
+    /**
      * @param grammar - The grammar of the pattern. This is an ordered array, containing pattern elements, as well as other patterns.
      * @param optional - Whether the fulfillment of this Pattern is optional or not. This is most useful for optional sub-patterns. Defaults to false.
      * @param mandatory - Whether the fulfillment of this Pattern is mandatory or not. This is most useful for optional sub-patterns that must be completely matched once partially matched. Defaults to false.
@@ -276,6 +281,15 @@ export class Pattern implements PatternElement {
         this.grammar = grammar;
         this.optional = optional;
         this.mandatory = mandatory;
+        if (mandatory) this.mandatoryOrMandatoryChildren = true;
+        else {
+            for (const element of grammar) {
+                if (element instanceof Pattern && element.mandatoryOrMandatoryChildren) {
+                    this.mandatoryOrMandatoryChildren = true;
+                    break;
+                }
+            }
+        }
     }
 
     /**
@@ -476,9 +490,47 @@ export class Pattern implements PatternElement {
      * @param base - MatchData to validate prepositions for.
      */
     private matchPrepositions(base: MatchData): MatchData {
-        // let data = base.clone();
+        let data = base.clone();
 
-        return base;
+        /** K is the name of the Slot that the Preposition refers to, V[0] is the Preposition element, V[1] is the array of Preposition tokens */
+        const prepositions: Collection<string, [Preposition, PrepositionToken[]]> = new Collection();
+
+        /** K is the name of the Slot or Multislot, V[0] is the Slot or Multislot, V[1] is the array of EntityTokens */
+        const slots: Collection<string, [Slot | Multislot, ItemContainerToken<ItemInstance | RoomItemContainer>[]]> = new Collection();
+
+        data.matches.forEach((tokens, element) => {
+            if (element instanceof Preposition)
+                prepositions.set(element.name, [element, tokens.filter(token => token instanceof PrepositionToken)]);
+            else if (element instanceof Slot || element instanceof Multislot)
+                slots.set(element.name, [element, tokens.filter(token => token instanceof ItemContainerToken)]);
+        });
+
+        for (const [name, preposition] of prepositions) {
+            if (!slots.has(name)) continue;
+
+            const [prepElement, prepTokens] = preposition;
+            const [slotElement, slotTokens] = slots.get(name);
+
+            const slotPrepositions = new Set(slotTokens.map(token => token.preposition));
+            const matches = new Set(prepTokens.map(token => token.value).filter(value => slotPrepositions.has(value)));
+
+            const narrowedPreps = prepTokens.filter(token => matches.has(token.value));
+            const narrowedSlots = slotTokens.filter(token => matches.has(token.preposition));
+
+            prepositions.set(name, [prepElement, narrowedPreps]);
+            slots.set(name, [slotElement, narrowedSlots]);
+        }
+
+        for (const [preposition, tokens] of prepositions.values())
+            data.matches.set(preposition, tokens);
+        for (const [slot, tokens] of slots.values())
+            data.matches.set(slot, tokens);
+
+        console.log(data);
+        console.log();
+
+        if (this.optional && data.errors.length > 0) return base;
+        else return data;
     }
 
     /**

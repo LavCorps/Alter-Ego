@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { InvalidInvocation, MatchedInvocation } from "../../../Classes/Command/Invocation.ts";
-import { Constant, Pattern, Slot } from "../../../Classes/Command/Pattern.ts";
+import { Constant, Pattern, Preposition, Slot } from "../../../Classes/Command/Pattern.ts";
 import { ConstantToken, EntityToken, ItemContainerToken, PocketToken, PrepositionToken } from "../../../Classes/Command/Token.ts";
 import Trie from "../../../Classes/Command/Trie.ts";
 import EquipmentSlot from "../../../Data/EquipmentSlot.ts";
@@ -365,7 +365,32 @@ describe("Pattern file from NG Commands", () => {
             const invocation = pattern.match(trie.tokenize(["MG", "F", "CFF", "and", "PACK", "OF", "TOILET", "PAPER"])) as InvalidInvocation;
             expect(invocation).toBeInstanceOf(InvalidInvocation);
             expect(invocation.errors).toBeLength(1);
-            expect(invocation.errors[0]).toBe("Couldn't find inventory item \"MG F CFF\" in your input.")
+            expect(invocation.errors[0]).toBe("Couldn't find inventory item \"MG F CFF\" in your input.");
+        });
+
+        test("Pattern.match(3)", async () => {
+            const pattern = new Pattern([
+                new Slot(InventoryItem, "target"),
+                new Preposition("destination"),
+                new Slot(Fixture, "destination"),
+            ]);
+            const invocation = pattern.match(trie.tokenize(["MUG", "OF", "COFFEE", "on", "FLOOR"])) as MatchedInvocation;
+            expect(invocation).toBeInstanceOf(MatchedInvocation);
+            expect(invocation.args.size).toBe(2);
+            expect(invocation.args.get("target")).not.toBeUndefined();
+            expect(invocation.args.get("target").length).toBe(1);
+            invocation.args.get("target").forEach((item: InventoryItem) => {
+                expect(item).toBeInstanceOf(InventoryItem);
+                expect(item.prefabId).toBe("MUG OF COFFEE");
+            });
+            expect(invocation.args.get("destination")).not.toBeUndefined();
+            // there are 189 floor fixtures within the test data
+            // however, two lack a preposition, and are thus excluded
+            expect(invocation.args.get("destination").length).toBe(187);
+            invocation.args.get("destination").forEach((fixture: Fixture) => { 
+                expect(fixture).toBeInstanceOf(Fixture);
+                expect(fixture.name).toBe("FLOOR");
+            });
         });
     });
 });
