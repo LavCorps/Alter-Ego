@@ -37,12 +37,17 @@ export class ValidatedInvocation extends BaseInvocation<true, true> {
     /** The key-value pairs of slot names to Game Entities. One Game Entity per key. */
     args: Collection<string, GameEntity>;
 
+    /** Any globbed data caught by the pattern matching. */
+    glob: string[];
+
     /**
      * @param args - The key-value pairs of slot names to Game Entities. One Game Entity per key.
+     * @param glob - Any globbed data caught by the pattern matching.
      */
-    constructor(args: Collection<string, GameEntity>) {
+    constructor(args: Collection<string, GameEntity>, glob: string[]) {
         super(true, true);
         this.args = args;
+        this.glob = glob;
     }
 }
 
@@ -51,12 +56,17 @@ export class MatchedInvocation extends BaseInvocation<true, false> {
     /** The key-value pairs of slot names to Game Entities. Multiple Game Entities allowed per key. */
     args: Collection<string, GameEntity[]>;
 
+    /** Any globbed data caught by the pattern matching. */
+    glob: string[];
+
     /**
      * @param args - The key-value pairs of slot names to Game Entities. Multiple Game Entities allowed per key.
+     * @param glob - Any globbed data caught by the pattern matching.
      */
-    constructor(args: Collection<string, GameEntity[]>) {
+    constructor(args: Collection<string, GameEntity[]>, glob: string[]) {
         super(true, false);
         this.args = args;
+        this.glob = glob;
     }
 }
 

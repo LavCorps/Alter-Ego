@@ -526,9 +526,6 @@ export class Pattern implements PatternElement {
         for (const [slot, tokens] of slots.values())
             data.matches.set(slot, tokens);
 
-        console.log(data);
-        console.log();
-
         if (this.optional && data.errors.length > 0) return base;
         else return data;
     }
@@ -550,7 +547,7 @@ export class Pattern implements PatternElement {
                         val.map((token: EntityToken<GameEntity>) => token.reference),
                     );
             });
-            return new MatchedInvocation(args);
+            return new MatchedInvocation(args, data.glob);
         }
     }
 }
