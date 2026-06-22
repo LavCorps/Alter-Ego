@@ -1,6 +1,11 @@
-import {ChannelType, type Guild, type GuildBasedChannel} from 'discord.js';
-import {access, constants, readFile, writeFile, mkdir} from "node:fs/promises";
-import type Game from '../Data/Game.ts';
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
+import { ChannelType, Client, Role, TextChannel, type Guild, type GuildBasedChannel } from "discord.js";
+import { access, constants, readFile, writeFile, mkdir } from "node:fs/promises";
+import type Game from "../Data/Game.ts";
+import GuildContext from "../Classes/GuildContext.ts";
 
 const SERVER_CONFIG_PATH = "./Configs/serverconfig.json";
 
@@ -20,6 +25,89 @@ export interface ServerConfig {
     announcementChannel: string;
     commandChannel: string;
     logChannel: string;
+}
+
+/**
+ * Creates the guild context the bot will use.
+ * @param client - The client user.
+ * @returns The newly created GuildContext, and a boolean indicating whether a firstBootMessage should be sent.
+ */
+export async function createGuildContext(client: Client): Promise<[GuildContext, boolean]> {
+    if (client.guilds.cache.size === 1) {
+        const guild = client.guilds.cache.first();
+        await createServerConfigFileIfNotExists();
+        let serverConfig = await loadServerConfig();
+        let firstBootMessage = await validateServerConfig(guild, serverConfig);
+        const commandChannel = guild.channels.resolve(serverConfig.commandChannel);
+        const logChannel = guild.channels.resolve(serverConfig.logChannel);
+        const announcementChannel = guild.channels.resolve(serverConfig.announcementChannel);
+        const testingChannel = guild.channels.resolve(serverConfig.testingChannel);
+        const generalChannel = guild.channels.resolve(serverConfig.generalChannel);
+        let errors: string[] = [];
+        if (!(commandChannel instanceof TextChannel))
+            errors.push("Error: commandChannel in serverconfig is not a TextChannel.");
+        if (!(logChannel instanceof TextChannel))
+            errors.push("Error: logChannel in serverconfig is not a TextChannel.");
+        if (!(announcementChannel instanceof TextChannel))
+            errors.push("Error: announcementChannel in serverconfig is not a TextChannel.");
+        if (!(testingChannel instanceof TextChannel))
+            errors.push("Error: testingChannel in serverconfig is not a TextChannel.");
+        if (!(generalChannel instanceof TextChannel))
+            errors.push("Error: generalChannel in serverconfig is not a TextChannel.");
+        if (!(commandChannel instanceof TextChannel && logChannel instanceof TextChannel && announcementChannel instanceof TextChannel && testingChannel instanceof TextChannel && generalChannel instanceof TextChannel)) {
+            console.log(errors.join('\n'));
+            return process.exit(3);
+        }
+        errors = [];
+        const testerRole = guild.roles.resolve(serverConfig.testerRole);
+        const eligibleRole = guild.roles.resolve(serverConfig.eligibleRole);
+        const playerRole = guild.roles.resolve(serverConfig.playerRole);
+        const freeMovementRole = guild.roles.resolve(serverConfig.freeMovementRole);
+        const moderatorRole = guild.roles.resolve(serverConfig.moderatorRole);
+        const deadRole = guild.roles.resolve(serverConfig.deadRole);
+        const spectatorRole = guild.roles.resolve(serverConfig.spectatorRole);
+        if (!(testerRole instanceof Role))
+            errors.push("Error: testerRole in serverconfig is not a Role.");
+        if (!(eligibleRole instanceof Role))
+            errors.push("Error: eligibleRole in serverconfig is not a Role.");
+        if (!(playerRole instanceof Role))
+            errors.push("Error: playerRole in serverconfig is not a Role.");
+        if (!(freeMovementRole instanceof Role))
+            errors.push("Error: freeMovementRole in serverconfig is not a Role.");
+        if (!(moderatorRole instanceof Role))
+            errors.push("Error: moderatorRole in serverconfig is not a Role.");
+        if (!(deadRole instanceof Role))
+            errors.push("Error: deadRole in serverconfig is not a Role.");
+        if (!(spectatorRole instanceof Role))
+            errors.push("Error: spectatorRole in serverconfig is not a Role.");
+        if (errors.length > 0) {
+            console.log(errors.join('\n'));
+            return process.exit(3);
+        }
+        const guildContext = new GuildContext(
+            guild,
+            commandChannel,
+            logChannel,
+            announcementChannel,
+            testingChannel,
+            generalChannel,
+            serverConfig.roomCategories.split(','),
+            serverConfig.whisperCategory,
+            serverConfig.spectateCategory,
+            testerRole,
+            eligibleRole,
+            playerRole,
+            freeMovementRole,
+            moderatorRole,
+            deadRole,
+            spectatorRole
+        );
+        return [guildContext, !!(firstBootMessage && commandChannel)];
+    }
+    else {
+        console.log("Error: Bot must be on one and only one server.");
+        return process.exit(2);
+    }
 }
 
 export async function validateServerConfig(guild: Guild, serverConfig: ServerConfig): Promise<boolean> {
