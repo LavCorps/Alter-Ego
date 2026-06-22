@@ -106,7 +106,7 @@ export class Multislot implements PatternElement {
 }
 
 /**
- * Preposition interface representing a piece of a grammar pattern that represents the preposition of a Slot.
+ * Preposition class representing a piece of a grammar pattern that represents the preposition of a Slot.
  */
 export class Preposition implements PatternElement {
     /**
@@ -116,6 +116,23 @@ export class Preposition implements PatternElement {
 
     /**
      * @param name - The name of the Slot that the Preposition refers to.
+     */
+    constructor(name: string) {
+        this.name = name;
+    }
+}
+
+/**
+ * Pocket class representing a piece of a grammar pattern that represents an InventorySlot of a Slot representing an ItemInstance.
+ */
+export class Pocket implements PatternElement {
+    /**
+     * The name of the Slot that the Pocket refers to.
+     */
+    readonly name: string;
+
+    /**
+     * @param name - The name of the Slot that the Pocket refers to.
      */
     constructor(name: string) {
         this.name = name;
