@@ -391,8 +391,21 @@ export default abstract class GameEntityManager {
         const party = new Party(this.game, leader, followers, idPrefix);
         const whisper = await this.createWhisper(Array.from(party.members.values()), idPrefix, WhisperType.PARTY);
         party.whisper = whisper;
+        party.id = whisper.id;
         this.game.parties.set(party.id, party);
         return party;
+    }
+
+    /**
+     * Updates a party's key in the game's collection of parties and sets its ID.
+     * @param party - The party to edit.
+     * @param newId - The party's new ID.
+     */
+    updatePartyId(party: Party, newId: string): void {
+        const oldId = party.id;
+        party.id = newId;
+        this.game.parties.set(party.id, party);
+        this.game.parties.delete(oldId);
     }
 
     /**

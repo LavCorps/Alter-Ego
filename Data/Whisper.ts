@@ -105,8 +105,8 @@ export default class Whisper extends GameConstruct {
      * If no associated entity exists, this is null.
      */
     get associatedEntity(): HidingSpot | Party {
-        if (this.type === WhisperType.HIDING_SPOT) return this.getGame().entityFinder.getFixture(this.associatedEntityName, this.locationId)?.hidingSpot;
-        else if (this.type === WhisperType.PARTY) return this.getGame().entityFinder.getParty(this.id);
+        if (this.type === WhisperType.HIDING_SPOT) return this.getGame().entityFinder.getFixture(this.associatedEntityName, this.locationId)?.hidingSpot ?? null;
+        else if (this.type === WhisperType.PARTY) return this.getGame().entityFinder.getParty(this.id) ?? null;
         return null;
     }
 
