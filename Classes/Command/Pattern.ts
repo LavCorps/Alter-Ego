@@ -333,10 +333,11 @@ export class Pattern implements PatternElement {
                     }
                 }
             } else if (element instanceof Slot || element instanceof Multislot) {
-                // TypeScript type narrowing is unreliable in instances where type guards are not as simple as single instanceof checks
-                // this is a previously encountered issue in PrettyPrinter, and was resolved by type casting
-                // we repeat such gratuitous type casting tricks here
-                let elementMatches: EntityToken<GameEntity>[] = data.stream.filter(token => token instanceof EntityToken && (element as Slot | Multislot).satisfiedBy(token)) as EntityToken<GameEntity>[];
+                let elementMatches: EntityToken<GameEntity>[] = [];
+                for (const token of data.stream) {
+                    if (token instanceof EntityToken && element.satisfiedBy(token))
+                        elementMatches.push(token);
+                }
                 if (elementMatches.length > 0) {
                     data.matches.set(element, elementMatches);
                     matchedIndices.add(grammarIndex);
