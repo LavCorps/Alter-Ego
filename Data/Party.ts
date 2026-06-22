@@ -120,7 +120,7 @@ export default class Party extends GameConstruct {
             this.#memberDisplayNames.set(player.name, player.displayName);
             player.joinParty(this);
         }
-        if (deleteWhisper) this.deleteWhisper();
+        if (deleteWhisper) await this.deleteWhisper();
         this.whisper = await this.getGame().entityLoader.createWhisper(Array.from(this.members.values()), this.idPrefix, WhisperType.PARTY);
         this.id = this.whisper.id;
     }
@@ -137,7 +137,7 @@ export default class Party extends GameConstruct {
         this.members.delete(player.name);
         this.#memberDisplayNames.delete(player.name);
         const whisperNarration = action ? leaveNarration : "";
-        player.removeFromWhispers(whisperNarration, action);
+        await this.whisper.removePlayer(player, whisperNarration, action);
         this.id = this.whisper.id;
         if (this.followers.size === 0) {
             await this.disband();
@@ -147,9 +147,9 @@ export default class Party extends GameConstruct {
     /**
      * Removes all members from the whisper and sets it to null.
      */
-    deleteWhisper(): void {
+    async deleteWhisper(): Promise<void> {
         for (const player of this.members.values())
-            player.removeFromWhispers("");
+            await this.whisper.removePlayer(player, "");
         this.whisper = null;
     }
 
