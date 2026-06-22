@@ -4,9 +4,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { InvalidInvocation, MatchedInvocation, type MatchResult } from "./Invocation.ts";
-import { ConstantToken, EntityToken, PrepositionToken, SentinelToken, type Token } from "./Token.ts";
+import { ConstantToken, EntityToken, PocketToken, PrepositionToken, SentinelToken, type Token } from "./Token.ts";
 import type GameEntity from "../../Data/GameEntity.ts";
 import { Collection } from "discord.js";
+import type ItemInstance from "../../Data/ItemInstance.ts";
 
 /**
  * Base interface representing a pattern element.
@@ -332,14 +333,14 @@ export class Pattern implements PatternElement {
                     }
                 }
             } else if (element instanceof Slot || element instanceof Multislot) {
-                let elementMatches: Token[] = [];
-                for (const token of data.stream) {
-                    if (token instanceof EntityToken && element.satisfiedBy(token)) {
-                        elementMatches.push(token);
-                        matchedIndices.add(grammarIndex);
-                    }
+                // TypeScript type narrowing is unreliable in instances where type guards are not as simple as single instanceof checks
+                // this is a previously encountered issue in PrettyPrinter, and was resolved by type casting
+                // we repeat such gratuitous type casting tricks here
+                let elementMatches: EntityToken<GameEntity>[] = data.stream.filter(token => token instanceof EntityToken && (element as Slot | Multislot).satisfiedBy(token)) as EntityToken<GameEntity>[];
+                if (elementMatches.length > 0) {
+                    data.matches.set(element, elementMatches);
+                    matchedIndices.add(grammarIndex);
                 }
-                if (elementMatches.length > 0) data.matches.set(element, elementMatches);
             } else if (element instanceof Preposition) {
                 for (const token of data.stream) {
                     if (token instanceof PrepositionToken) {
@@ -360,6 +361,12 @@ export class Pattern implements PatternElement {
                     if (data.index === data.streams.length) {
                         globbed = true;
                     } else stream = data.next();
+                }
+            } else if (element instanceof Pocket) {
+                let elementMatches: PocketToken<ItemInstance>[] = data.stream.filter(token => token instanceof PocketToken);
+                if (elementMatches.length > 0) {
+                    data.matches.set(element, elementMatches);
+                    matchedIndices.add(grammarIndex);
                 }
             } else if (element instanceof Pattern) {
                 data = element.innerMatch(data);
