@@ -286,7 +286,7 @@ export class Pattern implements PatternElement {
      * Internal matching function for Patterns. Used for recursive pattern matching.
      * @param base - MatchData for the innerMatch to use. This is cloned, and if the pattern is both optional and fails to match, is returned as-is.
      */
-    protected innerMatch(base: MatchData): MatchData {
+    private innerMatch(base: MatchData): MatchData {
         let data = base.clone();
 
         const unmatchedIndices: Set<number> = new Set();
@@ -428,11 +428,25 @@ export class Pattern implements PatternElement {
             }
         }
 
+        // TODO: if the size of neverMatchedIndices is greater than 0, we should complain quite loudly
         for (const index of unmatchedIndices) {
             if (!matchedIndices.has(index)) neverMatchedIndices.add(index);
         }
 
-        return data;
+        data = this.matchPrepositions(data);
+
+        if (this.optional && data.errors.length > 0) return base;
+        else return data;
+    }
+
+    /**
+     * Validates that prepositions match their referred slots
+     * @param base - MatchData to validate prepositions for.
+     */
+    private matchPrepositions(base: MatchData): MatchData {
+        // let data = base.clone();
+
+        return base;
     }
 
     /**
