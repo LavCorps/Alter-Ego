@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import demodata from "../Configs/demodata.json" with { type: 'json' };
 import { batchUpdateSheetValues } from "../Modules/sheets.js";
 import type Game from "../Data/Game.ts";
@@ -83,8 +87,8 @@ export default class GameEntitySaver {
 				]);
 				// If any items were deleted, row numbers may be incorrect. Fix them now.
 				if (deletedItemsCount > 0) {
-					if (i === 0) this.#game.roomItems[i].row = 2;
-					else this.#game.roomItems[i].row = this.#game.roomItems[i - 1].row + 1;
+					if (i === 0) this.#game.roomItems[i].setRow(2);
+					else this.#game.roomItems[i].setRow(this.#game.roomItems[i - 1].row + 1);
 				}
 			});
 			for (let i = 0; i < deletedItemsCount; i++)
@@ -184,8 +188,8 @@ export default class GameEntitySaver {
 				]);
 				// If any inventory items were deleted, row numbers may be incorrect. Fix them now.
 				if (deletedInventoryItemsCount > 0) {
-					if (i === 0) this.#game.inventoryItems[i].row = 2;
-					else this.#game.inventoryItems[i].row = this.#game.inventoryItems[i - 1].row + 1;
+					if (i === 0) this.#game.inventoryItems[i].setRow(2);
+					else this.#game.inventoryItems[i].setRow(this.#game.inventoryItems[i - 1].row + 1);
 				}
 			});
 			for (let i = 0; i < deletedInventoryItemsCount; i++)
