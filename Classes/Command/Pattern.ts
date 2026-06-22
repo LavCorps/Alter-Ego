@@ -517,6 +517,9 @@ export class Pattern implements PatternElement {
             const narrowedPreps = prepTokens.filter(token => matches.has(token.value));
             const narrowedSlots = slotTokens.filter(token => matches.has(token.preposition));
 
+            if (narrowedPreps.length === 0 || narrowedSlots.length === 0)
+                data.errors.push(`Couldn't find a preposition for ${name}.`)
+
             prepositions.set(name, [prepElement, narrowedPreps]);
             slots.set(name, [slotElement, narrowedSlots]);
         }
@@ -526,8 +529,7 @@ export class Pattern implements PatternElement {
         for (const [slot, tokens] of slots.values())
             data.matches.set(slot, tokens);
 
-        if (this.optional && data.errors.length > 0) return base;
-        else return data;
+        return data;
     }
 
     /**

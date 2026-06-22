@@ -392,5 +392,17 @@ describe("Pattern file from NG Commands", () => {
                 expect(fixture.name).toBe("FLOOR");
             });
         });
+
+        test("Pattern.match(4)", async () => {
+            const pattern = new Pattern([
+                new Slot(InventoryItem, "target"),
+                new Preposition("destination"),
+                new Slot(Fixture, "destination"),
+            ]);
+            const invocation = pattern.match(trie.tokenize(["MUG", "OF", "COFFEE", "next", "to", "FLOOR"])) as InvalidInvocation;
+            expect(invocation).toBeInstanceOf(InvalidInvocation);
+            expect(invocation.errors).toBeLength(1);
+            expect(invocation.errors[0]).toBe("Couldn't find a preposition for destination.");
+        });
     });
 });
