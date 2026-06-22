@@ -23,15 +23,10 @@ vi.mock(import('discord.js'), async (importOriginal) => {
 
 });
 
-/** @import BotCommand from '../Classes/BotCommand.ts' */
-/** @import ModeratorCommand from '../Classes/ModeratorCommand.ts' */
-/** @import PlayerCommand from '../Classes/PlayerCommand.ts' */
-/** @import EligibleCommand from '../Classes/EligibleCommand.ts' */
-
 import GuildContext from '../Classes/GuildContext.ts';
 import Game from '../Data/Game.ts';
 import ClientContext from '../Classes/ClientContext.ts';
-import { ChannelType, Collection } from 'discord.js';
+import { ChannelType } from 'discord.js';
 import {DEFAULT_GAME_SETTINGS} from "../Modules/settingsLoader.ts";
 
 vi.mock('../Configs/demodata.json', () => ({ default: demodata }));
@@ -101,19 +96,10 @@ beforeAll(() => {
         spectatorRole
     );
 
-    // Initialize game and client context with empty command collections.
+    // Initialize game.
     const game = new Game(guildContext, DEFAULT_GAME_SETTINGS);
-    /** @type {Collection<string, BotCommand>} */
-    const botCommands = new Collection();
-    /** @type {Collection<string, ModeratorCommand>} */
-    const moderatorCommands = new Collection();
-    /** @type {Collection<string, PlayerCommand>} */
-    const playerCommands = new Collection();
-    /** @type {Collection<string, EligibleCommand>} */
-    const eligibleCommands = new Collection();
-
     // Create ClientContext singleton and attach to game.
-    ClientContext.Instance(client, botCommands, moderatorCommands, playerCommands, eligibleCommands, game);
+    ClientContext.Instance(client, game);
     game.setClientContext();
     // Ensure presence update doesn't throw during tests.
     try { ClientContext.instance.updatePresence(); } catch (e) { }

@@ -5,8 +5,11 @@
 import {
     type CategoryChannelResolvable,
     ChannelType,
-    type Guild, type GuildBasedChannel, type GuildChannelTypes,
+    type Guild,
+    type GuildBasedChannel,
+    type GuildChannelTypes,
     type GuildMember,
+    type PartialMessage,
     type Role,
     type TextChannel
 } from "discord.js";
@@ -216,7 +219,7 @@ export default class GuildContext {
      * Returns true if the given message was sent in a DM channel.
      * @param message
      */
-    sentInDMChannel(message: UserMessage) {
+    sentInDMChannel(message: UserMessage | PartialMessage) {
         return message.channel.type === ChannelType.DM;
     }
 
@@ -224,7 +227,7 @@ export default class GuildContext {
      * Returns true if the given message was sent in the moderator command channel.
      * @param message
      */
-    sentInCommandChannel(message: UserMessage) {
+    sentInCommandChannel(message: UserMessage | PartialMessage) {
         return message.channel.id === this.commandChannel.id;
     }
 
@@ -232,7 +235,7 @@ export default class GuildContext {
      * Returns true if the given message was sent in a room channel.
      * @param message
      */
-    sentInRoomChannel(message: UserMessage) {
+    sentInRoomChannel(message: UserMessage | PartialMessage) {
         return message.channel.type === ChannelType.GuildText && this.roomCategories.includes(message.channel.parentId);
     }
 
@@ -240,15 +243,23 @@ export default class GuildContext {
      * Returns true if the given message was sent in a whisper channel.
      * @param message
      */
-    sentInWhisperChannel(message: UserMessage) {
+    sentInWhisperChannel(message: UserMessage | PartialMessage) {
         return message.channel.type === ChannelType.GuildText && message.channel.parentId === this.whisperCategoryId;
+    }
+
+    /**
+     * Returns true if the given message was sent in the announcement channel.
+     * @param message
+     */
+    sentInAnnouncementChannel(message: UserMessage | PartialMessage) {
+        return message.channel.type === ChannelType.GuildText && message.channel.id === this.announcementChannel.id;
     }
 
     /**
      * Returns true if the given message was sent in the testing channel.
      * @param message
      */
-    sentInTestingChannel(message: UserMessage) {
+    sentInTestingChannel(message: UserMessage | PartialMessage) {
         return message.channel.id === this.testingChannel.id;
     }
 
@@ -256,8 +267,16 @@ export default class GuildContext {
      * Returns true if the given message was sent in the general channel.
      * @param message
      */
-    sentInGeneralChannel(message: UserMessage) {
+    sentInGeneralChannel(message: UserMessage | PartialMessage) {
         return message.channel.id === this.generalChannel.id;
+    }
+
+    /**
+     * Returns true if the given message was sent in a channel where dialog messages can be sent.
+     * @param message
+     */
+    sentInDialogChannel(message: UserMessage | PartialMessage) {
+        return this.sentInRoomChannel(message) || this.sentInWhisperChannel(message) || this.sentInAnnouncementChannel(message);
     }
 
     /**
