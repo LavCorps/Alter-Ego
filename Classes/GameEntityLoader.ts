@@ -721,7 +721,9 @@ export default class GameEntityLoader extends GameEntityManager {
                         parseInt(inventorySlotSplit[1]),
                         0,
                         0,
-                        []
+                        [],
+                        row + 2,
+                        this.game
                     );
                     if (inventorySlots.get(inventorySlot.id))
                         errors.push(new Error(`Couldn't load prefab on row ${row + 2}. The prefab already has an inventory slot with the ID "${inventorySlot.id}".`));

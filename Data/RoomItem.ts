@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import { Collection } from "discord.js";
 import DestroyRoomItemAction from "./Actions/DestroyRoomItemAction.ts";
 import InstantiateRoomItemAction from "./Actions/InstantiateRoomItemAction.ts";
@@ -83,7 +87,9 @@ export default class RoomItem extends ItemInstance implements PersistentGameEnti
                 prefabInventorySlot.capacity,
                 prefabInventorySlot.takenSpace,
                 prefabInventorySlot.weight,
-                items
+                items,
+                this.row,
+                this.getGame()
             );
             this.inventory.set(inventorySlot.id, inventorySlot);
         });

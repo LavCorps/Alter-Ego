@@ -1,14 +1,20 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
+import GameEntity from "./GameEntity.ts";
 import type InventoryItem from "./InventoryItem.ts";
 import type ItemInstance from "./ItemInstance.ts";
 import type Prefab from "./Prefab.ts";
 import type RoomItem from "./RoomItem.ts";
+import type Game from "./Game.ts";
 
 /**
  * Represents a slot within an item that can contain other items.
  *
  * @typeParam T - The type of item contained in the slot. Must be either an {@link ItemInstance}, {@link RoomItem} or {@link InventoryItem}.
  */
-export default class InventorySlot<T extends ItemInstance | RoomItem | InventoryItem> {
+export default class InventorySlot<T extends ItemInstance | RoomItem | InventoryItem> extends GameEntity {
 	/**
 	 * The ID of the slot. Must be unique relative to other slots held by the same item.
 	 */
@@ -46,8 +52,11 @@ export default class InventorySlot<T extends ItemInstance | RoomItem | Inventory
 	 * @param takenSpace - The current sum of sizes stored in the slot.
 	 * @param weight - The combined weight of all items stored in the slot.
 	 * @param items - The items stored in the slot.
+     * @param row - The row number of the inventory slot in the sheet.
+     * @param game - The game this belongs to.
 	 */
-	constructor(id: string, capacity: number, takenSpace: number, weight: number, items: Array<T>) {
+	constructor(id: string, capacity: number, takenSpace: number, weight: number, items: Array<T>, row: number, game: Game) {
+        super(game, row);
 		this.id = id;
 		this.name = id;
 		this.capacity = capacity;
@@ -136,7 +145,11 @@ export default class InventorySlot<T extends ItemInstance | RoomItem | Inventory
         return this.weight;
     }
 
-    toString(): string {
+    override toString(): string {
         return `${this.id}: ${this.capacity}`;
+    }
+
+    override getEntityType(): string {
+        return "InventorySlot";
     }
 }

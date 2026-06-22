@@ -53,7 +53,7 @@ export default class InventoryItem extends ItemInstance implements PersistentGam
      * @param quantity - How many identical instances of this inventory item are in the given container.
      * @param uses - The number of times this inventory item can be used.
      * @param description - The description of the inventory item. Can contain multiple item lists named after its inventory slots.
-     * @param row - The row number of the inventory inventory item in the sheet.
+     * @param row - The row number of the inventory item in the sheet.
      * @param game - The game this belongs to.
      */
     constructor(playerName: string, prefabId: string, identifier: string, equipmentSlot: string, containerType: string,
@@ -89,7 +89,9 @@ export default class InventoryItem extends ItemInstance implements PersistentGam
                 prefabInventorySlot.capacity,
                 prefabInventorySlot.takenSpace,
                 prefabInventorySlot.weight,
-                items
+                items,
+                this.row,
+                this.getGame()
             );
             this.inventory.set(inventorySlot.id, inventorySlot);
         });
@@ -284,7 +286,7 @@ export default class InventoryItem extends ItemInstance implements PersistentGam
 
     /**
      * Returns the item contained inside of this container with the given identifier or prefab ID.
-     * If no such item exists, returns undefined. 
+     * If no such item exists, returns undefined.
      * @param identifier - The identifier or prefab ID to search for.
      */
     override getContainedItem(identifier: string): ItemInstance {

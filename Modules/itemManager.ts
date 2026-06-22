@@ -418,7 +418,7 @@ export function putItemInHand(item: ItemInstance, player: Player, handEquipmentS
     let createdItem = convertRoomItem(item, player, handEquipmentSlot.id, 1);
     createdItem.containerName = "";
     createdItem.container = null;
-    createdItem.row = handEquipmentSlot.row;
+    createdItem.setRow(handEquipmentSlot.row);
 
     // Equip the item and add it to the player's inventory.
     handEquipmentSlot.equipItem(createdItem);
@@ -532,7 +532,7 @@ export function insertRoomItems(location: Room, items: RoomItem[]): void {
             }
             // Update the rows for all of the items after this.
             for (let i = insertIndex + 1, newRow = insertRow + 1; i < game.roomItems.length; i++, newRow++)
-                game.roomItems[i].row = newRow;
+                game.roomItems[i].setRow(newRow);
         }
     }
 }
@@ -567,7 +567,7 @@ export function insertInventoryItems(player: Player, items: InventoryItem[], equ
                 matchedItem.quantity += item.quantity;
             const containerRow = matchedItem.container !== null ? matchedItem.container.row : 0;
             matchedItem.container = item.container;
-            if (containerRow !== 0 && item.container.row === 0) matchedItem.container.row = containerRow;
+            if (containerRow !== 0 && item.container.row === 0) matchedItem.container.setRow(containerRow);
             matchedItem.weight = item.weight;
             matchedItem.inventory = item.inventory;
             // Update container's references to this item.
@@ -625,7 +625,7 @@ export function insertInventoryItems(player: Player, items: InventoryItem[], equ
             }
             // Update the rows for all of the inventoryItems after this.
             for (let i = insertIndex + 1, newRow = insertRow + 1; i < game.inventoryItems.length; i++, newRow++)
-                game.inventoryItems[i].row = newRow;
+                game.inventoryItems[i].setRow(newRow);
 
             // Update the rows for all Player EquipmentSlots.
             game.players.forEach(player => {

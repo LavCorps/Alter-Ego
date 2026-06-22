@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import { Collection } from "discord.js";
 import type Game from "./Game.ts";
 import InventorySlot from "./InventorySlot.ts";
@@ -106,7 +110,7 @@ export default abstract class ItemInstance extends ItemContainer {
 	getIdentifier(): string {
 		return this.identifier !== "" ? this.identifier : this.prefab ? this.prefab.id : "NULL";
 	}
-    
+
     public get size(): number {
         return this.prefab?.size ?? 0;
     }
@@ -159,7 +163,7 @@ export default abstract class ItemInstance extends ItemContainer {
         this.pluralName = "";
         this.singleContainingPhrase = "";
         this.pluralContainingPhrase = "";
-        
+
         for (const [[...proceduralOption], names] of this.prefab.possibleNames.entries()) {
             if (this.hasProceduralSelection(proceduralOption[0])) {
                 this.name = names[0];
@@ -257,4 +261,15 @@ export default abstract class ItemInstance extends ItemContainer {
 	getSlotPhrase(inventorySlot: InventorySlot<ItemInstance>): string {
 		return this.inventory.size !== 1 ? `the ${inventorySlot.id} of ` : ``;
 	}
+
+    /**
+     * Sets the item's row to the given number, and updates the row numbers of all inventory slots contained within it.
+     * This does not change the row numbers of items contained in those inventory slots.
+     * @param row - The new row number to set.
+     */
+    setRow(row: number): void {
+        this.row = row;
+        for (const inventorySlot of this.inventory.values())
+            inventorySlot.row = row;
+    }
 }

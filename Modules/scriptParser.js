@@ -143,6 +143,7 @@ export const SCRIPT_SCOPE_OPTIONS = {
 		'removeItem',
         'addWeight',
         'subtractWeight',
+        'setRow',
         'setParentFixture',
         'checkRequirementsMet',
 		'solve',

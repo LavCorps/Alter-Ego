@@ -1505,7 +1505,7 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
 
         // Copy the inventory item to the new equipment slot.
         let createdItem = itemManager.copyInventoryItem(item, this, equipmentSlot.id, 1);
-        createdItem.row = equipmentSlot.row;
+        createdItem.setRow(equipmentSlot.row);
 
         // Equip the item to the player's equipment slot.
         equipmentSlot.equipItem(createdItem);
@@ -1527,7 +1527,7 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
      * @param equipmentSlot - The equipment slot to equip the inventory item to.
      */
     directEquip(item: InventoryItem, equipmentSlot: EquipmentSlot): void {
-        item.row = equipmentSlot.row;
+        item.setRow(equipmentSlot.row);
         equipmentSlot.equipItem(item);
         const handSlotIDs = this.getGame().entityFinder.getPlayerHands(this).map(equipmentSlot => equipmentSlot.id);
         if (!handSlotIDs.includes(equipmentSlot.id))
