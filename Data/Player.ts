@@ -771,23 +771,20 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
      * Creates a string of non-discreet inventory items in the player's hands.
      */
     createMoveAppendString(): string {
+        // Get the player's held items, sorted by size.
+        const heldItems = this.getGame().entityFinder.getPlayerHands(this)
+            .filter(hand => hand.equippedItem !== null && !hand.equippedItem.prefab.discreet)
+            .map(hand => hand.equippedItem)
+            .toSorted((a, b) => b.size - a.size);
+        const collatedHeldItems = CollatedItem.collateForItemList(heldItems);
+
         let nonDiscreetItems: string[] = [];
-        const hands = this.getGame().entityFinder.getPlayerHands(this);
-        for (const hand of hands)
-            if (hand.equippedItem !== null && !hand.equippedItem.prefab.discreet)
-                nonDiscreetItems.push(hand.equippedItem.singleContainingPhrase);
+        for (const heldItem of collatedHeldItems)
+            nonDiscreetItems.push(heldItem.toSingleOrPluralContainingPhrase());
 
         let appendString = "";
-        /**
-         * @privateRemarks
-         * I am of the understanding that this function shall soon be refactored regardless,
-         * so I will not touch any further in service to the `feature/handedness` PR, but I do wish to point out that
-         * if a player has more than two hands, this will be insufficient.
-         */
-        if (nonDiscreetItems.length === 1)
-            appendString = ` carrying ${nonDiscreetItems[0]}`;
-        else if (nonDiscreetItems.length === 2)
-            appendString = ` carrying ${nonDiscreetItems[0]} and ${nonDiscreetItems[1]}`;
+        if (nonDiscreetItems.length > 0)
+            appendString = ` carrying ${generateListString(nonDiscreetItems)}`;
 
         return appendString;
     }
