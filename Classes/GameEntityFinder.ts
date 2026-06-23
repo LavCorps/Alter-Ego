@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+// SPDX-FileCopyrightText: 2026 LavCorps <lavcorps@protonmail.com>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -205,6 +206,8 @@ export default class GameEntityFinder {
 		let hands: EquipmentSlot[] = [];
 		if (player.inventory.has("RIGHT HAND")) hands.push(player.inventory.get("RIGHT HAND"));
 		if (player.inventory.has("LEFT HAND")) hands.push(player.inventory.get("LEFT HAND"));
+        // Right-biased handedness may not be desirable. This sorting function allows for players to have a left hand used for handed operations by default, with a trivial computational cost.
+        hands.sort((a, b) => a.row - b.row);
 		return hands;
 	}
 
