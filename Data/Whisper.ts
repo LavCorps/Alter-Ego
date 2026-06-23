@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { Collection, type TextChannel } from "discord.js";
-import { generatePlayerListString } from "../Modules/helpers.ts";
+import { generatePlayerListString, sortPlayersByDisplayName } from "../Modules/helpers.ts";
 import { WhisperType } from "../Modules/enums.js";
 import type Action from "./Action.ts";
 import type Game from "./Game.ts";
@@ -176,8 +176,9 @@ export default class Whisper extends GameConstruct {
      */
     static generateValidId(players: Player[], location?: Room, associatedEntityName?: string): string {
         const locationString = location ? `${location.id}-` : ``;
-        const hidingSpotString = associatedEntityName ? `${associatedEntityName}-` : ``;
-        const playerListString = players.map(player => player.displayName).sort().join('-');
-        return Room.generateValidId(`${locationString}${hidingSpotString}${playerListString}`);
+        const associatedEntityString = associatedEntityName ? `${associatedEntityName}-` : ``;
+        sortPlayersByDisplayName(players);
+        const playerListString = players.map(player => player.displayName).join('-');
+        return Room.generateValidId(`${locationString}${associatedEntityString}${playerListString}`);
     }
 }

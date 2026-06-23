@@ -5,6 +5,7 @@
 import Party from "../../../Data/Party.ts";
 import type Player from "../../../Data/Player.ts";
 import type Status from "../../../Data/Status.ts";
+import DisbandPartyAction from "../../../Data/Actions/DisbandPartyAction.ts";
 import FollowAction from "../../../Data/Actions/FollowAction.ts";
 import LeadAction from "../../../Data/Actions/LeadAction.ts";
 import QueueMoveAction from "../../../Data/Actions/QueueMoveAction.ts";
@@ -102,7 +103,7 @@ describe('LeadAction test', () => {
             vi.restoreAllMocks();
         });
 
-        describe('lead one player at a time', () => {
+        describe('party is retained between tests', () => {
             beforeAll(async () => {
                 const followAction1 = new FollowAction(game, undefined, asuka, asuka.location, false);
                 await followAction1.performFollow(astrid);
@@ -142,6 +143,8 @@ describe('LeadAction test', () => {
                 expect(astrid.party.whisper.associatedEntity).not.toBeNull();
                 expect(astrid.party.whisper.associatedEntity).toBeInstanceOf(Party);
                 expect(astrid.party.whisper.associatedEntity).toStrictEqual(astrid.party);
+                expect(astrid.party.id).toBe("party-an-individual-wearing-a-mask-asuka");
+                expect(astrid.party.id).toBe(astrid.party.whisper.id);
                 expect(astrid.party.whisper.players).toHaveSize(2);
                 expect(astrid.party.whisper.players.has("Astrid")).toBe(true);
                 expect(astrid.party.whisper.players.has("Asuka")).toBe(true);
@@ -160,6 +163,8 @@ describe('LeadAction test', () => {
                 expect(astrid.party).not.toBeNull();
                 expect(asuka.party).not.toBeNull();
                 expect(astrid.party).toStrictEqual(asuka.party);
+                expect(astrid.party.id).toBe("party-an-individual-wearing-a-mask-asuka");
+                expect(astrid.party.id).toBe(astrid.party.whisper.id);
                 expect(astrid.party.leader).toStrictEqual(astrid);
                 expect(astrid.party.followers).toHaveSize(1);
                 expect(astrid.party.followers.has("Astrid")).toBe(false);
@@ -189,10 +194,89 @@ describe('LeadAction test', () => {
                 expect(astrid.party.whisper.associatedEntity).not.toBeNull();
                 expect(astrid.party.whisper.associatedEntity).toBeInstanceOf(Party);
                 expect(astrid.party.whisper.associatedEntity).toStrictEqual(astrid.party);
+                expect(astrid.party.id).toBe("party-an-individual-wearing-a-mask-asuka-nero");
+                expect(astrid.party.id).toBe(astrid.party.whisper.id);
                 expect(astrid.party.whisper.players).toHaveSize(3);
                 expect(astrid.party.whisper.players.has("Astrid")).toBe(true);
                 expect(astrid.party.whisper.players.has("Asuka")).toBe(true);
                 expect(astrid.party.whisper.players.has("Nero")).toBe(true);
+            });
+        });
+
+        describe('leader is moving and party is reset after each test', () => {
+            beforeAll(async () => {
+                const followAction1 = new FollowAction(game, undefined, asuka, asuka.location, false);
+                await followAction1.performFollow(astrid);
+                const followAction2 = new FollowAction(game, undefined, nero, nero.location, false);
+                await followAction2.performFollow(astrid);
+            });
+
+            beforeEach(async () => {
+                vi.useFakeTimers();
+                const followAction1 = new FollowAction(game, undefined, asuka, asuka.location, false);
+                await followAction1.performFollow(astrid);
+                const followAction2 = new FollowAction(game, undefined, nero, nero.location, false);
+                await followAction2.performFollow(astrid);
+                const queueMoveAction = new QueueMoveAction(game, undefined, astrid, astrid.location, false);
+                const destination = "HALL 5";
+                astrid.moveQueue = [destination];
+                await queueMoveAction.performQueueMove(false, destination);
+            });
+
+            afterEach(async () => {
+                const disbandPartyAction = new DisbandPartyAction(game, undefined, astrid, astrid.location, false);
+                await disbandPartyAction.performDisbandParty(true);
+                vi.useRealTimers();
+            });
+
+            afterAll(() => {
+                for (const player of [astrid, asuka, nero]) {
+                    const stopAction = new StopAction(game, undefined, player, player.location, false);
+                    stopAction.performStop(false, undefined, true);
+                }
+                vi.clearAllTimers();
+            });
+
+            test('moving player leads one moving player and all players stop', async () => {
+                await vi.advanceTimersByTimeAsync(200);
+                expect(astrid.isMoving).toBe(true);
+                expect(asuka.isMoving).toBe(true);
+                expect(nero.isMoving).toBe(true);
+
+                const action = new LeadAction(game, undefined, astrid, astrid.location, false);
+                await action.performLead([asuka]);
+                expect(astrid.ledPlayers).toHaveLength(1);
+                expect(astrid.ledPlayers[0]).toStrictEqual(asuka);
+                expect(createPartySpy).toHaveBeenCalledTimes(1);
+                expect(astrid.party).not.toBeNull();
+                expect(asuka.party).not.toBeNull();
+                expect(astrid.party).toStrictEqual(asuka.party);
+
+                expect(astrid.isMoving).toBe(false);
+                expect(asuka.isMoving).toBe(false);
+                expect(nero.isMoving).toBe(false);
+            });
+
+            test('moving player leads two moving players and all players stop', async () => {
+                await vi.advanceTimersByTimeAsync(200);
+                expect(astrid.isMoving).toBe(true);
+                expect(asuka.isMoving).toBe(true);
+                expect(nero.isMoving).toBe(true);
+
+                const action = new LeadAction(game, undefined, astrid, astrid.location, false);
+                await action.performLead([asuka, nero]);
+                expect(astrid.ledPlayers).toHaveLength(2);
+                expect(astrid.ledPlayers[0]).toStrictEqual(asuka);
+                expect(astrid.ledPlayers[1]).toStrictEqual(nero);
+                expect(createPartySpy).toHaveBeenCalledTimes(1);
+                expect(astrid.party).not.toBeNull();
+                expect(asuka.party).not.toBeNull();
+                expect(astrid.party).toStrictEqual(asuka.party);
+                expect(astrid.party).toStrictEqual(nero.party);
+
+                expect(astrid.isMoving).toBe(false);
+                expect(asuka.isMoving).toBe(false);
+                expect(nero.isMoving).toBe(false);
             });
         });
     });
