@@ -772,14 +772,18 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
      */
     createMoveAppendString(): string {
         let nonDiscreetItems: string[] = [];
-        const rightHand = this.inventory.get("RIGHT HAND");
-        if (rightHand && rightHand.equippedItem !== null && !rightHand.equippedItem.prefab.discreet)
-            nonDiscreetItems.push(rightHand.equippedItem.singleContainingPhrase);
-        const leftHand = this.inventory.get("LEFT HAND");
-        if (leftHand && leftHand.equippedItem !== null && !leftHand.equippedItem.prefab.discreet)
-            nonDiscreetItems.push(leftHand.equippedItem.singleContainingPhrase);
+        const hands = this.getGame().entityFinder.getPlayerHands(this);
+        for (const hand of hands)
+            if (hand.equippedItem !== null && !hand.equippedItem.prefab.discreet)
+                nonDiscreetItems.push(hand.equippedItem.singleContainingPhrase);
 
         let appendString = "";
+        /**
+         * @privateRemarks
+         * I am of the understanding that this function shall soon be refactored regardless,
+         * so I will not touch any further in service to the `feature/handedness` PR, but I do wish to point out that
+         * if a player has more than two hands, this will be insufficient.
+         */
         if (nonDiscreetItems.length === 1)
             appendString = ` carrying ${nonDiscreetItems[0]}`;
         else if (nonDiscreetItems.length === 2)
