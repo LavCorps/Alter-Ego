@@ -9,8 +9,8 @@ import { fileURLToPath } from "node:url";
 import ClientEventHandler from "./ClientEventHandler.ts";
 import ClientEvent from "./ClientEvent.ts";
 import PrettyPrinter from "./PrettyPrinter.ts";
-import BotInteractableManager from "./BotInteractableManager.ts";
-import BotInteractionHandler from "./BotInteractionHandler.ts";
+import ClientInteractableManager from "./ClientInteractableManager.ts";
+import ClientInteractionHandler from "./ClientInteractionHandler.ts";
 import type Game from "../Data/Game.ts";
 import BotCommand from "./BotCommand.ts";
 import ModeratorCommand from "./ModeratorCommand.ts";
@@ -95,11 +95,11 @@ export default class ClientContext {
 	/**
 	 * A set of functions for creating and managing Interactables.
 	 */
-	readonly interactableManager: BotInteractableManager;
+	readonly interactableManager: ClientInteractableManager;
 	/**
 	 * A set of functions for handling Interactions.
 	 */
-	readonly interactionHandler: BotInteractionHandler;
+	readonly interactionHandler: ClientInteractionHandler;
 	/**
 	 * A timeout which updates the client user's presence every 30 seconds.
 	 */
@@ -114,8 +114,8 @@ export default class ClientContext {
 		this.#game = game;
 		this.#commandLog = [];
 		this.prettyPrinter = new PrettyPrinter();
-		this.interactableManager = new BotInteractableManager(this.#game);
-		this.interactionHandler = new BotInteractionHandler(this.#game);
+		this.interactableManager = new ClientInteractableManager(this.#game);
+		this.interactionHandler = new ClientInteractionHandler(this.#game);
 		this.#presenceUpdateInterval = setInterval(
 			() => this.updatePresence(),
 			30 * 1000

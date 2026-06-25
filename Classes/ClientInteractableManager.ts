@@ -75,7 +75,7 @@ interface InteractableMessage {
 /**
  * A set of functions for creating and managing Interactables.
  */
-export default class BotInteractableManager {
+export default class ClientInteractableManager {
     /**
      * The game this belongs to.
      */

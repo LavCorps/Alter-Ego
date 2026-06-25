@@ -1,4 +1,4 @@
-import type BotInteractableManager from "../../Classes/BotInteractableManager.ts";
+import type ClientInteractableManager from "../../Classes/ClientInteractableManager.ts";
 import type Interactable from "../../Classes/Interactables/Interactable.ts";
 import Action from "../Action.ts";
 import Event, { type EventField } from "../Event.ts";
@@ -39,7 +39,7 @@ export type EntityField<T extends PersistentGameEntity> =
 export default class ViewAction extends Action {
     static readonly dataTypeRegex = /^((?<Room>room(?! ?item)s?)|(?<Exit>exits?)|(?<Fixture>objects?|fixtures?)|(?<Prefab>prefabs?)|(?<Recipe>recipes?)|(?<RoomItem>(room ?)?items?)|(?<Puzzle>puzzles?)|(?<Event>events?)|(?<Status>status(?:es)? ?(?:effects?)?)|(?<Player>players?)|(?<InventoryItem>inventory(?: ?items?)?)|(?<Gesture>gestures?)|(?<Flag>flags?))(?<search>.*)/i;
     /** Shorthand for the interactable manager, since we'll be using it a lot. */
-    #interactableManager: BotInteractableManager;
+    #interactableManager: ClientInteractableManager;
 
     /**
      * Performs a view action.

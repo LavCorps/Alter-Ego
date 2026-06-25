@@ -34,7 +34,7 @@ import type { Interaction, InteractionCallbackResponse } from "discord.js";
 /**
  * A set of functions for handling Interactions.
  */
-export default class BotInteractionHandler {
+export default class ClientInteractionHandler {
 	/**
 	 * The game this belongs to.
 	 */
