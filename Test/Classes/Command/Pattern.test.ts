@@ -12,6 +12,7 @@ import Exit from "../../../Data/Exit.ts";
 import Fixture from "../../../Data/Fixture.ts";
 import Flag from "../../../Data/Flag.ts";
 import InventoryItem from "../../../Data/InventoryItem.ts";
+import InventorySlot from "../../../Data/InventorySlot.ts";
 import Player from "../../../Data/Player.ts";
 import Prefab from "../../../Data/Prefab.ts";
 import Puzzle from "../../../Data/Puzzle.ts";
@@ -430,6 +431,8 @@ describe("Pattern file from NG Commands", () => {
         });
 
         test("Pattern.match(6)", async () => {
+            trie.insert("in", new ConstantToken("in"));
+            trie.insert("of", new ConstantToken("of"));
             const pattern = new Pattern([
                 new Slot(InventoryItem, "target"),
                 new Constant("in"),
@@ -437,10 +440,29 @@ describe("Pattern file from NG Commands", () => {
                 new Constant("of"),
                 new Slot(InventoryItem, "destination"),
             ]);
-            const invocation = pattern.match(trie.tokenize(["MUG", "OF", "COFFEE", "in", "RIGHT POCKET", "of", "KYRAS LAB COAT 1"])) as InvalidInvocation;
-            expect(invocation).toBeInstanceOf(InvalidInvocation);
-            expect(invocation.errors).toBeLength(1);
-            expect(invocation.errors[0]).toBe("Couldn't find a preposition for destination.");
+            const invocation = pattern.match(trie.tokenize(["MUG", "OF", "COFFEE", "in", "RIGHT", "POCKET", "of", "KYRAS", "LAB", "COAT", "1"])) as MatchedInvocation;
+            expect(invocation).toBeInstanceOf(MatchedInvocation);
+            console.log(invocation.args);
+            expect(invocation.args.size).toBe(3);
+            expect(invocation.args.get("target")).not.toBeUndefined();
+            expect(invocation.args.get("target").length).toBe(1);
+            invocation.args.get("target").forEach((item: InventoryItem) => {
+                expect(item).toBeInstanceOf(InventoryItem);
+                expect(item.prefabId).toBe("MUG OF COFFEE");
+            });
+            expect(invocation.args.get("destination")).not.toBeUndefined();
+            expect(invocation.args.get("destination").length).toBe(1);
+            invocation.args.get("destination").forEach((item: InventoryItem) => { 
+                expect(item).toBeInstanceOf(InventoryItem);
+                expect(item.prefabId).toBe("KYRAS LAB COAT");
+                expect(item.getIdentifier()).toBe("KYRAS LAB COAT 1");
+            });
+            expect(invocation.args.get("destination pocket")).not.toBeUndefined();
+            expect(invocation.args.get("destination pocket").length).toBe(1); // there are 505 pockets within the testing data, but we specifically want the right pocket of lab coat 1
+            invocation.args.get("destination pocket").forEach((pocket: InventorySlot<InventoryItem>) => { 
+                expect(pocket).toBeInstanceOf(InventorySlot);
+                expect(pocket.id).toBe("RIGHT POCKET");
+            });
         });
     });
 });

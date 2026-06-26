@@ -391,11 +391,14 @@ export class Pattern implements PatternElement {
                     } else stream = data.next();
                 }
             } else if (element instanceof Pocket) {
+                console.log("HIT POCKET")
+                console.log(data.stream);
                 let elementMatches: PocketToken<ItemInstance>[] = data.stream.filter(token => token instanceof PocketToken);
                 if (elementMatches.length > 0) {
+                    console.log("POCKET > 0")
                     data.matches.set(element, elementMatches);
                     matchedIndices.add(grammarIndex);
-                }
+                } else console.log("POCKET <= 0‽")
             } else if (element instanceof Pattern) {
                 data = element.innerMatch(data);
             }
@@ -485,7 +488,9 @@ export class Pattern implements PatternElement {
             if (!matchedIndices.has(index)) neverMatchedIndices.add(index);
         }
 
+        console.log(data.matches);
         data = this.matchPrepositions(data);
+        console.log(data.matches);
 
         //data = this.matchPockets(data);
 
@@ -619,6 +624,7 @@ export class Pattern implements PatternElement {
         else {
             const args: Collection<string, GameEntity[]> = new Collection();
             data.matches.forEach((val, key) => {
+                console.log([key instanceof Slot, key instanceof Multislot, key instanceof Pocket])
                 if (key instanceof Slot || key instanceof Multislot || key instanceof Pocket)
                     args.set(
                         key.name,
