@@ -9,7 +9,7 @@ export default defineConfig({
             reportOnFailure: true,
             include: ["Classes/*.{js,ts}", "Commands/*.{js,ts}", "Data/*.{js,ts}", "Data/Actions/*.{js,ts}", "Modules/*.{js,ts}"],
         },
-        setupFiles: "Test/setup.js",
+        setupFiles: "Test/setup.ts",
         typecheck: {
             enabled: true,
         },

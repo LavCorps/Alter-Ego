@@ -26,56 +26,52 @@ vi.mock(import('discord.js'), async (importOriginal) => {
 import GuildContext from '../Classes/GuildContext.ts';
 import Game from '../Data/Game.ts';
 import ClientContext from '../Classes/ClientContext.ts';
-import { ChannelType } from 'discord.js';
+import { CategoryChannel, ChannelType, Client, Guild, GuildMember, Role, TextChannel, type Channel } from 'discord.js';
 import {DEFAULT_GAME_SETTINGS} from "../Modules/settingsLoader.ts";
 
 vi.mock('../Configs/demodata.json', () => ({ default: demodata }));
 vi.mock('../Configs/serverconfig.json', () => ({ default: serverconfig }));
 
 beforeAll(() => {
-    /** @type {any} */ const client = discordMock.createMockClient();
+    const client = discordMock.createMockClient() as unknown as Client<true>;
 
     // Create a minimal mocked Discord environment and initialize Game.
-    /** @type {any[]} */
-    let channels = [];
-    /** @type {any} */ const commandChannel = discordMock.createMockChannel(serverconfig.commandChannel, 'bot-commands', ChannelType.GuildText, undefined, undefined, client);
-    /** @type {any} */ const logChannel = discordMock.createMockChannel(serverconfig.logChannel, 'bot-log', ChannelType.GuildText, undefined, undefined, client);
-    /** @type {any} */ const announcementChannel = discordMock.createMockChannel(serverconfig.announcementChannel, 'announcements', ChannelType.GuildText, undefined, undefined, client);
-    /** @type {any} */ const testingChannel = discordMock.createMockChannel(serverconfig.testingChannel, 'testing', ChannelType.GuildText, undefined, undefined, client);
-    /** @type {any} */ const generalChannel = discordMock.createMockChannel(serverconfig.generalChannel, 'general', ChannelType.GuildText, undefined, undefined, client);
-    /** @type {any} */ const whisperCategory = discordMock.createMockChannel(serverconfig.whisperCategory, 'Whispers', ChannelType.GuildCategory, undefined, undefined, client);
-    /** @type {any} */ const spectateCategory = discordMock.createMockChannel(serverconfig.spectateCategory, 'Spectate', ChannelType.GuildCategory, undefined, undefined, client);
+    let channels: Channel[] = [];
+    const commandChannel = discordMock.createMockChannel(serverconfig.commandChannel, 'bot-commands', ChannelType.GuildText, undefined, undefined, client) as unknown as TextChannel;
+    const logChannel = discordMock.createMockChannel(serverconfig.logChannel, 'bot-log', ChannelType.GuildText, undefined, undefined, client) as unknown as TextChannel;
+    const announcementChannel = discordMock.createMockChannel(serverconfig.announcementChannel, 'announcements', ChannelType.GuildText, undefined, undefined, client) as unknown as TextChannel;
+    const testingChannel = discordMock.createMockChannel(serverconfig.testingChannel, 'testing', ChannelType.GuildText, undefined, undefined, client) as unknown as TextChannel;
+    const generalChannel = discordMock.createMockChannel(serverconfig.generalChannel, 'general', ChannelType.GuildText, undefined, undefined, client) as unknown as TextChannel;
+    const whisperCategory = discordMock.createMockChannel(serverconfig.whisperCategory, 'Whispers', ChannelType.GuildCategory, undefined, undefined, client) as unknown as TextChannel;
+    const spectateCategory = discordMock.createMockChannel(serverconfig.spectateCategory, 'Spectate', ChannelType.GuildCategory, undefined, undefined, client) as unknown as TextChannel;
     channels.push(commandChannel, logChannel, announcementChannel, testingChannel, generalChannel, whisperCategory, spectateCategory);
-    /** @type {any[]} */ const roomCategoryIds = serverconfig.roomCategories.split(',');
+    const roomCategoryIds = serverconfig.roomCategories.split(',');
     for (const roomCategoryId of roomCategoryIds)
-        channels.push(discordMock.createMockChannel(roomCategoryId, 'Rooms', ChannelType.GuildCategory, undefined, undefined, client));
+        channels.push(discordMock.createMockChannel(roomCategoryId, 'Rooms', ChannelType.GuildCategory, undefined, undefined, client) as unknown as CategoryChannel);
 
-    /** @type {any[]} */
-    let roles = [];
-    /** @type {any} */ const testerRole = discordMock.createMockRole(serverconfig.testerRole, 'Tester');
-    /** @type {any} */ const eligibleRole = discordMock.createMockRole(serverconfig.eligibleRole, 'Eligible');
-    /** @type {any} */ const playerRole = discordMock.createMockRole(serverconfig.playerRole, 'Player');
-    /** @type {any} */ const freeMovementRole = discordMock.createMockRole(serverconfig.headmasterRole, 'Free Movement');
-    /** @type {any} */ const moderatorRole = discordMock.createMockRole(serverconfig.moderatorRole, 'Moderator');
-    /** @type {any} */ const deadRole = discordMock.createMockRole(serverconfig.deadRole, 'Dead');
-    /** @type {any} */ const spectatorRole = discordMock.createMockRole(serverconfig.spectatorRole, 'Spectator');
+    let roles: Role[] = [];
+    const testerRole = discordMock.createMockRole(serverconfig.testerRole, 'Tester') as unknown as Role;
+    const eligibleRole = discordMock.createMockRole(serverconfig.eligibleRole, 'Eligible') as unknown as Role;
+    const playerRole = discordMock.createMockRole(serverconfig.playerRole, 'Player') as unknown as Role;
+    const freeMovementRole = discordMock.createMockRole(serverconfig.headmasterRole, 'Free Movement') as unknown as Role;
+    const moderatorRole = discordMock.createMockRole(serverconfig.moderatorRole, 'Moderator') as unknown as Role;
+    const deadRole = discordMock.createMockRole(serverconfig.deadRole, 'Dead') as unknown as Role;
+    const spectatorRole = discordMock.createMockRole(serverconfig.spectatorRole, 'Spectator') as unknown as Role;
     roles.push(testerRole, eligibleRole, playerRole, freeMovementRole, moderatorRole, deadRole, spectatorRole);
 
     const memberIds = ["665168062697177107", "621550382253998081", "778157117936107520", "621554507041734656", "656377156934434818", "849256035867820072", "822180788288094238", "578764435766640640", "430830419793936394"];
-    /** @type {any[]} */
-    let members = [];
+    let members: GuildMember[] = [];
     for (const memberId of memberIds) {
         const member = discordMock.createMockMember(memberId);
         member.roles.add(playerRole);
         if (memberId === "430830419793936394") member.roles.add(freeMovementRole);
-        members.push(member);
+        members.push(member as unknown as GuildMember);
     }
     const moderator = discordMock.createMockMember("775841429641232417", "Narrator");
     moderator.roles.add(moderatorRole);
-    members.push(moderator);
+    members.push(moderator as unknown as GuildMember);
 
-    /** @type {any} */
-    const mockGuild = discordMock.createMockGuild(channels, roles, members, client);
+    const mockGuild = discordMock.createMockGuild(channels, roles, members, client) as unknown as Guild;
 
     const guildContext = new GuildContext(
         mockGuild,
@@ -125,7 +121,7 @@ import { PolyPlugin } from "../Classes/PrettyPrinter.ts";
 const polyPlugin = new PolyPlugin()
 
 plugins.DOMElement.test = polyPlugin.test;
-plugins.DOMElement.serialize = /** @type {typeof plugins.DOMElement.serialize} */ (polyPlugin.serialize);
+plugins.DOMElement.serialize = polyPlugin.serialize as typeof plugins.DOMElement.serialize;
 plugins.DOMCollection.test = () => false;
 plugins.DOMCollection.serialize = () => "";
 plugins.ReactElement.test = () => false;
