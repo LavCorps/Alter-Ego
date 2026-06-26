@@ -53,6 +53,7 @@ describe('LeadAction test', () => {
     let crutches: Status;
 
     beforeAll(async () => {
+        vi.useFakeTimers();
         if (!game.inProgress) await game.entityLoader.loadAll();
         astrid = game.entityFinder.getLivingPlayer("Astrid");
         asuka = game.entityFinder.getLivingPlayer("Asuka");
@@ -75,6 +76,8 @@ describe('LeadAction test', () => {
         astrid.displayName = "Astrid";
         asuka.cure(cheerful);
         nero.cure(crutches);
+        vi.clearAllTimers();
+        vi.useRealTimers();
     });
 
     test('Setup is correct', () => {
