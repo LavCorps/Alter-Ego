@@ -164,6 +164,18 @@ export default class GameEntityFinder {
 		return this.game.players.get(Game.generateValidEntityName(name));
 	}
 
+    /**
+     * Gets a player by their Discord user ID.
+     * @param id - The ID to search for.
+     * @returns The player with the specified user ID. If no such player exists, returns undefined.
+     */
+    getPlayerById(id: string): Player {
+        if (!id) return;
+        for (const player of this.game.players.values()) {
+            if (!player.isNPC && player.id === id) return player;
+        }
+    }
+
 	/**
 	 * Gets a living player.
 	 * @param name - The player's name.
