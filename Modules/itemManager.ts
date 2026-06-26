@@ -9,7 +9,7 @@ import InventoryItem from '../Data/InventoryItem.ts';
 import InventorySlot from '../Data/InventorySlot.ts';
 import RoomItem from '../Data/RoomItem.ts';
 import ItemInstance from '../Data/ItemInstance.ts';
-import { generateProceduralOutput } from './parser.js';
+import { generateProceduralOutput } from './parser.ts';
 import type Prefab from '../Data/Prefab.ts';
 import type Room from '../Data/Room.ts';
 import type Player from '../Data/Player.ts';

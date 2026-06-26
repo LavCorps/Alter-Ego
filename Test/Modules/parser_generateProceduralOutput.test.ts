@@ -4,7 +4,7 @@
 
 import Description from "../../Data/Description.ts";
 import type Player from "../../Data/Player.ts";
-import { generateProceduralOutput } from "../../Modules/parser.js";
+import { generateProceduralOutput } from "../../Modules/parser.ts";
 
 let expected = new Map<string, number>();
 let actual = new Map<string, number>();
@@ -18,13 +18,13 @@ const acceptableDeviation = 200;
  */
 function generateActual(text: string, proceduralSelections: Map<string, string>, player?: Player) {
     const description = new Description(text, game.entityFinder.getPrefab('SIGN IN SHEET'), game);
-	for (let i = 0; i < 10000; i++) {
+    for (let i = 0; i < 10000; i++) {
         const proceduralSelectionsCopy = new Map(proceduralSelections);
-		const generatedText = generateProceduralOutput(description, proceduralSelectionsCopy, player);
-		if (actual.has(generatedText))
-			actual.set(generatedText, actual.get(generatedText) + 1);
-		else actual.set(generatedText, 1);
-	}
+        const generatedText = generateProceduralOutput(description, proceduralSelectionsCopy, player);
+        if (actual.has(generatedText))
+            actual.set(generatedText, actual.get(generatedText) + 1);
+        else actual.set(generatedText, 1);
+    }
 }
 
 function setPlayerStats(player: Player, str: number, per: number, dex: number, spd: number, sta: number) {

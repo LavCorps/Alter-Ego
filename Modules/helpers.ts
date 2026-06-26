@@ -95,7 +95,7 @@ export function generatePlayerListString(players: Player[]) {
 
 /**
  * Generates a grammatically correct list.
- * @param list 
+ * @param list
  */
 export function generateListString(list: string[]): string {
 	let listString = "";
@@ -112,7 +112,7 @@ export function generateListString(list: string[]): string {
 
 /**
  * Makes the given string easier to copy with Discord's markdown.
- * @param string 
+ * @param string
  */
 export function makeCopyable(string: string): string {
     if (string.length === 0) return string;
@@ -152,9 +152,20 @@ export function capitalizeFirstLetter(string: string): string {
 }
 
 /**
+ * Returns the given string with the first letter converted to lowercase.
+ * @param string
+ */
+export function lowercaseFirstLetter(string: string): string {
+    if (string.length === 0) return string;
+    const lowercaseFirstLetter = string.charAt(0).toLocaleLowerCase();
+    const remainingString = string.length > 1 ? string.substring(1) : '';
+    return `${lowercaseFirstLetter}${remainingString}`;
+}
+
+/**
  * Returns true if the given string ends with a punctuation mark.
  * Ignores formatting characters like *, _, ~, |, and ` that come after the punctuation mark.
- * @param string 
+ * @param string
  */
 export function endsWithPunctuation(string: string): boolean {
 	return !!string.match(/[.!?][_*~|`]*$/);
