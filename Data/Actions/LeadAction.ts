@@ -10,20 +10,20 @@ import { generateListString } from "../../Modules/helpers.ts";
 
 /**
  * Represents a lead action.
- * 
+ *
  * @see https://msvblank.github.io/Alter-Ego/reference/data_structures/action.html#lead-action
  */
 export default class LeadAction extends Action {
     /**
      * Performs a lead action.
-     * 
-     * @param followers - The players to lead. 
+     *
+     * @param followers - The players to lead.
      */
     async performLead(followers: Player[]): Promise<void> {
         if (this.performed) return;
         super.perform();
         this.getGame().narrationHandler.narrateLead(this, this.player, followers);
-        
+
         // If the leader is already in a party, get their party.
         let party: Party;
         let partyAlreadyExists = false;
@@ -41,6 +41,7 @@ export default class LeadAction extends Action {
 
         const newFollowers: Player[] = [];
         for (const follower of followers) {
+            // TODO: The following block may be unnecessary, as stopping the leading player above also stops their followers.
             if (follower.isMoving) {
                 const stopAction = new StopAction(this.getGame(), undefined, follower, follower.location, this.forced);
                 stopAction.performStop(false, undefined, false);

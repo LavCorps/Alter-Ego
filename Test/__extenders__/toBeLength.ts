@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 export default (actual: Array<unknown>, length: number) => {
-    if (!('length' in actual)) throw new TypeError('This must have size attribute!');
+    if (!('length' in actual)) throw new TypeError('This must have length attribute!');
     if (typeof actual.length !== 'number' || typeof length !== 'number') throw new TypeError('These must be of type number!');
 
     const pass = actual.length === length;

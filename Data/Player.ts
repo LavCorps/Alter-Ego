@@ -771,19 +771,20 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
      * Creates a string of non-discreet inventory items in the player's hands.
      */
     createMoveAppendString(): string {
+        // Get the player's held items, sorted by size.
+        const heldItems = this.getGame().entityFinder.getPlayerHands(this)
+            .filter(hand => hand.equippedItem !== null && !hand.equippedItem.prefab.discreet)
+            .map(hand => hand.equippedItem)
+            .toSorted((a, b) => b.size - a.size);
+        const collatedHeldItems = CollatedItem.collateForItemList(heldItems);
+
         let nonDiscreetItems: string[] = [];
-        const rightHand = this.inventory.get("RIGHT HAND");
-        if (rightHand && rightHand.equippedItem !== null && !rightHand.equippedItem.prefab.discreet)
-            nonDiscreetItems.push(rightHand.equippedItem.singleContainingPhrase);
-        const leftHand = this.inventory.get("LEFT HAND");
-        if (leftHand && leftHand.equippedItem !== null && !leftHand.equippedItem.prefab.discreet)
-            nonDiscreetItems.push(leftHand.equippedItem.singleContainingPhrase);
+        for (const heldItem of collatedHeldItems)
+            nonDiscreetItems.push(heldItem.toSingleOrPluralContainingPhrase());
 
         let appendString = "";
-        if (nonDiscreetItems.length === 1)
-            appendString = ` carrying ${nonDiscreetItems[0]}`;
-        else if (nonDiscreetItems.length === 2)
-            appendString = ` carrying ${nonDiscreetItems[0]} and ${nonDiscreetItems[1]}`;
+        if (nonDiscreetItems.length > 0)
+            appendString = ` carrying ${generateListString(nonDiscreetItems)}`;
 
         return appendString;
     }

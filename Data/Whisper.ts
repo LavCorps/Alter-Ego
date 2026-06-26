@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { Collection, type TextChannel } from "discord.js";
-import { generatePlayerListString } from "../Modules/helpers.ts";
+import { generatePlayerListString, sortPlayersByDisplayName } from "../Modules/helpers.ts";
 import { WhisperType } from "../Modules/enums.js";
 import type Action from "./Action.ts";
 import type Game from "./Game.ts";
@@ -105,8 +105,8 @@ export default class Whisper extends GameConstruct {
      * If no associated entity exists, this is null.
      */
     get associatedEntity(): HidingSpot | Party {
-        if (this.type === WhisperType.HIDING_SPOT) return this.getGame().entityFinder.getFixture(this.associatedEntityName, this.locationId)?.hidingSpot;
-        else if (this.type === WhisperType.PARTY) return this.getGame().entityFinder.getParty(this.id);
+        if (this.type === WhisperType.HIDING_SPOT) return this.getGame().entityFinder.getFixture(this.associatedEntityName, this.locationId)?.hidingSpot ?? null;
+        else if (this.type === WhisperType.PARTY) return this.getGame().entityFinder.getParty(this.id) ?? null;
         return null;
     }
 
@@ -176,8 +176,9 @@ export default class Whisper extends GameConstruct {
      */
     static generateValidId(players: Player[], location?: Room, associatedEntityName?: string): string {
         const locationString = location ? `${location.id}-` : ``;
-        const hidingSpotString = associatedEntityName ? `${associatedEntityName}-` : ``;
-        const playerListString = players.map(player => player.displayName).sort().join('-');
-        return Room.generateValidId(`${locationString}${hidingSpotString}${playerListString}`);
+        const associatedEntityString = associatedEntityName ? `${associatedEntityName}-` : ``;
+        sortPlayersByDisplayName(players);
+        const playerListString = players.map(player => player.displayName).join('-');
+        return Room.generateValidId(`${locationString}${associatedEntityString}${playerListString}`);
     }
 }

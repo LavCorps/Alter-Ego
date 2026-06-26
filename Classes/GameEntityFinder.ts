@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+// SPDX-FileCopyrightText: 2026 LavCorps <lavcorps@protonmail.com>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -163,6 +164,18 @@ export default class GameEntityFinder {
 		return this.game.players.get(Game.generateValidEntityName(name));
 	}
 
+    /**
+     * Gets a player by their Discord user ID.
+     * @param id - The ID to search for.
+     * @returns The player with the specified user ID. If no such player exists, returns undefined.
+     */
+    getPlayerById(id: string): Player {
+        if (!id) return;
+        for (const player of this.game.players.values()) {
+            if (!player.isNPC && player.id === id) return player;
+        }
+    }
+
 	/**
 	 * Gets a living player.
 	 * @param name - The player's name.
@@ -205,6 +218,8 @@ export default class GameEntityFinder {
 		let hands: EquipmentSlot[] = [];
 		if (player.inventory.has("RIGHT HAND")) hands.push(player.inventory.get("RIGHT HAND"));
 		if (player.inventory.has("LEFT HAND")) hands.push(player.inventory.get("LEFT HAND"));
+        // Right-biased handedness may not be desirable. This sorting function allows for players to have a left hand used for handed operations by default, with a trivial computational cost.
+        hands.sort((a, b) => a.row - b.row);
 		return hands;
 	}
 
