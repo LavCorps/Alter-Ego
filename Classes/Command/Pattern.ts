@@ -7,7 +7,7 @@ import { InvalidInvocation, MatchedInvocation, type MatchResult } from "./Invoca
 import { ConstantToken, EntityToken, ItemContainerToken, PocketToken, PrepositionToken, SentinelToken, type Token } from "./Token.ts";
 import type GameEntity from "../../Data/GameEntity.ts";
 import { Collection } from "discord.js";
-import type ItemInstance from "../../Data/ItemInstance.ts";
+import ItemInstance from "../../Data/ItemInstance.ts";
 
 /**
  * Base interface representing a pattern element.
@@ -128,14 +128,20 @@ export class Preposition implements PatternElement {
  */
 export class Pocket implements PatternElement {
     /**
-     * The name of the Slot that the Pocket refers to.
+     * The ID of the Slot that the Pocket refers to.
+     */
+    readonly id: string;
+    /**
+     * The name to refer to the Pocket with. Inherited by any Tokens that fit the Pocket.
      */
     readonly name: string;
 
     /**
-     * @param name - The name of the Slot that the Pocket refers to.
+     * @param id - The ID of the Slot that the Pocket refers to.
+     * @param name - The name to refer to the Pocket with. Inherited by any Tokens that fit the Pocket.
      */
-    constructor(name: string) {
+    constructor(id: string, name: string) {
+        this.id = id;
         this.name = name;
     }
 }
@@ -481,6 +487,8 @@ export class Pattern implements PatternElement {
 
         data = this.matchPrepositions(data);
 
+        //data = this.matchPockets(data);
+
         if (this.optional && data.errors.length > 0) return base;
         else return data;
     }
@@ -490,7 +498,8 @@ export class Pattern implements PatternElement {
      * @param base - MatchData to validate prepositions for.
      */
     private matchPrepositions(base: MatchData): MatchData {
-        let data = base.clone();
+        // TODO: in is a universal preposition, but is not accounted for in this logic...
+        const data = base.clone();
 
         /** K is the name of the Slot that the Preposition refers to, V[0] is the Preposition element, V[1] is the array of Preposition tokens */
         const prepositions: Collection<string, [Preposition, PrepositionToken[]]> = new Collection();
@@ -505,10 +514,17 @@ export class Pattern implements PatternElement {
                 slots.set(element.name, [element, tokens.filter(token => token instanceof ItemContainerToken)]);
         });
 
-        for (const [name, preposition] of prepositions) {
-            if (!slots.has(name)) continue;
+        if (prepositions.size === 0) return base;
+        else if (slots.size === 0) return base;
 
-            const [prepElement, prepTokens] = preposition;
+        for (const [name, [prepElement, prepTokens]] of prepositions) {
+            if (!slots.has(name)) {
+                // this should never appear during a normal alter ego game,
+                // and is indicative of an error in the formulation of the pattern of a command.
+                data.errors.push(`Found a preposition for ${name}, but no corresponding game object?`);
+                continue;
+            }
+
             const [slotElement, slotTokens] = slots.get(name);
 
             const slotPrepositions = new Set(slotTokens.map(token => token.preposition));
@@ -533,6 +549,66 @@ export class Pattern implements PatternElement {
     }
 
     /**
+     * Validates that pockets match their referred slots
+     * @param base - MatchData to validate pockets for.
+     */
+    private matchPockets(base: MatchData): MatchData {
+        const data = base.clone();
+
+        /** K is the name of the Slot that the Preposition refers to, V[0] is the Preposition element, V[1] is the array of Preposition tokens */
+        const pockets: Collection<string, [Pocket, PocketToken<ItemInstance>[]]> = new Collection();
+
+        /** K is the name of the Slot or Multislot, V[0] is the Slot or Multislot, V[1] is the array of EntityTokens */
+        const slots: Collection<string, [Slot | Multislot, ItemContainerToken<ItemInstance>[]]> = new Collection();
+
+        data.matches.forEach((tokens, element) => {
+            if (element instanceof Pocket)
+                pockets.set(element.name, [element, tokens.filter(token => token instanceof PocketToken)]);
+            else if (element instanceof Slot || element instanceof Multislot)
+                slots.set(element.name, [element, tokens.filter(token => token instanceof ItemContainerToken && token.reference instanceof ItemInstance) as ItemContainerToken<ItemInstance>[]]);
+        });
+
+        if (pockets.size === 0) return base;
+        else if (slots.size === 0) return base;
+
+        for (const [name, pocket] of pockets) {
+            if (!slots.has(name)) {
+                // similarly to the identical error case in matchPrepositions(),
+                // this should never appear during a normal alter ego game,
+                // and is indicative of an error in the formulation of the pattern of a command.
+                data.errors.push(`Found a pocket for ${name}, but no corresponding game object?`);
+                continue;
+            }
+
+            const [pockElement, pockTokens] = pocket;
+            const [slotElement, slotTokens] = slots.get(name);
+
+            // TODO: this logic is mostly copy-pasted from matchPrepositions and i am reasonably confident it does not even work...
+            const slotPockets: Set<string> = new Set();
+            for (const token of slotTokens)
+                for (const pocket of token.reference.inventory.values())
+                    slotPockets.add(pocket.id);
+            const matches = new Set(pockTokens.map(token => token.value).filter(value => slotPockets.has(value)));
+
+            const narrowedPocks = pockTokens.filter(token => matches.has(token.value));
+            const narrowedSlots = slotTokens.filter(token => matches.has(token.value));
+
+            if (narrowedPocks.length === 0 || narrowedSlots.length === 0)
+                data.errors.push(`Couldn't find a preposition for ${name}.`)
+
+            pockets.set(name, [pockElement, narrowedPocks]);
+            slots.set(name, [slotElement, narrowedSlots]);
+        }
+
+        for (const [preposition, tokens] of pockets.values())
+            data.matches.set(preposition, tokens);
+        for (const [slot, tokens] of slots.values())
+            data.matches.set(slot, tokens);
+
+        return data;
+    }
+
+    /**
      * Match a stream of tokens to this pattern. Returns a MatchedInvocation on success, or an InvalidInvocation on error.
      * @param streams - The stream of tokens to attempt to match to the pattern.
      */
@@ -543,7 +619,7 @@ export class Pattern implements PatternElement {
         else {
             const args: Collection<string, GameEntity[]> = new Collection();
             data.matches.forEach((val, key) => {
-                if (key instanceof Slot || key instanceof Multislot)
+                if (key instanceof Slot || key instanceof Multislot || key instanceof Pocket)
                     args.set(
                         key.name,
                         val.map((token: EntityToken<GameEntity>) => token.reference),

@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { InvalidInvocation, MatchedInvocation } from "../../../Classes/Command/Invocation.ts";
-import { Constant, Pattern, Preposition, Slot } from "../../../Classes/Command/Pattern.ts";
+import { Constant, Pattern, Pocket, Preposition, Slot } from "../../../Classes/Command/Pattern.ts";
 import { ConstantToken, EntityToken, ItemContainerToken, PocketToken, PrepositionToken } from "../../../Classes/Command/Token.ts";
 import Trie from "../../../Classes/Command/Trie.ts";
 import EquipmentSlot from "../../../Data/EquipmentSlot.ts";
@@ -269,7 +269,7 @@ describe("Pattern file from NG Commands", () => {
             }
             for (const item of game.inventoryItems) {
                 if (item.prefab !== null && item.quantity > 0) {
-                    trie.insert(item.prefab.id, new ItemContainerToken(item.prefab.id, item));
+                    trie.insert(item.getIdentifier(), new ItemContainerToken(item.getIdentifier(), item));
                     for (const [key, val] of item.inventory)
                         trie.insert(key, new PocketToken(key, val, item));
                     if (!prepositions.has(item.getPreposition())) {
@@ -281,7 +281,7 @@ describe("Pattern file from NG Commands", () => {
             }
             for (const item of game.roomItems) {
                 if (item.prefab !== null && item.quantity > 0) {
-                    trie.insert(item.prefab.id, new ItemContainerToken(item.prefab.id, item));
+                    trie.insert(item.getIdentifier(), new ItemContainerToken(item.getIdentifier(), item));
                     for (const [key, val] of item.inventory)
                         trie.insert(key, new PocketToken(key, val, item));
                     if (!prepositions.has(item.getPreposition())) {
@@ -338,7 +338,7 @@ describe("Pattern file from NG Commands", () => {
                 new Constant("and"),
                 new Slot(InventoryItem, "item2"),
             ]);
-            const invocation = pattern.match(trie.tokenize(["MUG", "OF", "COFFEE", "and", "PACK", "OF", "TOILET", "PAPER"])) as MatchedInvocation;
+            const invocation = pattern.match(trie.tokenize(["MUG", "OF", "COFFEE", "and", "PACK", "OF", "TOILET", "PAPER", "2"])) as MatchedInvocation;
             expect(invocation).toBeInstanceOf(MatchedInvocation);
             expect(invocation.args.size).toBe(2);
             expect(invocation.args.get("item1")).not.toBeUndefined();
@@ -348,10 +348,11 @@ describe("Pattern file from NG Commands", () => {
                 expect(item.prefabId).toBe("MUG OF COFFEE");
             });
             expect(invocation.args.get("item2")).not.toBeUndefined();
-            expect(invocation.args.get("item2").length).toBe(2);
+            expect(invocation.args.get("item2").length).toBe(1);
             invocation.args.get("item2").forEach((item: InventoryItem) => { 
                 expect(item).toBeInstanceOf(InventoryItem);
                 expect(item.prefabId).toBe("PACK OF TOILET PAPER");
+                expect(item.getIdentifier()).toBe("PACK OF TOILET PAPER 2");
             });
         });
 
@@ -362,7 +363,7 @@ describe("Pattern file from NG Commands", () => {
                 new Constant("and"),
                 new Slot(InventoryItem, "item2"),
             ]);
-            const invocation = pattern.match(trie.tokenize(["MG", "F", "CFF", "and", "PACK", "OF", "TOILET", "PAPER"])) as InvalidInvocation;
+            const invocation = pattern.match(trie.tokenize(["MG", "F", "CFF", "and", "PACK", "OF", "TOILET", "PAPER", "2"])) as InvalidInvocation;
             expect(invocation).toBeInstanceOf(InvalidInvocation);
             expect(invocation.errors).toBeLength(1);
             expect(invocation.errors[0]).toBe("Couldn't find inventory item \"MG F CFF\" in your input.");
@@ -400,6 +401,43 @@ describe("Pattern file from NG Commands", () => {
                 new Slot(Fixture, "destination"),
             ]);
             const invocation = pattern.match(trie.tokenize(["MUG", "OF", "COFFEE", "next", "to", "FLOOR"])) as InvalidInvocation;
+            expect(invocation).toBeInstanceOf(InvalidInvocation);
+            expect(invocation.errors).toBeLength(1);
+            expect(invocation.errors[0]).toBe("Couldn't find a preposition for destination.");
+        });
+
+        test("Pattern.match(5)", async () => {
+            const pattern = new Pattern([
+                new Slot(InventoryItem, "target"),
+                new Preposition("destination"),
+                new Slot(Fixture, "destination"),
+            ]);
+            const invocation = pattern.match(trie.tokenize(["MUG", "OF", "COFFEE", "in", "FLOOR"])) as MatchedInvocation;
+            expect(invocation).toBeInstanceOf(MatchedInvocation);
+            expect(invocation.args.size).toBe(2);
+            expect(invocation.args.get("target")).not.toBeUndefined();
+            expect(invocation.args.get("target").length).toBe(1);
+            invocation.args.get("target").forEach((item: InventoryItem) => {
+                expect(item).toBeInstanceOf(InventoryItem);
+                expect(item.prefabId).toBe("MUG OF COFFEE");
+            });
+            expect(invocation.args.get("destination")).not.toBeUndefined();
+            expect(invocation.args.get("destination").length).toBe(189);
+            invocation.args.get("destination").forEach((fixture: Fixture) => { 
+                expect(fixture).toBeInstanceOf(Fixture);
+                expect(fixture.name).toBe("FLOOR");
+            });
+        });
+
+        test("Pattern.match(6)", async () => {
+            const pattern = new Pattern([
+                new Slot(InventoryItem, "target"),
+                new Constant("in"),
+                new Pocket("destination", "destination pocket"),
+                new Constant("of"),
+                new Slot(InventoryItem, "destination"),
+            ]);
+            const invocation = pattern.match(trie.tokenize(["MUG", "OF", "COFFEE", "in", "RIGHT POCKET", "of", "KYRAS LAB COAT 1"])) as InvalidInvocation;
             expect(invocation).toBeInstanceOf(InvalidInvocation);
             expect(invocation.errors).toBeLength(1);
             expect(invocation.errors[0]).toBe("Couldn't find a preposition for destination.");
