@@ -224,8 +224,8 @@ export function createMockMessage({ content = '', member = createMockMember(), a
 	if (messageChannel && messageChannel.parent) messageChannel.parentId = messageChannel.parent.id;
 	return {
 		id: generateSnowflake(),
-		content: components.length > 0 ? components[0].components[0].data.content : content,
-		cleanContent: components.length > 0 ? components[0].components[0].data.content : content,
+		content: components.length > 0 ? components[0]?.components?.[0]?.data?.content : content,
+		cleanContent: components.length > 0 ? components[0]?.components?.[0]?.data?.content : content,
 		client: client,
 		member,
 		author,

@@ -113,7 +113,7 @@ export function sendNarrationToRoom(
     room: Room,
     narration: Narration,
     messageText: string,
-    messageDisplayType: MessageDisplayType,
+    messageDisplayType: typeof MessageDisplayType[keyof typeof MessageDisplayType],
     addSpectate: boolean = true,
     player: Player = null,
     webhookUsername: string = narration.narratorDisplayName
@@ -165,7 +165,7 @@ export function sendNarrationToWhisper(
     narration: Narration,
     messageText: string,
     messageTextWithSpectatePrefix: string,
-    messageDisplayType: MessageDisplayType,
+    messageDisplayType: typeof MessageDisplayType[keyof typeof MessageDisplayType],
     addSpectate: boolean = true,
     player: Player = null
 ): void {
@@ -218,7 +218,7 @@ export function sendNarrationToWhisper(
 export function sendNotification(
     player: Player,
     messageText: string,
-    messageDisplayType: MessageDisplayType,
+    messageDisplayType: typeof MessageDisplayType[keyof typeof MessageDisplayType],
     addSpectate: boolean = true,
     attachments: Collection<string, Attachment> = new Collection(),
     interactables: Interactable[] = []
@@ -451,7 +451,7 @@ export function sendReply(game: Game, message: UserMessage, messageText: string)
 export function sendNarrationSpectateMessage(
     player: Player,
     messageText: string,
-    messageDisplayType: MessageDisplayType,
+    messageDisplayType: typeof MessageDisplayType[keyof typeof MessageDisplayType],
     files: string[] = [],
     messageCreateOptions: MessageCreateOptions | WebhookMessageCreateOptions = discordUtils.generateMessageDisplayCreateOptions(messageDisplayType, player.getGame(), messageText, player, files)
 ): void {
@@ -491,7 +491,7 @@ export function sendWebhookSpectateMessage(
     embeds: Embed[] = [],
     files: string[] = [],
     message?: UserMessage,
-    messageDisplayType: MessageDisplayType = MessageDisplayType.PLAIN_TEXT,
+    messageDisplayType: typeof MessageDisplayType[keyof typeof MessageDisplayType] = MessageDisplayType.PLAIN_TEXT,
     speaker?: Player
 ): void {
     if (player.spectateChannel !== null) {
@@ -577,7 +577,7 @@ export async function sendWebhookMessage(
     embeds: Embed[] = [],
     files: string[] = [],
     game?: Game,
-    messageDisplayType: MessageDisplayType = MessageDisplayType.PLAIN_TEXT,
+    messageDisplayType: typeof MessageDisplayType[keyof typeof MessageDisplayType] = MessageDisplayType.PLAIN_TEXT,
     player?: Player
 ): Promise<Message<true>> {
     const createdMessage = await webhook.send(discordUtils.generateWebhookMessageDisplayCreateOptions(messageDisplayType, game, content, username, avatarURL, embeds, files, player));
