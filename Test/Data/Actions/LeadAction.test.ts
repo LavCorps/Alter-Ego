@@ -54,7 +54,6 @@ describe('LeadAction test', () => {
     let crutches: Status;
 
     beforeAll(async () => {
-        game.messageQueue.manual = false;
         if (!game.inProgress) await game.entityLoader.loadAll();
         astrid = game.entityFinder.getLivingPlayer("Astrid");
         asuka = game.entityFinder.getLivingPlayer("Asuka");
