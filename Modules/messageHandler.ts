@@ -119,7 +119,6 @@ export function sendNarrationToRoom(
     webhookUsername: string = narration.narratorDisplayName
 ): void {
     if (messageText !== "") {
-        console.log(`sendNarrationToRoom<${room.id}> - Alter Ego: ${messageText}`);
         const files = narration.attachments.map(attachment => attachment.url);
         const sendWebhookMessage = messageDisplayType === MessageDisplayType.PLAYER || narration.isModeratorNarration();
         let messageCreateOptions: MessageCreateOptions | WebhookMessageCreateOptions;
@@ -171,7 +170,6 @@ export function sendNarrationToWhisper(
     player: Player = null
 ): void {
     if (messageText !== "") {
-        console.log(`sendNarrationToWhisper<${whisper.id}> - Alter Ego: ${messageText}`);
         const files = narration.attachments.map(attachment => attachment.url);
         const sendWebhookMessage = messageDisplayType === MessageDisplayType.PLAYER;
 
@@ -226,7 +224,6 @@ export function sendNotification(
     interactables: Interactable[] = []
 ): void {
     const files = attachments.map(attachment => attachment.url);
-    console.log(`sendNotification<${player.name}> - Alter Ego: ${messageText}`);
 
     if (!player.isNPC) {
         player.getGame().messageQueue.enqueue(
@@ -267,7 +264,6 @@ export function sendRoomDescription(
     addSpectate: boolean = true,
     interactables: Interactable[] = []
 ): void {
-    console.log(`sendRoomDescription - Alter Ego: [Sending description for ${location.id} to ${player.name}]`);
     if (!player.isNPC || (addSpectate && player.spectateChannel !== null)) {
         if (!player.isNPC) {
             location.getGame().messageQueue.enqueue(
@@ -327,7 +323,6 @@ export function sendCommandHelp(game: Game, channel: Messageable, command: Comma
     const thumbnailURL = game.guildContext.guild.members.me.avatarURL() || game.guildContext.guild.members.me.user.avatarURL();
     const color = game.settings.embedAccentColor;
 
-    console.log(`sendCommandHelp<${commandName}> - Alter Ego`);
     game.messageQueue.enqueue(
         {
             fire: async () => {
@@ -360,7 +355,6 @@ export function sendEntityView(
     interactables: Interactable[] = []
 ): void {
     const color = game.settings.embedAccentColor;
-    console.log(`sendEntityView - Alter Ego: [sending entity view for ${entityType} on row ${entityRow}]`);
     game.messageQueue.enqueue(
         {
             fire: async () => {
@@ -383,7 +377,6 @@ export function sendEntityView(
  * @param messageText - The message to send.
  */
 export function sendLogMessage(game: Game, messageText: string): void {
-    console.log(`sendLogMessage - Alter Ego: ${messageText}`);
     game.messageQueue.enqueue(
         {
             fire: async () => {
@@ -411,7 +404,6 @@ export function sendGameMechanicMessage(
     embeds: (Embed|EmbedBuilder)[] = []
 ): void {
     const messageCreateOptions = interactables.length > 0 ? discordUtils.generateMessageDisplayCreateOptions(MessageDisplayType.PLAIN_TEXT, game, messageText, undefined, undefined, interactables, embeds) : messageText;
-    console.log(`sendGameMechanicMessage - Alter Ego: ${typeof(messageCreateOptions) === "string" ? messageCreateOptions : messageCreateOptions.content}`);
     game.messageQueue.enqueue(
         {
             fire: async () => {
@@ -432,7 +424,6 @@ export function sendGameMechanicMessage(
  * @param messageText - The text to send in response.
  */
 export function sendReply(game: Game, message: UserMessage, messageText: string): void {
-    console.log(`sendReply - Alter Ego: ${messageText}`);
     game.messageQueue.enqueue(
         {
             fire: async () => {
@@ -464,7 +455,6 @@ export function sendNarrationSpectateMessage(
     files: string[] = [],
     messageCreateOptions: MessageCreateOptions | WebhookMessageCreateOptions = discordUtils.generateMessageDisplayCreateOptions(messageDisplayType, player.getGame(), messageText, player, files)
 ): void {
-    console.log(`sendNarrationSpectateMessage<${player.name}> - Alter Ego: ${messageText}`);
     player.getGame().messageQueue.enqueue(
         {
             fire: async () => {
@@ -504,7 +494,6 @@ export function sendWebhookSpectateMessage(
     messageDisplayType: typeof MessageDisplayType[keyof typeof MessageDisplayType] = MessageDisplayType.PLAIN_TEXT,
     speaker?: Player
 ): void {
-    console.log(`sendWebhookSpectateMessage - ${webhookUsername}: ${messageText}`);
     if (player.spectateChannel !== null) {
         player.getGame().messageQueue.enqueue(
             {
@@ -591,7 +580,6 @@ export async function sendWebhookMessage(
     messageDisplayType: typeof MessageDisplayType[keyof typeof MessageDisplayType] = MessageDisplayType.PLAIN_TEXT,
     player?: Player
 ): Promise<Message<true>> {
-    console.log(`sendWebhookMessage - ${username}: ${content}`);
     const createdMessage = await webhook.send(discordUtils.generateWebhookMessageDisplayCreateOptions(messageDisplayType, game, content, username, avatarURL, embeds, files, player));
     return createdMessage;
 }
