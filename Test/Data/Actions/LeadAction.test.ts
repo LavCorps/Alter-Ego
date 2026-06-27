@@ -3,12 +3,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import Party from "../../../Data/Party.ts";
-import type Player from "../../../Data/Player.ts";
+import Player from "../../../Data/Player.ts";
 import type Status from "../../../Data/Status.ts";
 import DisbandPartyAction from "../../../Data/Actions/DisbandPartyAction.ts";
 import FollowAction from "../../../Data/Actions/FollowAction.ts";
 import LeadAction from "../../../Data/Actions/LeadAction.ts";
 import QueueMoveAction from "../../../Data/Actions/QueueMoveAction.ts";
+import StartMoveAction from "../../../Data/Actions/StartMoveAction.ts";
 import StopAction from "../../../Data/Actions/StopAction.ts";
 import GameEntityManager from "../../../Classes/GameEntityManager.ts";
 import { WhisperType } from "../../../Modules/enums.js";
@@ -93,12 +94,22 @@ describe('LeadAction test', () => {
         let createWhisperSpy: Mock<typeof GameEntityManager.prototype.createWhisper>;
         let addFollowersSpy: Mock<typeof Party.prototype.addFollowers>;
         let deleteWhisperSpy: Mock<typeof Party.prototype.deleteWhisper>;
+        let doAfterDelaySpy: Mock<typeof Player.prototype.doAfterDelay>;
+        let queueMoveSpy: Mock<typeof QueueMoveAction.prototype.performQueueMove>;
+        let performStartMoveSpy: Mock<typeof StartMoveAction.prototype.performStartMove>;
+        let calculateMoveTimeSpy: Mock<typeof Player.prototype.calculateMoveTime>;
+        let moveSpy: Mock<typeof Player.prototype.move>;
 
         beforeEach(() => {
             createPartySpy = vi.spyOn(GameEntityManager.prototype, 'createParty');
             createWhisperSpy = vi.spyOn(GameEntityManager.prototype, 'createWhisper');
             addFollowersSpy = vi.spyOn(Party.prototype, 'addFollowers');
             deleteWhisperSpy = vi.spyOn(Party.prototype, 'deleteWhisper');
+            doAfterDelaySpy = vi.spyOn(Player.prototype, 'doAfterDelay');
+            queueMoveSpy = vi.spyOn(QueueMoveAction.prototype, 'performQueueMove');
+            performStartMoveSpy = vi.spyOn(StartMoveAction.prototype, 'performStartMove');
+            calculateMoveTimeSpy = vi.spyOn(Player.prototype, 'calculateMoveTime');
+            moveSpy = vi.spyOn(Player.prototype, 'move');
         });
 
         afterEach(() => {
@@ -217,7 +228,19 @@ describe('LeadAction test', () => {
                 const destination = "HALL 5";
                 astrid.moveQueue = [destination];
                 await queueMoveAction.performQueueMove(false, destination);
+                // Ensure Astrid is the only player to have started moving at this point.
+                expect(doAfterDelaySpy).toHaveBeenCalledTimes(2);
+                expect(queueMoveSpy).toHaveBeenCalledOnce();
+                expect(performStartMoveSpy).toHaveBeenCalledOnce();
+                expect(calculateMoveTimeSpy).toHaveBeenCalledTimes(3);
+                expect(moveSpy).toHaveBeenCalledOnce();
                 await vi.advanceTimersByTimeAsync(1000);
+                // Player.doAfterDelay should not have been called again.
+                expect(doAfterDelaySpy).toHaveBeenCalledTimes(2);
+                expect(queueMoveSpy).toHaveBeenCalledTimes(3);
+                expect(performStartMoveSpy).toHaveBeenCalledTimes(3);
+                expect(calculateMoveTimeSpy).toHaveBeenCalledTimes(5);
+                expect(moveSpy).toHaveBeenCalledTimes(3);
                 expect(astrid.isMoving).toBe(true);
                 expect(asuka.isMoving).toBe(true);
                 expect(nero.isMoving).toBe(true);
@@ -257,7 +280,19 @@ describe('LeadAction test', () => {
                 const destination = "HALL 5";
                 astrid.moveQueue = [destination];
                 await queueMoveAction.performQueueMove(false, destination);
+                // Ensure Astrid is the only player to have started moving at this point.
+                expect(doAfterDelaySpy).toHaveBeenCalledTimes(2);
+                expect(queueMoveSpy).toHaveBeenCalledOnce();
+                expect(performStartMoveSpy).toHaveBeenCalledOnce();
+                expect(calculateMoveTimeSpy).toHaveBeenCalledTimes(3);
+                expect(moveSpy).toHaveBeenCalledOnce();
                 await vi.advanceTimersByTimeAsync(1000);
+                // Player.doAfterDelay should not have been called again.
+                expect(doAfterDelaySpy).toHaveBeenCalledTimes(2);
+                expect(queueMoveSpy).toHaveBeenCalledTimes(3);
+                expect(performStartMoveSpy).toHaveBeenCalledTimes(3);
+                expect(calculateMoveTimeSpy).toHaveBeenCalledTimes(5);
+                expect(moveSpy).toHaveBeenCalledTimes(3);
                 expect(astrid.isMoving).toBe(true);
                 expect(asuka.isMoving).toBe(true);
                 expect(nero.isMoving).toBe(true);
