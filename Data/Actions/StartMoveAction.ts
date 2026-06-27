@@ -29,11 +29,17 @@ export default class StartMoveAction extends Action {
 		super.perform();
         this.player.currentMovingSpeed = speed;
 		const time = this.player.calculateMoveTime(exit, isRunning, speed);
+        /**
+         * Ordinarily, we narrate actions before performing them to avoid changes to the state before the narration is created,
+         * but since this narration only occurs if the movement is going to take longer than 1000ms, we don't have to worry about that.
+         * It's important to begin the movement before sending the narration in this case, as creating interactables involves
+         * async operations that can cause race conditions when using fake timers in tests.
+         */
+		this.player.move(isRunning, currentRoom, destinationRoom, exit, entrance, time, this.forced);
 		if (time > 1000) {
             const interactables = await this.getGame().clientContext.interactableManager.createStopActionInteractable(this.player, this.user);
             this.getGame().narrationHandler.narrateStartMove(this, isRunning, exit, this.player, interactables);
         }
-		this.player.move(isRunning, currentRoom, destinationRoom, exit, entrance, time, this.forced);
 
         // If anyone is following this player, they need to start moving.
         for (const occupant of this.location.occupants) {
