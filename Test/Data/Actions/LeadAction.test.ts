@@ -53,6 +53,7 @@ describe('LeadAction test', () => {
     let crutches: Status;
 
     beforeAll(async () => {
+        game.messageQueue.manual = false;
         if (!game.inProgress) await game.entityLoader.loadAll();
         astrid = game.entityFinder.getLivingPlayer("Astrid");
         asuka = game.entityFinder.getLivingPlayer("Asuka");
@@ -75,6 +76,7 @@ describe('LeadAction test', () => {
         astrid.displayName = "Astrid";
         asuka.cure(cheerful);
         nero.cure(crutches);
+        game.messageQueue.manual = true;
     });
 
     test('Setup is correct', () => {
@@ -204,14 +206,7 @@ describe('LeadAction test', () => {
         });
 
         describe('leader is moving and party is reset after each test', () => {
-            beforeAll(async () => {
-                const followAction1 = new FollowAction(game, undefined, asuka, asuka.location, false);
-                await followAction1.performFollow(astrid);
-                const followAction2 = new FollowAction(game, undefined, nero, nero.location, false);
-                await followAction2.performFollow(astrid);
-            });
-
-            beforeEach(async () => {
+            test('moving player leads one moving player and all players stop', async () => {
                 vi.clearAllTimers();
                 vi.useFakeTimers();
                 const followAction1 = new FollowAction(game, undefined, asuka, asuka.location, false);
@@ -222,26 +217,6 @@ describe('LeadAction test', () => {
                 const destination = "HALL 5";
                 astrid.moveQueue = [destination];
                 await queueMoveAction.performQueueMove(false, destination);
-            });
-
-            afterEach(async () => {
-                for (const player of [astrid, asuka, nero])
-                    player.stopMoving();
-                const disbandPartyAction = new DisbandPartyAction(game, undefined, astrid, astrid.location, false);
-                await disbandPartyAction.performDisbandParty(true);
-                vi.clearAllTimers();
-                vi.useRealTimers();
-            });
-
-            afterAll(() => {
-                for (const player of [astrid, asuka, nero]) {
-                    const stopAction = new StopAction(game, undefined, player, player.location, false);
-                    stopAction.performStop(false, undefined, true);
-                }
-                vi.clearAllTimers();
-            });
-
-            test('moving player leads one moving player and all players stop', async () => {
                 await vi.advanceTimersByTimeAsync(1000);
                 expect(astrid.isMoving).toBe(true);
                 expect(asuka.isMoving).toBe(true);
@@ -259,9 +234,29 @@ describe('LeadAction test', () => {
                 expect(astrid.isMoving).toBe(false);
                 expect(asuka.isMoving).toBe(false);
                 expect(nero.isMoving).toBe(false);
+                for (const player of [astrid, asuka, nero])
+                    player.stopMoving();
+                const disbandPartyAction = new DisbandPartyAction(game, undefined, astrid, astrid.location, false);
+                await disbandPartyAction.performDisbandParty(true);
+                for (const player of [astrid, asuka, nero]) {
+                    const stopAction = new StopAction(game, undefined, player, player.location, false);
+                    stopAction.performStop(false, undefined, true);
+                }
+                vi.clearAllTimers();
+                vi.useRealTimers();
             });
 
             test('moving player leads two moving players and all players stop', async () => {
+                vi.clearAllTimers();
+                vi.useFakeTimers();
+                const followAction1 = new FollowAction(game, undefined, asuka, asuka.location, false);
+                await followAction1.performFollow(astrid);
+                const followAction2 = new FollowAction(game, undefined, nero, nero.location, false);
+                await followAction2.performFollow(astrid);
+                const queueMoveAction = new QueueMoveAction(game, undefined, astrid, astrid.location, false);
+                const destination = "HALL 5";
+                astrid.moveQueue = [destination];
+                await queueMoveAction.performQueueMove(false, destination);
                 await vi.advanceTimersByTimeAsync(1000);
                 expect(astrid.isMoving).toBe(true);
                 expect(asuka.isMoving).toBe(true);
@@ -281,6 +276,16 @@ describe('LeadAction test', () => {
                 expect(astrid.isMoving).toBe(false);
                 expect(asuka.isMoving).toBe(false);
                 expect(nero.isMoving).toBe(false);
+                for (const player of [astrid, asuka, nero])
+                    player.stopMoving();
+                const disbandPartyAction = new DisbandPartyAction(game, undefined, astrid, astrid.location, false);
+                await disbandPartyAction.performDisbandParty(true);
+                for (const player of [astrid, asuka, nero]) {
+                    const stopAction = new StopAction(game, undefined, player, player.location, false);
+                    stopAction.performStop(false, undefined, true);
+                }
+                vi.clearAllTimers();
+                vi.useRealTimers();
             });
         });
     });
