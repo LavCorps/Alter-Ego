@@ -1893,7 +1893,7 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
      * @param messageDisplayType - The display type of the message to send. Defaults to PLAIN_TEXT.
      * @param interactables - An array of interactables to send with the message.
      */
-    sendDescription(descriptionString: string, container: GameEntity, messageDisplayType: MessageDisplayType = MessageDisplayType.PLAIN_TEXT, interactables: Interactable[] = []): void {
+    sendDescription(descriptionString: string, container: GameEntity, messageDisplayType: typeof MessageDisplayType[keyof typeof MessageDisplayType] = MessageDisplayType.PLAIN_TEXT, interactables: Interactable[] = []): void {
         if (descriptionString && !this.isNPC && (this.isConscious() || container instanceof Status))
             this.getGame().communicationHandler.sendDescriptionToPlayer(this, descriptionString, container, messageDisplayType, true, interactables);
     }
