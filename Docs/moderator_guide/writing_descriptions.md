@@ -1,7 +1,7 @@
 # Writing Descriptions
 
 Writing for Alter Ego is somewhat complex, but thanks to its custom
-[parser module](https://github.com/MsVBLANK/Alter-Ego/blob/master/Modules/parser.js),
+[parser module](https://github.com/MsVBLANK/Alter-Ego/blob/master/Modules/parser.ts),
 it is incredibly flexible. Alter Ego makes use of [XML](https://en.wikipedia.org/wiki/XML) formatting to understand what
 the [moderator](moderating.md) has written so that it can make changes as necessary.
 

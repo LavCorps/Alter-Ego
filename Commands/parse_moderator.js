@@ -1,6 +1,6 @@
 ﻿import fs from 'fs';
 import Player from '../Data/Player.ts';
-import { parseDescriptionWithErrors } from '../Modules/parser.js';
+import { parseDescriptionWithErrors } from '../Modules/parser.ts';
 import { makeCopyable } from '../Modules/helpers.ts';
 import { EOL } from 'os';
 import { Collection } from 'discord.js';

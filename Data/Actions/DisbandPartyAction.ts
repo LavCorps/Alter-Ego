@@ -28,7 +28,7 @@ export default class DisbandPartyAction extends Action {
             this.player.stopLeading(follower);
             if (stopFollowing) follower.stopFollowing();
         }
-        await party.disband();
+        if (party) await party.disband();
         this.successMessage = `Successfully disbanded ${this.player.name}'s party.`;
     }
 }

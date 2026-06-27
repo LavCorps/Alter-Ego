@@ -1,112 +1,227 @@
+import { DOMParser, XMLSerializer } from '@xmldom/xmldom';
 import CollatedItem from '../Data/CollatedItem.ts';
 import Description from '../Data/Description.ts';
 import ItemContainer from '../Data/ItemContainer.ts';
 import Player from '../Data/Player.ts';
 import { MessageDisplayType } from './enums.js';
 import { default as evaluateScript } from './scriptParser.js';
+import { capitalizeFirstLetter, clamp, lowercaseFirstLetter } from './helpers.ts';
+import type GameEntity from '../Data/GameEntity.ts';
 
-import { DOMParser, XMLSerializer } from '@xmldom/xmldom';
+export * as default from './parser.ts';
 
-export * as default from './parser.js';
+interface DescriptionDocument {
+    document: Document,
+    warnings: string[],
+    errors: string[],
+    messageDisplayType: MessageDisplayType,
+    procedurals: Map<string, Set<string>>
+}
 
-/** @import GameEntity from '../Data/GameEntity.ts' */
+interface ParsedTextWithErrors {
+    text: string;
+    warnings: string[];
+    errors: string[];
+}
 
+// Unfortunately, the xmldom package is minimally typed.
+// These abominations allow us to largely avoid dealing with the consequences of that.
+interface EditableDocumentNode extends Element { data: string; }
+type DocumentElement<T = Element> =
+    T extends ParentNode & { tagName: string }
+        ? T['tagName']
+        : T extends ChildNode & { parentNode: ParentNode }
+            ? T['parentNode']
+            : Element;
+type DocumentNode<T = Element> =
+    T extends EditableDocumentNode
+        ? EditableDocumentNode
+        : T extends Element
+            ? Element
+            : T extends Node
+                ? Node
+                : HTMLElement;
+type DocumentNodeCollection = HTMLCollectionOf<Element> | DocumentNode[];
+
+/**
+ * Represents a clause in a sentence. These are used to fill out item lists.
+ */
 class Clause {
+    /** The node element of the clause. */
+    #node: DocumentNode<EditableDocumentNode> | Text;
+    /** The text content of the clause. */
+    text: string;
+    /** Whether or not the clause is an item clause. */
+    isItem: boolean;
+    /** The position in which this item appears in the list. */
+    itemNo: number;
+    /** The quantity of the item. */
+    itemQuantity: number;
+    /** The sentence this clause belongs to. */
+    #sentence: Sentence;
+
     /**
-     * @param {any} node
-     * @param {boolean} [isItem]
-     * @param {number} [itemNo]
-     * @param {number} [itemQuantity]
+     * @param node - The node element of the clause.
+     * @param isItem - Whether or not the clause is an item clause.
+     * @param itemNo - The position in which this item appears in the list.
+     * @param itemQuantity - The quantity of the item.
      */
-    constructor(node, isItem, itemNo, itemQuantity) {
-        this.node = node;
-        this.text = this.node.data;
-        this.isItem = isItem !== null && isItem !== undefined ? isItem : false;
-        this.itemNo = itemNo !== null && itemNo !== undefined ? itemNo : NaN;
-        this.itemQuantity = itemQuantity !== null && itemQuantity !== undefined ? itemQuantity : 0;
+    constructor(node: DocumentNode<EditableDocumentNode> | Text, isItem: boolean = false, itemNo: number = NaN, itemQuantity: number = 0) {
+        this.#node = node;
+        this.text = 'data' in this.#node && typeof this.#node.data === 'string' ? this.#node.data : this.#node.textContent;
+        this.isItem = isItem;
+        this.itemNo = itemNo;
+        this.itemQuantity = itemQuantity;
     }
 
-    /** @param {string} word */
-    startsWith(word) {
+    /**
+     * Returns true if the clause has no node.
+     */
+    isNodeless(): boolean {
+        return this.#node === null;
+    }
+
+    /** The parentNode of the clause's node, if it exists. */
+    get parentNode(): DocumentElement<any> {
+        return this.#node.parentNode;
+    }
+
+    /**
+     * Returns true if the given clause is the last child of its sentence's item list.
+     */
+    isLastChildInItemList(): boolean {
+        if (!this.#sentence || !this.#sentence.itemList) return false;
+        return this.#sentence.itemList.lastChild === this.#node;
+    }
+
+    /**
+     * Returns true if the first character of the clause is an uppercase letter, and the second character is not.
+     */
+    firstLetterIsUppercase(): boolean {
+        if (this.text.length < 2) return false;
+        return /^[A-Z][^A-Z]/.test(this.text);
+    }
+
+    /**
+     * Returns true if the text of the clause starts with the given word.
+     */
+    startsWith(word: string): boolean {
         return this.text.includes(` ${word} `) && this.text.substring(0, this.text.indexOf(` ${word} `)).split(',').length - 1 === 0;
     }
 
-    /** @param {string} word */
-    endsWith(word) {
+    /**
+     * Returns true if the text of the clause ends with the given word.
+     */
+    endsWith(word: string): boolean {
         return this.text.includes(` ${word} `) && this.text.substring(this.text.lastIndexOf(` ${word} `)).split(',').length - 1 === 0;
     }
 
     /**
      * Replaces the given first word with a new word.
-     * @param {string} word
-     * @param {string} newWord
      */
-    replaceFirstWord(word, newWord) {
+    replaceFirstWord(word: string, newWord: string): void {
         this.set(this.text.substring(0, this.text.indexOf(` ${word} `)) + ` ${newWord} ` + this.text.substring(this.text.indexOf(` ${word} `) + ` ${word} `.length));
     }
 
     /**
      * Replaces the given ending word with a new word.
-     * @param {string} word
-     * @param {string} newWord
      */
-    replaceLastWord(word, newWord) {
+    replaceLastWord(word: string, newWord: string): void {
         this.set(this.text.substring(0, this.text.lastIndexOf(` ${word} `)) + ` ${newWord} ` + this.text.substring(this.text.lastIndexOf(` ${word} `) + ` ${word} `.length));
     }
 
-    /** @param {string} string */
-    set(string) {
-        this.node.data = string;
-        this.text = this.node.data;
+    /**
+     * Sets the text of the clause.
+     */
+    set(string: string): void {
+        this.#node.data = string;
+        this.text = this.#node.data;
     }
 
-    delete() {
-        if (this.node) {
-            let parentNode = this.node.parentNode;
+    /**
+     * Sets the sentence the clause belongs to.
+     */
+    setSentence(sentence: Sentence): void {
+        this.#sentence = sentence;
+    }
+
+    /**
+     * Deletes the clause from the sentence.
+     */
+    delete(): void {
+        if (this.#node) {
+            let parentNode = this.#node.parentNode;
             let grandParentNode = parentNode.parentNode;
-            parentNode.removeChild(this.node);
+            parentNode.removeChild(this.#node);
             // If this is an item clause, then the parent node is an item tag. Delete the now empty item tag.
             if (this.isItem) grandParentNode.removeChild(parentNode);
             // If this item is contained in an if tag, remove the if tag.
             if (grandParentNode.nodeName === 'if') grandParentNode.parentNode.removeChild(grandParentNode);
-            this.node = null;
+            this.#node = null;
         }
         this.text = "";
     }
 }
 
+/**
+ * Represents a string of text contained within sentence tags, divided into clauses.
+ */
 class Sentence {
+    /** The clauses making up the sentence. */
+    clauses: Clause[];
+    /** A count of how many items are in the sentence. */
+    itemCount: number;
+    /** The item list node. This is what is created from item list tags. */
+    itemList: DocumentNode;
+    /** The name of the item list, if one is provided. */
+    itemListName: string;
+
     /**
-     * @param {Array<Clause>} clause
-     * @param {number} itemCount
-     * @param {Element} itemList
-     * @param {string} itemListName
+     * @param clauses - The clauses making up the sentence.
+     * @param itemCount - A count of how many items are in the sentence.
+     * @param itemList - The item list node. This is what is created from item list tags.
+     * @param itemListName - The name of the item list, if one is provided.
      */
-    constructor(clause, itemCount, itemList, itemListName) {
-        this.clause = clause;
+    constructor(clauses: Clause[], itemCount: number, itemList: DocumentNode, itemListName: string) {
+        this.clauses = clauses;
         this.itemCount = itemCount;
         this.itemList = itemList;
         this.itemListName = itemListName;
+        for (const clause of this.clauses)
+            clause.setSentence(this);
     }
 
-    /** @param {number} i */
-    deleteClause(i) {
-        this.clause.splice(i, 1);
+    /**
+     * Adds the clause to the sentence at the given index.
+     * @param i - The index at which to add the clause.
+     * @param clause - The clause to add.
+     */
+    addClause(i: number, clause: Clause): void {
+        clause.setSentence(this);
+        this.clauses.splice(i, 0, clause);
+    }
+
+    /**
+     * Deletes the clause at the given index.
+     * @param i - The index of the clause to delete.
+     */
+    deleteClause(i: number): void {
+        this.clauses.splice(i, 1);
     }
 }
 
 /**
  * Converts a description from plain-text to a document, with warnings and errors.
- * @param {string} descriptionText - The text of the description.
- * @param {boolean} [removeItems] - Whether or not to remove item tags from the description. Defaults to true.
+ * @param descriptionText - The text of the description.
+ * @param removeItems - Whether or not to remove item tags from the description. Defaults to true.
  */
-export function createDocument(descriptionText, removeItems = true) {
+export function createDocument(descriptionText: string, removeItems: boolean = true): DescriptionDocument {
     const description = createDescriptionDocumentFromString(descriptionText);
     if (removeItems && description.warnings.length === 0 && description.errors.length === 0) {
         // Check if there's an item list in the document.
-        const itemListSentences = getItemListSentences(description.document);
+        const itemListSentences: DocumentNode[] = getItemListSentences(description.document);
         for (const sentenceElement of itemListSentences) {
-            const sentence = createSentence(sentenceElement);
+            const sentence: Sentence = createSentence(sentenceElement);
             description.document = removeAllItemsFromItemList(description.document, sentence);
         }
     }
@@ -115,21 +230,19 @@ export function createDocument(descriptionText, removeItems = true) {
 
 /**
  * Parses the XML of a description and evaluates it into a result object with no XML tags. Includes warnings and errors.
- * @param {Description} description - The description to parse.
- * @param {GameEntity} container - The in-game entity this description belongs to.
- * @param {Player} player - The Player currently reading the description.
- * @returns {{text: string, warnings: string[], errors: string[]}}
+ * @param description - The description to parse.
+ * @param container - The in-game entity this description belongs to.
+ * @param player - The Player currently reading the description.
  */
-export function parseDescriptionWithErrors(description, container, player) {
+export function parseDescriptionWithErrors(description: Description, container: GameEntity, player: Player): ParsedTextWithErrors {
     const descriptionCopy = new Description(description.text, container, description.getGame());
-    let documentElement = descriptionCopy.document;
+    let documentElement: Document = descriptionCopy.document;
 
     // Find any conditionals.
-    let conditionals = documentElement.getElementsByTagName('if');
-    /** @type {Array<Element>} */
-    let conditionalsToRemove = [];
+    let conditionals: DocumentNodeCollection = documentElement.getElementsByTagName('if');
+    let conditionalsToRemove: DocumentNode[] = [];
     for (let i = 0; i < conditionals.length; i++) {
-        let conditional = conditionals[i].getAttribute('cond');
+        let conditional: string = conditionals[i].getAttribute('cond');
         if (conditional !== null && conditional !== undefined) {
             try {
                 if (evaluateScript(conditional, container, player) === false)
@@ -146,11 +259,11 @@ export function parseDescriptionWithErrors(description, container, player) {
     }
 
     // Check if there's an item list in the document.
-    const itemListSentences = getItemListSentences(documentElement);
+    const itemListSentences: DocumentNode[] = getItemListSentences(documentElement);
     for (const sentenceElement of itemListSentences) {
-        const itemList = sentenceElement.getElementsByTagName('il').item(0);
+        const itemList: DocumentNode = sentenceElement.getElementsByTagName('il').item(0);
         if (container instanceof ItemContainer) {
-            const sentence = createSentence(sentenceElement);
+            const sentence: Sentence = createSentence(sentenceElement);
             documentElement = addItemsToItemList(documentElement, sentence, container, player);
         }
         // If the item list is empty, remove the sentence from the documentElement.
@@ -162,17 +275,18 @@ export function parseDescriptionWithErrors(description, container, player) {
     }
 
     // Replace any var tags.
-    const variables = documentElement.getElementsByTagName('var');
-    let variableStrings = [];
+    const variables: DocumentNodeCollection = documentElement.getElementsByTagName('var');
+    let variableStrings: { element: DocumentNode, attribute: string }[] = [];
     for (let i = 0; i < variables.length; i++) {
-        const varAttribute = variables[i].getAttribute('v');
-        if (varAttribute !== null && varAttribute !== undefined) {
+        const varScript: string = variables[i].getAttribute('v');
+        if (varScript !== null && varScript !== undefined) {
             try {
-                const variableText = evaluateScript(varAttribute, container, player);
-                if (variableText === undefined || variableText === "undefined")
-                    description.getErrors().push('"' + varAttribute.replace(/container/g, "this") + '" is undefined.');
-                variableStrings.push({ element: variables[i], attribute: String(variableText) });
-            } catch (err) {
+                const evaluatedVariable = evaluateScript(varScript, container, player);
+                if (evaluatedVariable === undefined || evaluatedVariable === "undefined")
+                    description.getErrors().push('"' + varScript.replace(/container/g, "this") + '" is undefined.');
+                variableStrings.push({ element: variables[i], attribute: String(evaluatedVariable) });
+            }
+            catch (err) {
                 description.getErrors().push(err.toString());
             }
         }
@@ -183,8 +297,8 @@ export function parseDescriptionWithErrors(description, container, player) {
     }
 
     // Replace any br tags.
-    const breakTags = documentElement.getElementsByTagName('br');
-    let breaks = [];
+    const breakTags: DocumentNodeCollection = documentElement.getElementsByTagName('br');
+    let breaks: DocumentNode[] = [];
     for (let i = 0; i < breakTags.length; i++)
         breaks.push(breakTags[i]);
     for (let i = 0; i < breaks.length; i++) {
@@ -193,39 +307,38 @@ export function parseDescriptionWithErrors(description, container, player) {
     }
 
     // Convert the document to a string.
-    let newDescription = stringify(documentElement);
+    let parsedDescription = stringify(documentElement);
     // Strip XML tags from the string, as well as all duplicate spaces.
-    newDescription = newDescription.replace(/<\/?\w+((\s+\w+(\s*=\s*(?:".*?"|'.*?'|[^'">\s]+))?)+\s*|\s*)\/?>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim();
-    return { text: newDescription, warnings: description.getWarnings(), errors: description.getErrors() };
+    parsedDescription = parsedDescription.replace(/<\/?\w+((\s+\w+(\s*=\s*(?:".*?"|'.*?'|[^'">\s]+))?)+\s*|\s*)\/?>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim();
+    return { text: parsedDescription, warnings: description.getWarnings(), errors: description.getErrors() };
 }
 
 /**
  * Parses the XML of a description and evaluates it into a result with no XML tags. Returns only the resulting text.
- * @param {Description} description - The description to parse.
- * @param {GameEntity} container - The in-game entity this description belongs to.
- * @param {Player} player - The Player currently reading the description.
- * @returns {string}
+ * @param description - The description to parse.
+ * @param container - The in-game entity this description belongs to.
+ * @param player - The Player currently reading the description.
  */
-export function parseDescription(description, container, player) {
+export function parseDescription(description: Description, container: GameEntity, player: Player): string {
     const parsedDescription = parseDescriptionWithErrors(description, container, player);
     return parsedDescription.text;
 }
 
 /**
  * Adds items to an item list.
- * @param {Document} document - The document containing sentences with item lists.
- * @param {Sentence} sentence - The sentence containing an item list.
- * @param {ItemContainer} container - The item container entity this item list belongs to.
- * @param {Player} player - The Player currently reading the description.
+ * @param document - The document containing sentences with item lists.
+ * @param sentence - The sentence containing an item list.
+ * @param container - The item container entity this item list belongs to.
+ * @param player - The Player currently reading the description.
  */
-function addItemsToItemList(document, sentence, container, player) {
+function addItemsToItemList(document: Document, sentence: Sentence, container: ItemContainer, player: Player) {
     const items = CollatedItem.collateForItemList(container.getContainedItemsForItemList(sentence.itemListName, player)).reverse();
     for (const item of items) {
         const singleContainingPhrase = item.singleContainingPhrase.toLocaleUpperCase();
         const pluralContainingPhrase = item.pluralContainingPhrase?.toLocaleUpperCase();
         let itemAlreadyExists = false;
-        for (const clause of sentence.clause) {
-            const clauseText = clause.node.data.toLocaleUpperCase();
+        for (const clause of sentence.clauses) {
+            const clauseText = clause.text.toLocaleUpperCase();
             if (isNaN(item.quantity) && (pluralContainingPhrase && clauseText.includes(pluralContainingPhrase) || item.pluralName && clauseText.includes(item.pluralName) || clauseText.includes(item.name))) {
                 itemAlreadyExists = true;
                 break;
@@ -241,14 +354,14 @@ function addItemsToItemList(document, sentence, container, player) {
                     const quantityMatch = clauseText.match(/\d+/);
                     if (quantityMatch) {
                         const oldQuantity = parseInt(quantityMatch[0]);
-                        clause.set(clause.text.replace(oldQuantity, oldQuantity + item.quantity));
+                        clause.set(clause.text.replace(String(oldQuantity), String(oldQuantity + item.quantity)));
                     }
                 }
                 break;
             }
         }
         if (itemAlreadyExists) continue;
-        addClause(sentence, item.toSingleOrPluralContainingPhrase(), item.quantity);
+        addItemClauseToItemList(sentence, item.toSingleOrPluralContainingPhrase(), item.quantity);
         sentence.itemCount++;
     }
     return document;
@@ -256,22 +369,25 @@ function addItemsToItemList(document, sentence, container, player) {
 
 /**
  * Removes all items from an item list.
- * @param {Document} document - The document containing sentences with item lists.
- * @param {Sentence} sentence - The sentence containing an item list.
+ * @param document - The document containing at least one sentence with an item list.
+ * @param sentence - The sentence containing an item list.
+ * @returns The document with items removed from the given sentence.
  */
-function removeAllItemsFromItemList(document, sentence) {
+function removeAllItemsFromItemList(document: Document, sentence: Sentence): Document {
     const childNode = sentence.itemList.childNodes.item(0);
-    if (sentence.itemList.childNodes.length === 0 || sentence.itemList.childNodes.length === 1 && 'tagName' in childNode && childNode.tagName === 'null') return document;
-    for (let i = sentence.clause.length - 1; i >= 0; i--) {
-        if (!sentence.clause[i].isItem) continue;
-        removeClause(sentence, i);
+    // If the item list has no children, or its only child is a null tag, there are no items to be removed.
+    if (sentence.itemList.childNodes.length === 0 || sentence.itemList.childNodes.length === 1 && 'tagName' in childNode && childNode.tagName === 'null')
+        return document;
+    for (let i = sentence.clauses.length - 1; i >= 0; i--) {
+        if (!sentence.clauses[i].isItem) continue;
+        removeItemClauseFromItemList(sentence, i);
         // Remove any deleted nodes from the sentence and adjust the current index if needed.
-        for (let j = sentence.clause.length - 1; j >= i; j--) {
-            if (sentence.clause[j].node === null)
+        for (let j = sentence.clauses.length - 1; j >= i; j--) {
+            if (sentence.clauses[j].isNodeless())
                 sentence.deleteClause(j);
         }
         for (let j = i - 1; j >= 0; j--) {
-            if (sentence.clause[j].node === null) {
+            if (sentence.clauses[j].isNodeless()) {
                 sentence.deleteClause(j);
                 i--;
             }
@@ -283,18 +399,16 @@ function removeAllItemsFromItemList(document, sentence) {
 
 /**
  * Evaluates all of the procedural and poss tags in a description and randomly selects which ones to keep.
- * @param {Description} description - The description with procedurals.
- * @param {Map<string, string>} proceduralSelections - A Map of manually selected names of poss tags to keep.
- * @param {Player} [player] - The player who caused these procedurals to be evaluated, if applicable.
- * @returns {string}
+ * @param description - The description with procedurals.
+ * @param proceduralSelections - A Map of manually selected names of poss tags to keep.
+ * @param player - The player who caused these procedurals to be evaluated, if applicable.
  */
-export function generateProceduralOutput(description, proceduralSelections, player) {
+export function generateProceduralOutput(description: Description, proceduralSelections: Map<string, string>, player?: Player): string {
     const descriptionCopy = new Description(description.text, description.getContainer(), description.getGame());
     let document = descriptionCopy.document;
     // Find all procedurals.
-    let procedurals = document.getElementsByTagName('procedural');
-    /** @type {Array<Node>} */
-    let proceduralsToRemove = [];
+    let procedurals: DocumentNodeCollection = document.getElementsByTagName('procedural');
+    let proceduralsToRemove: DocumentNode<ParentNode>[] = [];
     const attributesToRemove = ['chance', 'stat'];
     for (let i = 0; i < procedurals.length; i++) {
         const proceduralName = procedurals[i].getAttribute('name').toLowerCase().trim();
@@ -302,7 +416,7 @@ export function generateProceduralOutput(description, proceduralSelections, play
         if (proceduralName !== '' && proceduralSelections.has(proceduralName))
             proceduralAssigned = true;
         else {
-            let parentProcedural = procedurals[i].parentNode;
+            let parentProcedural = procedurals[i].parentNode as DocumentNode<ParentNode>;
             // If this procedural is nested, find its parent procedural.
             while (!parentProcedural.hasOwnProperty("documentElement") && 'tagName' in parentProcedural && parentProcedural.tagName !== "procedural")
                 parentProcedural = parentProcedural.parentNode;
@@ -318,13 +432,10 @@ export function generateProceduralOutput(description, proceduralSelections, play
         }
 
         // Determine which poss tag within this procedural to keep.
-        let possibilities = procedurals[i].getElementsByTagName('poss');
-        /** @type {Array<Possibility>} */
-        let possibilityArr = [];
-        /** @type {Array<Element>} */
-        let possibilitiesToRemove = [];
-        /** @type {number} */
-        let winningPossibilityIndex;
+        let possibilities: DocumentNodeCollection = procedurals[i].getElementsByTagName('poss');
+        let possibilityArr: Possibility[] = [];
+        let possibilitiesToRemove: DocumentNode[] = [];
+        let winningPossibilityIndex: number;
         for (let j = 0; j < possibilities.length; j++) {
             // Skip possibilities that belong to nested procedurals.
             let parentNode = possibilities[j].parentNode;
@@ -341,8 +452,7 @@ export function generateProceduralOutput(description, proceduralSelections, play
             possibilityArr.push({ index: j, chance: possibilityChance, name: possibilityName });
         }
         if (winningPossibilityIndex === undefined) {
-            /** @type {number} */
-            let statValue;
+            let statValue: number;
             const proceduralStat = Player.abbreviateStatName(procedurals[i].getAttribute('stat'));
             if (proceduralStat !== '' && player) {
                 if (proceduralStat === "str") statValue = player.strength;
@@ -390,22 +500,27 @@ export function generateProceduralOutput(description, proceduralSelections, play
     return stringify(document).replace(/<procedural\s?[^>]*>\s*<\/procedural>/g, '').replace(/<procedural\s?[^>]*\/>/g, '').replace(/<s>\s*<\/s>/g, '').replace(/<\/([^>]+?)> +<\/desc>/g, "</$1></desc>").replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim();
 }
 
-/** @param {number} chance */
-function keepProcedural(chance) {
+/**
+ * Randomly decides whether or not to keep the procedural based on the given chance.
+ * @param chance - The percent chance.
+ */
+function keepProcedural(chance: number): boolean {
     return Math.random() * 100 < chance;
 }
 
 /**
- * @param {Array<Possibility>} possibilityArr
- * @param {number} statValue
- * @returns {Array<Possibility>}
+ * Creates a possibility array based on the one given with the chances modified by the given stat value.
+ * @param possibilityArr - The unmodified possibility array to modify.
+ * @param statValue - The stat value to use as a weight for the possibilities.
  */
-function calculateModifiedPossibilityArr(possibilityArr, statValue) {
+function calculateModifiedPossibilityArr(possibilityArr: Possibility[], statValue: number): Possibility[] {
     // If any of the given possibilities are null, assign their chances equally so that all chances add up to 100.
     // Clamp the sum of non-null possibilities between 0 and 100.
-    /** @type {number} */
-    let possibilitySum = Math.min(Math.max(possibilityArr.reduce((accumulator, possibility) => accumulator + (possibility.chance === null ? 0 : possibility.chance), 0), 0), 100);
-    /** @type {number} */
+    let possibilitySum = clamp(
+        possibilityArr.reduce((accumulator, possibility) => accumulator + (possibility.chance === null ? 0 : possibility.chance), 0),
+        0,
+        100
+    );
     let nullCount = possibilityArr.reduce((accumulator, possibility) => accumulator + (possibility.chance === null ? 1 : 0), 0);
     if (nullCount > 0) {
         let dividedRemainder = (100.0 - possibilitySum) / nullCount;
@@ -432,10 +547,11 @@ function calculateModifiedPossibilityArr(possibilityArr, statValue) {
 }
 
 /**
- * @param {Array<Possibility>} possibilityArr
- * @returns {number}
+ * Randomly chooses a possibility to keep.
+ * @param possibilityArr - An array of possibilities, with their indexes.
+ * @returns The index of the possibility to keep.
  */
-function choosePossibilityIndex(possibilityArr) {
+function choosePossibilityIndex(possibilityArr: Possibility[]): number {
     // Roll a random number and find the winner.
     const rand = Math.random() * 100;
     let gachaValue = 0;
@@ -448,24 +564,22 @@ function choosePossibilityIndex(possibilityArr) {
 }
 
 /**
- * @param {string} description
- * @returns {{document: Document, warnings: string[], errors: string[], messageDisplayType: MessageDisplayType, procedurals: Map<string, Set<string>>}}
+ * Converts the given description string into a description document
  */
-function createDescriptionDocumentFromString(description) {
-    description = description.replace(/<il><\/il>/g, "<il><null /></il>");
+function createDescriptionDocumentFromString(descriptionString: string): DescriptionDocument {
+    descriptionString = descriptionString.replace(/<il><\/il>/g, "<il><null /></il>");
 
-    let warnings = [];
-    let errors = [];
-    /** @type {Document} */
-    let document = new DOMParser({
-        // locator is always need for error position info
+    let warnings: string[] = [];
+    let errors: string[] = [];
+    let document: Document = new DOMParser({
+        // Locator is always need for error position info.
         locator: {},
-        // you can override the errorHandler for xml parser
+        // We can override the errorHandler for DOMParser.
         errorHandler: {
-            warning: function (w) { warnings.push(w); },
-            error: function (err) { errors.push(err); }
+            warning: function (warning) { warnings.push(warning); },
+            error: function (error) { errors.push(error); }
         }
-    }).parseFromString(description, 'text/xml');
+    }).parseFromString(descriptionString, 'text/xml');
 
     // Get message display type.
     const messageDisplayTypeString = document?.getElementsByTagName('desc').item(0)?.getAttribute('type')?.toUpperCase();
@@ -478,9 +592,8 @@ function createDescriptionDocumentFromString(description) {
 
 /**
  * Returns a message display type based on the given string.
- * @param {string} messageDisplayTypeString
  */
-function getMessageDisplayType(messageDisplayTypeString) {
+function getMessageDisplayType(messageDisplayTypeString: string): MessageDisplayType {
     switch (messageDisplayTypeString) {
         case 'STANDARD':
             return MessageDisplayType.STANDARD;
@@ -496,37 +609,34 @@ function getMessageDisplayType(messageDisplayTypeString) {
 }
 
 /**
- * @param {Element} sentenceNode
- * @returns {Sentence}
+ * Creates a sentence object from the given node.
+ * @param sentenceNode - The node to create a sentence from.
  */
-function createSentence(sentenceNode) {
-    /** @type {Array<Clause>} */
-    let clauses = [];
-    parseNodes(clauses, sentenceNode);
+function createSentence(sentenceNode: DocumentNode): Sentence {
+    const clauses: Clause[] = createClauses(sentenceNode);
     let itemCount = 0;
     for (const clause of clauses) {
-        if (clause.node.parentNode.tagName === 'item') {
+        if (clause.parentNode.tagName === 'item') {
             clause.isItem = true;
             itemCount++;
             clause.itemNo = itemCount;
             // Get item quantity.
-            let text = clause.node.data;
+            let text = clause.text;
             let start = text.search(/\d/);
             if (start === 0) {
-                let end;
+                let end: number;
                 for (end = start; end < text.length; end++) {
-                    if (isNaN(text.charAt(end + 1)))
+                    if (isNaN(parseInt(text.charAt(end + 1))))
                         break;
                 }
-                const quantity = parseInt(text.substring(start, end));
-                clause.itemQuantity = quantity;
+                clause.itemQuantity = parseInt(text.substring(start, end));
             }
             else clause.itemQuantity = 1;
         }
     }
-    let itemList = null;
+    let itemList: DocumentNode = null;
     let itemListName = "";
-    let itemLists = sentenceNode.getElementsByTagName('il');
+    let itemLists: DocumentNodeCollection = sentenceNode.getElementsByTagName('il');
     if (itemLists.length > 0) {
         itemList = itemLists[0];
         itemListName = itemList.getAttribute('name');
@@ -536,30 +646,29 @@ function createSentence(sentenceNode) {
 }
 
 /**
- * @param {Array<Clause>} clauses
- * @param {Node} node
- * @returns {Array<Clause>}
+ * Creates clauses from the given node.
+ * @param node - The node to create clauses from.
+ * @param clauses - An array of clauses that already exist. Optional.
  */
-function parseNodes(clauses, node) {
+function createClauses(node: DocumentNode, clauses: Clause[] = []): Clause[] {
     for (let i = 0; i < node.childNodes.length; i++) {
-        if ('data' in node.childNodes[i])
-            clauses.push(new Clause(node.childNodes[i]));
-        else if ('tagName' in node.childNodes[i])
-            parseNodes(clauses, node.childNodes[i]);
+        const childNode = node.childNodes[i] as DocumentNode;
+        if ('data' in childNode)
+            clauses.push(new Clause(childNode as EditableDocumentNode));
+        else if ('tagName' in childNode)
+            createClauses(childNode, clauses);
     }
     return clauses;
 }
 
 /**
  * Gets all s tag elements containing an il tag element.
- * @param {Document} document
- * @returns {Array<Element>}
  */
-function getItemListSentences(document) {
+function getItemListSentences(document: Document): DocumentNode[] {
     // Get a list of sentences in the document.
-    const sentences = document.getElementsByTagName('s');
+    const sentences: DocumentNodeCollection = document.getElementsByTagName('s');
     // Find the sentence containing an item list, if there is one.
-    let itemListSentences = [];
+    let itemListSentences: DocumentNode[] = [];
     for (let i = 0; i < sentences.length; i++) {
         if (sentences[i].getElementsByTagName('il').length > 0)
             itemListSentences.push(sentences[i]);
@@ -570,19 +679,17 @@ function getItemListSentences(document) {
 
 /**
  * Gets all procedurals contained in the document.
- * @param {Document} document
- * @returns {Map<string, Set<string>>} A map of procedurals and the set of possibilities contained within them.
+ * @returns A map of procedurals and the set of possibilities contained within them.
  */
-function getProcedurals(document) {
-    /** @type {Map<string, Set<string>>} */
-    const procedurals = new Map();
+function getProcedurals(document: Document): Map<string, Set<string>> {
+    const procedurals: Map<string, Set<string>> = new Map();
     // Get a list of all procedural tags in the document.
-    const proceduralElements = document?.getElementsByTagName('procedural') ?? [];
+    const proceduralElements: DocumentNodeCollection = document?.getElementsByTagName('procedural') ?? [];
     for (let i = 0; i < proceduralElements.length; i++) {
         const proceduralName = proceduralElements[i].getAttribute('name').toLowerCase().trim();
         if (!procedurals.has(proceduralName)) procedurals.set(proceduralName, new Set());
         const procedural = procedurals.get(proceduralName);
-        const possibilityElements = proceduralElements[i].getElementsByTagName('poss');
+        const possibilityElements: DocumentNodeCollection = proceduralElements[i].getElementsByTagName('poss');
         for (let j = 0; j < possibilityElements.length; j++) {
             // Skip possibilities that belong to nested procedurals.
             let parentNode = possibilityElements[j].parentNode;
@@ -597,25 +704,26 @@ function getProcedurals(document) {
 }
 
 /**
- * @param {Node} document
- * @returns {string}
+ * Converts the given document to a string with all XML tags removed.
+ * @param document - The document to convert to a string.
  */
-export function stringify(document) {
+export function stringify(document: Document): string {
     let description = new XMLSerializer().serializeToString(document);
     description = description.replace(/<il\/>/g, "<il></il>").replace(/(<(il)\s[^>]+?)\/>/g, "$1></$2>").replace(/<s\/>/g, "").replace(/<null\/>/g, "").replace(/<\/([^>]+?)> +<\/desc>/g, "</$1></desc>").replace(/ {2,}/g, " ").trim();
     return description;
 }
 
 /**
- * @param {Sentence} sentence
- * @param {string} phrase
- * @param {number} itemQuantity
- * @returns {number} i - The index of the new Clause within the Sentence.
+ * Creates an item clause and inserts it into the sentence.
+ * @param sentence - Creates a new clause in the sentence.
+ * @param clauseText - The text to set as the clause's contents.
+ * @param itemQuantity - The quantity of the item to set.
+ * @returns The index of the new Clause within the Sentence.
  */
-function initializeNewClause(sentence, phrase, itemQuantity) {
+function insertNewItemClause(sentence: Sentence, clauseText: string, itemQuantity: number): number {
     let document = sentence.itemList.ownerDocument;
     let firstChild = sentence.itemList.firstChild;
-    let tempNode;
+    let tempNode: Text;
     if (firstChild === null || firstChild === undefined) {
         if (sentence.itemList.nextSibling !== null && sentence.itemList.nextSibling !== undefined)
             firstChild = sentence.itemList.nextSibling;
@@ -631,25 +739,25 @@ function initializeNewClause(sentence, phrase, itemQuantity) {
     }
     while (!firstChild.hasOwnProperty("data"))
         firstChild = firstChild.firstChild;
-    let i;
-    for (i = 0; i < sentence.clause.length; i++) {
-        if ('data' in firstChild && sentence.clause[i].text === firstChild.data)
+    let i: number;
+    for (i = 0; i < sentence.clauses.length; i++) {
+        if ('data' in firstChild && sentence.clauses[i].text === firstChild.data)
             break;
     }
 
-    let textNode = document.createTextNode(phrase);
-    let itemNode = document.createElement('item');
+    let textNode: Text = document.createTextNode(clauseText);
+    let itemNode: DocumentNode = document.createElement('item');
     itemNode.appendChild(textNode);
     sentence.itemList.insertBefore(itemNode, sentence.itemList.firstChild);
 
-    let separatorNode = document.createTextNode(" ");
+    let separatorNode: Text = document.createTextNode(" ");
     sentence.itemList.insertBefore(separatorNode, itemNode.nextSibling);
 
     const itemClause = new Clause(textNode, true, 0, itemQuantity);
-    sentence.clause.splice(i, 0, itemClause);
+    sentence.addClause(i, itemClause);
 
     const separatorClause = new Clause(separatorNode);
-    sentence.clause.splice(i + 1, 0, separatorClause);
+    sentence.addClause(i + 1, separatorClause);
 
     if (tempNode !== undefined)
         tempNode.parentNode.removeChild(tempNode);
@@ -658,27 +766,27 @@ function initializeNewClause(sentence, phrase, itemQuantity) {
 }
 
 /**
- * @param {Sentence} sentence
- * @param {string} phrase
- * @param {number} [itemQuantity]
- * @returns {number} case - A number to indicate which condition was met for debugging purposes.
+ * Adds an item clause to the sentence's item list and modifies the sentence to accommodate it.
+ * @param sentence - The sentence to add an item clause to.
+ * @param clauseText - The text to set as the clause's contents.
+ * @param itemQuantity - The quantity of the item to set. Defaults to 1.
+ * @returns A number to indicate which condition was met for debugging purposes.
  */
-function addClause(sentence, phrase, itemQuantity = 1) {
+function addItemClauseToItemList(sentence: Sentence, clauseText: string, itemQuantity = 1): number {
     // This function properly edits a sentence after an Item clause has been added.
     // In this function, sentence is the sentence containing an Item list.
-    const clause = sentence.clause;
+    const clause: Clause[] = sentence.clauses;
 
     // First, create the new Item clause and get its index in the sentence.
     // Note: clause[i + 1] is the separator clause where a comma, space, "and", etc. will go.
-    const i = initializeNewClause(sentence, phrase, itemQuantity);
+    const i = insertNewItemClause(sentence, clauseText, itemQuantity);
 
     // If this is the beginning of the sentence, capitalize the first letter of the new clause.
     // Then, fix the capitalization of the next clause, if applicable.
     if (i === 0) {
-        clause[i].set(clause[i].text.charAt(0).toUpperCase() + clause[i].text.substring(1));
-        const capitals = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-        if (capitals.includes(clause[i + 2].text.charAt(0)) && !capitals.includes(clause[i + 2].text.charAt(1)))
-            clause[i + 2].set(clause[i + 2].text.charAt(0).toLowerCase() + clause[i + 2].text.substring(1));
+        clause[i].set(capitalizeFirstLetter(clause[i].text));
+        if (clause[i + 2].firstLetterIsUppercase())
+            clause[i + 2].set(lowercaseFirstLetter(clause[i + 2].text));
     }
 
     // BEFORE: "<desc><s>On these shelves are <il><item>3 bottles of ZZZQUIL</item>, <item>a bottle of LAXATIVES</item>, and <item>a bottle of ISOPROPYL ALCOHOL</item></il>.</s></desc>"
@@ -709,7 +817,7 @@ function addClause(sentence, phrase, itemQuantity = 1) {
         // BEFORE: "<desc><s>On these shelves is <il><item>a bottle of ISOPROPYL ALCOHOL</item></il>.</s></desc>"
         // INSERT: "PAINKILLERS"
         // AFTER:  "<desc><s>On these shelves are <il><item>a bottle of PAINKILLERS</item> and <item>a bottle of ISOPROPYL ALCOHOL</item></il>.</s></desc>"
-        if (clause[i + 2].isItem && clause[i + 2].node.parentNode === sentence.itemList.lastChild) {
+        if (clause[i + 2].isItem && clause[i + 2].parentNode === sentence.itemList.lastChild) {
             // If the clause before/after the item list has "is" and there are no commas after "is", change "is" to "are".
             if (clause[i - 1] && clause[i - 1].endsWith("is"))
                 clause[i - 1].replaceLastWord("is", "are");
@@ -748,14 +856,14 @@ function addClause(sentence, phrase, itemQuantity = 1) {
         // BEFORE: "<desc><s>There are <il>BASKETBALLS, SOCCER BALLS, and BASEBALLS</il>.</s></desc>"
         // INSERT: "TENNIS BALL"
         // AFTER:  "<desc><s>There are <il><item>a TENNIS BALL</item>, BASKETBALLS, SOCCER BALLS, and BASEBALLS</il>.</s></desc>"
-        if (clause[i + 2] && clause[i + 2].text.includes(", and ") && clause[i + 2].node === sentence.itemList.lastChild) {
+        if (clause[i + 2] && clause[i + 2].text.includes(", and ") && clause[i + 2].isLastChildInItemList()) {
             clause[i + 1].set(", ");
             return 8;
         }
         // BEFORE: "<desc><s>There are <il>SOCCER BALLS and BASEBALLS</il>.</s></desc>"
         // INSERT: "TENNIS BALL"
         // AFTER:  "<desc><s>There are <il><item>a TENNIS BALL</item>, SOCCER BALLS, and BASEBALLS</il>.</s></desc>"
-        else if (clause[i + 2] && clause[i + 2].text.includes(" and ") && clause[i + 2].node === sentence.itemList.lastChild) {
+        else if (clause[i + 2] && clause[i + 2].text.includes(" and ") && clause[i + 2].isLastChildInItemList()) {
             clause[i + 1].set(", ");
             clause[i + 2].set(clause[i + 2].text.replace(" and ", ", and "));
             return 9;
@@ -763,14 +871,14 @@ function addClause(sentence, phrase, itemQuantity = 1) {
         // BEFORE: "<desc><s>However, you do find <il>a wooden ruler</il>.</s></desc>"
         // INSERT: "KEYBOARD"
         // AFTER:  "<desc><s>However, you do find <il><item>a KEYBOARD</item> and a wooden ruler</il>.</s></desc>"
-        else if (clause[i + 2] && !clause[i + 2].isItem && clause[i + 2].node === sentence.itemList.lastChild) {
+        else if (clause[i + 2] && !clause[i + 2].isItem && clause[i + 2].isLastChildInItemList()) {
             clause[i + 1].set(" and ");
             return 10;
         }
         // BEFORE: "<desc><s>Looking under the beds, you find <il></il>.</s></desc>"
         // INSERT: "BASKETBALL"
         // AFTER:  "<desc><s>Looking under the beds, you find <il><item>a BASKETBALL</item></il>.</s></desc>"
-        else if (clause[i + 1].node === sentence.itemList.lastChild) {
+        else if (clause[i + 1].isLastChildInItemList()) {
             clause[i + 1].delete();
             sentence.deleteClause(i + 1);
             // If the clause before or after the item list has "are" or "is" and that wouldn't be grammatically correct with the given item quantity, replace it.
@@ -789,15 +897,16 @@ function addClause(sentence, phrase, itemQuantity = 1) {
 }
 
 /**
- * @param {Sentence} sentence
- * @param {number} i
- * @returns {number} case - A number to indicate which condition was met for debugging purposes.
+ * Removes an item clause from the sentence's item list and modifies the sentence to be grammatically correct.
+ * @param sentence - The sentence to add an item clause to.
+ * @param i - The index of the item clause in the sentence.
+ * @returns A number to indicate which condition was met for debugging purposes.
  */
-function removeClause(sentence, i) {
+function removeItemClauseFromItemList(sentence: Sentence, i: number): number {
     // This function removes an Item clause from a sentence.
     // In this function, sentence is the sentence containing mention of the item.
     // i is the index of the clause mentioning that item.
-    const clause = sentence.clause;
+    const clause: Clause[] = sentence.clauses;
 
     if (sentence.itemCount > 1) {
         // Handle removing the last item from a list of items. The if/else if conditionals go by decreasing number of items in the list.
