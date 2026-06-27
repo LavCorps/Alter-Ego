@@ -42,9 +42,10 @@ export default class StartMoveAction extends Action {
                 // So, calculate how long to delay their movement.
                 let delay = 0;
                 const occupantTime = occupant.calculateMoveTime(exit, isRunning, occupant.getFollowingSpeed());
+                if (occupantTime <= time) delay = time - occupantTime;
                 // Add one tick to the delay just to be safe.
-                if (occupantTime <= time) delay = time - occupantTime + Game.tick;
-                occupant.doAfterDelay(delay, async () => {
+                delay += Game.tick;
+                occupant.doAfterDelay(delay, this, async () => {
                     occupant.moveQueue = [exit.name];
                     const queueMoveAction = new QueueMoveAction(this.getGame(), undefined, occupant, occupant.location, this.forced);
                     await queueMoveAction.performQueueMove(this.player.isRunning, occupant.moveQueue[0], occupant.getFollowingSpeed());

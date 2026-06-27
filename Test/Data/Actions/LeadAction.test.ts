@@ -212,6 +212,7 @@ describe('LeadAction test', () => {
             });
 
             beforeEach(async () => {
+                vi.clearAllTimers();
                 vi.useFakeTimers();
                 const followAction1 = new FollowAction(game, undefined, asuka, asuka.location, false);
                 await followAction1.performFollow(astrid);
@@ -224,8 +225,11 @@ describe('LeadAction test', () => {
             });
 
             afterEach(async () => {
+                for (const player of [astrid, asuka, nero])
+                    player.stopMoving();
                 const disbandPartyAction = new DisbandPartyAction(game, undefined, astrid, astrid.location, false);
                 await disbandPartyAction.performDisbandParty(true);
+                vi.clearAllTimers();
                 vi.useRealTimers();
             });
 
@@ -238,7 +242,7 @@ describe('LeadAction test', () => {
             });
 
             test('moving player leads one moving player and all players stop', async () => {
-                await vi.advanceTimersByTimeAsync(200);
+                await vi.advanceTimersByTimeAsync(1000);
                 expect(astrid.isMoving).toBe(true);
                 expect(asuka.isMoving).toBe(true);
                 expect(nero.isMoving).toBe(true);
@@ -258,7 +262,7 @@ describe('LeadAction test', () => {
             });
 
             test('moving player leads two moving players and all players stop', async () => {
-                await vi.advanceTimersByTimeAsync(200);
+                await vi.advanceTimersByTimeAsync(1000);
                 expect(astrid.isMoving).toBe(true);
                 expect(asuka.isMoving).toBe(true);
                 expect(nero.isMoving).toBe(true);

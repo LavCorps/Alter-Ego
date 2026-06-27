@@ -33,6 +33,7 @@ vi.mock('../Configs/demodata.json', () => ({ default: demodata }));
 vi.mock('../Configs/serverconfig.json', () => ({ default: serverconfig }));
 
 beforeAll(() => {
+    vi.useFakeTimers();
     /** @type {any} */ const client = discordMock.createMockClient();
 
     // Create a minimal mocked Discord environment and initialize Game.
@@ -110,6 +111,11 @@ beforeAll(() => {
 afterEach(() => {
     vi.resetModules();
     vi.restoreAllMocks();
+});
+
+afterAll(() => {
+    vi.clearAllTimers();
+    vi.useRealTimers();
 });
 
 expect.extend({

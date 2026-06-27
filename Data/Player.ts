@@ -287,6 +287,10 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
      */
     remainingTime: number;
     /**
+     * The ID of the most recent action to set a delay timer. Used to prevent concurrent callbacks on delay timers.
+     */
+    #delayTimerActionId: string;
+    /**
      * A list of all movements the player wishes to make in sequential order.
      * When the player finishes moving to one destination, they will begin moving to the next one in the queue, if it exists.
      */
@@ -419,6 +423,7 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
         this.currentMovingSpeed = 0;
         this.moveTimer = null;
         this.remainingTime = 0;
+        this.#delayTimerActionId = "";
         this.moveQueue = [];
         this.#followedPlayerName = "";
         this.followedPlayerDisplayName = "";
@@ -568,19 +573,31 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
      * Executes the given callback function after a set delay.
      * Overwrites the player's `moveTimer` and `remainingTime`.
      * @param delay - The amount of time to delay the callback function in milliseconds.
+     * @param action - The action which is calling this function. Used to prevent concurrent delay timers.
      * @param callback - The function to call when the delay is over.
      */
-    doAfterDelay(delay: number, callback: (...args: any[]) => Promise<void>): void {
+    doAfterDelay(delay: number, action: Action, callback: (...args: any[]) => Promise<void>): void {
+        this.#delayTimerActionId = action.id;
         clearInterval(this.moveTimer);
         this.remainingTime = delay;
         const player = this;
         this.moveTimer = setInterval(async () => {
+            console.log(`${action.id} === ${player.#delayTimerActionId} ?`);
+            if (action.id !== player.#delayTimerActionId) {
+                clearInterval(player.moveTimer);
+                return;
+            }
             let subtractedTime = Game.tick;
             if (player.getGame().heated) subtractedTime = player.getGame().settings.heatedSlowdownRate * subtractedTime;
             player.remainingTime -= subtractedTime;
-            if (player.remainingTime <= 0) {
-                clearInterval(this.moveTimer);
-                await callback();
+            if (player.remainingTime <= 0 && action.id === player.#delayTimerActionId) {
+                clearInterval(player.moveTimer);
+                try {
+                    await callback();
+                }
+                catch (error) {
+                    console.error(`${player.name} doAfterDelay callback error:`, error);
+                }
             }
         }, Game.tick);
     }
@@ -793,6 +810,7 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
      * Stops the player, if they're moving.
      */
     stopMoving(): void {
+        this.#delayTimerActionId = "";
         if (this.moveTimer !== null)
             clearInterval(this.moveTimer);
         this.isMoving = false;
