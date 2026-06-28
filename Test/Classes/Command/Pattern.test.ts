@@ -539,5 +539,38 @@ describe("Pattern file from NG Commands", () => {
                 expect(pocket.id).toBe("RIGHT POCKET");
             });
         });
+
+        test("Pattern.match(9)", async () => {
+            trie.insert("of", new ConstantToken("of"));
+            const pattern = new Pattern([
+                new Slot(InventoryItem, "target"),
+                new Preposition("destination"),
+                new Pattern([
+                    new Pocket("destination", "destination pocket"),
+                    new Constant("of")
+                ], true, true),
+                new Slot(InventoryItem, "destination"),
+            ]);
+            const start = process.hrtime.bigint();
+            const invocation = pattern.match(trie.tokenize(["MUG", "OF", "COFFEE", "in", "KYRAS", "LAB", "COAT", "1"])) as MatchedInvocation;
+            const finish = process.hrtime.bigint();
+            console.log(`tokenization and matching took ${Number(finish - start) / 1000}μs`);
+            console.log(invocation);
+            expect(invocation).toBeInstanceOf(MatchedInvocation);
+            expect(invocation.args.size).toBe(3);
+            expect(invocation.args.get("target")).not.toBeUndefined();
+            expect(invocation.args.get("target").length).toBe(1);
+            invocation.args.get("target").forEach((item: InventoryItem) => {
+                expect(item).toBeInstanceOf(InventoryItem);
+                expect(item.prefabId).toBe("MUG OF COFFEE");
+            });
+            expect(invocation.args.get("destination")).not.toBeUndefined();
+            expect(invocation.args.get("destination").length).toBe(1);
+            invocation.args.get("destination").forEach((item: InventoryItem) => { 
+                expect(item).toBeInstanceOf(InventoryItem);
+                expect(item.prefabId).toBe("KYRAS LAB COAT");
+                expect(item.getIdentifier()).toBe("KYRAS LAB COAT 1");
+            });
+        });
     });
 });
