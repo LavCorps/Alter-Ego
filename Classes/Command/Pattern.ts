@@ -162,6 +162,9 @@ class MatchData {
     /** Collection of PatternElements to Tokens, representing the tokens that have been successfully matched to pattern elements. */
     matches: Collection<PatternElement, Token[]>;
 
+    /** Collection of Patterns to booleans, representing whether or not they have begun the process of consuming tokens. */
+    hasConsumed: Collection<Pattern, boolean>;
+
     /** Array of strings representing globbed user input. */
     glob: string[];
 
@@ -356,6 +359,7 @@ export class Pattern implements PatternElement {
                     if (token instanceof ConstantToken && element.satisfiedBy(token)) {
                         data.matches.set(element, [token]);
                         matchedIndices.add(grammarIndex);
+                        data.hasConsumed.set(this, true);
                         break;
                     }
                 }
@@ -368,12 +372,14 @@ export class Pattern implements PatternElement {
                 if (elementMatches.length > 0) {
                     data.matches.set(element, elementMatches);
                     matchedIndices.add(grammarIndex);
+                    data.hasConsumed.set(this, true);
                 }
             } else if (element instanceof Preposition) {
                 for (const token of data.stream) {
                     if (token instanceof PrepositionToken) {
                         data.matches.set(element, [token]);
                         matchedIndices.add(grammarIndex);
+                        data.hasConsumed.set(this, true);
                         break;
                     }
                 }
@@ -392,20 +398,24 @@ export class Pattern implements PatternElement {
                     } else stream = data.next();
                 }
                 matchedIndices.add(grammarIndex);
+                data.hasConsumed.set(this, true);
             } else if (element instanceof Pocket) {
                 let elementMatches: PocketToken<ItemInstance>[] = data.stream.filter(token => token instanceof PocketToken);
                 if (elementMatches.length > 0) {
                     data.matches.set(element, elementMatches);
                     matchedIndices.add(grammarIndex);
+                    data.hasConsumed.set(this, true);
                 }
             } else if (element instanceof Pattern) {
+                data.hasConsumed.set(element, false);
                 data = element.innerMatch(data);
+                if (data.hasConsumed.get(element)) data.hasConsumed.set(this, true);
                 matchedIndices.add(grammarIndex);
             }
 
             if (!data.matches.has(element) && !(element instanceof Pattern) && !(element instanceof Glob)) {
                 // this is an error state. if this pattern is optional, we should simply abandon matching this pattern.
-                if (!this.mandatory && this.optional) return base;
+                if ((!this.mandatory || !data.hasConsumed.get(this)) && this.optional) return base;
                 // this is an error state: we have gone over all possibilities, and the element has not been matched.
                 // this kind of error severs the anchor between the token streams and the grammar pattern, even if there are still valid tokens to match to the pattern.
                 // this section of code is tasked with the unenviable job of finding the nearest anchor for reorientation.
@@ -650,7 +660,9 @@ export class Pattern implements PatternElement {
      * @param streams - The stream of tokens to attempt to match to the pattern.
      */
     match(streams: Token[][]): MatchResult {
-        const data = this.innerMatch(new MatchData(streams));
+        let data = new MatchData(streams);
+        data.hasConsumed.set(this, false);
+        data = this.innerMatch(data);
         if (data.errors.length > 0) return new InvalidInvocation(data.errors);
         else {
             const args: Collection<string, GameEntity[]> = new Collection();
