@@ -103,7 +103,7 @@ export default class PlayerContext extends Context {
     readonly roomItems: RoomItem[];
 
     /**
-     * The room items within the room.
+     * The gestures of the game.
      */
     readonly gestures: Collection<string, Gesture>;
 
