@@ -1194,6 +1194,14 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
     }
 
     /**
+     * Returns true if the player is in the same hiding spot as the given player.
+     * @param player - The other player to check if they are hiding together.
+     */
+    isHiddenWith(player: Player): boolean {
+        return this.isHidden() && player.isHidden() && this.hidingSpot === player.hidingSpot;
+    }
+
+    /**
      * Calculates the player's stats based on their current status effects.
      */
     #recalculateStats(): void {
@@ -1839,10 +1847,12 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
      *
      * @param action - The action that caused the player to die.
      */
-    die(action: Action): void {
+    async die(action: Action): Promise<void> {
         this.location.removePlayer(this);
         const whisperRemovalMessage = this.getGame().notificationGenerator.generateDieNotification(this, false);
-        this.removeFromWhispers(whisperRemovalMessage, action);
+        await this.removeFromWhispers(whisperRemovalMessage, action);
+        const hidingSpot = this.getGame().entityFinder.getFixture(this.hidingSpot, this.location.id)?.hidingSpot ?? undefined;
+        if (hidingSpot) await hidingSpot.removePlayer(this, action);
         // Update various data.
         this.alive = false;
         this.location = null;
@@ -1868,10 +1878,10 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
      * @param action - The action that caused the player to be removed. If a narration is supplied, this is required.
      * @param removeFromParty - Whether or not to remove the player from party whispers. Defaults to true.
      */
-    removeFromWhispers(narration: string, action?: Action, removeFromParty: boolean = true): void {
+    async removeFromWhispers(narration: string, action?: Action, removeFromParty: boolean = true): Promise<void> {
         for (const whisper of this.getGame().whispers.values()) {
             if (whisper.players.has(this.name) && (removeFromParty || whisper.type !== WhisperType.PARTY))
-                whisper.removePlayer(this, narration, action);
+                await whisper.removePlayer(this, narration, action);
         }
     }
 
