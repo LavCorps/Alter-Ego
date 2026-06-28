@@ -342,6 +342,9 @@ export class Pattern implements PatternElement {
     private innerMatch(base: MatchData): MatchData {
         let data = base.clone();
 
+        // it is useful to know whether this is the root pattern. this can be intuited by how many consumers are known in data
+        const root = data.hasConsumed.size === 1;
+
         const unmatchedIndices: Set<number> = new Set();
         const matchedIndices: Set<number> = new Set();
         const nearMatchIndices: Collection<number, string[]> = new Collection();
@@ -511,9 +514,11 @@ export class Pattern implements PatternElement {
             }
         }
 
-        data = this.matchPrepositions(data);
-
-        data = this.matchPockets(data);
+        // restrict preposition and pocket matching to only work on the root pattern
+        if (root) {
+            data = this.matchPrepositions(data);
+            data = this.matchPockets(data);
+        }
 
         if (!this.mandatory && this.optional && data.errors.length > 0) return base;
         else return data;
