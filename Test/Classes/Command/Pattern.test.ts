@@ -498,7 +498,7 @@ describe("Pattern file from NG Commands", () => {
             console.log(`tokenization and matching took ${Number(finish - start) / 1000}μs`);
             expect(invocation).toBeInstanceOf(InvalidInvocation);
             expect(invocation.errors).toBeLength(1);
-            expect(invocation.errors[0]).toBe(""); // TODO: needs to be filled in
+            expect(invocation.errors[0]).toBe("Couldn't find anything for destination in your input.");
         });
     });
 });

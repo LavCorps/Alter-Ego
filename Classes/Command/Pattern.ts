@@ -337,7 +337,6 @@ export class Pattern implements PatternElement {
 
         const unmatchedIndices: Set<number> = new Set();
         const matchedIndices: Set<number> = new Set();
-        const neverMatchedIndices: Set<number> = new Set();
         const nearMatchIndices: Collection<number, string[]> = new Collection();
 
         this.grammar.forEach((_, index) => {
@@ -374,6 +373,7 @@ export class Pattern implements PatternElement {
                 for (const token of data.stream) {
                     if (token instanceof PrepositionToken) {
                         data.matches.set(element, [token]);
+                        matchedIndices.add(grammarIndex);
                         break;
                     }
                 }
@@ -391,6 +391,7 @@ export class Pattern implements PatternElement {
                         globbed = true;
                     } else stream = data.next();
                 }
+                matchedIndices.add(grammarIndex);
             } else if (element instanceof Pocket) {
                 let elementMatches: PocketToken<ItemInstance>[] = data.stream.filter(token => token instanceof PocketToken);
                 if (elementMatches.length > 0) {
@@ -399,6 +400,7 @@ export class Pattern implements PatternElement {
                 }
             } else if (element instanceof Pattern) {
                 data = element.innerMatch(data);
+                matchedIndices.add(grammarIndex);
             }
 
             if (!data.matches.has(element) && !(element instanceof Pattern) && !(element instanceof Glob)) {
@@ -481,9 +483,18 @@ export class Pattern implements PatternElement {
             }
         }
 
-        // TODO: if the size of neverMatchedIndices is greater than 0, we should complain quite loudly
         for (const index of unmatchedIndices) {
-            if (!matchedIndices.has(index)) neverMatchedIndices.add(index);
+            if (matchedIndices.has(index) || nearMatchIndices.has(index)) continue;
+            element = this.grammar[index];
+            if (element instanceof Constant) {
+                data.errors.push(`Couldn't find a required "${element.value}" in your input.`)
+            } else if (element instanceof Slot || element instanceof Multislot) {
+                data.errors.push(`Couldn't find anything for ${element.name} in your input.`)
+            } else if (element instanceof Preposition) {
+                data.errors.push(`Couldn't find any preposition for ${element.name} in your input.`)
+            } else if (element instanceof Pocket) {
+                data.errors.push(`Couldn't find any inventory slot for ${element.id} in your input.`)
+            }
         }
 
         data = this.matchPrepositions(data);
