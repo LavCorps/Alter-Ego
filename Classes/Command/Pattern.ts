@@ -385,7 +385,7 @@ export class Pattern implements PatternElement {
                     }
                 }
             } else if (element instanceof Glob) {
-                let globbed = false;
+                let globbed = data.index === data.streams.length - 1;
                 let stream = data.stream;
                 while (!globbed) {
                     for (const token of stream) {
@@ -394,7 +394,7 @@ export class Pattern implements PatternElement {
                             break;
                         }
                     }
-                    if (data.index === data.streams.length) {
+                    if (data.index === data.streams.length - 1) {
                         globbed = true;
                     } else stream = data.next();
                 }
@@ -491,7 +491,7 @@ export class Pattern implements PatternElement {
             } else {
                 grammarIndex++;
 
-                if (!(element instanceof Pattern))
+                if (!(element instanceof Pattern) && !(element instanceof Glob))
                     data.next();
 
                 finished = grammarIndex >= this.grammar.length || data.exhausted;

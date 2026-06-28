@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { InvalidInvocation, MatchedInvocation } from "../../../Classes/Command/Invocation.ts";
-import { Constant, Pattern, Pocket, Preposition, Slot } from "../../../Classes/Command/Pattern.ts";
+import { Constant, Glob, Pattern, Pocket, Preposition, Slot } from "../../../Classes/Command/Pattern.ts";
 import { ConstantToken, EntityToken, ItemContainerToken, PocketToken, PrepositionToken } from "../../../Classes/Command/Token.ts";
 import Trie from "../../../Classes/Command/Trie.ts";
 import EquipmentSlot from "../../../Data/EquipmentSlot.ts";
@@ -569,6 +569,46 @@ describe("Pattern file from NG Commands", () => {
                 expect(item.prefabId).toBe("KYRAS LAB COAT");
                 expect(item.getIdentifier()).toBe("KYRAS LAB COAT 1");
             });
+        });
+
+        test("Pattern.match(10)", async () => {
+            const pattern = new Pattern([
+                new Slot(Player, "recipient"),
+                new Glob(),
+            ]);
+            const start = process.hrtime.bigint();
+            const invocation = pattern.match(trie.tokenize(["kyra", "Hello.\n\nI", "have", "overheard", "your", "conversation", "with", "Huiyu", "regarding", "your", "*very", "large", "rabbit*.\n\nPlease", "tell", "me", "more", "about", "the", "nature", "of", "this", "rabbit."])) as MatchedInvocation;
+            const finish = process.hrtime.bigint();
+            console.log(`tokenization and matching took ${Number(finish - start) / 1000}μs`);
+            expect(invocation).toBeInstanceOf(MatchedInvocation);
+            expect(invocation.args.size).toBe(1);
+            expect(invocation.args.get("recipient")).not.toBeUndefined();
+            expect(invocation.args.get("recipient").length).toBe(1);
+            invocation.args.get("recipient").forEach((player: Player) => {
+                expect(player).toBeInstanceOf(Player);
+                expect(player.name).toBe("Kyra");
+            });
+            expect(invocation.glob).toStrictEqual(["Hello.\n\nI", "have", "overheard", "your", "conversation", "with", "Huiyu", "regarding", "your", "*very", "large", "rabbit*.\n\nPlease", "tell", "me", "more", "about", "the", "nature", "of", "this", "rabbit."])
+        });
+
+        test("Pattern.match(11)", async () => {
+            const pattern = new Pattern([
+                new Slot(Player, "recipient"),
+                new Glob(),
+            ]);
+            const start = process.hrtime.bigint();
+            const invocation = pattern.match(trie.tokenize(["kyra"])) as MatchedInvocation;
+            const finish = process.hrtime.bigint();
+            console.log(`tokenization and matching took ${Number(finish - start) / 1000}μs`);
+            expect(invocation).toBeInstanceOf(MatchedInvocation);
+            expect(invocation.args.size).toBe(1);
+            expect(invocation.args.get("recipient")).not.toBeUndefined();
+            expect(invocation.args.get("recipient").length).toBe(1);
+            invocation.args.get("recipient").forEach((player: Player) => {
+                expect(player).toBeInstanceOf(Player);
+                expect(player.name).toBe("Kyra");
+            });
+            expect(invocation.glob).toStrictEqual([])
         });
     });
 });
