@@ -271,12 +271,12 @@ export class Pattern implements PatternElement {
     /**
      * Whether the fulfillment of this Pattern is mandatory or not. This is most useful for optional sub-patterns that must be completely matched once partially matched.
      */
-    readonly mandatory: boolean;
+    readonly _self_mandatory: boolean;
 
     /**
      * Whether this pattern, or the children of this pattern, are mandatory.
      */
-    readonly mandatoryOrMandatoryChildren: boolean;
+    readonly mandatory: boolean;
 
     /**
      * @param grammar - The grammar of the pattern. This is an ordered array, containing pattern elements, as well as other patterns.
@@ -286,12 +286,12 @@ export class Pattern implements PatternElement {
     constructor(grammar: Array<PatternElement>, optional: boolean = false, mandatory: boolean = true) {
         this.grammar = grammar;
         this.optional = optional;
-        this.mandatory = mandatory;
-        if (mandatory) this.mandatoryOrMandatoryChildren = true;
+        this._self_mandatory = mandatory;
+        if (mandatory) this.mandatory = true;
         else {
             for (const element of grammar) {
-                if (element instanceof Pattern && element.mandatoryOrMandatoryChildren) {
-                    this.mandatoryOrMandatoryChildren = true;
+                if (element instanceof Pattern && element.mandatory) {
+                    this.mandatory = true;
                     break;
                 }
             }
@@ -503,7 +503,6 @@ export class Pattern implements PatternElement {
      * @param base - MatchData to validate prepositions for.
      */
     private matchPrepositions(base: MatchData): MatchData {
-        // TODO: in is a universal preposition, but is not accounted for in this logic...
         const data = base.clone();
 
         /** K is the name of the Slot that the Preposition refers to, V[0] is the Preposition element, V[1] is the array of Preposition tokens */
@@ -512,6 +511,7 @@ export class Pattern implements PatternElement {
         /** K is the name of the Slot or Multislot, V[0] is the Slot or Multislot, V[1] is the array of EntityTokens */
         const slots: Collection<string, [Slot | Multislot, ItemContainerToken<ItemInstance | RoomItemContainer>[]]> = new Collection();
 
+        // re-map prepositions and (multi)slots into a format more easily accessible for matching
         data.matches.forEach((tokens, element) => {
             if (element instanceof Preposition)
                 prepositions.set(element.name, [element, tokens.filter(token => token instanceof PrepositionToken)]);
@@ -519,10 +519,11 @@ export class Pattern implements PatternElement {
                 slots.set(element.name, [element, tokens.filter(token => token instanceof ItemContainerToken)]);
         });
 
+        // if there are no prepositions or slots, this function is unnecessary, and we can return the unmodified base MatchData
         if (prepositions.size === 0) return base;
         else if (slots.size === 0) return base;
 
-        for (const [name, [prepElement, prepTokens]] of prepositions) {
+        for (const [name, [prepositionElement, prepositionTokens]] of prepositions) {
             if (!slots.has(name)) {
                 // this should never appear during a normal alter ego game,
                 // and is indicative of an error in the formulation of the pattern of a command.
@@ -532,19 +533,30 @@ export class Pattern implements PatternElement {
 
             const [slotElement, slotTokens] = slots.get(name);
 
+            // this creates a set of all prepositions used by the tokens in the slot matching this preposition
             const slotPrepositions = new Set(slotTokens.map(token => token.preposition));
-            const matches = new Set(prepTokens.map(token => token.value).filter(value => slotPrepositions.has(value)));
+            // this ensures we have the universal preposition "in" in the set
+            slotPrepositions.add("in");
 
-            const narrowedPreps = prepTokens.filter(token => matches.has(token.value));
-            const narrowedSlots = slotTokens.filter(token => matches.has(token.preposition));
+            // find which prepositions that got matched that are also valid for this slot
+            const matches = new Set(prepositionTokens.map(token => token.value).filter(value => slotPrepositions.has(value)));
 
+            // narrow prepositions against the matched preposition set
+            const narrowedPreps = prepositionTokens.filter(token => matches.has(token.value));
+
+            // narrow slots against the matched preposition set UNLESS we matched "in"
+            const narrowedSlots = matches.has("in") ? slotTokens : slotTokens.filter(token => matches.has(token.preposition));
+
+            // if either slots or prepositions were narrowed to a length of 0, then the slot has no valid preposition
             if (narrowedPreps.length === 0 || narrowedSlots.length === 0)
                 data.errors.push(`Couldn't find a preposition for ${name}.`)
 
-            prepositions.set(name, [prepElement, narrowedPreps]);
+            // write back narrowed prepositions and slots...
+            prepositions.set(name, [prepositionElement, narrowedPreps]);
             slots.set(name, [slotElement, narrowedSlots]);
         }
 
+        // write back narrowed prepositions and slots from our custom mapping
         for (const [preposition, tokens] of prepositions.values())
             data.matches.set(preposition, tokens);
         for (const [slot, tokens] of slots.values())
