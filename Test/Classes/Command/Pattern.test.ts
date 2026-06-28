@@ -328,6 +328,9 @@ describe("Pattern file from NG Commands", () => {
             for (const status of game.statusEffects.values()) {
                 trie.insert(status.id, new EntityToken(status.id, status));
             }
+            for (const gesture of game.gestures.values()) {
+                trie.insert(gesture.id, new EntityToken(gesture.id, gesture));
+            }
         });
 
         let trie: Trie;

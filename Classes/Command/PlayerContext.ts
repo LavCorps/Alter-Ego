@@ -16,6 +16,7 @@ import type EquipmentSlot from "../../Data/EquipmentSlot.ts";
 import Context from "./Context.ts";
 import { EntityToken, ItemContainerToken, PocketToken, PrepositionToken, type Token } from "./Token.ts";
 import type Puzzle from "../../Data/Puzzle.ts";
+import type Gesture from "../../Data/Gesture.ts";
 
 /**
  * Represents the in-game context of a new-generation player command.
@@ -102,6 +103,11 @@ export default class PlayerContext extends Context {
     readonly roomItems: RoomItem[];
 
     /**
+     * The room items within the room.
+     */
+    readonly gestures: Collection<string, Gesture>;
+
+    /**
      * @param game - The game to construct the context within.
      * @param player - The player to construct the context for.
      * @param invokedAlias - The alias the command was invoked with.
@@ -150,6 +156,7 @@ export default class PlayerContext extends Context {
             .filter((fixture) => fixture.accessible);
         this.puzzles = this.game.entityFinder.getPuzzles(undefined, this.room.id);
         this.roomItems = this.room.getContainedItems().filter((item) => item.accessible);
+        this.gestures = this.game.gestures;
     }
 
     getLexicon(): Token[] {
@@ -213,6 +220,10 @@ export default class PlayerContext extends Context {
 
         for (const exit of this.exits.values()) {
             tokens.push(new EntityToken(exit.name, exit));
+        }
+
+        for (const gesture of this.gestures.values()) {
+            tokens.push(new EntityToken(gesture.id, gesture));
         }
 
         return tokens;
