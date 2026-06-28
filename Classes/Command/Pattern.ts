@@ -413,10 +413,6 @@ export class Pattern implements PatternElement {
                 if (data.hasConsumed.get(element)) {
                     data.hasConsumed.set(this, true);
                 }
-                // TODO: this is something of a hacky workaround...
-                // when a sub-pattern completes, it advances us too far and exhausts the token stream
-                // this decrement on the stream index fixes that, but who is to say what side-effects it may entail?
-                data.index--;
                 matchedIndices.add(grammarIndex);
             }
 
@@ -494,7 +490,9 @@ export class Pattern implements PatternElement {
                 grammarIndex = patternAnchorIndex;
             } else {
                 grammarIndex++;
-                data.next();
+
+                if (!(element instanceof Pattern))
+                    data.next();
 
                 finished = grammarIndex >= this.grammar.length || data.exhausted;
             }
@@ -520,7 +518,7 @@ export class Pattern implements PatternElement {
             data = this.matchPockets(data);
         }
 
-        if (!this.mandatory && this.optional && data.errors.length > 0) return base;
+        if (this.optional && !this.mandatory && !data.hasConsumed.get(this) && data.errors.length > 0) return base;
         else return data;
     }
 
