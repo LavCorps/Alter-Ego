@@ -609,5 +609,25 @@ describe("Pattern file from NG Commands", () => {
             });
             expect(invocation.glob).toStrictEqual([])
         });
+
+        test("Pattern.match(12)", async () => {
+            trie.insert("of", new ConstantToken("of"));
+            const pattern = new Pattern([
+                new Slot(InventoryItem, "target"),
+                new Preposition("destination"),
+                new Pattern([
+                    new Pocket("destination", "destination pocket"),
+                    new Constant("of")
+                ], true, true),
+                new Slot(InventoryItem, "destination"),
+            ]);
+            const invocation = pattern.match(trie.tokenize(["MUG", "OF", "COFFEE", "in", "RIGHT", "POCKET", "KYRAS", "LAB", "COAT", "1"])) as InvalidInvocation;
+            expect(invocation).toBeInstanceOf(InvalidInvocation);
+            expect(invocation.errors).toBeLength(4);
+            expect(invocation.errors[0]).toBe("Couldn't find a required \"of\" in your input, instead found KYRAS LAB COAT 1.");
+            expect(invocation.errors[1]).toBe("Couldn't find anything for destination in your input.");
+            expect(invocation.errors[2]).toBe("Found a preposition for destination, but no corresponding game object?");
+            expect(invocation.errors[3]).toBe("Found a pocket for destination, but no corresponding game object?");
+        });
     });
 });
