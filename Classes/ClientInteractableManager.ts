@@ -72,6 +72,8 @@ interface InteractableMessage {
     messageId: Snowflake;
 }
 
+type ButtonOrStringSelectMenuInteractable = ButtonInteractable | StringSelectMenuInteractable;
+
 /**
  * A set of functions for creating and managing Interactables.
  */
@@ -190,11 +192,8 @@ export default class ClientInteractableManager {
      * @param player - The player this action directive is being created for.
      * @param user - The user this action directive is being created for. This is used to generate a unique custom ID for the directive, preventing conflicts with directives created for other users with the same action and arguments.
      */
-    async #createActionDirective<T extends Action>(actionClass: { new(...args: any[]): T }, args: any[], player: Player, user: User): Promise<ActionDirective<T>> {
-        const actionDirective = new ActionDirective(actionClass.prototype, player, args);
-        const customId = await actionDirective.generateCustomId(user);
-        actionDirective.setCustomId(customId);
-        return actionDirective;
+    #createActionDirective<T extends Action>(actionClass: { new(...args: any[]): T }, args: any[], player: Player, user: User): ActionDirective<T> {
+        return new ActionDirective(actionClass.prototype, player, args, user);
     }
 
     /**
@@ -265,17 +264,17 @@ export default class ClientInteractableManager {
      * @param player - The player these interactables are being created for. This is used to determine which exits the player can use.
      * @param user - The user these interactables are being created for. Defaults to the given player.
      */
-    async createQueueMoveActionInteractables(exits: Exit[], player: Player, user: User = player): Promise<ButtonInteractable[]> {
+    createQueueMoveActionInteractables(exits: Exit[], player: Player, user: User = player): ButtonInteractable[] {
         const moveButtons: ButtonInteractable[] = [];
         const runButtons: ButtonInteractable[] = [];
         for (const exit of exits) {
             if (player.canUseCommand("move")) {
-                const actionDirective = await this.#createActionDirective(QueueMoveAction, exit.getQueueMoveActionDirectiveArgs(player.location, false), player, user);
+                const actionDirective = this.#createActionDirective(QueueMoveAction, exit.getQueueMoveActionDirectiveArgs(player.location, false), player, user);
                 const buttonOptions = new InteractableOptions(actionDirective, `Move ${exit.name}`);
                 moveButtons.push(this.#createButtonInteractable(buttonOptions, ButtonStyle.Primary, ActionPriority.QUEUE_MOVE));
             }
             if (player.canUseCommand("run")) {
-                const actionDirective = await this.#createActionDirective(QueueMoveAction, exit.getQueueMoveActionDirectiveArgs(player.location, true), player, user);
+                const actionDirective = this.#createActionDirective(QueueMoveAction, exit.getQueueMoveActionDirectiveArgs(player.location, true), player, user);
                 const buttonOptions = new InteractableOptions(actionDirective, `Run ${exit.name}`);
                 runButtons.push(this.#createButtonInteractable(buttonOptions, ButtonStyle.Danger, ActionPriority.QUEUE_RUN));
             }
@@ -288,9 +287,9 @@ export default class ClientInteractableManager {
      * @param player - The player these interactables are being created for.
      * @param user - The user these interactables are being created for. Defaults to the given player.
      */
-    async createStopActionInteractable(player: Player, user: User = player): Promise<ButtonInteractable[]> {
+    createStopActionInteractable(player: Player, user: User = player): ButtonInteractable[] {
         if (!player.canUseCommand("stop")) return [];
-        const actionDirective = await this.#createActionDirective(StopAction, [], player, user);
+        const actionDirective = this.#createActionDirective(StopAction, [], player, user);
         const interactableOptions = new InteractableOptions(actionDirective, `Stop`);
         return [this.#createButtonInteractable(interactableOptions, ButtonStyle.Danger, ActionPriority.STOP)];
     }
@@ -301,11 +300,11 @@ export default class ClientInteractableManager {
      * @param player - The player these interactables are being created for.
      * @param user - The user these interactables are being created for. Defaults to the given player.
      */
-    async createInspectActionInteractable(entities: Inspectable[], player: Player, user: User = player): Promise<StringSelectMenuInteractable[]> {
+    createInspectActionInteractable(entities: Inspectable[], player: Player, user: User = player): StringSelectMenuInteractable[] {
         if (!player.canUseCommand("inspect")) return [];
         const interactableOptions: InteractableOptions<InspectAction>[] = [];
         for (const entity of entities) {
-            const actionDirective = await this.#createActionDirective(InspectAction, entity.getInspectActionDirectiveArgs(), player, user);
+            const actionDirective = this.#createActionDirective(InspectAction, entity.getInspectActionDirectiveArgs(), player, user);
             const label = entity instanceof Player ? entity.displayName : entity.name;
             const containerString = entity instanceof ItemInstance && entity.container ?
                 entity.container instanceof ItemInstance && entity.container.inventory.size > 1 ?
@@ -315,7 +314,7 @@ export default class ClientInteractableManager {
             const description = `Inspect ${label}${containerString}`;
             interactableOptions.push(new InteractableOptions(actionDirective, label, label, description));
         }
-        const actionDirective = await this.#createActionDirective(InspectAction, ["InspectAction Menu"], player, user);
+        const actionDirective = this.#createActionDirective(InspectAction, ["InspectAction Menu"], player, user);
         return this.#createStringSelectMenuInteractable(actionDirective, interactableOptions, "Inspect", ActionPriority.INSPECT);
     }
 
@@ -325,11 +324,11 @@ export default class ClientInteractableManager {
      * @param player - The player these interactables are being created for.
      * @param user - The user these interactables are being created for. Defaults to the given player.
      */
-    async createTakeActionInteractable(entities: RoomItem[], player: Player, user: User = player): Promise<(ButtonInteractable | StringSelectMenuInteractable)[]> {
+    createTakeActionInteractable(entities: RoomItem[], player: Player, user: User = player): ButtonOrStringSelectMenuInteractable[] {
         if (!player.canUseCommand("take")) return [];
         const interactableOptions: InteractableOptions<TakeAction>[] = [];
         for (const entity of entities) {
-            const actionDirective = await this.#createActionDirective(TakeAction, entity.getTakeActionDirectiveArgs(), player, user);
+            const actionDirective = this.#createActionDirective(TakeAction, entity.getTakeActionDirectiveArgs(), player, user);
             const containerString = entity.container instanceof RoomItem && entity.container.inventory.size > 1 ?
                 ` from ${entity.slot} of ${entity.container.name}`
                 : ` from ${entity.container.name}`;
@@ -339,7 +338,7 @@ export default class ClientInteractableManager {
             interactableOptions.push(new InteractableOptions(actionDirective, buttonLabel, stringSelectLabel, description));
         }
         if (interactableOptions.length > 2) {
-            const actionDirective = await this.#createActionDirective(TakeAction, ["TakeAction Menu"], player, user);
+            const actionDirective = this.#createActionDirective(TakeAction, ["TakeAction Menu"], player, user);
             return this.#createStringSelectMenuInteractable(actionDirective, interactableOptions, "Take", ActionPriority.TAKE);
         }
         else return this.#createButtonInteractables(interactableOptions, ButtonStyle.Primary, ActionPriority.TAKE);
@@ -352,7 +351,7 @@ export default class ClientInteractableManager {
      * @param container - The fixture or room item the player is dropping the items into.
      * @param user - The user these interactables are being created for. Defaults to the given player.
      */
-    async createDropActionInteractables(entities: InventoryItem[], player: Player, container: RoomItemContainer, user: User = player): Promise<(ButtonInteractable | StringSelectMenuInteractable)[]> {
+    createDropActionInteractables(entities: InventoryItem[], player: Player, container: RoomItemContainer, user: User = player): ButtonOrStringSelectMenuInteractable[] {
         if (!player.canUseCommand("drop")) return [];
         const interactableOptions: InteractableOptions<DropAction>[] = [];
         for (const entity of entities) {
@@ -361,7 +360,7 @@ export default class ClientInteractableManager {
             if (container instanceof RoomItem && container.inventory.size > 1) {
                 for (const inventorySlot of container.inventory.values()) {
                     if (inventorySlot.willBeOverFilledBy(entity)) continue;
-                    const actionDirective = await this.#createActionDirective(DropAction, entity.getDropActionDirectiveArgs(containerType, container, inventorySlot), player, user);
+                    const actionDirective = this.#createActionDirective(DropAction, entity.getDropActionDirectiveArgs(containerType, container, inventorySlot), player, user);
                     const stringSelectLabel = `${entity.name} ${container.getPreposition()} ${inventorySlot.id}`;
                     const description = `Drop ${entity.name} ${container.getPreposition()} ${inventorySlot.id} of ${container.name}`;
                     interactableOptions.push(new InteractableOptions(actionDirective, buttonLabel, stringSelectLabel, description));
@@ -370,14 +369,14 @@ export default class ClientInteractableManager {
             else {
                 const inventorySlot = container instanceof RoomItem ? container.inventory.first() : undefined;
                 if (inventorySlot && inventorySlot.willBeOverFilledBy(entity)) continue;
-                const actionDirective = await this.#createActionDirective(DropAction, entity.getDropActionDirectiveArgs(containerType, container, inventorySlot), player, user);
+                const actionDirective = this.#createActionDirective(DropAction, entity.getDropActionDirectiveArgs(containerType, container, inventorySlot), player, user);
                 const stringSelectLabel = `${entity.name} ${container.getPreposition()} ${container.name}`;
                 const description = `Drop ${entity.name} ${container.getPreposition()} ${container.name}`;
                 interactableOptions.push(new InteractableOptions(actionDirective, buttonLabel, stringSelectLabel, description));
             }
         }
         if (interactableOptions.length > 2) {
-            const actionDirective = await this.#createActionDirective(DropAction, ["DropAction Menu"], player, user);
+            const actionDirective = this.#createActionDirective(DropAction, ["DropAction Menu"], player, user);
             return this.#createStringSelectMenuInteractable(actionDirective, interactableOptions, "Drop", ActionPriority.DROP);
         }
         else return this.#createButtonInteractables(interactableOptions, ButtonStyle.Primary, ActionPriority.DROP);
@@ -390,7 +389,7 @@ export default class ClientInteractableManager {
      * @param viableContainers - A map of viable stash containers to the inventory slots the item can be stashed into. This is used to determine which stash options to create for each item.
      * @param user - The user these interactables are being created for. Defaults to the given player.
      */
-    async createStashActionInteractables(entities: InventoryItem[], player: Player, viableContainers: Map<InventoryItem, string[]>, user: User = player): Promise<(ButtonInteractable | StringSelectMenuInteractable)[]> {
+    createStashActionInteractables(entities: InventoryItem[], player: Player, viableContainers: Map<InventoryItem, string[]>, user: User = player): ButtonOrStringSelectMenuInteractable[] {
         if (!player.canUseCommand("stash")) return [];
         const interactableOptions: InteractableOptions<StashAction>[] = [];
         for (const entity of entities) {
@@ -399,7 +398,7 @@ export default class ClientInteractableManager {
                 for (const inventorySlotId of inventorySlots) {
                     const inventorySlot = container.inventory.get(inventorySlotId);
                     if (!inventorySlot || inventorySlot.willBeOverFilledBy(entity)) continue;
-                    const actionDirective = await this.#createActionDirective(StashAction, entity.getStashActionDirectiveArgs(container, inventorySlot), player, user);
+                    const actionDirective = this.#createActionDirective(StashAction, entity.getStashActionDirectiveArgs(container, inventorySlot), player, user);
                     const containerName = container.inventory.size > 1 ? `${inventorySlot.id} of ${container.name}` : container.name;
                     const stringSelectLabel = `${entity.name} ${container.getPreposition()} ${containerName}`;
                     const buttonLabel = `Stash ${stringSelectLabel}`;
@@ -409,7 +408,7 @@ export default class ClientInteractableManager {
             }
         }
         if (viableContainers.values().reduce((sum, inventorySlots) => sum + inventorySlots.length, 0) > 2) {
-            const actionDirective = await this.#createActionDirective(StashAction, ["StashAction Menu"], player, user);
+            const actionDirective = this.#createActionDirective(StashAction, ["StashAction Menu"], player, user);
             return this.#createStringSelectMenuInteractable(actionDirective, interactableOptions, "Stash", ActionPriority.STASH);
         }
         else return this.#createButtonInteractables(interactableOptions, ButtonStyle.Primary, ActionPriority.STASH);
@@ -421,11 +420,11 @@ export default class ClientInteractableManager {
      * @param player - The player these interactables are being created for.
      * @param user - The user these interactables are being created for. Defaults to the given player.
      */
-    async createUnstashActionInteractables(entities: InventoryItem[], player: Player, user: User = player): Promise<(ButtonInteractable | StringSelectMenuInteractable)[]> {
+    createUnstashActionInteractables(entities: InventoryItem[], player: Player, user: User = player): ButtonOrStringSelectMenuInteractable[] {
         if (!player.canUseCommand("unstash")) return [];
         const interactableOptions: InteractableOptions<UnstashAction>[] = [];
         for (const entity of entities) {
-            const actionDirective = await this.#createActionDirective(UnstashAction, entity.getUnstashActionDirectiveArgs(), player, user);
+            const actionDirective = this.#createActionDirective(UnstashAction, entity.getUnstashActionDirectiveArgs(), player, user);
             const stringSelectLabel = `${entity.name}`;
             const buttonLabel = `Unstash ${stringSelectLabel}`;
             const containerString = entity.container !== null && entity.container.inventory.size > 1 ?
@@ -436,7 +435,7 @@ export default class ClientInteractableManager {
         }
         const uniqueEntityNames = new Set(entities.map(entity => entity.name));
         if (entities.length > 4 || uniqueEntityNames.size !== entities.length) {
-            const actionDirective = await this.#createActionDirective(UnstashAction, ["UnstashAction Menu"], player, user);
+            const actionDirective = this.#createActionDirective(UnstashAction, ["UnstashAction Menu"], player, user);
             return this.#createStringSelectMenuInteractable(actionDirective, interactableOptions, "Unstash", ActionPriority.UNSTASH);
         }
         else return this.#createButtonInteractables(interactableOptions, ButtonStyle.Primary, ActionPriority.UNSTASH);
@@ -448,14 +447,14 @@ export default class ClientInteractableManager {
      * @param player - The player these interactables are being created for.
      * @param user - The user these interactables are being created for. Defaults to the given player.
      */
-    async createEquipActionInteractables(equippableItems: Map<InventoryItem, string[]>, player: Player, user: User = player): Promise<(ButtonInteractable | StringSelectMenuInteractable)[]> {
+    createEquipActionInteractables(equippableItems: Map<InventoryItem, string[]>, player: Player, user: User = player): ButtonOrStringSelectMenuInteractable[] {
         if (!player.canUseCommand("equip")) return [];
         const interactableOptions: InteractableOptions<EquipAction>[] = [];
         for (const [heldItem, equipmentSlots] of equippableItems.entries()) {
             for (const equipmentSlotId of equipmentSlots) {
                 const equipmentSlot = player.inventory.get(equipmentSlotId);
                 if (!equipmentSlot || equipmentSlot.equippedItem !== null) continue;
-                const actionDirective = await this.#createActionDirective(EquipAction, heldItem.getEquipActionDirectiveArgs(equipmentSlot), player, user);
+                const actionDirective = this.#createActionDirective(EquipAction, heldItem.getEquipActionDirectiveArgs(equipmentSlot), player, user);
                 const stringSelectLabel = `${heldItem.name} to ${equipmentSlot.id}`;
                 const buttonLabel = `Equip ${heldItem.name}`;
                 const description = `Equip ${heldItem.name} to ${equipmentSlot.id}`;
@@ -463,7 +462,7 @@ export default class ClientInteractableManager {
             }
         }
         if (equippableItems.values().reduce((sum, equipmentSlots) => sum + equipmentSlots.length, 0) > 1) {
-            const actionDirective = await this.#createActionDirective(EquipAction, ["EquipAction Menu"], player, user);
+            const actionDirective = this.#createActionDirective(EquipAction, ["EquipAction Menu"], player, user);
             return this.#createStringSelectMenuInteractable(actionDirective, interactableOptions, "Equip", ActionPriority.EQUIP);
         }
         else return this.#createButtonInteractables(interactableOptions, ButtonStyle.Secondary, ActionPriority.EQUIP);
@@ -475,14 +474,14 @@ export default class ClientInteractableManager {
      * @param player - The player these interactables are being created for.
      * @param user - The user these interactables are being created for. Defaults to the given player.
      */
-    async createUnequipActionInteractables(unequippableItems: InventoryItem[], player: Player, user: User = player): Promise<StringSelectMenuInteractable[]> {
+    createUnequipActionInteractables(unequippableItems: InventoryItem[], player: Player, user: User = player): StringSelectMenuInteractable[] {
         if (!player.canUseCommand("unequip")) return [];
         const interactableOptions: InteractableOptions<UnequipAction>[] = [];
         for (const item of unequippableItems) {
-            const actionDirective = await this.#createActionDirective(UnequipAction, item.getUnequipActionDirectiveArgs(), player, user);
+            const actionDirective = this.#createActionDirective(UnequipAction, item.getUnequipActionDirectiveArgs(), player, user);
             interactableOptions.push(new InteractableOptions(actionDirective, `Unequip ${item.name}`, `${item.name}`, `Unequip ${item.name} from ${item.equipmentSlot}`));
         }
-        const actionDirective = await this.#createActionDirective(UnequipAction, ["UnequipAction Menu"], player, user);
+        const actionDirective = this.#createActionDirective(UnequipAction, ["UnequipAction Menu"], player, user);
         return this.#createStringSelectMenuInteractable(actionDirective, interactableOptions, "Unequip", ActionPriority.UNEQUIP);
     }
 
@@ -492,10 +491,10 @@ export default class ClientInteractableManager {
      * @param player - The player these interactables are being created for.
      * @param user - The user these interactables are being created for. Defaults to the given player.
      */
-    async createCraftActionInteractables(recipe: Recipe, player: Player, user: User = player): Promise<ButtonInteractable[]> {
+    createCraftActionInteractables(recipe: Recipe, player: Player, user: User = player): ButtonInteractable[] {
         if (!player.canUseCommand("craft")) return [];
         const heldItems = getSortedItems(this.#game.entityFinder.getPlayerHands(player).filter(hand => hand.equippedItem !== null).map(hand => hand.equippedItem));
-        const actionDirective = await this.#createActionDirective(CraftAction, player.getCraftActionDirectiveArgs(heldItems[0], heldItems[1], recipe), player, user);
+        const actionDirective = this.#createActionDirective(CraftAction, player.getCraftActionDirectiveArgs(heldItems[0], heldItems[1], recipe), player, user);
         const interactableOptions = new InteractableOptions(actionDirective, `Craft ${heldItems[0].name} and ${heldItems[1].name}`);
         return [this.#createButtonInteractable(interactableOptions, ButtonStyle.Success, ActionPriority.CRAFT)];
     }
@@ -506,10 +505,10 @@ export default class ClientInteractableManager {
      * @param player - The player these interactables are being created for.
      * @param user - The user these interactables are being created for. Defaults to the given player.
      */
-    async createUncraftActionInteractables(recipe: Recipe, player: Player, user: User = player): Promise<ButtonInteractable[]> {
+    createUncraftActionInteractables(recipe: Recipe, player: Player, user: User = player): ButtonInteractable[] {
         if (!player.canUseCommand("uncraft")) return [];
         const heldItems = getSortedItems(this.#game.entityFinder.getPlayerHands(player).filter(hand => hand.equippedItem !== null).map(hand => hand.equippedItem));
-        const actionDirective = await this.#createActionDirective(UncraftAction, player.getUncraftActionDirectiveArgs(heldItems[0], recipe), player, user);
+        const actionDirective = this.#createActionDirective(UncraftAction, player.getUncraftActionDirectiveArgs(heldItems[0], recipe), player, user);
         const interactableOptions = new InteractableOptions(actionDirective, `Uncraft ${heldItems[0].name}`);
         return [this.#createButtonInteractable(interactableOptions, ButtonStyle.Secondary, ActionPriority.UNCRAFT)];
     }
@@ -520,17 +519,17 @@ export default class ClientInteractableManager {
      * @param player - The player these interactables are being created for.
      * @param user - The user these interactables are being created for. Defaults to the given player.
      */
-    async createUseActionInteractables(usableItems: InventoryItem[], player: Player, user: User = player): Promise<StringSelectMenuInteractable[]> {
+    createUseActionInteractables(usableItems: InventoryItem[], player: Player, user: User = player): StringSelectMenuInteractable[] {
         if (!player.canUseCommand("use")) return [];
         const interactableOptions: InteractableOptions<UseAction>[] = [];
         for (const item of usableItems) {
-            const actionDirective = await this.#createActionDirective(UseAction, item.getUseActionDirectiveArgs(player), player, user);
+            const actionDirective = this.#createActionDirective(UseAction, item.getUseActionDirectiveArgs(player), player, user);
             const verb = item.prefab.secondPersonVerb ? capitalizeFirstLetter(item.prefab.secondPersonVerb) : "Use";
             const stringSelectLabel = `${item.name}`;
             const description = `${verb} ${stringSelectLabel}`;
             interactableOptions.push(new InteractableOptions(actionDirective, description, stringSelectLabel, description));
         }
-        const actionDirective = await this.#createActionDirective(UseAction, ["UseAction Menu"], player, user);
+        const actionDirective = this.#createActionDirective(UseAction, ["UseAction Menu"], player, user);
         return this.#createStringSelectMenuInteractable(actionDirective, interactableOptions, "Use", ActionPriority.USE);
     }
 
@@ -540,9 +539,9 @@ export default class ClientInteractableManager {
      * @param player - The player these interactables are being created for.
      * @param user - The user these interactables are being created for. Defaults to the given player.
      */
-    async createActivateInteractables(fixture: Fixture, player: Player, user: User = player): Promise<ButtonInteractable[]> {
+    createActivateInteractables(fixture: Fixture, player: Player, user: User = player): ButtonInteractable[] {
         if (!player.canUseCommand("use")) return [];
-        const actionDirective = await this.#createActionDirective(ActivateAction, fixture.getActivateOrDeactivateActionDirectiveArgs(true), player, user);
+        const actionDirective = this.#createActionDirective(ActivateAction, fixture.getActivateOrDeactivateActionDirectiveArgs(true), player, user);
         const interactableOptions = new InteractableOptions(actionDirective, `Activate ${fixture.name}`);
         return [this.#createButtonInteractable(interactableOptions, ButtonStyle.Secondary, ActionPriority.ACTIVATE)];
     }
@@ -553,9 +552,9 @@ export default class ClientInteractableManager {
      * @param player - The player these interactables are being created for.
      * @param user - The user these interactables are being created for. Defaults to the given player.
      */
-    async createDeactivateInteractables(fixture: Fixture, player: Player, user: User = player): Promise<ButtonInteractable[]> {
+    createDeactivateInteractables(fixture: Fixture, player: Player, user: User = player): ButtonInteractable[] {
         if (!player.canUseCommand("use")) return [];
-        const actionDirective = await this.#createActionDirective(DeactivateAction, fixture.getActivateOrDeactivateActionDirectiveArgs(true), player, user);
+        const actionDirective = this.#createActionDirective(DeactivateAction, fixture.getActivateOrDeactivateActionDirectiveArgs(true), player, user);
         const interactableOptions = new InteractableOptions(actionDirective, `Deactivate ${fixture.name}`);
         return [this.#createButtonInteractable(interactableOptions, ButtonStyle.Secondary, ActionPriority.DEACTIVATE)];
     }
@@ -567,11 +566,11 @@ export default class ClientInteractableManager {
      * @param player - The player these interactables are being created for.
      * @param user - The user these interactables are being created for.
      */
-    async createInstantiateInventoryItemActionInteractables(freeEquipmentSlots: EquipmentSlot[], viableContainers: Map<InventoryItem, string[]>, player: Player, user: User): Promise<(ButtonInteractable | StringSelectMenuInteractable)[]> {
+    createInstantiateInventoryItemActionInteractables(freeEquipmentSlots: EquipmentSlot[], viableContainers: Map<InventoryItem, string[]>, player: Player, user: User): ButtonOrStringSelectMenuInteractable[] {
         const interactableOptions: InteractableOptions<InstantiateInventoryItemAction>[] = [];
         for (const equipmentSlot of freeEquipmentSlots) {
             if (equipmentSlot.equippedItem !== null) continue;
-            const actionDirective = await this.#createActionDirective(InstantiateInventoryItemAction, equipmentSlot.getPartialInstantiateActionDirectiveArgs(), player, user);
+            const actionDirective = this.#createActionDirective(InstantiateInventoryItemAction, equipmentSlot.getPartialInstantiateActionDirectiveArgs(), player, user);
             const stringSelectLabel = `${equipmentSlot.id}`;
             const buttonLabel = `Instantiate to ${stringSelectLabel}`;
             const description = `Instantiate to ${equipmentSlot.id}`;
@@ -581,7 +580,7 @@ export default class ClientInteractableManager {
             for (const inventorySlotId of inventorySlots) {
                 const inventorySlot = container.inventory.get(inventorySlotId);
                 if (!inventorySlot || inventorySlot.takenSpace >= inventorySlot.capacity) continue;
-                const actionDirective = await this.#createActionDirective(InstantiateInventoryItemAction, container.getPartialInstantiateActionDirectiveArgs(inventorySlot), player ?? container.player, user);
+                const actionDirective = this.#createActionDirective(InstantiateInventoryItemAction, container.getPartialInstantiateActionDirectiveArgs(inventorySlot), player ?? container.player, user);
                 const containerName = container.inventory.size > 1 ? `${inventorySlot.id} of ${container.getIdentifier()}` : container.getIdentifier();
                 const stringSelectLabel = `${containerName}`;
                 const buttonLabel = `Instantiate ${container.getPreposition()} ${stringSelectLabel}`;
@@ -591,7 +590,7 @@ export default class ClientInteractableManager {
         }
         const uniqueButtonLabels = new Set(interactableOptions.map(option => `${option.buttonLabel}`));
         if (interactableOptions.length > 2 || uniqueButtonLabels.size !== interactableOptions.length) {
-            const actionDirective = await this.#createActionDirective(InstantiateInventoryItemAction, ["InstantiateInventoryItemAction Menu"], player, user);
+            const actionDirective = this.#createActionDirective(InstantiateInventoryItemAction, ["InstantiateInventoryItemAction Menu"], player, user);
             return this.#createStringSelectMenuInteractable(actionDirective, interactableOptions, "Instantiate", ActionPriority.INSTANTIATE);
         }
         else return this.#createButtonInteractables(interactableOptions, ButtonStyle.Success, ActionPriority.INSTANTIATE);
@@ -604,7 +603,7 @@ export default class ClientInteractableManager {
      * @param player - The player these interactables are being created for.
      * @param user - The user these interactables are being created for.
      */
-    async createInstantiateInventoryItemActionModalInteractable(args: [string, string, string, string], player: Player, user: User): Promise<ModalInteractable> {
+    createInstantiateInventoryItemActionModalInteractable(args: [string, string, string, string], player: Player, user: User): ModalInteractable {
         const equipmentSlotId = args[1];
         const containerIdentifier = args[2];
         const inventorySlotId = args[3];
@@ -614,7 +613,7 @@ export default class ClientInteractableManager {
             inputs.push(new TextInputInteractable("Instantiate Inventory Item Quantity", "Quantity", "Number.", true, "1"));
         inputs.push(new TextInputInteractable("Instantiate Inventory Item Uses", "Uses", "Number. If not provided, item will be instantiated with its default uses.", false));
         inputs.push(new TextInputInteractable("Instantiate Inventory Item Procedural Selections", "Procedural Selections", "Example: (color=metal + character=upa)", false, undefined, undefined, 5));
-        const modalActionDirective = await this.#createActionDirective(InstantiateInventoryItemAction, args.concat(["Modal"]), player, user);
+        const modalActionDirective = this.#createActionDirective(InstantiateInventoryItemAction, args.concat(["Modal"]), player, user);
         const description = containerIdentifier ? `Instantiate to ${inventorySlotId} of ${player.name}'s ${containerIdentifier}` : `Instantiate to ${player.name}'s ${equipmentSlotId}`;
         const modal = new ModalInteractable(modalActionDirective, "Instantiate Inventory Item", inputs, ActionPriority.INSTANTIATE, description);
         this.addInteractable(modal);
@@ -626,14 +625,14 @@ export default class ClientInteractableManager {
      * @param viableContainers - A map of viable room item containers and (optionally) inventory slots an item can be instantiated into.
      * @param user - The user these interactables are being created for.
      */
-    async createInstantiateRoomItemActionInteractables(viableContainers: Map<RoomItemContainer, string[]>, user: User): Promise<(ButtonInteractable | StringSelectMenuInteractable)[]> {
+    createInstantiateRoomItemActionInteractables(viableContainers: Map<RoomItemContainer, string[]>, user: User): ButtonOrStringSelectMenuInteractable[] {
         const interactableOptions: InteractableOptions<InstantiateRoomItemAction>[] = [];
         for (const [container, inventorySlots] of viableContainers.entries()) {
             if (container instanceof RoomItem) {
                 for (const inventorySlotId of inventorySlots) {
                     const inventorySlot = container.inventory.get(inventorySlotId);
                     if (!inventorySlot || inventorySlot.takenSpace >= inventorySlot.capacity) continue;
-                    const actionDirective = await this.#createActionDirective(InstantiateRoomItemAction, container.getPartialInstantiateActionDirectiveArgs(inventorySlot), undefined, user);
+                    const actionDirective = this.#createActionDirective(InstantiateRoomItemAction, container.getPartialInstantiateActionDirectiveArgs(inventorySlot), undefined, user);
                     const containerName = container.inventory.size > 1 ? `${inventorySlot.id} of ${container.getIdentifier()}` : container.getIdentifier();
                     const stringSelectLabel = `${containerName}`;
                     const buttonLabel = `Instantiate ${container.getPreposition()} ${stringSelectLabel}`;
@@ -643,7 +642,7 @@ export default class ClientInteractableManager {
             }
             else {
                 if (!container.canCurrentlyContainItems(true, true)) continue;
-                const actionDirective = await this.#createActionDirective(InstantiateRoomItemAction, container.getPartialInstantiateActionDirectiveArgs(), undefined, user);
+                const actionDirective = this.#createActionDirective(InstantiateRoomItemAction, container.getPartialInstantiateActionDirectiveArgs(), undefined, user);
                 const containerName = container.getContainerIdentifier();
                 const stringSelectLabel = `${containerName}`;
                 const buttonLabel = `Instantiate ${container.getPreposition()} ${stringSelectLabel}`;
@@ -653,7 +652,7 @@ export default class ClientInteractableManager {
         }
         const uniqueButtonLabels = new Set(interactableOptions.map(option => `${option.buttonLabel}`));
         if (interactableOptions.length > 2 || uniqueButtonLabels.size !== interactableOptions.length) {
-            const actionDirective = await this.#createActionDirective(InstantiateRoomItemAction, ["InstantiateRoomItemAction Menu"], undefined, user);
+            const actionDirective = this.#createActionDirective(InstantiateRoomItemAction, ["InstantiateRoomItemAction Menu"], undefined, user);
             return this.#createStringSelectMenuInteractable(actionDirective, interactableOptions, "Instantiate", ActionPriority.INSTANTIATE);
         }
         else return this.#createButtonInteractables(interactableOptions, ButtonStyle.Success, ActionPriority.INSTANTIATE);
@@ -665,7 +664,7 @@ export default class ClientInteractableManager {
      * @param args - An array of partial instantiate room item action directive args. ["??", identifier, location, preposition, .?, .?, destinationInventorySlot]
      * @param user - The user these interactables are being created for.
      */
-    async createInstantiateRoomItemActionModalInteractable(args: string[], user: User): Promise<ModalInteractable> {
+    createInstantiateRoomItemActionModalInteractable(args: string[], user: User): ModalInteractable {
         const containerIdentifier = args[1];
         const locationDisplayName = args[2];
         const preposition = args[3];
@@ -676,7 +675,7 @@ export default class ClientInteractableManager {
         inputs.push(new TextInputInteractable("Instantiate Room Item Quantity", "Quantity", "Number.", true, "1"));
         inputs.push(new TextInputInteractable("Instantiate Room Item Uses", "Uses", "Number. If not provided, item will be instantiated with its default uses.", false));
         inputs.push(new TextInputInteractable("Instantiate Room Item Procedural Selections", "Procedural Selections", "Example: (color=metal + character=upa)", false, undefined, undefined, 5));
-        const modalActionDirective = await this.#createActionDirective(InstantiateRoomItemAction, args.concat(["Modal"]), undefined, user);
+        const modalActionDirective = this.#createActionDirective(InstantiateRoomItemAction, args.concat(["Modal"]), undefined, user);
         const description = `Instantiate ${preposition} ${containerPhrase} at ${locationDisplayName}`;
         const modal = new ModalInteractable(modalActionDirective, "Instantiate Room Item", inputs, ActionPriority.INSTANTIATE, description);
         this.addInteractable(modal);
@@ -689,10 +688,10 @@ export default class ClientInteractableManager {
      * @param player - The player these interactables are being created for.
      * @param user - The user these interactables are being created for.
      */
-    async createDestroyInventoryItemActionInteractables(destroyableItems: InventoryItem[], player: Player, user: User): Promise<(ButtonInteractable | StringSelectMenuInteractable)[]> {
+    createDestroyInventoryItemActionInteractables(destroyableItems: InventoryItem[], player: Player, user: User): ButtonOrStringSelectMenuInteractable[] {
         const interactableOptions: InteractableOptions<DestroyInventoryItemAction>[] = [];
         for (const item of destroyableItems) {
-            const actionDirective = await this.#createActionDirective(DestroyInventoryItemAction, item.getDestroyActionDirectiveArgs(), player ?? item.player, user);
+            const actionDirective = this.#createActionDirective(DestroyInventoryItemAction, item.getDestroyActionDirectiveArgs(), player ?? item.player, user);
             let containerString: string;
             if (item.container !== null) {
                 containerString = `${item.container.getPreposition()} `;
@@ -707,7 +706,7 @@ export default class ClientInteractableManager {
         }
         const uniqueButtonLabels = new Set(interactableOptions.map(option => option.buttonLabel));
         if (interactableOptions.length > 2 || uniqueButtonLabels.size !== interactableOptions.length) {
-            const actionDirective = await this.#createActionDirective(DestroyInventoryItemAction, ["DestroyInventoryItemAction Menu"], player, user);
+            const actionDirective = this.#createActionDirective(DestroyInventoryItemAction, ["DestroyInventoryItemAction Menu"], player, user);
             return this.#createStringSelectMenuInteractable(actionDirective, interactableOptions, "Destroy", ActionPriority.DESTROY);
         }
         else return this.#createButtonInteractables(interactableOptions, ButtonStyle.Danger, ActionPriority.DESTROY);
@@ -718,11 +717,11 @@ export default class ClientInteractableManager {
      * @param itemContainers - A list of item containers to create Interactables for.
      * @param user - The user these interactables are being created for.
      */
-    async createDestroyRoomItemActionInteractables(itemContainers: RoomItemContainer[], user: User): Promise<(ButtonInteractable | StringSelectMenuInteractable)[]> {
+    createDestroyRoomItemActionInteractables(itemContainers: RoomItemContainer[], user: User): ButtonOrStringSelectMenuInteractable[] {
         const interactableOptions: InteractableOptions<DestroyRoomItemAction>[] = [];
         for (const container of itemContainers) {
             if (container instanceof RoomItem) {
-                const actionDirective = await this.#createActionDirective(DestroyRoomItemAction, container.getDestroyRoomItemActionDirectiveArgs(), undefined, user);
+                const actionDirective = this.#createActionDirective(DestroyRoomItemAction, container.getDestroyRoomItemActionDirectiveArgs(), undefined, user);
                 let containerString = `${container.container.getPreposition()} `;
                 if (container.container instanceof RoomItem) {
                     if (container.container.inventory.size > 1) containerString += `${container.slot} of `;
@@ -736,7 +735,7 @@ export default class ClientInteractableManager {
                 interactableOptions.push(new InteractableOptions(actionDirective, buttonLabel, stringSelectLabel, description));
             }
             if (container.isItemContainer() && container.canCurrentlyContainItems(false, true) && !container.containsNoItems()) {
-                const actionDirective = await this.#createActionDirective(DestroyRoomItemAction, container.getDestroyAllRoomItemActionDirectiveArgs(), undefined, user);
+                const actionDirective = this.#createActionDirective(DestroyRoomItemAction, container.getDestroyAllRoomItemActionDirectiveArgs(), undefined, user);
                 const containerString = `${container.getPreposition()} ${container.getContainerIdentifier()}`;
                 const stringSelectLabel = `All ${containerString}`;
                 const buttonLabel = `Destroy all ${containerString}`;
@@ -746,7 +745,7 @@ export default class ClientInteractableManager {
         }
         const uniqueButtonLabels = new Set(interactableOptions.map(option => option.buttonLabel));
         if (interactableOptions.length > 2 || uniqueButtonLabels.size !== interactableOptions.length) {
-            const actionDirective = await this.#createActionDirective(DestroyRoomItemAction, ["DestroyRoomItemAction Menu"], undefined, user);
+            const actionDirective = this.#createActionDirective(DestroyRoomItemAction, ["DestroyRoomItemAction Menu"], undefined, user);
             return this.#createStringSelectMenuInteractable(actionDirective, interactableOptions, "Destroy", ActionPriority.DESTROY);
         }
         else return this.#createButtonInteractables(interactableOptions, ButtonStyle.Danger, ActionPriority.DESTROY);
@@ -757,15 +756,15 @@ export default class ClientInteractableManager {
      * @param argsSets - Sets of args to be passed into performFind as search queries.
      * @param user - The user these interactables are being created for.
      */
-    async createFindActionInteractables(argsSets: [string][], user: User): Promise<StringSelectMenuInteractable[]> {
+    createFindActionInteractables(argsSets: [string][], user: User): StringSelectMenuInteractable[] {
         const interactableOptions: InteractableOptions<FindAction>[] = [];
         for (const args of argsSets) {
-            const actionDirective = await this.#createActionDirective(FindAction, args, undefined, user);
+            const actionDirective = this.#createActionDirective(FindAction, args, undefined, user);
             const stringSelectLabel = `${args[0]}`;
             const buttonLabel = `Find ${stringSelectLabel}`;
             interactableOptions.push(new InteractableOptions(actionDirective, buttonLabel, stringSelectLabel, buttonLabel));
         }
-        const actionDirective = await this.#createActionDirective(FindAction, ["FindAction Menu"], undefined, user);
+        const actionDirective = this.#createActionDirective(FindAction, ["FindAction Menu"], undefined, user);
         return this.#createStringSelectMenuInteractable(actionDirective, interactableOptions, "Find", ActionPriority.FIND);
     }
 
@@ -774,7 +773,7 @@ export default class ClientInteractableManager {
      * @param container - The container to search in.
      * @param user - The user these interactables are being created for.
      */
-    async createFindContainedItemsActionInteractables(container: RoomItemContainer | InventoryItem, user: User): Promise<(ButtonInteractable | StringSelectMenuInteractable)[]> {
+    createFindContainedItemsActionInteractables(container: RoomItemContainer | InventoryItem, user: User): ButtonOrStringSelectMenuInteractable[] {
         const interactableOptions: InteractableOptions<FindAction>[] = [];
         let inventorySlotIDs: string[] = [undefined];
         if ((container instanceof RoomItem || container instanceof InventoryItem) && container.inventory.size > 1) {
@@ -783,7 +782,7 @@ export default class ClientInteractableManager {
             }
         }
         for (const inventorySlotID of inventorySlotIDs) {
-            const actionDirective = await this.#createActionDirective(FindAction, container.getFindChildItemsActionDirectiveArgs(inventorySlotID), undefined, user);
+            const actionDirective = this.#createActionDirective(FindAction, container.getFindChildItemsActionDirectiveArgs(inventorySlotID), undefined, user);
             let containerString = `${container.getPreposition()} `;
             const slotPhrase = inventorySlotID ? `${inventorySlotID} of ` : ``;
             const stringSelectLabel = `${slotPhrase}${container.getContainerIdentifier()}`;
@@ -793,7 +792,7 @@ export default class ClientInteractableManager {
             interactableOptions.push(new InteractableOptions(actionDirective, buttonLabel, stringSelectLabel, description));
         }
         if (interactableOptions.length > 1) {
-            const actionDirective = await this.#createActionDirective(FindAction, ["FindContainedItemsAction Menu"], undefined, user);
+            const actionDirective = this.#createActionDirective(FindAction, ["FindContainedItemsAction Menu"], undefined, user);
             return this.#createStringSelectMenuInteractable(actionDirective, interactableOptions, "Find Contained Items", ActionPriority.FIND);
         }
         else return this.#createButtonInteractables(interactableOptions, ButtonStyle.Secondary, ActionPriority.FIND);
@@ -806,16 +805,16 @@ export default class ClientInteractableManager {
      * @param user - The user these interactables are being created for.
      * @returns An array of button interactables, if the number of fields is less than or equal to 5. Otherwise, returns an array containing one string select menu interactable.
      */
-    async createViewFieldActionInteractables<T extends PersistentGameEntity>(entity: T, fields: EntityField<T>[], user: User): Promise<(ButtonInteractable | StringSelectMenuInteractable)[]> {
+    createViewFieldActionInteractables<T extends PersistentGameEntity>(entity: T, fields: EntityField<T>[], user: User): ButtonOrStringSelectMenuInteractable[] {
         const interactableOptions: InteractableOptions<ViewAction>[] = [];
         for (const field of fields) {
-            const actionDirective = await this.#createActionDirective(ViewAction, [entity.getEntityType(), entity.row, field], undefined, user);
+            const actionDirective = this.#createActionDirective(ViewAction, [entity.getEntityType(), entity.row, field], undefined, user);
             const stringSelectLabel = entity.getLabel(field);
             const buttonLabel = `View ${stringSelectLabel}`;
             interactableOptions.push(new InteractableOptions(actionDirective, buttonLabel, stringSelectLabel, buttonLabel));
         }
         if (fields.length > 5) {
-            const actionDirective = await this.#createActionDirective(ViewAction, ["ViewFieldAction Menu"], undefined, user);
+            const actionDirective = this.#createActionDirective(ViewAction, ["ViewFieldAction Menu"], undefined, user);
             return this.#createStringSelectMenuInteractable(actionDirective, interactableOptions, `View Field of ${entity.getEntityID()}`, ActionPriority.VIEW_FIELD);
         }
         else return this.#createButtonInteractables(interactableOptions, ButtonStyle.Primary, ActionPriority.VIEW_FIELD);
@@ -826,10 +825,10 @@ export default class ClientInteractableManager {
      * @param entities - A list of entities to view.
      * @param user - The user these interactables are being created for.
      */
-    async createViewActionInteractables(entities: PersistentGameEntity[], user: User): Promise<StringSelectMenuInteractable[]> {
+    createViewActionInteractables(entities: PersistentGameEntity[], user: User): StringSelectMenuInteractable[] {
         const interactableOptions: InteractableOptions<ViewAction>[] = [];
         for (const entity of entities) {
-            const actionDirective = await this.#createActionDirective(ViewAction, [entity.getEntityType(), entity.row], undefined, user);
+            const actionDirective = this.#createActionDirective(ViewAction, [entity.getEntityType(), entity.row], undefined, user);
             const stringSelectLabel = `${entity.getEntityID()}`;
             const buttonLabel = `View ${stringSelectLabel}`;
             let description: string;
@@ -837,7 +836,7 @@ export default class ClientInteractableManager {
             else description = `View ${entity.getEntityType()} ${entity.getEntityID()} on row ${entity.row}`;
             interactableOptions.push(new InteractableOptions(actionDirective, buttonLabel, stringSelectLabel, description));
         }
-        const actionDirective = await this.#createActionDirective(ViewAction, ["ViewAction Menu"], undefined, user);
+        const actionDirective = this.#createActionDirective(ViewAction, ["ViewAction Menu"], undefined, user);
         return this.#createStringSelectMenuInteractable(actionDirective, interactableOptions, "View Entity", ActionPriority.VIEW);
     }
 
@@ -848,13 +847,13 @@ export default class ClientInteractableManager {
      * @param player - The player who can perform a take action.
      * @param user - The user these interactables are being created for. Defaults to the given player.
      */
-    async getTakeInteractables(container: RoomItemContainer, containedItems: RoomItem[], player: Player, user: User = player): Promise<Interactable[]> {
+    getTakeInteractables(container: RoomItemContainer, containedItems: RoomItem[], player: Player, user: User = player): Interactable[] {
         let interactables: Interactable[] = [];
         const playerFreeHand = this.#game.entityFinder.getPlayerFreeHand(player);
         let dropContainer = container;
         if (dropContainer instanceof Fixture && dropContainer.childPuzzle !== null && dropContainer.childPuzzle.isItemContainer()) dropContainer = container;
         if (playerFreeHand && dropContainer.canCurrentlyContainItems(false, user instanceof Moderator))
-            interactables = interactables.concat(await this.createTakeActionInteractable(containedItems, player, user));
+            interactables = interactables.concat(this.createTakeActionInteractable(containedItems, player, user));
         return interactables;
     }
 
@@ -864,7 +863,7 @@ export default class ClientInteractableManager {
      * @param player - The player who can perform a drop action.
      * @param user - The user these interactables are being created for. Defaults to the given player.
      */
-    async getDropInteractables(container: RoomItemContainer, player: Player, user: User = player): Promise<Interactable[]> {
+    getDropInteractables(container: RoomItemContainer, player: Player, user: User = player): Interactable[] {
         let interactables: Interactable[] = [];
         let dropContainer = container;
         if (dropContainer instanceof Fixture && dropContainer.childPuzzle !== null && dropContainer.childPuzzle.isItemContainer())
@@ -872,7 +871,7 @@ export default class ClientInteractableManager {
         if (dropContainer.canCurrentlyContainItems(true, user instanceof Moderator)) {
             if (dropContainer.isItemContainer()) {
                 const droppableEntities = this.#game.entityFinder.getPlayerHands(player).filter(equipmentSlot => equipmentSlot.equippedItem !== null).map(equipmentSlot => equipmentSlot.equippedItem);
-                if (droppableEntities.length !== 0) interactables = interactables.concat(await this.createDropActionInteractables(droppableEntities, player, dropContainer, user));
+                if (droppableEntities.length !== 0) interactables = interactables.concat(this.createDropActionInteractables(droppableEntities, player, dropContainer, user));
             }
         }
         return interactables;
@@ -883,7 +882,7 @@ export default class ClientInteractableManager {
      * @param player - The player who can perform a stash action.
      * @param user - The user these interactables are being created for. Defaults to the given player.
      */
-    async getStashInteractables(player: Player, user: User = player): Promise<Interactable[]> {
+    getStashInteractables(player: Player, user: User = player): Interactable[] {
         let interactables: Interactable[] = [];
         const playerItems = this.#game.entityFinder.getInventoryItems(undefined, player.name);
         const heldItems = this.#game.entityFinder.getPlayerHands(player).filter(hand => hand.equippedItem !== null).map(hand => hand.equippedItem);
@@ -912,7 +911,7 @@ export default class ClientInteractableManager {
                     if (viableInventorySlots.length > 0) viableStashDestinations.set(containerItem, viableInventorySlots);
                 }
             }
-            interactables = interactables.concat(await this.createStashActionInteractables(heldItems, player, viableStashDestinations, user));
+            interactables = interactables.concat(this.createStashActionInteractables(heldItems, player, viableStashDestinations, user));
         }
         return interactables;
     }
@@ -922,7 +921,7 @@ export default class ClientInteractableManager {
      * @param player - The player who can perform an unstash action.
      * @param user - The user these interactables are being created for. Defaults to the given player.
      */
-    async getUnstashInteractables(player: Player, user: User = player): Promise<Interactable[]> {
+    getUnstashInteractables(player: Player, user: User = player): Interactable[] {
         let interactables: Interactable[] = [];
         const playerItems = this.#game.entityFinder.getInventoryItems(undefined, player.name);
         const playerFreeHand = this.#game.entityFinder.getPlayerFreeHand(player);
@@ -930,7 +929,7 @@ export default class ClientInteractableManager {
         if (playerFreeHand && playerContainerItems.length > 0) {
             const stashedItems = playerItems.filter(item => item.container !== null);
             if (stashedItems.length > 0) {
-                interactables = interactables.concat(await this.createUnstashActionInteractables(stashedItems, player, user));
+                interactables = interactables.concat(this.createUnstashActionInteractables(stashedItems, player, user));
             }
         }
         return interactables;
@@ -941,7 +940,7 @@ export default class ClientInteractableManager {
      * @param player - The player who can perform an equip action.
      * @param user - The user these interactables are being created for. Defaults to the given player.
      */
-    async getEquipInteractables(player: Player, user: User = player): Promise<Interactable[]> {
+    getEquipInteractables(player: Player, user: User = player): Interactable[] {
         let interactables: Interactable[] = [];
         const hands = this.#game.entityFinder.getPlayerHands(player);
         const heldItems = hands.filter(hand => hand.equippedItem !== null).map(hand => hand.equippedItem);
@@ -959,7 +958,7 @@ export default class ClientInteractableManager {
                 }
                 if (viableEquipmentSlots.length > 0) equippableItems.set(heldItem, viableEquipmentSlots);
             }
-            interactables = interactables.concat(await this.createEquipActionInteractables(equippableItems, player, user));
+            interactables = interactables.concat(this.createEquipActionInteractables(equippableItems, player, user));
         }
         return interactables;
     }
@@ -969,14 +968,14 @@ export default class ClientInteractableManager {
      * @param player - The player who can perform an unequip action.
      * @param user - The user these interactables are being created for. Defaults to the given player.
      */
-    async getUnequipInteractables(player: Player, user: User = player): Promise<Interactable[]> {
+    getUnequipInteractables(player: Player, user: User = player): Interactable[] {
         let interactables: Interactable[] = [];
         const playerFreeHand = this.#game.entityFinder.getPlayerFreeHand(player);
         const handSlotIDs = this.#game.entityFinder.getPlayerHands(player).map(hand => hand.id);
         let unequippableItems = player.inventory.filter(equipmentSlot => !handSlotIDs.includes(equipmentSlot.id) && equipmentSlot.equippedItem !== null).map(equipmentSlot => equipmentSlot.equippedItem!);
         unequippableItems = unequippableItems.filter(item => item.prefab.equippable);
         if (playerFreeHand && unequippableItems.length > 0) {
-            interactables = interactables.concat(await this.createUnequipActionInteractables(unequippableItems, player, user));
+            interactables = interactables.concat(this.createUnequipActionInteractables(unequippableItems, player, user));
         }
         return interactables;
     }
@@ -986,7 +985,7 @@ export default class ClientInteractableManager {
      * @param player - The player who can perform a craft action.
      * @param user - The user these interactables are being created for. Defaults to the given player.
      */
-    async getCraftInteractables(player: Player, user: User = player): Promise<Interactable[]> {
+    getCraftInteractables(player: Player, user: User = player): Interactable[] {
         let interactables: Interactable[] = [];
         const heldItems = this.#game.entityFinder.getPlayerHands(player).filter(hand => hand.equippedItem !== null).map(hand => hand.equippedItem);
         if (heldItems.length >= 2) {
@@ -995,7 +994,7 @@ export default class ClientInteractableManager {
             if (recipes.length === 0) return [];
             for (const recipe of recipes) {
                 if (player.canCraft(recipe, [items[0], items[1]])) {
-                    interactables = interactables.concat(await this.createCraftActionInteractables(recipe, player, user));
+                    interactables = interactables.concat(this.createCraftActionInteractables(recipe, player, user));
                     break;
                 }
             }
@@ -1008,7 +1007,7 @@ export default class ClientInteractableManager {
      * @param player - The player who can perform an uncraft action.
      * @param user - The user these interactables are being created for. Defaults to the given player.
      */
-    async getUncraftInteractables(player: Player, user: User = player): Promise<Interactable[]> {
+    getUncraftInteractables(player: Player, user: User = player): Interactable[] {
         let interactables: Interactable[] = [];
         const heldItems = this.#game.entityFinder.getPlayerHands(player).filter(hand => hand.equippedItem !== null).map(hand => hand.equippedItem);
         const playerFreeHand = this.#game.entityFinder.getPlayerFreeHand(player);
@@ -1016,7 +1015,7 @@ export default class ClientInteractableManager {
             const item = heldItems[0];
             const recipe = this.#game.entityFinder.getRecipes("uncraftable", undefined, undefined, item.prefab.id)[0];
             if (recipe)
-                interactables = interactables.concat(await this.createUncraftActionInteractables(recipe, player, user));
+                interactables = interactables.concat(this.createUncraftActionInteractables(recipe, player, user));
         }
         return interactables;
     }
@@ -1026,12 +1025,12 @@ export default class ClientInteractableManager {
      * @param player - The player who can perform a use action.
      * @param user - The user these interactables are being created for. Defaults to the given player.
      */
-    async getUseInteractables(player: Player, user: User = player): Promise<Interactable[]> {
+    getUseInteractables(player: Player, user: User = player): Interactable[] {
         let interactables: Interactable[] = [];
         const heldItems = this.#game.entityFinder.getPlayerHands(player).filter(hand => hand.equippedItem !== null).map(hand => hand.equippedItem);
         const usableItems = heldItems.filter(item => item.uses !== 0 && item.prefab.usable && item.usableOn(player));
         if (usableItems.length > 0) {
-            interactables = interactables.concat(await this.createUseActionInteractables(usableItems, player, user));
+            interactables = interactables.concat(this.createUseActionInteractables(usableItems, player, user));
         }
         return interactables;
     }
@@ -1043,15 +1042,15 @@ export default class ClientInteractableManager {
      * @param activated - Whether or not the fixture is activated. Defaults to the fixture's current activation state.
      * @param user - The user these interactables are being created for. Defaults to the given player.
      */
-    async getActivateOrDeactivateInteractables(fixture: Fixture, player: Player, activated = fixture.activated, user: User = player): Promise<Interactable[]> {
+    getActivateOrDeactivateInteractables(fixture: Fixture, player: Player, activated = fixture.activated, user: User = player): Interactable[] {
         let interactables: Interactable[] = [];
         // If there is a puzzle in the room with an identical name, we can't simply activate or deactivate it.
         const matchingPuzzle = this.#game.entityFinder.getPuzzle(fixture.name, fixture.location.id);
         if (fixture.recipeTag !== "" && !matchingPuzzle && (fixture.activatable || user instanceof Moderator)) {
             if (activated)
-                interactables = interactables.concat(await this.createDeactivateInteractables(fixture, player, user));
+                interactables = interactables.concat(this.createDeactivateInteractables(fixture, player, user));
             else
-                interactables = interactables.concat(await this.createActivateInteractables(fixture, player, user));
+                interactables = interactables.concat(this.createActivateInteractables(fixture, player, user));
         }
         return interactables;
     }
@@ -1063,7 +1062,7 @@ export default class ClientInteractableManager {
      * @param freeEquipmentSlots - An array of equipment slots with nothing equipped. Optional.
      * @param containerItems - An array of inventory items that can contain items. Optional.
      */
-    async getInstantiateInventoryItemInteractables(player: Player, user: User, freeEquipmentSlots?: EquipmentSlot[], containerItems?: InventoryItem[]): Promise<Interactable[]> {
+    getInstantiateInventoryItemInteractables(player: Player, user: User, freeEquipmentSlots?: EquipmentSlot[], containerItems?: InventoryItem[]): Interactable[] {
         let interactables: Interactable[] = [];
         if (freeEquipmentSlots === undefined) freeEquipmentSlots = player.inventory.filter(equipmentSlot => equipmentSlot.equippedItem === null).map(equipmentSlot => equipmentSlot);
         if (containerItems === undefined) containerItems = this.#game.entityFinder.getInventoryItems(undefined, player.name).filter(item => item.inventory.size > 0);
@@ -1077,7 +1076,7 @@ export default class ClientInteractableManager {
                 }
                 if (viableInventorySlots.length > 0) viableStashDestinations.set(containerItem, viableInventorySlots);
             }
-            interactables = interactables.concat(await this.createInstantiateInventoryItemActionInteractables(freeEquipmentSlots, viableStashDestinations, player, user));
+            interactables = interactables.concat(this.createInstantiateInventoryItemActionInteractables(freeEquipmentSlots, viableStashDestinations, player, user));
         }
         return interactables;
     }
@@ -1087,7 +1086,7 @@ export default class ClientInteractableManager {
      * @param itemContainers - An array of room item containers that can potentially be instantiated into.
      * @param user - The user these interactables are being created for.
      */
-    async getInstantiateRoomItemInteractables(itemContainers: RoomItemContainer[], user: User): Promise<Interactable[]> {
+    getInstantiateRoomItemInteractables(itemContainers: RoomItemContainer[], user: User): Interactable[] {
         let interactables: Interactable[] = [];
         if (itemContainers.length > 0) {
             const viableInstantiateDestinations = new Map<RoomItemContainer, string[]>();
@@ -1103,7 +1102,7 @@ export default class ClientInteractableManager {
                 else if (itemContainer.isItemContainer() && itemContainer.canCurrentlyContainItems(true, true))
                     viableInstantiateDestinations.set(itemContainer, []);
             }
-            interactables = interactables.concat(await this.createInstantiateRoomItemActionInteractables(viableInstantiateDestinations, user));
+            interactables = interactables.concat(this.createInstantiateRoomItemActionInteractables(viableInstantiateDestinations, user));
         }
         return interactables;
     }
@@ -1115,12 +1114,12 @@ export default class ClientInteractableManager {
      * @param equippedItems - An array of inventory items the player has equipped. Optional.
      * @param stashedItems - An array of inventory items the player has stashed. Optional.
      */
-    async getDestroyInventoryItemInteractables(player: Player, user: User, equippedItems?: InventoryItem[], stashedItems?: InventoryItem[]): Promise<Interactable[]> {
+    getDestroyInventoryItemInteractables(player: Player, user: User, equippedItems?: InventoryItem[], stashedItems?: InventoryItem[]): Interactable[] {
         let interactables: Interactable[] = [];
         if (equippedItems === undefined) equippedItems = player.inventory.filter(equipmentSlot => equipmentSlot.equippedItem !== null).map(equipmentSlot => equipmentSlot.equippedItem);
         if (stashedItems === undefined) stashedItems = this.#game.entityFinder.getInventoryItems(undefined, player.name).filter(item => item.container !== null);
         if (equippedItems.length > 0 || stashedItems.length > 0) {
-            interactables = interactables.concat(await this.createDestroyInventoryItemActionInteractables(equippedItems.concat(stashedItems), player, user));
+            interactables = interactables.concat(this.createDestroyInventoryItemActionInteractables(equippedItems.concat(stashedItems), player, user));
         }
         return interactables;
     }
@@ -1130,10 +1129,10 @@ export default class ClientInteractableManager {
      * @param itemContainers - The item containers to destroy inventory items for.
      * @param user - The user these interactables are being created for.
      */
-    async getDestroyRoomItemInteractables(itemContainers: RoomItemContainer[], user: User): Promise<Interactable[]> {
+    getDestroyRoomItemInteractables(itemContainers: RoomItemContainer[], user: User): Interactable[] {
         let interactables: Interactable[] = [];
         if (itemContainers.length > 0) {
-            interactables = interactables.concat(await this.createDestroyRoomItemActionInteractables(itemContainers, user));
+            interactables = interactables.concat(this.createDestroyRoomItemActionInteractables(itemContainers, user));
         }
         return interactables;
     }
@@ -1143,10 +1142,10 @@ export default class ClientInteractableManager {
      * @param container - The container to search in.
      * @param user - The user these interactables are being created for.
      */
-    async getFindContainedItemsInteractables(container: RoomItemContainer | InventoryItem, user: User): Promise<Interactable[]> {
+    getFindContainedItemsInteractables(container: RoomItemContainer | InventoryItem, user: User): Interactable[] {
         let interactables: Interactable[] = [];
         if (container && !container.containsNoItems())
-            interactables = interactables.concat(await this.createFindContainedItemsActionInteractables(container, user));
+            interactables = interactables.concat(this.createFindContainedItemsActionInteractables(container, user));
         return interactables;
     }
 
@@ -1157,12 +1156,12 @@ export default class ClientInteractableManager {
      * @param relatedEntities - Related entities to view. These will always be collated into a string select menu interactable.
      * @param user - The user these interactables are being created for.
      */
-    async getViewInteractables<T extends PersistentGameEntity>(entity: T, fields: EntityField<T>[], relatedEntities: PersistentGameEntity[], user: User): Promise<Interactable[]> {
+    getViewInteractables<T extends PersistentGameEntity>(entity: T, fields: EntityField<T>[], relatedEntities: PersistentGameEntity[], user: User): Interactable[] {
         let interactables: Interactable[] = [];
         if (entity && fields.length > 0)
-            interactables = interactables.concat(await this.createViewFieldActionInteractables(entity, fields, user));
+            interactables = interactables.concat(this.createViewFieldActionInteractables(entity, fields, user));
         if (relatedEntities.length > 0)
-            interactables = interactables.concat(await this.createViewActionInteractables(relatedEntities, user));
+            interactables = interactables.concat(this.createViewActionInteractables(relatedEntities, user));
         return interactables;
     }
 }
