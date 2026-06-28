@@ -403,7 +403,7 @@ export class Pattern implements PatternElement {
 
             if (!data.matches.has(element) && !(element instanceof Pattern) && !(element instanceof Glob)) {
                 // this is an error state. if this pattern is optional, we should simply abandon matching this pattern.
-                if (this.optional) return base;
+                if (!this.mandatory && this.optional) return base;
                 // this is an error state: we have gone over all possibilities, and the element has not been matched.
                 // this kind of error severs the anchor between the token streams and the grammar pattern, even if there are still valid tokens to match to the pattern.
                 // this section of code is tasked with the unenviable job of finding the nearest anchor for reorientation.
@@ -490,7 +490,7 @@ export class Pattern implements PatternElement {
 
         data = this.matchPockets(data);
 
-        if (this.optional && data.errors.length > 0) return base;
+        if (!this.mandatory && this.optional && data.errors.length > 0) return base;
         else return data;
     }
 
