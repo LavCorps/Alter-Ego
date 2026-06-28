@@ -500,5 +500,44 @@ describe("Pattern file from NG Commands", () => {
             expect(invocation.errors).toBeLength(1);
             expect(invocation.errors[0]).toBe("Couldn't find anything for destination in your input.");
         });
+
+        test("Pattern.match(8)", async () => {
+            trie.insert("of", new ConstantToken("of"));
+            const pattern = new Pattern([
+                new Slot(InventoryItem, "target"),
+                new Preposition("destination"),
+                new Pattern([
+                    new Pocket("destination", "destination pocket"),
+                    new Constant("of")
+                ], true, true),
+                new Slot(InventoryItem, "destination"),
+            ]);
+            const start = process.hrtime.bigint();
+            const invocation = pattern.match(trie.tokenize(["MUG", "OF", "COFFEE", "in", "RIGHT", "POCKET", "of", "KYRAS", "LAB", "COAT", "1"])) as MatchedInvocation;
+            const finish = process.hrtime.bigint();
+            console.log(`tokenization and matching took ${Number(finish - start) / 1000}μs`);
+            console.log(invocation);
+            expect(invocation).toBeInstanceOf(MatchedInvocation);
+            expect(invocation.args.size).toBe(3);
+            expect(invocation.args.get("target")).not.toBeUndefined();
+            expect(invocation.args.get("target").length).toBe(1);
+            invocation.args.get("target").forEach((item: InventoryItem) => {
+                expect(item).toBeInstanceOf(InventoryItem);
+                expect(item.prefabId).toBe("MUG OF COFFEE");
+            });
+            expect(invocation.args.get("destination")).not.toBeUndefined();
+            expect(invocation.args.get("destination").length).toBe(1);
+            invocation.args.get("destination").forEach((item: InventoryItem) => { 
+                expect(item).toBeInstanceOf(InventoryItem);
+                expect(item.prefabId).toBe("KYRAS LAB COAT");
+                expect(item.getIdentifier()).toBe("KYRAS LAB COAT 1");
+            });
+            expect(invocation.args.get("destination pocket")).not.toBeUndefined();
+            expect(invocation.args.get("destination pocket").length).toBe(1); // there are 505 right pockets within the testing data, but we specifically want the right pocket of kyras lab coat 1
+            invocation.args.get("destination pocket").forEach((pocket: InventorySlot<InventoryItem>) => { 
+                expect(pocket).toBeInstanceOf(InventorySlot);
+                expect(pocket.id).toBe("RIGHT POCKET");
+            });
+        });
     });
 });
