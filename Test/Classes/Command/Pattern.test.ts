@@ -11,6 +11,7 @@ import Event from "../../../Data/Event.ts";
 import Exit from "../../../Data/Exit.ts";
 import Fixture from "../../../Data/Fixture.ts";
 import Flag from "../../../Data/Flag.ts";
+import Gesture from "../../../Data/Gesture.ts";
 import InventoryItem from "../../../Data/InventoryItem.ts";
 import InventorySlot from "../../../Data/InventorySlot.ts";
 import Player from "../../../Data/Player.ts";
@@ -46,6 +47,7 @@ describe("Pattern file from NG Commands", () => {
         flagToken = new EntityToken("CHAPTER", game.entityFinder.getFlag("CHAPTER"));
         prefabToken = new EntityToken("PEN", game.entityFinder.getPrefab("PEN"));
         statusToken = new EntityToken("heated", game.entityFinder.getStatusEffect("heated"));
+        gestureToken = new EntityToken("giggle", game.entityFinder.getGesture("giggle"))
     });
 
     afterEach(async () => {
@@ -66,6 +68,7 @@ describe("Pattern file from NG Commands", () => {
     let flagToken: EntityToken<Flag>;
     let prefabToken: EntityToken<Prefab>;
     let statusToken: EntityToken<Status>;
+    let gestureToken: EntityToken<Gesture>;
 
     describe("Slot class from NG Commands", () => {
         test("Slot.satisfiedBy(Player)", async () => {
@@ -82,6 +85,7 @@ describe("Pattern file from NG Commands", () => {
             expect(slot.satisfiedBy(flagToken)).toBeFalsy();
             expect(slot.satisfiedBy(prefabToken)).toBeFalsy();
             expect(slot.satisfiedBy(statusToken)).toBeFalsy();
+            expect(slot.satisfiedBy(gestureToken)).toBeFalsy();
         });
 
         test("Slot.satisfiedBy(InventoryItem)", async () => {
@@ -98,6 +102,7 @@ describe("Pattern file from NG Commands", () => {
             expect(slot.satisfiedBy(flagToken)).toBeFalsy();
             expect(slot.satisfiedBy(prefabToken)).toBeFalsy();
             expect(slot.satisfiedBy(statusToken)).toBeFalsy();
+            expect(slot.satisfiedBy(gestureToken)).toBeFalsy();
         });
 
         test("Slot.satisfiedBy(RoomItem)", async () => {
@@ -114,6 +119,7 @@ describe("Pattern file from NG Commands", () => {
             expect(slot.satisfiedBy(flagToken)).toBeFalsy();
             expect(slot.satisfiedBy(prefabToken)).toBeFalsy();
             expect(slot.satisfiedBy(statusToken)).toBeFalsy();
+            expect(slot.satisfiedBy(gestureToken)).toBeFalsy();
         });
 
         test("Slot.satisfiedBy(Fixture)", async () => {
@@ -130,6 +136,7 @@ describe("Pattern file from NG Commands", () => {
             expect(slot.satisfiedBy(flagToken)).toBeFalsy();
             expect(slot.satisfiedBy(prefabToken)).toBeFalsy();
             expect(slot.satisfiedBy(statusToken)).toBeFalsy();
+            expect(slot.satisfiedBy(gestureToken)).toBeFalsy();
         });
 
         test("Slot.satisfiedBy(Puzzle)", async () => {
@@ -146,6 +153,7 @@ describe("Pattern file from NG Commands", () => {
             expect(slot.satisfiedBy(flagToken)).toBeFalsy();
             expect(slot.satisfiedBy(prefabToken)).toBeFalsy();
             expect(slot.satisfiedBy(statusToken)).toBeFalsy();
+            expect(slot.satisfiedBy(gestureToken)).toBeFalsy();
         });
 
         test("Slot.satisfiedBy(Room)", async () => {
@@ -162,6 +170,7 @@ describe("Pattern file from NG Commands", () => {
             expect(slot.satisfiedBy(flagToken)).toBeFalsy();
             expect(slot.satisfiedBy(prefabToken)).toBeFalsy();
             expect(slot.satisfiedBy(statusToken)).toBeFalsy();
+            expect(slot.satisfiedBy(gestureToken)).toBeFalsy();
         });
 
         test("Slot.satisfiedBy(Exit)", async () => {
@@ -178,6 +187,7 @@ describe("Pattern file from NG Commands", () => {
             expect(slot.satisfiedBy(flagToken)).toBeFalsy();
             expect(slot.satisfiedBy(prefabToken)).toBeFalsy();
             expect(slot.satisfiedBy(statusToken)).toBeFalsy();
+            expect(slot.satisfiedBy(gestureToken)).toBeFalsy();
         });
 
         test("Slot.satisfiedBy(EquipmentSlot)", async () => {
@@ -194,6 +204,7 @@ describe("Pattern file from NG Commands", () => {
             expect(slot.satisfiedBy(flagToken)).toBeFalsy();
             expect(slot.satisfiedBy(prefabToken)).toBeFalsy();
             expect(slot.satisfiedBy(statusToken)).toBeFalsy();
+            expect(slot.satisfiedBy(gestureToken)).toBeFalsy();
         });
 
         test("Slot.satisfiedBy(Event)", async () => {
@@ -210,6 +221,7 @@ describe("Pattern file from NG Commands", () => {
             expect(slot.satisfiedBy(flagToken)).toBeFalsy();
             expect(slot.satisfiedBy(prefabToken)).toBeFalsy();
             expect(slot.satisfiedBy(statusToken)).toBeFalsy();
+            expect(slot.satisfiedBy(gestureToken)).toBeFalsy();
         });
 
         test("Slot.satisfiedBy(Flag)", async () => {
@@ -226,6 +238,7 @@ describe("Pattern file from NG Commands", () => {
             expect(slot.satisfiedBy(flagToken)).toBeTruthy();
             expect(slot.satisfiedBy(prefabToken)).toBeFalsy();
             expect(slot.satisfiedBy(statusToken)).toBeFalsy();
+            expect(slot.satisfiedBy(gestureToken)).toBeFalsy();
         });
 
         test("Slot.satisfiedBy(Prefab)", async () => {
@@ -242,6 +255,7 @@ describe("Pattern file from NG Commands", () => {
             expect(slot.satisfiedBy(flagToken)).toBeFalsy();
             expect(slot.satisfiedBy(prefabToken)).toBeTruthy();
             expect(slot.satisfiedBy(statusToken)).toBeFalsy();
+            expect(slot.satisfiedBy(gestureToken)).toBeFalsy();
         });
 
         test("Slot.satisfiedBy(Status)", async () => {
@@ -258,6 +272,24 @@ describe("Pattern file from NG Commands", () => {
             expect(slot.satisfiedBy(flagToken)).toBeFalsy();
             expect(slot.satisfiedBy(prefabToken)).toBeFalsy();
             expect(slot.satisfiedBy(statusToken)).toBeTruthy();
+            expect(slot.satisfiedBy(gestureToken)).toBeFalsy();
+        });
+
+        test("Slot.satisfiedBy(Gesture)", async () => {
+            const slot = new Slot(Gesture, "Gesture");
+            expect(slot.satisfiedBy(playerToken)).toBeFalsy();
+            expect(slot.satisfiedBy(inventoryItemToken)).toBeFalsy();
+            expect(slot.satisfiedBy(roomItemToken)).toBeFalsy();
+            expect(slot.satisfiedBy(fixtureToken)).toBeFalsy();
+            expect(slot.satisfiedBy(puzzleToken)).toBeFalsy();
+            expect(slot.satisfiedBy(roomToken)).toBeFalsy();
+            expect(slot.satisfiedBy(exitToken)).toBeFalsy();
+            expect(slot.satisfiedBy(equipmentSlotToken)).toBeFalsy();
+            expect(slot.satisfiedBy(eventToken)).toBeFalsy();
+            expect(slot.satisfiedBy(flagToken)).toBeFalsy();
+            expect(slot.satisfiedBy(prefabToken)).toBeFalsy();
+            expect(slot.satisfiedBy(statusToken)).toBeFalsy();
+            expect(slot.satisfiedBy(gestureToken)).toBeTruthy();
         });
     });
 
