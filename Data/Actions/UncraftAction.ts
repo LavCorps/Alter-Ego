@@ -20,7 +20,7 @@ export default class UncraftAction extends Action {
      * @param item - The product to uncraft.
      * @param recipe - The recipe that describes how this product is crafted.
      */
-    async performUncraft(item: InventoryItem, recipe: Recipe): Promise<void> {
+    performUncraft(item: InventoryItem, recipe: Recipe): void {
         if (this.performed) return;
         super.perform();
         const originalItemDiscreet = item.prefab.discreet;
@@ -28,7 +28,7 @@ export default class UncraftAction extends Action {
         const itemId = item.getIdentifier();
         const uncraftingResult = this.player.uncraft(item, recipe);
         const uncraftedDescription = recipe.uncraftedDescription.parseFor(this.player, this.player);
-        const interactables = await this.#getInteractables([uncraftingResult.ingredient1, uncraftingResult.ingredient2].filter(ingredient => ingredient !== null));
+        const interactables = this.#getInteractables([uncraftingResult.ingredient1, uncraftingResult.ingredient2].filter(ingredient => ingredient !== null));
         this.player.sendDescription(uncraftedDescription, this.player, recipe.uncraftedDescription.messageDisplayType ?? MessageDisplayType.STANDARD, interactables);
         this.getGame().narrationHandler.narrateUncraft(this, recipe, originalItemDiscreet, originalItemSingleContainingPhrase, item, uncraftingResult, this.player);
         this.getGame().logHandler.logUncraft(itemId, uncraftingResult, this.player, this.forced);
@@ -36,12 +36,12 @@ export default class UncraftAction extends Action {
         this.successMessage = `Successfully uncrafted ${itemId} for ${this.player.name}.`;
     }
 
-    async #getInteractables(createdItems: InventoryItem[]): Promise<Interactable[]> {
+    #getInteractables(createdItems: InventoryItem[]): Interactable[] {
         let interactables: Interactable[] = [];
         const interactableManager = this.getGame().clientContext.interactableManager;
-        interactables = interactables.concat(await interactableManager.createInspectActionInteractable(createdItems, this.player))
-        interactables = interactables.concat(await interactableManager.getCraftInteractables(this.player));
-        interactables = interactables.concat(await interactableManager.getUseInteractables(this.player));
+        interactables = interactables.concat(interactableManager.createInspectActionInteractable(createdItems, this.player))
+        interactables = interactables.concat(interactableManager.getCraftInteractables(this.player));
+        interactables = interactables.concat(interactableManager.getUseInteractables(this.player));
         return interactables;
     }
 

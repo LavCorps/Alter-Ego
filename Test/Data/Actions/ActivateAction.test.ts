@@ -35,16 +35,16 @@ describe('ActivateAction test', () => {
             fixtureActivateSpy = vi.spyOn(Fixture.prototype, 'activate');
         });
 
-        test('performed should be true', async () => {
+        test('performed should be true', () => {
             let action = new ActivateAction(game, message, player, location, false);
-            await action.performActivate(fixture, true);
+            action.performActivate(fixture, true);
             // @ts-ignore
             expect(action.performed).toBe(true);
         });
 
-        test('fixture activate should be called', async () => {
+        test('fixture activate should be called', () => {
             let action = new ActivateAction(game, message, player, location, false);
-            await action.performActivate(fixture, true);
+            action.performActivate(fixture, true);
             expect(fixtureActivateSpy).toHaveBeenCalled();
         });
     });

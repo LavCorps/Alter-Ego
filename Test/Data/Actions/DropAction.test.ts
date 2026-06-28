@@ -19,7 +19,7 @@ describe("DropAction test", () => {
         await game.entityLoader.loadRoomItems(false);
     });
 
-    test("ported legacy test", async () => {
+    test("ported legacy test", () => {
         const kyra = game.entityFinder.getPlayer("Kyra");
         const vivian = game.entityFinder.getPlayer("Vivian");
         const kyraHand = game.entityFinder.getPlayerHandHoldingItem(kyra, "MUG OF COFFEE");
@@ -30,7 +30,7 @@ describe("DropAction test", () => {
         {
             const coffee = kyraHand.equippedItem;
             const dropAction = new DropAction(game, createMockMessage(), kyra, kyra.location, false);
-            await dropAction.performDrop(coffee, kyraHand, kyraFloor, null);
+            dropAction.performDrop(coffee, kyraHand, kyraFloor, null);
         }
 
         {
@@ -39,7 +39,7 @@ describe("DropAction test", () => {
             unequipAction.performUnequip(quiver,game.entityFinder.getPlayerEquipmentSlotWithEquippedItem(vivian, quiver.getIdentifier()),vivianHand);
             quiver = game.entityFinder.getInventoryItem("VIVIANS QUIVER");
             const dropAction = new DropAction(game, createMockMessage(), vivian, vivian.location, false);
-            await dropAction.performDrop(quiver, vivianHand, vivianFloor, null);
+            dropAction.performDrop(quiver, vivianHand, vivianFloor, null);
         }
 
         const coffee = game.entityFinder.getRoomItem("MUG OF COFFEE", kyra.location.id, "FIXTURE", kyraFloor.name);

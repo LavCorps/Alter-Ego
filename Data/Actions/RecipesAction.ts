@@ -40,7 +40,7 @@ export default class RecipesAction extends Action {
      *
      * @param item - An inventory item to use as one of the ingredients. If this is provided, all recipes that use it as an ingredient will be shown.
      */
-    async performRecipes(item?: InventoryItem): Promise<void> {
+    performRecipes(item?: InventoryItem): void {
         if (this.performed) return;
         super.perform();
 

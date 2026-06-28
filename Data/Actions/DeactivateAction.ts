@@ -19,11 +19,11 @@ export default class DeactivateAction extends Action {
      * @param narrate - Whether or not to narrate the fixture's deactivation.
      * @param customNarration - The custom text of the narration. Optional.
      */
-    async performDeactivate(fixture: Fixture, narrate: boolean, customNarration?: string): Promise<void> {
+    performDeactivate(fixture: Fixture, narrate: boolean, customNarration?: string): void {
         if (this.performed) return;
         super.perform();
         const player = this.player && this.player.location.id === fixture.location.id && this.player.isConscious() && !this.player.isHidden() ? this.player : undefined;
-        const interactables = player ? await this.#getInteractables(fixture) : [];
+        const interactables = player ? this.#getInteractables(fixture) : [];
         if (narrate)
             this.getGame().narrationHandler.narrateDeactivate(this, fixture, player, customNarration, interactables);
         this.getGame().logHandler.logDeactivate(fixture, player, this.forced);
@@ -31,11 +31,11 @@ export default class DeactivateAction extends Action {
         this.successMessage = `Successfully deactivated ${fixture.name} at ${fixture.location.getEntityID()}${this.player ? ` for ${this.player.name}` : ``}.`;
     }
 
-    async #getInteractables(fixture: Fixture): Promise<Interactable[]> {
+    #getInteractables(fixture: Fixture): Interactable[] {
         let interactables: Interactable[] = [];
         const interactableManager = this.getGame().clientContext.interactableManager;
-        interactables = interactables.concat(await interactableManager.createInspectActionInteractable([fixture], this.player));
-        interactables = interactables.concat(await interactableManager.getActivateOrDeactivateInteractables(fixture, this.player, false));
+        interactables = interactables.concat(interactableManager.createInspectActionInteractable([fixture], this.player));
+        interactables = interactables.concat(interactableManager.getActivateOrDeactivateInteractables(fixture, this.player, false));
         return interactables;
     }
 

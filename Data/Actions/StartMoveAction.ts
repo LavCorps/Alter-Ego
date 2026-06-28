@@ -14,30 +14,28 @@ import QueueMoveAction from "./QueueMoveAction.ts";
  * @see https://msvblank.github.io/Alter-Ego/reference/data_structures/action.html#start-move-action
  */
 export default class StartMoveAction extends Action {
-	/**
-	 * Performs a start move action.
+    /**
+     * Performs a start move action.
      *
-	 * @param isRunning - Whether the player is running.
+     * @param isRunning - Whether the player is running.
      * @param currentRoom - The room the player is currently in.
      * @param destinationRoom - The room the player will be moved to.
      * @param exit - The exit the player will leave their current room through.
      * @param entrance - The exit the player will enter the destination room from.
      * @param speed - The speed at which the player is moving. Defaults to the minimum speed of their party, or their own current speed if they're not in a party.
-	 */
-	async performStartMove(isRunning: boolean, currentRoom: Room, destinationRoom: Room, exit: Exit, entrance: Exit, speed = this.player.party ? this.player.party.speed : this.player.speed): Promise<void> {
-		if (this.performed) return;
-		super.perform();
+     */
+    async performStartMove(isRunning: boolean, currentRoom: Room, destinationRoom: Room, exit: Exit, entrance: Exit, speed = this.player.party ? this.player.party.speed : this.player.speed): Promise<void> {
+        if (this.performed) return;
+        super.perform();
         this.player.currentMovingSpeed = speed;
-		const time = this.player.calculateMoveTime(exit, isRunning, speed);
+        const time = this.player.calculateMoveTime(exit, isRunning, speed);
         /**
          * Ordinarily, we narrate actions before performing them to avoid changes to the state before the narration is created,
          * but since this narration only occurs if the movement is going to take longer than 1000ms, we don't have to worry about that.
-         * It's important to begin the movement before sending the narration in this case, as creating interactables involves
-         * async operations that can cause race conditions when using fake timers in tests.
          */
-		this.player.move(isRunning, currentRoom, destinationRoom, exit, entrance, time, this.forced);
-		if (time > 1000) {
-            const interactables = await this.getGame().clientContext.interactableManager.createStopActionInteractable(this.player, this.user);
+        this.player.move(isRunning, currentRoom, destinationRoom, exit, entrance, time, this.forced);
+        if (time > 1000) {
+            const interactables = this.getGame().clientContext.interactableManager.createStopActionInteractable(this.player, this.user);
             this.getGame().narrationHandler.narrateStartMove(this, isRunning, exit, this.player, interactables);
         }
 
@@ -58,5 +56,5 @@ export default class StartMoveAction extends Action {
                 });
             }
         }
-	}
+    }
 }
