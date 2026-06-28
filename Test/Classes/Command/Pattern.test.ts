@@ -486,6 +486,7 @@ describe("Pattern file from NG Commands", () => {
         });
 
         test("Pattern.match(7)", async () => {
+            trie.insert("with", new ConstantToken("with"));
             const pattern = new Pattern([
                 new Slot(InventoryItem, "target"),
                 new Constant("with"),
