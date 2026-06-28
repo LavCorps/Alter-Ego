@@ -185,6 +185,7 @@ class MatchData {
     constructor(streams: Token[][]) {
         this.errors = [];
         this.matches = new Collection();
+        this.hasConsumed = new Collection();
         this.glob = [];
         this.streams = streams;
         this.streamIndex = 0;
@@ -223,6 +224,9 @@ class MatchData {
         data.errors = this.errors.map((o) => o);
         for (const entry of this.matches) {
             data.matches.set(entry[0], entry[1]);
+        }
+        for (const entry of this.hasConsumed) {
+            data.hasConsumed.set(entry[0], entry[1]);
         }
         return data;
     }
