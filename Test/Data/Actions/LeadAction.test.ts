@@ -136,17 +136,23 @@ describe('LeadAction test', () => {
                 expect(astrid.ledPlayers[0]).toStrictEqual(asuka);
                 expect(astrid.getLedPlayer("Asuka")).toStrictEqual(asuka);
                 expect(astrid.isLeading(asuka)).toBe(true);
-                expect(createPartySpy).toHaveBeenCalledTimes(1);
+                expect(createPartySpy).toHaveBeenCalledOnce();
                 expect(astrid.party).not.toBeNull();
                 expect(asuka.party).not.toBeNull();
                 expect(astrid.party).toStrictEqual(asuka.party);
                 expect(astrid.party.leader).toStrictEqual(astrid);
+                expect(astrid.party.hasLeader(astrid)).toBe(true);
+                expect(astrid.party.hasLeader(asuka)).toBe(false);
                 expect(astrid.party.followers).toHaveSize(1);
                 expect(astrid.party.followers.has("Astrid")).toBe(false);
                 expect(astrid.party.followers.has("Asuka")).toBe(true);
+                expect(astrid.party.hasFollower(astrid)).toBe(false);
+                expect(astrid.party.hasFollower(asuka)).toBe(true);
                 expect(astrid.party.members).toHaveSize(2);
                 expect(astrid.party.members.has("Astrid")).toBe(true);
                 expect(astrid.party.members.has("Asuka")).toBe(true);
+                expect(astrid.party.hasMember(astrid)).toBe(true);
+                expect(astrid.party.hasMember(asuka)).toBe(true);
                 expect(astrid.party.getMemberDisplayName(astrid)).toBe(concealedDisplayName);
                 expect(astrid.party.getMemberDisplayName(asuka)).toBe(asuka.name);
                 expect(astrid.party.whisper).not.toBeNull();
@@ -159,6 +165,12 @@ describe('LeadAction test', () => {
                 expect(astrid.party.whisper.players).toHaveSize(2);
                 expect(astrid.party.whisper.players.has("Astrid")).toBe(true);
                 expect(astrid.party.whisper.players.has("Asuka")).toBe(true);
+                expect(astrid.viewParty(false)).toBe(`You are the leader of a party.\n\nAsuka is traveling together with you.`);
+                expect(asuka.viewParty(false)).toBe(`You are in a party led by ${concealedDisplayName}.`);
+                expect(nero.viewParty(false)).toBe(`You are not in a party. However, you are following ${concealedDisplayName}.`);
+                expect(astrid.viewParty(true)).toBe(`Astrid is the leader of a party.\n\nAsuka is traveling together with her.`);
+                expect(asuka.viewParty(true)).toBe(`Asuka is in a party led by Astrid.`);
+                expect(nero.viewParty(true)).toBe(`Nero is not in a party. However, he is following Astrid.`);
             });
 
             test('stationary player leads stationary player she was already leading', async () => {
@@ -168,9 +180,9 @@ describe('LeadAction test', () => {
                 expect(astrid.ledPlayers[0]).toStrictEqual(asuka);
                 expect(astrid.getLedPlayer("Asuka")).toStrictEqual(asuka);
                 expect(astrid.isLeading(asuka)).toBe(true);
-                expect(createPartySpy).toHaveBeenCalledTimes(0);
-                expect(deleteWhisperSpy).toHaveBeenCalledTimes(0);
-                expect(createWhisperSpy).toHaveBeenCalledTimes(0);
+                expect(createPartySpy).not.toHaveBeenCalled();
+                expect(deleteWhisperSpy).not.toHaveBeenCalled();
+                expect(createWhisperSpy).not.toHaveBeenCalled();
                 expect(astrid.party).not.toBeNull();
                 expect(asuka.party).not.toBeNull();
                 expect(astrid.party).toStrictEqual(asuka.party);
@@ -183,6 +195,12 @@ describe('LeadAction test', () => {
                 expect(astrid.party.members).toHaveSize(2);
                 expect(astrid.party.members.has("Astrid")).toBe(true);
                 expect(astrid.party.members.has("Asuka")).toBe(true);
+                expect(astrid.viewParty(false)).toBe(`You are the leader of a party.\n\nAsuka is traveling together with you.`);
+                expect(asuka.viewParty(false)).toBe(`You are in a party led by ${concealedDisplayName}.`);
+                expect(nero.viewParty(false)).toBe(`You are not in a party. However, you are following ${concealedDisplayName}.`);
+                expect(astrid.viewParty(true)).toBe(`Astrid is the leader of a party.\n\nAsuka is traveling together with her.`);
+                expect(asuka.viewParty(true)).toBe(`Asuka is in a party led by Astrid.`);
+                expect(nero.viewParty(true)).toBe(`Nero is not in a party. However, he is following Astrid.`);
             });
 
             test('stationary player leads another stationary player while already in a party', async () => {
@@ -195,11 +213,11 @@ describe('LeadAction test', () => {
                 expect(astrid.getLedPlayer("Nero")).toStrictEqual(nero);
                 expect(astrid.isLeading(asuka)).toBe(true);
                 expect(astrid.isLeading(nero)).toBe(true);
-                expect(createPartySpy).toHaveBeenCalledTimes(0);
-                expect(addFollowersSpy).toHaveBeenCalledTimes(1);
+                expect(createPartySpy).not.toHaveBeenCalled();
+                expect(addFollowersSpy).toHaveBeenCalledOnce();
                 expect(addFollowersSpy).toBeInvokedWith([nero]);
-                expect(deleteWhisperSpy).toHaveBeenCalledTimes(1);
-                expect(createWhisperSpy).toHaveBeenCalledTimes(1);
+                expect(deleteWhisperSpy).toHaveBeenCalledOnce();
+                expect(createWhisperSpy).toHaveBeenCalledOnce();
                 expect(astrid.party.whisper).not.toBeNull();
                 expect(astrid.party.whisper.type).toEqual(WhisperType.PARTY);
                 expect(astrid.party.whisper.associatedEntity).not.toBeNull();
@@ -211,6 +229,12 @@ describe('LeadAction test', () => {
                 expect(astrid.party.whisper.players.has("Astrid")).toBe(true);
                 expect(astrid.party.whisper.players.has("Asuka")).toBe(true);
                 expect(astrid.party.whisper.players.has("Nero")).toBe(true);
+                expect(astrid.viewParty(false)).toBe(`You are the leader of a party.\n\nAsuka and Nero are traveling together with you.`);
+                expect(asuka.viewParty(false)).toBe(`You are in a party led by ${concealedDisplayName}.\n\nNero is also traveling with you.`);
+                expect(nero.viewParty(false)).toBe(`You are in a party led by ${concealedDisplayName}.\n\nAsuka is also traveling with you.`);
+                expect(astrid.viewParty(true)).toBe(`Astrid is the leader of a party.\n\nAsuka and Nero are traveling together with her.`);
+                expect(asuka.viewParty(true)).toBe(`Asuka is in a party led by Astrid.\n\nNero is also traveling with it.`);
+                expect(nero.viewParty(true)).toBe(`Nero is in a party led by Astrid.\n\nAsuka is also traveling with him.`);
             });
         });
 
@@ -268,7 +292,7 @@ describe('LeadAction test', () => {
                 await action.performLead([asuka]);
                 expect(astrid.ledPlayers).toHaveLength(1);
                 expect(astrid.ledPlayers[0]).toStrictEqual(asuka);
-                expect(createPartySpy).toHaveBeenCalledTimes(1);
+                expect(createPartySpy).toHaveBeenCalledOnce();
                 expect(astrid.party).not.toBeNull();
                 expect(asuka.party).not.toBeNull();
                 expect(astrid.party).toStrictEqual(asuka.party);
@@ -303,7 +327,7 @@ describe('LeadAction test', () => {
                 expect(astrid.ledPlayers).toHaveLength(2);
                 expect(astrid.ledPlayers[0]).toStrictEqual(asuka);
                 expect(astrid.ledPlayers[1]).toStrictEqual(nero);
-                expect(createPartySpy).toHaveBeenCalledTimes(1);
+                expect(createPartySpy).toHaveBeenCalledOnce();
                 expect(astrid.party).not.toBeNull();
                 expect(asuka.party).not.toBeNull();
                 expect(astrid.party).toStrictEqual(asuka.party);

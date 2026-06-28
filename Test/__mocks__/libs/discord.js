@@ -183,10 +183,10 @@ export function createMockGuildMemberManager() {
 }
 
 /**
- * @param {*} channels 
- * @param {*} roles 
- * @param {*} members 
- * @returns 
+ * @param {*} channels
+ * @param {*} roles
+ * @param {*} members
+ * @returns
  */
 export function createMockGuild(channels = [], roles = [], members = [], client) {
 	const guild = {
@@ -215,17 +215,22 @@ export function createMockClient() {
 }
 
 /**
- * @param {*} param0 
+ * @param {*} param0
  * @returns {UserMessage}
  */
 export function createMockMessage({ content = '', member = createMockMember(), author = createMockUser(), channel = null, webhookId, client, components = [], flags = 0 } = {}) {
 	const { Collection } = require('discord.js');
 	const messageChannel = channel || createMockChannel();
 	if (messageChannel && messageChannel.parent) messageChannel.parentId = messageChannel.parent.id;
+    const messageContent = components.length > 0 && components[0].components
+        ? components[0]?.components[0]?.data?.content
+        : components.length > 0
+            ? components[0]?.data?.content
+            : content;
 	return {
 		id: generateSnowflake(),
-		content: components.length > 0 ? components[0]?.components?.[0]?.data?.content : content,
-		cleanContent: components.length > 0 ? components[0]?.components?.[0]?.data?.content : content,
+		content: messageContent,
+		cleanContent: messageContent,
 		client: client,
 		member,
 		author,
@@ -248,7 +253,7 @@ export function createMockMessage({ content = '', member = createMockMember(), a
 	};
 }
 
-/** 
+/**
  * Creates a mocked message by the given player.
  * @param {Player} player
  * @param {string} content

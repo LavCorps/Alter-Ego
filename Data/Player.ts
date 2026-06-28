@@ -936,8 +936,11 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
                 }
             }
         }
-        else if (this.followedPlayer)
-            partyString += ` not in a party. However, you are following ${moderatorView ? this.followedPlayer.name : this.followedPlayerDisplayName}.`;
+        else if (this.followedPlayer) {
+            partyString += ` not in a party. However, `;
+            partyString += moderatorView ? `${this.originalPronouns.sbj} ${this.originalPronouns.plural ? "are" : "is"}` : `you are`;
+            partyString += ` following ${moderatorView ? this.followedPlayer.name : this.followedPlayerDisplayName}.`;
+        }
         else partyString += ` not in a party.`;
         return partyString;
     }
