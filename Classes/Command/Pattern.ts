@@ -277,12 +277,7 @@ export class Pattern implements PatternElement {
     readonly optional: boolean;
 
     /**
-     * Whether the fulfillment of this Pattern is mandatory or not. This is most useful for optional sub-patterns that must be completely matched once partially matched.
-     */
-    readonly _self_mandatory: boolean;
-
-    /**
-     * Whether this pattern, or the children of this pattern, are mandatory.
+     * Whether this pattern, or the children of this pattern, are mandatory. This is most useful for optional sub-patterns that must be completely matched once partially matched.
      */
     readonly mandatory: boolean;
 
@@ -294,7 +289,6 @@ export class Pattern implements PatternElement {
     constructor(grammar: Array<PatternElement>, optional: boolean = false, mandatory: boolean = true) {
         this.grammar = grammar;
         this.optional = optional;
-        this._self_mandatory = mandatory;
         if (mandatory) this.mandatory = true;
         else {
             for (const element of grammar) {
