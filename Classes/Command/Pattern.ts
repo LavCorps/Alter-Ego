@@ -412,11 +412,11 @@ export class Pattern implements PatternElement {
                 data = element.innerMatch(data);
                 if (data.hasConsumed.get(element)) {
                     data.hasConsumed.set(this, true);
-                    // TODO: this is something of a hacky workaround...
-                    // when a sub-pattern completes, it advances us too far and exhausts the token stream
-                    // this decrement on the stream index fixes that, but who is to say what side-effects it may entail?
-                    data.index--;
                 }
+                // TODO: this is something of a hacky workaround...
+                // when a sub-pattern completes, it advances us too far and exhausts the token stream
+                // this decrement on the stream index fixes that, but who is to say what side-effects it may entail?
+                data.index--;
                 matchedIndices.add(grammarIndex);
             }
 

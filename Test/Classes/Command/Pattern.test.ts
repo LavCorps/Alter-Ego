@@ -516,7 +516,6 @@ describe("Pattern file from NG Commands", () => {
             const invocation = pattern.match(trie.tokenize(["MUG", "OF", "COFFEE", "in", "RIGHT", "POCKET", "of", "KYRAS", "LAB", "COAT", "1"])) as MatchedInvocation;
             const finish = process.hrtime.bigint();
             console.log(`tokenization and matching took ${Number(finish - start) / 1000}μs`);
-            console.log(invocation);
             expect(invocation).toBeInstanceOf(MatchedInvocation);
             expect(invocation.args.size).toBe(3);
             expect(invocation.args.get("target")).not.toBeUndefined();
@@ -555,9 +554,8 @@ describe("Pattern file from NG Commands", () => {
             const invocation = pattern.match(trie.tokenize(["MUG", "OF", "COFFEE", "in", "KYRAS", "LAB", "COAT", "1"])) as MatchedInvocation;
             const finish = process.hrtime.bigint();
             console.log(`tokenization and matching took ${Number(finish - start) / 1000}μs`);
-            console.log(invocation);
             expect(invocation).toBeInstanceOf(MatchedInvocation);
-            expect(invocation.args.size).toBe(3);
+            expect(invocation.args.size).toBe(2);
             expect(invocation.args.get("target")).not.toBeUndefined();
             expect(invocation.args.get("target").length).toBe(1);
             invocation.args.get("target").forEach((item: InventoryItem) => {
