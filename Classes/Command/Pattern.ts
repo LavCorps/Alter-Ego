@@ -8,6 +8,7 @@ import { ConstantToken, EntityToken, ItemContainerToken, PocketToken, Prepositio
 import type GameEntity from "../../Data/GameEntity.ts";
 import { Collection } from "discord.js";
 import ItemInstance from "../../Data/ItemInstance.ts";
+import type InventorySlot from "../../Data/InventorySlot.ts";
 
 /**
  * Base interface representing a pattern element.
@@ -391,14 +392,11 @@ export class Pattern implements PatternElement {
                     } else stream = data.next();
                 }
             } else if (element instanceof Pocket) {
-                console.log("HIT POCKET")
-                console.log(data.stream);
                 let elementMatches: PocketToken<ItemInstance>[] = data.stream.filter(token => token instanceof PocketToken);
                 if (elementMatches.length > 0) {
-                    console.log("POCKET > 0")
                     data.matches.set(element, elementMatches);
                     matchedIndices.add(grammarIndex);
-                } else console.log("POCKET <= 0‽")
+                }
             } else if (element instanceof Pattern) {
                 data = element.innerMatch(data);
             }
@@ -488,11 +486,9 @@ export class Pattern implements PatternElement {
             if (!matchedIndices.has(index)) neverMatchedIndices.add(index);
         }
 
-        console.log(data.matches);
         data = this.matchPrepositions(data);
-        console.log(data.matches);
 
-        //data = this.matchPockets(data);
+        data = this.matchPockets(data);
 
         if (this.optional && data.errors.length > 0) return base;
         else return data;
@@ -578,17 +574,19 @@ export class Pattern implements PatternElement {
         /** K is the name of the Slot or Multislot, V[0] is the Slot or Multislot, V[1] is the array of EntityTokens */
         const slots: Collection<string, [Slot | Multislot, ItemContainerToken<ItemInstance>[]]> = new Collection();
 
+        // re-map pockets and (multi)slots into a format more easily accessible for matching
         data.matches.forEach((tokens, element) => {
             if (element instanceof Pocket)
-                pockets.set(element.name, [element, tokens.filter(token => token instanceof PocketToken)]);
+                pockets.set(element.id, [element, tokens.filter(token => token instanceof PocketToken)]);
             else if (element instanceof Slot || element instanceof Multislot)
                 slots.set(element.name, [element, tokens.filter(token => token instanceof ItemContainerToken && token.reference instanceof ItemInstance) as ItemContainerToken<ItemInstance>[]]);
         });
 
+        // if there are no pockets or slots, this function is unnecessary, and we can return the unmodified base MatchData
         if (pockets.size === 0) return base;
         else if (slots.size === 0) return base;
 
-        for (const [name, pocket] of pockets) {
+        for (const [name, [pocketElement, pocketTokens]] of pockets) {
             if (!slots.has(name)) {
                 // similarly to the identical error case in matchPrepositions(),
                 // this should never appear during a normal alter ego game,
@@ -597,26 +595,37 @@ export class Pattern implements PatternElement {
                 continue;
             }
 
-            const [pockElement, pockTokens] = pocket;
             const [slotElement, slotTokens] = slots.get(name);
 
-            // TODO: this logic is mostly copy-pasted from matchPrepositions and i am reasonably confident it does not even work...
-            const slotPockets: Set<string> = new Set();
+            // this creates a set of all pockets contained in the token references in the slots matching this pocket slot
+            const slotPockets: Set<InventorySlot<ItemInstance>> = new Set();
             for (const token of slotTokens)
                 for (const pocket of token.reference.inventory.values())
-                    slotPockets.add(pocket.id);
-            const matches = new Set(pockTokens.map(token => token.value).filter(value => slotPockets.has(value)));
+                    slotPockets.add(pocket);
 
-            const narrowedPocks = pockTokens.filter(token => matches.has(token.value));
-            const narrowedSlots = slotTokens.filter(token => matches.has(token.value));
+            // find which pockets that got matched that are also valid for this slot
+            const matches = new Set(pocketTokens.map(token => token.reference).filter(value => slotPockets.has(value)));
 
-            if (narrowedPocks.length === 0 || narrowedSlots.length === 0)
-                data.errors.push(`Couldn't find a preposition for ${name}.`)
+            // narrow pockets against the matched pocket set
+            const narrowedPockets = pocketTokens.filter(token => matches.has(token.reference));
 
-            pockets.set(name, [pockElement, narrowedPocks]);
+            // narrow slots against the matched pocket set
+            const narrowedSlots = slotTokens.filter(token => {
+                for (const slot of token.reference.inventory.values())
+                    if (matches.has(slot)) return true;
+                return false;
+            });
+
+            // if either slots or pockets were narrowed to a length of 0, then the slot has no valid pocket
+            if (narrowedPockets.length === 0 || narrowedSlots.length === 0)
+                data.errors.push(`Couldn't find a pocket for ${name}.`)
+
+            // write back narrowed pockets and slots...
+            pockets.set(name, [pocketElement, narrowedPockets]);
             slots.set(name, [slotElement, narrowedSlots]);
         }
 
+        // write back narrowed pockets and slots from our custom mapping
         for (const [preposition, tokens] of pockets.values())
             data.matches.set(preposition, tokens);
         for (const [slot, tokens] of slots.values())
@@ -631,12 +640,10 @@ export class Pattern implements PatternElement {
      */
     match(streams: Token[][]): MatchResult {
         const data = this.innerMatch(new MatchData(streams));
-        console.log(data);
         if (data.errors.length > 0) return new InvalidInvocation(data.errors);
         else {
             const args: Collection<string, GameEntity[]> = new Collection();
             data.matches.forEach((val, key) => {
-                console.log([key instanceof Slot, key instanceof Multislot, key instanceof Pocket])
                 if (key instanceof Slot || key instanceof Multislot || key instanceof Pocket)
                     args.set(
                         key.name,

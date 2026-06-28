@@ -339,7 +339,10 @@ describe("Pattern file from NG Commands", () => {
                 new Constant("and"),
                 new Slot(InventoryItem, "item2"),
             ]);
+            const start = process.hrtime.bigint();
             const invocation = pattern.match(trie.tokenize(["MUG", "OF", "COFFEE", "and", "PACK", "OF", "TOILET", "PAPER", "2"])) as MatchedInvocation;
+            const finish = process.hrtime.bigint();
+            console.log(`tokenization and matching took ${Number(finish - start) / 1000}μs`);
             expect(invocation).toBeInstanceOf(MatchedInvocation);
             expect(invocation.args.size).toBe(2);
             expect(invocation.args.get("item1")).not.toBeUndefined();
@@ -364,7 +367,10 @@ describe("Pattern file from NG Commands", () => {
                 new Constant("and"),
                 new Slot(InventoryItem, "item2"),
             ]);
+            const start = process.hrtime.bigint();
             const invocation = pattern.match(trie.tokenize(["MG", "F", "CFF", "and", "PACK", "OF", "TOILET", "PAPER", "2"])) as InvalidInvocation;
+            const finish = process.hrtime.bigint();
+            console.log(`tokenization and matching took ${Number(finish - start) / 1000}μs`);
             expect(invocation).toBeInstanceOf(InvalidInvocation);
             expect(invocation.errors).toBeLength(1);
             expect(invocation.errors[0]).toBe("Couldn't find inventory item \"MG F CFF\" in your input.");
@@ -376,7 +382,10 @@ describe("Pattern file from NG Commands", () => {
                 new Preposition("destination"),
                 new Slot(Fixture, "destination"),
             ]);
+            const start = process.hrtime.bigint();
             const invocation = pattern.match(trie.tokenize(["MUG", "OF", "COFFEE", "on", "FLOOR"])) as MatchedInvocation;
+            const finish = process.hrtime.bigint();
+            console.log(`tokenization and matching took ${Number(finish - start) / 1000}μs`);
             expect(invocation).toBeInstanceOf(MatchedInvocation);
             expect(invocation.args.size).toBe(2);
             expect(invocation.args.get("target")).not.toBeUndefined();
@@ -401,7 +410,10 @@ describe("Pattern file from NG Commands", () => {
                 new Preposition("destination"),
                 new Slot(Fixture, "destination"),
             ]);
+            const start = process.hrtime.bigint();
             const invocation = pattern.match(trie.tokenize(["MUG", "OF", "COFFEE", "next", "to", "FLOOR"])) as InvalidInvocation;
+            const finish = process.hrtime.bigint();
+            console.log(`tokenization and matching took ${Number(finish - start) / 1000}μs`);
             expect(invocation).toBeInstanceOf(InvalidInvocation);
             expect(invocation.errors).toBeLength(1);
             expect(invocation.errors[0]).toBe("Couldn't find a preposition for destination.");
@@ -413,7 +425,10 @@ describe("Pattern file from NG Commands", () => {
                 new Preposition("destination"),
                 new Slot(Fixture, "destination"),
             ]);
+            const start = process.hrtime.bigint();
             const invocation = pattern.match(trie.tokenize(["MUG", "OF", "COFFEE", "in", "FLOOR"])) as MatchedInvocation;
+            const finish = process.hrtime.bigint();
+            console.log(`tokenization and matching took ${Number(finish - start) / 1000}μs`);
             expect(invocation).toBeInstanceOf(MatchedInvocation);
             expect(invocation.args.size).toBe(2);
             expect(invocation.args.get("target")).not.toBeUndefined();
@@ -440,9 +455,11 @@ describe("Pattern file from NG Commands", () => {
                 new Constant("of"),
                 new Slot(InventoryItem, "destination"),
             ]);
+            const start = process.hrtime.bigint();
             const invocation = pattern.match(trie.tokenize(["MUG", "OF", "COFFEE", "in", "RIGHT", "POCKET", "of", "KYRAS", "LAB", "COAT", "1"])) as MatchedInvocation;
+            const finish = process.hrtime.bigint();
+            console.log(`tokenization and matching took ${Number(finish - start) / 1000}μs`);
             expect(invocation).toBeInstanceOf(MatchedInvocation);
-            console.log(invocation.args);
             expect(invocation.args.size).toBe(3);
             expect(invocation.args.get("target")).not.toBeUndefined();
             expect(invocation.args.get("target").length).toBe(1);
@@ -458,7 +475,7 @@ describe("Pattern file from NG Commands", () => {
                 expect(item.getIdentifier()).toBe("KYRAS LAB COAT 1");
             });
             expect(invocation.args.get("destination pocket")).not.toBeUndefined();
-            expect(invocation.args.get("destination pocket").length).toBe(1); // there are 505 pockets within the testing data, but we specifically want the right pocket of lab coat 1
+            expect(invocation.args.get("destination pocket").length).toBe(1); // there are 505 right pockets within the testing data, but we specifically want the right pocket of kyras lab coat 1
             invocation.args.get("destination pocket").forEach((pocket: InventorySlot<InventoryItem>) => { 
                 expect(pocket).toBeInstanceOf(InventorySlot);
                 expect(pocket.id).toBe("RIGHT POCKET");
