@@ -245,14 +245,14 @@ export default class Fixture extends RecipeProcessor implements PersistentGameEn
     }
 
     /**
-	 * Gets all of the items that should appear in the fixture's item list.
+     * Gets all of the items that should appear in the fixture's item list.
      *
-	 * @param itemListName - The name of the item list. Unused.
-	 * @param player - The player the description is being sent to. Unused.
-	 */
-	override getContainedItemsForItemList(itemListName?: string, player?: Player): RoomItem[] {
-		return this.getGame().entityFinder.getRoomItems(undefined, this.location.id, true, 'Fixture', this.name);
-	}
+     * @param itemListName - The name of the item list. Unused.
+     * @param player - The player the description is being sent to. Unused.
+     */
+    override getContainedItemsForItemList(itemListName?: string, player?: Player): RoomItem[] {
+        return this.getGame().entityFinder.getRoomItems(undefined, this.location.id, true, 'Fixture', this.name);
+    }
 
     /**
      * Returns true if this entity contains an item with the given identifier or prefab ID.
@@ -329,19 +329,19 @@ export default class Fixture extends RecipeProcessor implements PersistentGameEn
      * Starts the process timer when no recipe was found and the fixture is set to deactivate automatically.
      */
     #startProcessTimerForAutoDeactivateFixtureWithNoRecipe(): void {
-        this.#setProcessDuration(Duration.fromObject({minutes: 1}));
+        this.#setProcessDuration(Duration.fromObject({ minutes: 1 }));
         this.#whenProcessTimerExpires(() => {
-			this.#performDeactivate();
+            this.#performDeactivate();
         });
     }
 
-	/**
+    /**
      * Ends recipe processing. If `this.autoDeactivate` is true, deactivates the fixture. Otherwise, just clears the process.
      */
-	#endProcess(): void {
-		if (this.autoDeactivate) this.#performDeactivate();
+    #endProcess(): void {
+        if (this.autoDeactivate) this.#performDeactivate();
         else this._clearProcess();
-	}
+    }
 
     /**
      * Makes the fixture start processing recipes.
@@ -361,7 +361,7 @@ export default class Fixture extends RecipeProcessor implements PersistentGameEn
         this.#setProcessDuration();
         this.#whenProcessTimerExpires(() => {
             this.processRecipe(player);
-			this.#endProcess();
+            this.#endProcess();
         });
     }
 
@@ -389,7 +389,7 @@ export default class Fixture extends RecipeProcessor implements PersistentGameEn
             this.#setProcessDuration();
             this.#whenProcessTimerExpires(() => {
                 this.processRecipe();
-				this.#endProcess();
+                this.#endProcess();
             });
         }
     }
@@ -402,32 +402,32 @@ export default class Fixture extends RecipeProcessor implements PersistentGameEn
     private processRecipe(player?: Player): void {
         // Calculate how many times the fixture's ingredients satisfy the current recipe.
         this.process.satisfactoryProcessCount = this.process.recipe.getSatisfactoryProcessCount(this.process.ingredients);
-		if (this.process.satisfactoryProcessCount < 1) return;
+        if (this.process.satisfactoryProcessCount < 1) return;
         const variableValues = this.process.recipe.getIngredientVariableValues(this.process.ingredients);
         const proceduralSelections = combineProceduralSelections(this.process.ingredients);
         this.destroyIngredients(this.process.recipe, this.process.ingredients, this.process.satisfactoryProcessCount);
-		const instantiatedProducts = this.instantiateProducts<RoomItem>(this.process.recipe, this.process.satisfactoryProcessCount, variableValues, proceduralSelections, player);
+        const instantiatedProducts = this.instantiateProducts<RoomItem>(this.process.recipe, this.process.satisfactoryProcessCount, variableValues, proceduralSelections, player);
         this.#setProcessProducts(instantiatedProducts);
-		this.#sendRecipeCompletedDescription(player);
+        this.#sendRecipeCompletedDescription(player);
     }
 
-	/**
-	 * Instantiates a room item in this fixture.
+    /**
+     * Instantiates a room item in this fixture.
      *
-	 * @param prefab - The prefab to instantiate.
-	 * @param quantity - The quantity of the prefab to instantiate.
-	 * @param uses - The number of uses to instantiate the prefab with. Defaults to the prefab's number of uses.
-	 * @param proceduralSelections - The manually selected procedural possibilities.
-	 * @param container - The container to instantiate the prefab into. Defaults to the fixture itself.
-	 * @param inventorySlotId - The ID of the {@link InventorySlot|inventory slot} to instantiate the item in.
+     * @param prefab - The prefab to instantiate.
+     * @param quantity - The quantity of the prefab to instantiate.
+     * @param uses - The number of uses to instantiate the prefab with. Defaults to the prefab's number of uses.
+     * @param proceduralSelections - The manually selected procedural possibilities.
+     * @param container - The container to instantiate the prefab into. Defaults to the fixture itself.
+     * @param inventorySlotId - The ID of the {@link InventorySlot|inventory slot} to instantiate the item in.
      * @param player - The player who caused this instantiation, if applicable.
-	 * @returns The instantiated room item.
-	 */
-	protected override instantiate(prefab: Prefab, quantity: number, uses: number = prefab.uses, proceduralSelections: Map<string, string> = new Map(), container: RoomItemContainer = this.childPuzzle ?? this, inventorySlotId: string = "", player?: Player): RoomItem[] {
+     * @returns The instantiated room item.
+     */
+    protected override instantiate(prefab: Prefab, quantity: number, uses: number = prefab.uses, proceduralSelections: Map<string, string> = new Map(), container: RoomItemContainer = this.childPuzzle ?? this, inventorySlotId: string = "", player?: Player): RoomItem[] {
         const instantiatingPlayer = player && player.alive && player.location.id === this.location.id ? player : undefined;
-		const instantiateAction = new InstantiateRoomItemAction(this.getGame(), undefined, instantiatingPlayer, this.location, true);
-		return instantiateAction.performInstantiateRoomItem(prefab, container, inventorySlotId, quantity, proceduralSelections, uses);
-	}
+        const instantiateAction = new InstantiateRoomItemAction(this.getGame(), undefined, instantiatingPlayer, this.location, true);
+        return instantiateAction.performInstantiateRoomItem(prefab, container, inventorySlotId, quantity, proceduralSelections, uses);
+    }
 
     /**
      * Gets the actual ingredient item instance that was used as an ingredient in the currently processed recipe.
@@ -455,29 +455,29 @@ export default class Fixture extends RecipeProcessor implements PersistentGameEn
         return this.process.recipe?.productsFlat.find(product => product.prefab.id === prefabId)?.prefab;
     }
 
-	/**
-	 * If a player is given and they are still alive and in the same room as the fixture, sends them the processed recipe's completed description.
+    /**
+     * If a player is given and they are still alive and in the same room as the fixture, sends them the processed recipe's completed description.
      *
-	 * @param player - The player to send the completed description to.
-	 */
-	async #sendRecipeCompletedDescription(player: Player): Promise<void> {
-		if (player && player.alive && player.location.id === this.location.id) {
-			const completedDescription = this.process.recipe.completedDescription.parseFor(player, this);
-			const messageDisplayType = this.process.recipe.completedDescription.messageDisplayType ?? MessageDisplayType.STANDARD;
-			const interactables = await this.getGame().clientContext.interactableManager.createInspectActionInteractable([this], player);
-			player.sendDescription(completedDescription, this, messageDisplayType, interactables);
-		}
-	}
+     * @param player - The player to send the completed description to.
+     */
+    #sendRecipeCompletedDescription(player: Player): void {
+        if (player && player.alive && player.location.id === this.location.id) {
+            const completedDescription = this.process.recipe.completedDescription.parseFor(player, this);
+            const messageDisplayType = this.process.recipe.completedDescription.messageDisplayType ?? MessageDisplayType.STANDARD;
+            const interactables = this.getGame().clientContext.interactableManager.createInspectActionInteractable([this], player);
+            player.sendDescription(completedDescription, this, messageDisplayType, interactables);
+        }
+    }
 
-	/**
-	 * Creates a DeactivateAction and calls performDeactivate.
+    /**
+     * Creates a DeactivateAction and calls performDeactivate.
      *
-	 * @param player - The player who initiated the recipe, if any.
-	 */
-	#performDeactivate(player?: Player): void {
-		const deactivateAction = new DeactivateAction(this.getGame(), undefined, player, this.location, true);
+     * @param player - The player who initiated the recipe, if any.
+     */
+    #performDeactivate(player?: Player): void {
+        const deactivateAction = new DeactivateAction(this.getGame(), undefined, player, this.location, true);
         deactivateAction.performDeactivate(this, true);
-	}
+    }
 
     /**
      * Finds a recipe that can currently be processed by this fixture. The fixture must contain all of the ingredients for this recipe.

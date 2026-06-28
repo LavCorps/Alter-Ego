@@ -27,7 +27,7 @@ export default class TakeAction extends Action {
      * @param inventorySlot - The {@link InventorySlot|inventory slot} the item is currently in.
      * @param notify - Whether or not to notify the player that they took the item. Defaults to true.
      */
-    async performTake(item: RoomItem, handEquipmentSlot: EquipmentSlot, container: RoomItemContainer, inventorySlot: InventorySlot<RoomItem>, notify: boolean = true): Promise<void> {
+    performTake(item: RoomItem, handEquipmentSlot: EquipmentSlot, container: RoomItemContainer, inventorySlot: InventorySlot<RoomItem>, notify: boolean = true): void {
         if (this.performed) return;
         super.perform();
         const successful = this.forced || this.player.carryWeight + item.weight <= this.player.maxCarryWeight;
@@ -37,7 +37,7 @@ export default class TakeAction extends Action {
             return;
         }
         const takenItem = this.player.take(item, handEquipmentSlot, container, inventorySlot);
-        const interactables = await this.#getInteractables();
+        const interactables = this.#getInteractables();
         this.getGame().narrationHandler.narrateTake(this, takenItem, container, this.player, notify, interactables);
         // Container is a weight puzzle.
         if (container instanceof Puzzle && container.type === "weight") {
@@ -61,13 +61,13 @@ export default class TakeAction extends Action {
         this.successMessage = `Successfully took ${item.getIdentifier()} from ${slotPhrase}${container.getEntityID()} for ${this.player.name}.`;
     }
 
-    async #getInteractables(): Promise<Interactable[]> {
-        let interactables = await this.getGame().clientContext.interactableManager.getStashInteractables(this.player);
+    #getInteractables(): Interactable[] {
+        let interactables = this.getGame().clientContext.interactableManager.getStashInteractables(this.player);
         const interactableManager = this.getGame().clientContext.interactableManager;
-        interactables = interactables.concat(await interactableManager.getCraftInteractables(this.player));
-        interactables = interactables.concat(await interactableManager.getUncraftInteractables(this.player, this.user));
-        interactables = interactables.concat(await interactableManager.getUseInteractables(this.player));
-        interactables = interactables.concat(await interactableManager.getEquipInteractables(this.player));
+        interactables = interactables.concat(interactableManager.getCraftInteractables(this.player));
+        interactables = interactables.concat(interactableManager.getUncraftInteractables(this.player, this.user));
+        interactables = interactables.concat(interactableManager.getUseInteractables(this.player));
+        interactables = interactables.concat(interactableManager.getEquipInteractables(this.player));
         return interactables;
     }
 

@@ -20,7 +20,7 @@ export default class ActivateAction extends Action {
      * @param narrate - Whether or not to narrate the fixture's activation.
      * @param customNarration - The custom text of the narration. Optional.
      */
-    async performActivate(fixture: Fixture, narrate: boolean, customNarration?: string): Promise<void> {
+    performActivate(fixture: Fixture, narrate: boolean, customNarration?: string): void {
         if (this.performed) return;
         super.perform();
         this.getGame().logHandler.logActivate(fixture, this.player, this.forced);
@@ -31,7 +31,7 @@ export default class ActivateAction extends Action {
             initiatedDescription = fixture.process.recipe.initiatedDescription.parseFor(this.player, fixture);
             messageDisplayType = fixture.process.recipe.initiatedDescription.messageDisplayType;
         }
-        const interactables = await this.#getInteractables(fixture);
+        const interactables = this.#getInteractables(fixture);
         if (narrate)
             this.getGame().narrationHandler.narrateActivate(this, fixture, this.player, initiatedDescription !== undefined && initiatedDescription !== "", customNarration, interactables);
         if (initiatedDescription) {
@@ -40,11 +40,11 @@ export default class ActivateAction extends Action {
         this.successMessage = `Successfully activated ${fixture.name} at ${fixture.location.getEntityID()}${this.player ? ` for ${this.player.name}` : ``}.`;
     }
 
-    async #getInteractables(fixture: Fixture): Promise<Interactable[]> {
+    #getInteractables(fixture: Fixture): Interactable[] {
         let interactables: Interactable[] = [];
         const interactableManager = this.getGame().clientContext.interactableManager;
-        interactables = interactables.concat(await interactableManager.createInspectActionInteractable([fixture], this.player));
-        interactables = interactables.concat(await interactableManager.getActivateOrDeactivateInteractables(fixture, this.player, true));
+        interactables = interactables.concat(interactableManager.createInspectActionInteractable([fixture], this.player));
+        interactables = interactables.concat(interactableManager.getActivateOrDeactivateInteractables(fixture, this.player, true));
         return interactables;
     }
 

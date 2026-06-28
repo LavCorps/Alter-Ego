@@ -28,10 +28,10 @@ export default class DropAction extends Action {
      * @param inventorySlot - The {@link InventorySlot|inventory slot} to put the item in.
      * @param notify - Whether or not to notify the player that they dropped the item. Defaults to true.
      */
-    async performDrop(item: InventoryItem, handEquipmentSlot: EquipmentSlot, container: RoomItemContainer, inventorySlot: InventorySlot<RoomItem>, notify: boolean = true): Promise<void> {
+    performDrop(item: InventoryItem, handEquipmentSlot: EquipmentSlot, container: RoomItemContainer, inventorySlot: InventorySlot<RoomItem>, notify: boolean = true): void {
         if (this.performed) return;
         super.perform();
-        const interactables = await this.#getInteractables(container);
+        const interactables = this.#getInteractables(container);
         this.getGame().narrationHandler.narrateDrop(this, item, container, this.player, notify, interactables);
         this.getGame().logHandler.logDrop(item, this.player, container, inventorySlot, this.forced);
         this.player.drop(item, handEquipmentSlot, container, inventorySlot);
@@ -58,10 +58,10 @@ export default class DropAction extends Action {
         this.successMessage = `Successfully dropped ${item.getIdentifier()} ${preposition} ${containerPhrase} for ${this.player.name}.`;
     }
 
-    async #getInteractables(container: RoomItemContainer): Promise<Interactable[]> {
+    #getInteractables(container: RoomItemContainer): Interactable[] {
         let interactables: Interactable[] = [];
         if (container instanceof Fixture) {
-            interactables = interactables.concat(await this.getGame().clientContext.interactableManager.getActivateOrDeactivateInteractables(container, this.player));
+            interactables = interactables.concat(this.getGame().clientContext.interactableManager.getActivateOrDeactivateInteractables(container, this.player));
         }
         return interactables;
     }

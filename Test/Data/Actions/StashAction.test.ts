@@ -20,7 +20,7 @@ describe('StashAction test', () => {
         await game.entityLoader.loadRoomItems(false);
     });
 
-    test('ported legacy test', async () => {
+    test('ported legacy test', () => {
         const kyra = game.entityFinder.getLivingPlayer("Kyra");
         const hand = game.entityFinder.getPlayerFreeHand(kyra);
         const labCoat = game.entityFinder.getPlayerEquipmentSlotWithEquippedItem(kyra, "KYRAS LAB COAT").equippedItem;

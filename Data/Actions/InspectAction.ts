@@ -19,7 +19,7 @@ export default class InspectAction extends Action {
      *
      * @param target - The entity to inspect.
      */
-    async performInspect(target: Inspectable): Promise<void> {
+    performInspect(target: Inspectable): void {
         if (this.performed) return;
         super.perform();
         this.getGame().narrationHandler.narrateInspect(this, target, this.player);
