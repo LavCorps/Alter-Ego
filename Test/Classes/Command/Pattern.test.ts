@@ -481,5 +481,20 @@ describe("Pattern file from NG Commands", () => {
                 expect(pocket.id).toBe("RIGHT POCKET");
             });
         });
+
+        test("Pattern.match(7)", async () => {
+            const pattern = new Pattern([
+                new Slot(InventoryItem, "target"),
+                new Constant("with"),
+                new Slot(Fixture, "destination"),
+            ]);
+            const start = process.hrtime.bigint();
+            const invocation = pattern.match(trie.tokenize(["MUG", "OF", "COFFEE", "with"])) as InvalidInvocation;
+            const finish = process.hrtime.bigint();
+            console.log(`tokenization and matching took ${Number(finish - start) / 1000}μs`);
+            expect(invocation).toBeInstanceOf(InvalidInvocation);
+            expect(invocation.errors).toBeLength(1);
+            expect(invocation.errors[0]).toBe(""); // TODO: needs to be filled in
+        });
     });
 });
