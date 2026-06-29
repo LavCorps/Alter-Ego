@@ -39,7 +39,8 @@ export default class Trie {
     }
 
     /**
-     *
+     * Tokenize an array of strings into an array of token arrays, representing the possibilities represented by the input. Tokenization is done on the basis of longest match.
+     * @param words - The input to tokenize. Should be split according to the regex `[^\S\n]`.
      */
     tokenize(words: string[]): Token[][] {
         const input: Word[] = words.map((word) => {
