@@ -1,16 +1,19 @@
 // SPDX-FileCopyrightText: 2019 Alter Ego Contributors
 // SPDX-FileCopyrightText: 2026 LavCorps <lavcorps@protonmail.com>
+// SPDX-FileCopyrightText: 2026 Ms. VBLANK <alteregomolly@pm.me>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import { Collection } from "discord.js";
+import { ValidatedInvocation, type MatchedInvocation } from "../../Classes/Command/Invocation.ts";
 import { Pattern, Slot, Constant } from "../../Classes/Command/Pattern.ts";
 import PlayerCommand from "../../Classes/Command/PlayerCommand.ts";
 import type PlayerContext from "../../Classes/Command/PlayerContext.ts";
 import type GameSettings from "../../Classes/GameSettings.js";
 import InventoryItem from "../../Data/InventoryItem.ts";
 
-export default class CraftPlayerCommand extends PlayerCommand {
-    readonly config: CommandConfig = {
+export default new PlayerCommand({
+    config: {
         name: "craft_player",
         description: "Crafts two items in your inventory together.",
         details:
@@ -22,9 +25,18 @@ export default class CraftPlayerCommand extends PlayerCommand {
         usableBy: "Player",
         aliases: ["craft", "combine", "mix", "c"],
         requiresGame: true,
-    };
+    },
 
-    readonly patterns = [
+    usage: (settings: GameSettings) => {
+        return (
+            `${settings.commandPrefix}craft DRAIN CLEANER and PLASTIC BOTTLE\n` +
+            `${settings.commandPrefix}combine BREAD and CHEESE\n` +
+            `${settings.commandPrefix}mix RED VIAL with BLUE VIAL\n` +
+            `${settings.commandPrefix}craft SOAP with KNIFE`
+        );
+    },
+
+    patterns: [
         new Pattern([
             new Slot(InventoryItem, "item1"),
             new Constant("and"),
@@ -35,16 +47,13 @@ export default class CraftPlayerCommand extends PlayerCommand {
             new Constant("with"),
             new Slot(InventoryItem, "item2"),
         ]),
-    ];
+    ],
 
-    usage(settings: GameSettings) {
-        return (
-            `${settings.commandPrefix}craft DRAIN CLEANER and PLASTIC BOTTLE\n` +
-            `${settings.commandPrefix}combine BREAD and CHEESE\n` +
-            `${settings.commandPrefix}mix RED VIAL with BLUE VIAL\n` +
-            `${settings.commandPrefix}craft SOAP with KNIFE`
-        );
+    validate: async (context: PlayerContext, invocation: MatchedInvocation) => {
+        return new ValidatedInvocation(new Collection(), []);
+    },
+
+    execute: async (ctx: PlayerContext) => {
+
     }
-
-    async execute(ctx: PlayerContext) {}
-}
+});

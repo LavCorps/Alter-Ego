@@ -1,16 +1,13 @@
-// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
 // SPDX-FileCopyrightText: 2026 LavCorps <lavcorps@protonmail.com>
+// SPDX-FileCopyrightText: 2026 Ms. VBLANK <alteregomolly@pm.me>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import Command from "./Command.ts";
-import type { MatchedInvocation, ValidatedInvocation, ValidationResult } from "./Invocation.ts";
 import type PlayerContext from "./PlayerContext.ts";
 
 /**
- * Abstract new-generation command usable by a player.
+ * New-generation command usable by a player.
  */
-export default abstract class PlayerCommand extends Command {
-    abstract override validate(context: PlayerContext, invocation: MatchedInvocation): Promise<ValidationResult>;
-    abstract override execute(context: PlayerContext, invocation: ValidatedInvocation): Promise<void>;
+export default class PlayerCommand extends Command<PlayerContext> {
 }

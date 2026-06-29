@@ -5,35 +5,70 @@
 
 import type GameSettings from "../GameSettings.ts";
 import type Context from "./Context.ts";
-import type { Invocation, MatchedInvocation, ValidatedInvocation, ValidationResult } from "./Invocation.ts";
+import type { MatchedInvocation, ValidatedInvocation, ValidationResult } from "./Invocation.ts";
 import type { Pattern } from "./Pattern.ts";
+
+type CommandUsage = (settings: GameSettings) => string;
+type CommandValidate<T extends Context> = (context: T, invocation: MatchedInvocation) => Promise<ValidationResult>;
+type CommandExecute<T extends Context> = (context: T, invocation: ValidatedInvocation) => Promise<void>;
+
+interface CommandConstructorArgs<T extends Context> {
+    /**
+     * The specific configuration of the command.
+     */
+    config: CommandConfig;
+    /**
+     * Examples of the command's usage.
+     */
+    usage: CommandUsage;
+    /**
+     * Grammar patterns for the command.
+     */
+    patterns?: Pattern[];
+    /**
+     * The code to execute when the command is called, inputs matched to at least one pattern, but the invocation is not yet validated.
+     */
+    validate: CommandValidate<T>;
+    /**
+     * The code to execute when the command is called, and the invocation has been validated.
+     */
+    execute: CommandExecute<T>;
+}
 
 /**
  * Abstract base class for all new-generation commands.
  */
-export default abstract class Command {
+export default abstract class Command<T extends Context> {
     /**
      * The specific configuration of the command.
      */
-    abstract readonly config: CommandConfig;
+    readonly config: CommandConfig;
 
     /**
      * Examples of the command's usage.
      */
-    abstract usage(settings: GameSettings): string;
+    readonly usage: CommandUsage;
 
     /**
      * Grammar patterns for the command.
      */
-    abstract readonly patterns: Pattern[];
+    readonly patterns: Pattern[];
 
     /**
      * The code to execute when the command is called, inputs matched to at least one pattern, but the invocation is not yet validated.
      */
-    abstract validate(context: Context, invocation: MatchedInvocation): Promise<ValidationResult>;
+    readonly validate: CommandValidate<T>;
 
     /**
      * The code to execute when the command is called, and the invocation has been validated.
      */
-    abstract execute(context: Context, invocation: ValidatedInvocation): Promise<void>;
+    readonly execute: CommandExecute<T>;
+
+    constructor(args: CommandConstructorArgs<T>) {
+        this.config = args.config;
+        this.usage = args.usage;
+        this.patterns = args.patterns ?? [];
+        this.validate = args.validate;
+        this.execute = args.execute;
+    }
 }
