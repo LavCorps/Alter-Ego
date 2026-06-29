@@ -17,6 +17,7 @@ import Context from "./Context.ts";
 import { EntityToken, ItemContainerToken, PocketToken, PrepositionToken, type Token } from "./Token.ts";
 import type Puzzle from "../../Data/Puzzle.ts";
 import type Gesture from "../../Data/Gesture.ts";
+import type HidingSpot from "../../Data/HidingSpot.ts";
 
 /**
  * Represents the in-game context of a new-generation player command.
@@ -73,7 +74,19 @@ export default class PlayerContext extends Context {
     readonly room: Room;
 
     /**
+     * The fixture the player is currently hidden in, if applicable.
+     * If the player is not hidden in a hiding spot, this is `null`.
+     */
+    readonly hidingSpot: HidingSpot | null;
+
+    /**
      * The other players in the same room as the player.
+     * @privateRemarks
+     * If the player is in a hiding spot, this should only be the other players in the hiding spot.
+     * Some commands might not respect this though, so I wonder if maybe it would be best to have
+     * a separate field for hiding spot occupants and room occupants.
+     * Something to consider!
+     * - VM
      */
     readonly otherOccupants: Player[];
 
@@ -89,16 +102,27 @@ export default class PlayerContext extends Context {
 
     /**
      * The fixtures within the room.
+     * @privateRemarks
+     * If the player is in a hiding spot, this should only be the fixture associated with the hiding spot.
+     * - VM
      */
     readonly fixtures: Fixture[];
 
     /**
      * The puzzles within the room.
+     * @privateRemarks
+     * If the player is in a hiding spot, this should only be the child puzzle of the fixture associated with the hiding spot.
+     * I think, anyway. It might also be possible for it to be a puzzle with an identical name.
+     * - VM
      */
     readonly puzzles: Puzzle[];
 
     /**
      * The room items within the room.
+     * @privateRemarks
+     * If the player is in a hiding spot, this should only be the room items that are contained in the hiding spot, its child puzzle,
+     * or any room items contained in those recursively. It might be useful to create a `getTopContainer` method for room items.
+     * - VM
      */
     readonly roomItems: RoomItem[];
 
@@ -114,6 +138,14 @@ export default class PlayerContext extends Context {
      * @param message - The message that invoked the command.
      */
     constructor(game: Game, player: Player, invokedAlias: string, message: UserMessage) {
+        /**
+         * @privateRemarks
+         * It might be unnecessary to fill out the entire player context for every single command invocation, especially
+         * commands that don't even have any arguments. So, we might want to consider filling out the context based on
+         * the patterns in the command being invoked. If not, some other way of avoiding filling this out with unneeded data
+         * might help speed things up. This is mostly a concern for room items, since there can potentially be thousands of them.
+         * - VM
+         */
         super();
         this.invokedAlias = invokedAlias;
         this.message = message;
@@ -129,6 +161,7 @@ export default class PlayerContext extends Context {
         this.stashedItems = [];
         this.inventoryItems.forEach((item) => getChildItems(this.stashedItems, item));
         this.room = this.player.location;
+        this.hidingSpot = this.game.entityFinder.getFixture(this.player.hidingSpot, this.room.id)?.hidingSpot ?? null;
         this.otherOccupants = this.room.occupants.filter((roomPlayer) => roomPlayer !== this.player);
         this.exits = this.room.exits;
         this.adjacentRooms = this.exits.map((exit) => exit.dest);

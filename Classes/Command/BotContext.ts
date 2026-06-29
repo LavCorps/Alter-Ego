@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import Context from "./Context.ts"
+import type { Token } from "./Token.ts";
 
 /**
  * Represents the command context of a new-generation bot command.
@@ -18,7 +19,11 @@ export default class BotContext extends Context {
      * @param invoked - The alias the command was invoked with.
      */
     constructor(invoked: string) {
-        super()
+        super();
         this.invokedAlias = invoked;
+    }
+
+    getLexicon(): Token[] {
+        return [];
     }
 }

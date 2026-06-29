@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import Context from "./Context.ts";
+import type { Token } from "./Token.ts";
 
 /**
  * Represents the command context of a new-generation moderator command.
@@ -28,5 +29,9 @@ export default class ModeratorContext extends Context {
         super();
         this.invokedAlias = invoked;
         this.message = message;
+    }
+
+    getLexicon(): Token[] {
+        return [];
     }
 }
