@@ -282,6 +282,11 @@ export class Pattern implements PatternElement {
     readonly mandatory: boolean;
 
     /**
+     * The types of Game Entities contained within a pattern. Informs Contexts what must be gathered, to prevent gathering unnecessary context.
+     */
+    readonly types: Set<{ new (...args: any[]): GameEntity }>;
+
+    /**
      * @param grammar - The grammar of the pattern. This is an ordered array, containing pattern elements, as well as other patterns.
      * @param optional - Whether the fulfillment of this Pattern is optional or not. This is most useful for optional sub-patterns. Defaults to false.
      * @param mandatory - Whether the fulfillment of this Pattern is mandatory or not. This is most useful for optional sub-patterns that must be completely matched once partially matched. Defaults to false.
@@ -289,13 +294,19 @@ export class Pattern implements PatternElement {
     constructor(grammar: Array<PatternElement>, optional: boolean = false, mandatory: boolean = true) {
         this.grammar = grammar;
         this.optional = optional;
+        this.types = new Set();
         if (mandatory) this.mandatory = true;
-        else {
-            for (const element of grammar) {
-                if (element instanceof Pattern && element.mandatory) {
+        for (const element of grammar) {
+            if (element instanceof Slot)
+                this.types.add(element.type)
+            else if (element instanceof Multislot)
+                for (const slot of element.slots)
+                    this.types.add(slot.type)
+            else if (element instanceof Pattern) {
+                for (const ctor of element.types)
+                    this.types.add(ctor);
+                if (element.mandatory)
                     this.mandatory = true;
-                    break;
-                }
             }
         }
     }
