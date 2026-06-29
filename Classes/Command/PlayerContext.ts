@@ -198,6 +198,7 @@ export default class PlayerContext extends Context {
 
         for (const player of this.game.players.values()) {
             tokens.push(new EntityToken(player.displayName, player));
+            if (player.displayName !== player.name) tokens.push(new EntityToken(player.name, player));
         }
 
         for (const item of this.inventoryItems) {
