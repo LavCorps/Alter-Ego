@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2026 LavCorps <lavcorps@protonmail.com>
+// SPDX-FileCopyrightText: 2026 Ms. VBLANK <alteregomolly@pm.me>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -21,7 +22,7 @@ export default class TrieNode {
      * Store a Token within the TrieNode.
      * @param value - The Token to store within this TrieNode.
      */
-    imbue(value: Token): void {
+    storeToken(value: Token): void {
         this.value.push(value);
     }
 
@@ -29,7 +30,7 @@ export default class TrieNode {
      * Return a child TrieNode at the given string, creating one if necessary.
      * @param word - The string to use when looking up and optionally creating the TrieNode on this TrieNode.
      */
-    extend(word: string): TrieNode {
+    getOrCreateNode(word: string): TrieNode {
         if (!this.children.has(word)) {
             this.children.set(word, new TrieNode());
         }
