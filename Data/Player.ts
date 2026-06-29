@@ -713,38 +713,8 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
      * @returns The number of milliseconds it will take to move to the desired exit.
      */
     calculateMoveTime(exit: Exit, isRunning: boolean, customSpeed?: number): number {
-        let rate = this.calculateMoveRate(isRunning, customSpeed);
-        let distance = Math.sqrt(Math.pow(exit.pos.x - this.pos.x, 2) + Math.pow(exit.pos.z - this.pos.z, 2));
-        distance = distance / this.getGame().settings.pixelsPerMeter;
-        // Slope should affect the rate.
-        const rise = (exit.pos.y - this.pos.y) / this.getGame().settings.pixelsPerMeter;
-        let time = 0;
-        // If distance is 0, we'll treat it like a staircase and just use the rise to calculate the time.
-        if (distance === 0 && rise !== 0) {
-            const uphill = rise > 0;
-            // Assume that the staircase is a right triangle leading to another right triangle flipped horizontally.
-            const legs = rise / 2;
-            // Calculate the length of the hypotenuse of these right triangles.
-            distance = Math.sqrt(2 * Math.pow(legs, 2));
-            // The distance should be two hypotenuses.
-            distance = distance * 2;
-            // If the player is moving uphill, reduce their rate of movement by 1/3.
-            // Otherwise, increase it by 1/3;
-            rate = uphill ? 2 * rate / 3 : 4 * rate / 3;
-            // To make it feel a little more realistic, multiply it by 2.
-            time = distance / rate * 2 * 1000;
-        }
-        else {
-            const slope = rise / distance;
-            // Prevent division errors.
-            rate = !isNaN(slope) && slope * rate !== rate ? rate - slope * rate : rate;
-            time = distance / rate * 1000;
-        }
-        if (time < 0 || isNaN(time)) time = 0;
-        // Cap out the maximum length of time at 1 hour.
-        const maxLength = 60 * 60 * 1000;
-        if (time > maxLength) time = maxLength;
-        return time;
+        const rate = this.calculateMoveRate(isRunning, customSpeed);
+        return this.getGame().movementHandler.calculateMoveTime(rate, this, exit);
     }
 
     /**

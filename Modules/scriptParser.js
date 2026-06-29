@@ -94,6 +94,7 @@ export const SCRIPT_SCOPE_OPTIONS = {
         'errorMessageGenerator',
         'notificationGenerator',
         'narrationHandler',
+        'movementHandler',
         'loadedEntitiesWithErrors',
 		'messageQueue',
 		'dialogCache',

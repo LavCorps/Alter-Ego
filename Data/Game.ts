@@ -14,6 +14,7 @@ import GameErrorMessageGenerator from "../Classes/GameErrorMessageGenerator.ts";
 import GameLogHandler from "../Classes/GameLogHandler.ts";
 import GameNarrationHandler from "../Classes/GameNarrationHandler.ts";
 import GameNotificationGenerator from "../Classes/GameNotificationGenerator.ts";
+import GameMovementHandler from "../Classes/GameMovementHandler.ts";
 import type GameSettings from "../Classes/GameSettings.ts";
 import type GuildContext from "../Classes/GuildContext.ts";
 import PriorityQueue from "../Classes/PriorityQueue.ts";
@@ -88,6 +89,10 @@ export default class Game {
 	 * A set of functions to send narrations.
 	 */
 	readonly narrationHandler: GameNarrationHandler;
+    /**
+     * A set of functions to handle movement.
+     */
+    readonly movementHandler: GameMovementHandler;
 	/**
 	 * Whether or not the game is currently in progress.
 	 */
@@ -232,6 +237,7 @@ export default class Game {
         this.errorMessageGenerator = new GameErrorMessageGenerator(this);
 		this.notificationGenerator = new GameNotificationGenerator(this);
 		this.narrationHandler = new GameNarrationHandler(this);
+        this.movementHandler = new GameMovementHandler(this);
 		this.inProgress = false;
 		this.canJoin = false;
 		this.halfTimer = null;
