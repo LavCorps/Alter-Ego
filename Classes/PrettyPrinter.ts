@@ -635,12 +635,16 @@ export class CollectionPlugin implements AEPlugin<Collection<any, any>> {
 		return value instanceof Collection;
 	}
 
-    serialize(value: Collection<any, any>, config: AEConfig, indentation: string, depth: number, refs: Refs, printer: AEPrinter) {
-         // TODO: previous functionality was broken in vitest when printing collections. u_u
-        if (this.processing.has(value)) return `[Circular]`;
-        this.processing.add(value);
+	serialize(value: Collection<any, any>, config: AEConfig, indentation: string, depth: number, refs: Refs, printer: AEPrinter) {
+		if (this.processing.has(value)) return `[Circular]`;
+		this.processing.add(value);
+		let map = new Map();
+		for (const [key, val] of value) {
+			map.set(key, val);
+		}
+		let serialized = printer(map, config, indentation, depth, refs);
 		this.processing.delete(value);
-		return "Collection { }";
+		return serialized;
 	}
 }
 
