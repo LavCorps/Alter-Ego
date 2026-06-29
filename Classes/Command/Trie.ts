@@ -32,14 +32,14 @@ export default class Trie {
         let node = this.root;
 
         for (const word of words) {
-            node = node.extend(word);
+            node = node.getOrCreateNode(word);
         }
 
-        node.imbue(value);
+        node.storeToken(value);
     }
 
     /**
-     * 
+     *
      */
     tokenize(words: string[]): Token[][] {
         const input: Word[] = words.map((word) => {
