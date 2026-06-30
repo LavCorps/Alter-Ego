@@ -3,6 +3,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import type { Pattern } from "./Pattern.ts";
 import type { Token } from "./Token.ts";
 
 /**
@@ -16,6 +17,7 @@ export default abstract class Context {
 
     /**
      * Gather the lexicon for tokenizing from a given context.
+     * @param patterns - The command patterns to use for determining which tokens to gather.
      */
-    abstract getLexicon(): Token[];
+    abstract getLexicon(patterns: Pattern[]): Token[];
 }

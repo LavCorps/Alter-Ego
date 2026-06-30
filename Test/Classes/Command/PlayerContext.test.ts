@@ -3,13 +3,19 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import { Multislot, Pattern, Slot } from "../../../Classes/Command/Pattern.ts";
 import PlayerContext from "../../../Classes/Command/PlayerContext.ts";
 import { ItemContainerToken, PrepositionToken } from "../../../Classes/Command/Token.ts";
 import Trie from "../../../Classes/Command/Trie.ts";
 import PrettyPrinter from "../../../Classes/PrettyPrinter.ts";
-import type Fixture from "../../../Data/Fixture.ts";
-import type InventoryItem from "../../../Data/InventoryItem.ts";
-import type Player from "../../../Data/Player.ts";
+import Exit from "../../../Data/Exit.ts";
+import Fixture from "../../../Data/Fixture.ts";
+import Gesture from "../../../Data/Gesture.ts";
+import InventoryItem from "../../../Data/InventoryItem.ts";
+import Player from "../../../Data/Player.ts";
+import Puzzle from "../../../Data/Puzzle.ts";
+import Room from "../../../Data/Room.ts";
+import RoomItem from "../../../Data/RoomItem.ts";
 import { clearQueue } from "../../../Modules/messageHandler.js";
 import { createMockMessage } from "../../__mocks__/libs/discord.js";
 
@@ -64,21 +70,44 @@ describe("PlayerContext class from NG Commands", () => {
             const start = process.hrtime.bigint();
             const trie = new Trie();
             const trieInitConclude = process.hrtime.bigint();
-            const context = new PlayerContext(game, kyra, "test", createMockMessage());
+            const message = createMockMessage();
+            const mockInitConclude = process.hrtime.bigint();
+            const context = new PlayerContext(game, kyra, "test", message);
             const contextInitConclude = process.hrtime.bigint();
-            const tokens = context.getLexicon();
+            const patterns = [
+                new Pattern([
+                    new Multislot(
+                        [
+                            new Slot(Player, "player"),
+                            new Slot(InventoryItem, "inventory item"),
+                            new Slot(RoomItem, "room item"),
+                            new Slot(Fixture, "fixture"),
+                            new Slot(Puzzle, "puzzle"),
+                            new Slot(Room, "room"),
+                            new Slot(Exit, "exit"),
+                            new Slot(Gesture, "gesture"),
+                        ],
+                        "multislot",
+                    ),
+                ]),
+            ];
+            const patternInitConclude = process.hrtime.bigint();
+            const tokens = context.getLexicon(patterns);
             const getLexiconConclude = process.hrtime.bigint();
             for (const token of tokens) {
                 trie.insert(token.value, token);
             }
             const trieLoadConclude = process.hrtime.bigint();
             console.log(`full trie load from context took ${Number(trieLoadConclude - start) / 1000000}ms`);
+            console.log(`  (excluding mock init: ${Number((trieLoadConclude - start) - (mockInitConclude - trieInitConclude)) / 1000000}ms)`);
             console.log(`  trie init took ${Number(trieInitConclude - start) / 1000000}ms`);
-            console.log(`  context init took ${Number(contextInitConclude - trieInitConclude) / 1000000}ms`);
-            console.log(`  lexicon building took ${Number(getLexiconConclude - contextInitConclude) / 1000000}ms`);
+            console.log(`  mock message init took ${Number(mockInitConclude - trieInitConclude) / 1000000}ms`);
+            console.log(`  context init took ${Number(contextInitConclude - mockInitConclude) / 1000000}ms`);
+            console.log(`  pattern building took ${Number(patternInitConclude - contextInitConclude) / 1000000}ms`);
+            console.log(`  lexicon building took ${Number(getLexiconConclude - patternInitConclude) / 1000000}ms`);
             console.log(`  trie loading took ${Number(trieLoadConclude - getLexiconConclude) / 1000000}ms`);
             console.log(`final trie size is ${trie.size()}`);
-            console.log(printer.prettyString(trie));
+            // console.log(printer.prettyString(trie));
         });
     });
 
@@ -87,7 +116,14 @@ describe("PlayerContext class from NG Commands", () => {
             const trie = new Trie();
             {
                 const context = new PlayerContext(game, kyra, "test", createMockMessage());
-                const tokens = context.getLexicon();
+                const tokens = context.getLexicon([
+                    new Pattern([
+                        new Multislot(
+                            [new Slot(InventoryItem, "inventory item"), new Slot(Fixture, "fixture")],
+                            "multislot",
+                        ),
+                    ]),
+                ]);
                 for (const token of tokens) {
                     trie.insert(token.value, token);
                 }

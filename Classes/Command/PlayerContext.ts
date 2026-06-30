@@ -4,20 +4,22 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { getChildItems } from "../../Modules/itemManager.ts";
-import type { Collection } from "discord.js";
-import type Exit from "../../Data/Exit.ts";
-import type Fixture from "../../Data/Fixture.ts";
-import type InventoryItem from "../../Data/InventoryItem.ts";
-import type Player from "../../Data/Player.ts";
-import type Room from "../../Data/Room.ts";
-import type RoomItem from "../../Data/RoomItem.ts";
+import { Collection } from "discord.js";
+import Exit from "../../Data/Exit.ts";
+import Fixture from "../../Data/Fixture.ts";
+import InventoryItem from "../../Data/InventoryItem.ts";
+import Player from "../../Data/Player.ts";
+import Room from "../../Data/Room.ts";
+import RoomItem from "../../Data/RoomItem.ts";
 import type Game from "../../Data/Game.ts";
 import type EquipmentSlot from "../../Data/EquipmentSlot.ts";
 import Context from "./Context.ts";
 import { EntityToken, ItemContainerToken, PocketToken, PrepositionToken, type Token } from "./Token.ts";
-import type Puzzle from "../../Data/Puzzle.ts";
-import type Gesture from "../../Data/Gesture.ts";
+import Puzzle from "../../Data/Puzzle.ts";
+import Gesture from "../../Data/Gesture.ts";
 import type HidingSpot from "../../Data/HidingSpot.ts";
+import type { Pattern } from "./Pattern.ts";
+import type GameEntity from "../../Data/GameEntity.ts";
 
 /**
  * Represents the in-game context of a new-generation player command.
@@ -45,91 +47,118 @@ export default class PlayerContext extends Context {
 
     /**
      * The equipment slots of the player.
+     * May be undefined. Consumers should use the corresponding get method.
      */
-    readonly equipmentSlots: Collection<string, EquipmentSlot>;
+    #equipmentSlots: Collection<string, EquipmentSlot> | undefined;
 
     /**
      * The inventory items held, equipped, or stashed by the player.
+     * May be undefined. Consumers should use the corresponding get method.
      */
-    readonly inventoryItems: InventoryItem[];
+    #inventoryItems: InventoryItem[] | undefined;
+
+    /**
+     * The hands of the player.
+     * May be undefined. Consumers should use the corresponding private get method.
+     */
+    #hands: EquipmentSlot[] | undefined;
+
+    /**
+     * The IDs of the hands of the player.
+     * May be undefined. Consumers should use the corresponding private get method.
+     */
+    #handIDs: Set<string> | undefined;
+
+    /**
+     * Equipment slots of the player that are not their hands.
+     * May be undefined. Consumers should use the corresponding private get method.
+     */
+    #notHands: Collection<string, EquipmentSlot> | undefined;
 
     /**
      * The inventory items held by the player.
+     * May be undefined. Consumers should use the corresponding get method.
      */
-    readonly heldItems: InventoryItem[];
+    #heldItems: InventoryItem[] | undefined;
 
     /**
      * The inventory items equipped by the player.
+     * May be undefined. Consumers should use the corresponding get method.
      */
-    readonly equippedItems: InventoryItem[];
+    #equippedItems: InventoryItem[] | undefined;
 
     /**
      * The inventory items stashed by the player.
+     * May be undefined. Consumers should use the corresponding get method.
      */
-    readonly stashedItems: InventoryItem[];
+    #stashedItems: InventoryItem[] | undefined;
 
     /**
      * The room the player occupies.
      */
-    readonly room: Room;
+    room: Room;
 
     /**
      * The fixture the player is currently hidden in, if applicable.
      * If the player is not hidden in a hiding spot, this is `null`.
+     * May be undefined. Consumers should use the corresponding get method.
      */
-    readonly hidingSpot: HidingSpot | null;
+    #hidingSpot: HidingSpot | null | undefined;
 
     /**
      * The other players in the same room as the player.
-     * @privateRemarks
-     * If the player is in a hiding spot, this should only be the other players in the hiding spot.
-     * Some commands might not respect this though, so I wonder if maybe it would be best to have
-     * a separate field for hiding spot occupants and room occupants.
-     * Something to consider!
-     * - VM
+     * May be undefined. Consumers should use the corresponding get method.
      */
-    readonly otherOccupants: Player[];
+    #roomOccupants: Player[] | undefined;
+
+    /**
+     * The other players in the same hiding spot as the player.
+     * May be undefined. Consumers should use the corresponding get method.
+     */
+    #spotOccupants: Player[] | undefined;
 
     /**
      * The exits within the room.
      */
-    readonly exits: Collection<string, Exit>;
+    exits: Collection<string, Exit>;
 
     /**
      * The rooms adjacent to the player's location.
+     * May be undefined. Consumers should use the corresponding get method.
      */
-    readonly adjacentRooms: Room[];
+    #adjacentRooms: Room[] | undefined;
 
     /**
      * The fixtures within the room.
-     * @privateRemarks
-     * If the player is in a hiding spot, this should only be the fixture associated with the hiding spot.
-     * - VM
+     * If the player is in a hiding spot, this will only be the fixture associated with the hiding spot.
+     * May be undefined. Consumers should use the corresponding get method.
      */
-    readonly fixtures: Fixture[];
+    #fixtures: Fixture[] | undefined;
 
     /**
      * The puzzles within the room.
+     * May be undefined. Consumers should use the corresponding get method.
      * @privateRemarks
      * If the player is in a hiding spot, this should only be the child puzzle of the fixture associated with the hiding spot.
      * I think, anyway. It might also be possible for it to be a puzzle with an identical name.
      * - VM
      */
-    readonly puzzles: Puzzle[];
+    #puzzles: Puzzle[] | undefined;
 
     /**
      * The room items within the room.
+     * May be undefined. Consumers should use the corresponding get method.
      * @privateRemarks
      * If the player is in a hiding spot, this should only be the room items that are contained in the hiding spot, its child puzzle,
      * or any room items contained in those recursively. It might be useful to create a `getTopContainer` method for room items.
      * - VM
      */
-    readonly roomItems: RoomItem[];
+    #roomItems: RoomItem[] | undefined;
 
     /**
      * The gestures of the game.
      */
-    readonly gestures: Collection<string, Gesture>;
+    gestures: Collection<string, Gesture>;
 
     /**
      * @param game - The game to construct the context within.
@@ -151,20 +180,8 @@ export default class PlayerContext extends Context {
         this.message = message;
         this.game = game;
         this.player = player;
-        this.equipmentSlots = this.player.inventory;
-        this.inventoryItems = this.player.getContainedItems().filter((item) => item !== null);
-        const hands = this.game.entityFinder.getPlayerHands(this.player);
-        const handIDs = new Set(hands.map((hand) => hand.id));
-        const notHands = this.player.inventory.filter((slot) => !handIDs.has(slot.id));
-        this.heldItems = hands.map((slot) => slot.equippedItem).filter((item) => item !== null);
-        this.equippedItems = notHands.map((slot) => slot.equippedItem).filter((item) => item !== null);
-        this.stashedItems = [];
-        this.inventoryItems.forEach((item) => getChildItems(this.stashedItems, item));
         this.room = this.player.location;
-        this.hidingSpot = this.game.entityFinder.getFixture(this.player.hidingSpot, this.room.id)?.hidingSpot ?? null;
-        this.otherOccupants = this.room.occupants.filter((roomPlayer) => roomPlayer !== this.player);
         this.exits = this.room.exits;
-        this.adjacentRooms = this.exits.map((exit) => exit.dest);
         /**
          * @privateRemarks
          * It is actually intentional that players can attempt Puzzles that are not currently accessible.
@@ -184,30 +201,207 @@ export default class PlayerContext extends Context {
          * time a puzzle is solved. This would be a good time to make such a change.
          * - DM
          */
-        this.fixtures = this.game.entityFinder
-            .getFixtures(undefined, this.room.id)
-            .filter((fixture) => fixture.accessible);
-        this.puzzles = this.game.entityFinder.getPuzzles(undefined, this.room.id);
-        this.roomItems = this.room.getContainedItems().filter((item) => item.accessible);
         this.gestures = this.game.gestures;
     }
 
-    getLexicon(): Token[] {
+    /**
+     * The equipment slots of the player.
+     */
+    get equipmentSlots(): Collection<string, EquipmentSlot> {
+        if (!this.#equipmentSlots)
+            this.#equipmentSlots = this.player.inventory;
+        return this.#equipmentSlots;
+    }
+
+    /**
+     * The inventory items held, equipped, or stashed by the player.
+     */
+    get inventoryItems(): InventoryItem[] {
+        if (!this.#inventoryItems)
+            this.#inventoryItems = this.player.getContainedItems().filter((item) => item !== null);
+        return this.#inventoryItems;
+    }
+
+    /**
+     * The hands of the player.
+     */
+    private get hands(): EquipmentSlot[] {
+        if (!this.#hands)
+            this.#hands = this.game.entityFinder.getPlayerHands(this.player);
+        return this.#hands;
+    }
+
+    /**
+     * The IDs of the hands of the player.
+     */
+    private get handIDs(): Set<string> {
+        if (!this.#handIDs)
+            this.#handIDs = new Set(this.hands.map((hand) => hand.id));
+        return this.#handIDs;
+    }
+
+    /**
+     * Equipment slots of the player that are not their hands.
+     */
+    private get notHands(): Collection<string, EquipmentSlot> {
+        if (!this.#notHands)
+            this.#notHands = this.player.inventory.filter((slot) => !this.handIDs.has(slot.id));
+        return this.#notHands;
+    }
+
+    /**
+     * The inventory items held by the player.
+     */
+    get heldItems(): InventoryItem[] {
+        if (!this.#heldItems)
+            this.#heldItems = this.hands.map((slot) => slot.equippedItem).filter((item) => item !== null);
+        return this.#heldItems;
+    }
+
+    /**
+     * The inventory items equipped by the player.
+     */
+    get equippedItems(): InventoryItem[] {
+        if (!this.#equippedItems)
+            this.#equippedItems = this.notHands.map((slot) => slot.equippedItem).filter((item) => item !== null);
+        return this.#equippedItems;
+    }
+
+    /**
+     * The inventory items stashed by the player.
+     */
+    get stashedItems(): InventoryItem[] {
+        if (!this.#stashedItems) {
+            this.#stashedItems = [];
+            this.inventoryItems.forEach((item) => getChildItems(this.#stashedItems, item))
+        }
+        return this.#stashedItems;
+    }
+
+    /**
+     * The fixture the player is currently hidden in, if applicable.
+     * If the player is not hidden in a hiding spot, this is `null`.
+     */
+    get hidingSpot(): HidingSpot | null {
+        if (this.#hidingSpot === undefined)
+            this.#hidingSpot = this.game.entityFinder.getFixture(this.player.hidingSpot, this.room.id)?.hidingSpot ?? null;
+        return this.#hidingSpot;
+    }
+
+    /**
+     * The other players in the same room as the player.
+     */
+    get roomOccupants(): Player[] {
+        if (!this.#roomOccupants)
+            this.#roomOccupants = this.room.occupants.filter((roomPlayer) => roomPlayer !== this.player);
+        return this.#roomOccupants;
+    }
+
+    /**
+     * The other players in the same hiding spot as the player.
+     * Will be empty if the player is in a hiding spot alone, or not in a hiding spot.
+     */
+    get spotOccupants(): Player[] {
+        if (!this.hidingSpot)
+            return [];
+        if (!this.#spotOccupants)
+            this.#spotOccupants = this.room.occupants.filter((roomPlayer) => roomPlayer.hidingSpot === this.player.hidingSpot && roomPlayer !== this.player);
+        return this.#spotOccupants;
+    }
+
+    /**
+     * The rooms adjacent to the player's location.
+     */
+    get adjacentRooms(): Room[] {
+        if (!this.#adjacentRooms)
+            this.#adjacentRooms = this.exits.map((exit) => exit.dest);
+        return this.#adjacentRooms;
+    }
+
+    /**
+     * The fixtures within the room.
+     * If the player is in a hiding spot, this will only be the fixture associated with the hiding spot.
+     */
+    get fixtures(): Fixture[] {
+        if (!this.#fixtures) {
+            if (this.hidingSpot)
+                this.#fixtures = [this.hidingSpot.getFixture()];
+            else
+                this.#fixtures = game.entityFinder.getFixtures(undefined, this.room.id).filter((fixture) => fixture.accessible);
+        }
+        return this.#fixtures;
+    }
+
+    /**
+     * The puzzles within the room.
+     */
+    get puzzles(): Puzzle[] {
+        // TODO: "I think, anyway"...?
+        // investigate what she meant by this, and implement puzzle lookup accordingly...
+        if (!this.#puzzles)
+            this.#puzzles = this.game.entityFinder.getPuzzles(undefined, this.room.id);
+        return this.#puzzles;
+    }
+
+    /**
+     * The room items within the room.
+     */
+    get roomItems(): RoomItem[] {
+        // TODO: this is subject to similar uncertainty as 
+        if (!this.#roomItems)
+            this.#roomItems = this.room.getContainedItems().filter((item) => item.accessible);
+        return this.#roomItems;
+    }
+
+    getLexicon(patterns: Pattern[]): Token[] {
         const prepositions: Set<string> = new Set();
         const tokens: Token[] = [];
+        const types = patterns.reduce((acc, pattern) => acc.union(pattern.types), new Set<{ new(...args: any[]): GameEntity }>());
 
-        for (const player of this.game.players.values()) {
-            tokens.push(new EntityToken(player.displayName, player));
-            if (player.displayName !== player.name) tokens.push(new EntityToken(player.name, player));
+        if (types.has(Player)) {
+            for (const player of this.game.players.values()) {
+                tokens.push(new EntityToken(player.displayName, player));
+                if (player.displayName !== player.name) tokens.push(new EntityToken(player.name, player));
+            }
         }
 
-        for (const item of this.inventoryItems) {
-            if (item.prefab !== null && item.quantity > 0) {
-                const preposition = item.getPreposition();
-                tokens.push(new ItemContainerToken(item.name, item));
-                for (const [key, val] of item.inventory)
-                    tokens.push(new PocketToken(key, val, item));
-                if (item.pluralName !== "") tokens.push(new ItemContainerToken(item.pluralName, item));
+        if (types.has(InventoryItem)) {
+            for (const item of this.inventoryItems) {
+                if (item.prefab !== null && item.quantity > 0) {
+                    const preposition = item.getPreposition();
+                    tokens.push(new ItemContainerToken(item.name, item));
+                    for (const [key, val] of item.inventory)
+                        tokens.push(new PocketToken(key, val, item));
+                    if (item.pluralName !== "") tokens.push(new ItemContainerToken(item.pluralName, item));
+                    if (!prepositions.has(preposition) && preposition !== "") {
+                        prepositions.add(preposition);
+                        tokens.push(new PrepositionToken(preposition));
+                    }
+                }
+            }
+        }
+
+        if (types.has(RoomItem)) {
+            for (const item of this.roomItems) {
+                if (item.prefab !== null && item.quantity > 0) {
+                    const preposition = item.getPreposition();
+                    tokens.push(new ItemContainerToken(item.name, item));
+                    for (const [key, val] of item.inventory) {
+                        tokens.push(new PocketToken(key, val, item));
+                    }
+                    if (item.pluralName !== "") tokens.push(new ItemContainerToken(item.pluralName, item));
+                    if (!prepositions.has(preposition) && preposition !== "") {
+                        prepositions.add(preposition);
+                        tokens.push(new PrepositionToken(preposition));
+                    }
+                }
+            }
+        }
+
+        if (types.has(Fixture)) {
+            for (const fixture of this.fixtures) {
+                const preposition = fixture.getPreposition();
+                tokens.push(new ItemContainerToken(fixture.name, fixture));
                 if (!prepositions.has(preposition) && preposition !== "") {
                     prepositions.add(preposition);
                     tokens.push(new PrepositionToken(preposition));
@@ -215,14 +409,10 @@ export default class PlayerContext extends Context {
             }
         }
 
-        for (const item of this.roomItems) {
-            if (item.prefab !== null && item.quantity > 0) {
-                const preposition = item.getPreposition();
-                tokens.push(new ItemContainerToken(item.name, item));
-                for (const [key, val] of item.inventory) {
-                    tokens.push(new PocketToken(key, val, item));
-                }
-                if (item.pluralName !== "") tokens.push(new ItemContainerToken(item.pluralName, item));
+        if (types.has(Puzzle)) {
+            for (const puzzle of this.puzzles) {
+                const preposition = puzzle.getPreposition();
+                tokens.push(new ItemContainerToken(puzzle.name, puzzle));
                 if (!prepositions.has(preposition) && preposition !== "") {
                     prepositions.add(preposition);
                     tokens.push(new PrepositionToken(preposition));
@@ -230,34 +420,22 @@ export default class PlayerContext extends Context {
             }
         }
 
-        for (const fixture of this.fixtures) {
-            const preposition = fixture.getPreposition();
-            tokens.push(new ItemContainerToken(fixture.name, fixture));
-            if (!prepositions.has(preposition) && preposition !== "") {
-                prepositions.add(preposition);
-                tokens.push(new PrepositionToken(preposition));
+        if (types.has(Room)) {
+            for (const room of this.adjacentRooms) {
+                tokens.push(new EntityToken(room.id, room));
             }
         }
 
-        for (const puzzle of this.puzzles) {
-            const preposition = puzzle.getPreposition();
-            tokens.push(new ItemContainerToken(puzzle.name, puzzle));
-            if (!prepositions.has(preposition) && preposition !== "") {
-                prepositions.add(preposition);
-                tokens.push(new PrepositionToken(preposition));
+        if (types.has(Exit)) {
+            for (const exit of this.exits.values()) {
+                tokens.push(new EntityToken(exit.name, exit));
             }
         }
 
-        for (const room of this.adjacentRooms) {
-            tokens.push(new EntityToken(room.id, room));
-        }
-
-        for (const exit of this.exits.values()) {
-            tokens.push(new EntityToken(exit.name, exit));
-        }
-
-        for (const gesture of this.gestures.values()) {
-            tokens.push(new EntityToken(gesture.id, gesture));
+        if (types.has(Gesture)) {
+            for (const gesture of this.gestures.values()) {
+                tokens.push(new EntityToken(gesture.id, gesture));
+            }
         }
 
         return tokens;

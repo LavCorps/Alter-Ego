@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import Context from "./Context.ts";
+import type { Pattern } from "./Pattern.ts";
 import type { Token } from "./Token.ts";
 
 /**
@@ -31,7 +32,7 @@ export default class ModeratorContext extends Context {
         this.message = message;
     }
 
-    getLexicon(): Token[] {
+    getLexicon(patterns: Pattern[]): Token[] {
         return [];
     }
 }

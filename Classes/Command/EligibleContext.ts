@@ -6,6 +6,7 @@
 import type { User as DiscordUser } from "discord.js";
 import Context from "./Context.ts";
 import type { Token } from "./Token.ts";
+import type { Pattern } from "./Pattern.ts";
 
 /**
  * Represents the command context of a new-generation eligible command.
@@ -38,7 +39,7 @@ export default class EligibleContext extends Context {
         this.author = this.message.author;
     }
 
-    getLexicon(): Token[] {
+    getLexicon(patterns: Pattern[]): Token[] {
         return [];
     }
 }

@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import Context from "./Context.ts"
+import type { Pattern } from "./Pattern.ts";
 import type { Token } from "./Token.ts";
 
 /**
@@ -23,7 +24,7 @@ export default class BotContext extends Context {
         this.invokedAlias = invoked;
     }
 
-    getLexicon(): Token[] {
+    getLexicon(patterns: Pattern[]): Token[] {
         return [];
     }
 }
