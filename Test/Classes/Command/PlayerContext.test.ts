@@ -7,7 +7,6 @@ import { Multislot, Pattern, Slot } from "../../../Classes/Command/Pattern.ts";
 import PlayerContext from "../../../Classes/Command/PlayerContext.ts";
 import { ItemContainerToken, PrepositionToken } from "../../../Classes/Command/Token.ts";
 import Trie from "../../../Classes/Command/Trie.ts";
-import PrettyPrinter from "../../../Classes/PrettyPrinter.ts";
 import Exit from "../../../Data/Exit.ts";
 import Fixture from "../../../Data/Fixture.ts";
 import Gesture from "../../../Data/Gesture.ts";
@@ -18,6 +17,14 @@ import Room from "../../../Data/Room.ts";
 import RoomItem from "../../../Data/RoomItem.ts";
 import { clearQueue } from "../../../Modules/messageHandler.js";
 import { createMockMessage } from "../../__mocks__/libs/discord.js";
+
+/**
+ * @privateRemarks
+ * this is a little strange, but switching this to TRUE will print out some benchmarking times for GetLexicon() tests...
+ * any suggestions for doing this in a less terrible way would be appreciated!
+ * - AC
+ */
+const DEBUG = false;
 
 describe("PlayerContext class from NG Commands", () => {
     beforeAll(async () => {
@@ -34,8 +41,6 @@ describe("PlayerContext class from NG Commands", () => {
     });
 
     let kyra: Player;
-
-    const printer = new PrettyPrinter();
 
     describe("constructor()", () => {
         test("verify that stashedItems does not include top-level items", async () => {
@@ -66,7 +71,7 @@ describe("PlayerContext class from NG Commands", () => {
     });
 
     describe("getLexicon()", () => {
-        test("feed Kyra Context to Trie", async () => {
+        test("feed Kyra Context [Player,InventoryItem,RoomItem,Fixture,Puzzle,Room,Exit,Gesture] to Trie", async () => {
             const start = process.hrtime.bigint();
             const trie = new Trie();
             const trieInitConclude = process.hrtime.bigint();
@@ -98,16 +103,370 @@ describe("PlayerContext class from NG Commands", () => {
                 trie.insert(token.value, token);
             }
             const trieLoadConclude = process.hrtime.bigint();
-            console.log(`full trie load from context took ${Number(trieLoadConclude - start) / 1000000}ms`);
-            console.log(`  (excluding mock init: ${Number((trieLoadConclude - start) - (mockInitConclude - trieInitConclude)) / 1000000}ms)`);
-            console.log(`  trie init took ${Number(trieInitConclude - start) / 1000000}ms`);
-            console.log(`  mock message init took ${Number(mockInitConclude - trieInitConclude) / 1000000}ms`);
-            console.log(`  context init took ${Number(contextInitConclude - mockInitConclude) / 1000000}ms`);
-            console.log(`  pattern building took ${Number(patternInitConclude - contextInitConclude) / 1000000}ms`);
-            console.log(`  lexicon building took ${Number(getLexiconConclude - patternInitConclude) / 1000000}ms`);
-            console.log(`  trie loading took ${Number(trieLoadConclude - getLexiconConclude) / 1000000}ms`);
-            console.log(`final trie size is ${trie.size()}`);
-            // console.log(printer.prettyString(trie));
+            if (DEBUG) {
+                console.log(`full trie load from context took ${Number(trieLoadConclude - start) / 1000000}ms`);
+                console.log(`  (excluding mock init: ${Number((trieLoadConclude - start) - (mockInitConclude - trieInitConclude)) / 1000000}ms)`);
+                console.log(`  trie init took ${Number(trieInitConclude - start) / 1000000}ms`);
+                console.log(`  mock message init took ${Number(mockInitConclude - trieInitConclude) / 1000000}ms`);
+                console.log(`  context init took ${Number(contextInitConclude - mockInitConclude) / 1000000}ms`);
+                console.log(`  pattern building took ${Number(patternInitConclude - contextInitConclude) / 1000000}ms`);
+                console.log(`  lexicon building took ${Number(getLexiconConclude - patternInitConclude) / 1000000}ms`);
+                console.log(`  trie loading took ${Number(trieLoadConclude - getLexiconConclude) / 1000000}ms`);
+                console.log(`final trie size is ${trie.size()}`);
+                console.log(game.clientContext.prettyPrinter.prettyString(trie));
+            }
+            expect(trie.size()).toBe(304);
+        });
+
+        test("feed Kyra Context [Player] to Trie", async () => {
+            const start = process.hrtime.bigint();
+            const trie = new Trie();
+            const trieInitConclude = process.hrtime.bigint();
+            const message = createMockMessage();
+            const mockInitConclude = process.hrtime.bigint();
+            const context = new PlayerContext(game, kyra, "test", message);
+            const contextInitConclude = process.hrtime.bigint();
+            const patterns = [
+                new Pattern([
+                    new Multislot(
+                        [
+                            new Slot(Player, "player"),
+                        ],
+                        "multislot",
+                    ),
+                ]),
+            ];
+            const patternInitConclude = process.hrtime.bigint();
+            const tokens = context.getLexicon(patterns);
+            const getLexiconConclude = process.hrtime.bigint();
+            for (const token of tokens) {
+                trie.insert(token.value, token);
+            }
+            const trieLoadConclude = process.hrtime.bigint();
+            if (DEBUG) {
+                console.log(`full trie load from context took ${Number(trieLoadConclude - start) / 1000000}ms`);
+                console.log(`  (excluding mock init: ${Number((trieLoadConclude - start) - (mockInitConclude - trieInitConclude)) / 1000000}ms)`);
+                console.log(`  trie init took ${Number(trieInitConclude - start) / 1000000}ms`);
+                console.log(`  mock message init took ${Number(mockInitConclude - trieInitConclude) / 1000000}ms`);
+                console.log(`  context init took ${Number(contextInitConclude - mockInitConclude) / 1000000}ms`);
+                console.log(`  pattern building took ${Number(patternInitConclude - contextInitConclude) / 1000000}ms`);
+                console.log(`  lexicon building took ${Number(getLexiconConclude - patternInitConclude) / 1000000}ms`);
+                console.log(`  trie loading took ${Number(trieLoadConclude - getLexiconConclude) / 1000000}ms`);
+                console.log(`final trie size is ${trie.size()}`);
+                console.log(game.clientContext.prettyPrinter.prettyString(trie));
+            }
+            expect(trie.size()).toBe(12);
+        });
+
+        test("feed Kyra Context [InventoryItem] to Trie", async () => {
+            const start = process.hrtime.bigint();
+            const trie = new Trie();
+            const trieInitConclude = process.hrtime.bigint();
+            const message = createMockMessage();
+            const mockInitConclude = process.hrtime.bigint();
+            const context = new PlayerContext(game, kyra, "test", message);
+            const contextInitConclude = process.hrtime.bigint();
+            const patterns = [
+                new Pattern([
+                    new Multislot(
+                        [
+                            new Slot(InventoryItem, "inventory item"),
+                        ],
+                        "multislot",
+                    ),
+                ]),
+            ];
+            const patternInitConclude = process.hrtime.bigint();
+            const tokens = context.getLexicon(patterns);
+            const getLexiconConclude = process.hrtime.bigint();
+            for (const token of tokens) {
+                trie.insert(token.value, token);
+            }
+            const trieLoadConclude = process.hrtime.bigint();
+            if (DEBUG) {
+                console.log(`full trie load from context took ${Number(trieLoadConclude - start) / 1000000}ms`);
+                console.log(`  (excluding mock init: ${Number((trieLoadConclude - start) - (mockInitConclude - trieInitConclude)) / 1000000}ms)`);
+                console.log(`  trie init took ${Number(trieInitConclude - start) / 1000000}ms`);
+                console.log(`  mock message init took ${Number(mockInitConclude - trieInitConclude) / 1000000}ms`);
+                console.log(`  context init took ${Number(contextInitConclude - mockInitConclude) / 1000000}ms`);
+                console.log(`  pattern building took ${Number(patternInitConclude - contextInitConclude) / 1000000}ms`);
+                console.log(`  lexicon building took ${Number(getLexiconConclude - patternInitConclude) / 1000000}ms`);
+                console.log(`  trie loading took ${Number(trieLoadConclude - getLexiconConclude) / 1000000}ms`);
+                console.log(`final trie size is ${trie.size()}`);
+                console.log(game.clientContext.prettyPrinter.prettyString(trie));
+            }
+            expect(trie.size()).toBe(27);
+        });
+
+        test("feed Kyra Context [RoomItem] to Trie", async () => {
+            const start = process.hrtime.bigint();
+            const trie = new Trie();
+            const trieInitConclude = process.hrtime.bigint();
+            const message = createMockMessage();
+            const mockInitConclude = process.hrtime.bigint();
+            const context = new PlayerContext(game, kyra, "test", message);
+            const contextInitConclude = process.hrtime.bigint();
+            const patterns = [
+                new Pattern([
+                    new Multislot(
+                        [
+                            new Slot(RoomItem, "room item"),
+                        ],
+                        "multislot",
+                    ),
+                ]),
+            ];
+            const patternInitConclude = process.hrtime.bigint();
+            const tokens = context.getLexicon(patterns);
+            const getLexiconConclude = process.hrtime.bigint();
+            for (const token of tokens) {
+                trie.insert(token.value, token);
+            }
+            const trieLoadConclude = process.hrtime.bigint();
+            if (DEBUG) {
+                console.log(`full trie load from context took ${Number(trieLoadConclude - start) / 1000000}ms`);
+                console.log(`  (excluding mock init: ${Number((trieLoadConclude - start) - (mockInitConclude - trieInitConclude)) / 1000000}ms)`);
+                console.log(`  trie init took ${Number(trieInitConclude - start) / 1000000}ms`);
+                console.log(`  mock message init took ${Number(mockInitConclude - trieInitConclude) / 1000000}ms`);
+                console.log(`  context init took ${Number(contextInitConclude - mockInitConclude) / 1000000}ms`);
+                console.log(`  pattern building took ${Number(patternInitConclude - contextInitConclude) / 1000000}ms`);
+                console.log(`  lexicon building took ${Number(getLexiconConclude - patternInitConclude) / 1000000}ms`);
+                console.log(`  trie loading took ${Number(trieLoadConclude - getLexiconConclude) / 1000000}ms`);
+                console.log(`final trie size is ${trie.size()}`);
+                console.log(game.clientContext.prettyPrinter.prettyString(trie));
+            }
+            expect(trie.size()).toBe(41);
+        });
+
+        test("feed Kyra Context [Fixture] to Trie", async () => {
+            const start = process.hrtime.bigint();
+            const trie = new Trie();
+            const trieInitConclude = process.hrtime.bigint();
+            const message = createMockMessage();
+            const mockInitConclude = process.hrtime.bigint();
+            const context = new PlayerContext(game, kyra, "test", message);
+            const contextInitConclude = process.hrtime.bigint();
+            const patterns = [
+                new Pattern([
+                    new Multislot(
+                        [
+                            new Slot(Fixture, "fixture"),
+                        ],
+                        "multislot",
+                    ),
+                ]),
+            ];
+            const patternInitConclude = process.hrtime.bigint();
+            const tokens = context.getLexicon(patterns);
+            const getLexiconConclude = process.hrtime.bigint();
+            for (const token of tokens) {
+                trie.insert(token.value, token);
+            }
+            const trieLoadConclude = process.hrtime.bigint();
+            if (DEBUG) {
+                console.log(`full trie load from context took ${Number(trieLoadConclude - start) / 1000000}ms`);
+                console.log(`  (excluding mock init: ${Number((trieLoadConclude - start) - (mockInitConclude - trieInitConclude)) / 1000000}ms)`);
+                console.log(`  trie init took ${Number(trieInitConclude - start) / 1000000}ms`);
+                console.log(`  mock message init took ${Number(mockInitConclude - trieInitConclude) / 1000000}ms`);
+                console.log(`  context init took ${Number(contextInitConclude - mockInitConclude) / 1000000}ms`);
+                console.log(`  pattern building took ${Number(patternInitConclude - contextInitConclude) / 1000000}ms`);
+                console.log(`  lexicon building took ${Number(getLexiconConclude - patternInitConclude) / 1000000}ms`);
+                console.log(`  trie loading took ${Number(trieLoadConclude - getLexiconConclude) / 1000000}ms`);
+                console.log(`final trie size is ${trie.size()}`);
+                console.log(game.clientContext.prettyPrinter.prettyString(trie));
+            }
+            expect(trie.size()).toBe(30);
+        });
+
+        test("feed Kyra Context [Puzzle] to Trie", async () => {
+            const start = process.hrtime.bigint();
+            const trie = new Trie();
+            const trieInitConclude = process.hrtime.bigint();
+            const message = createMockMessage();
+            const mockInitConclude = process.hrtime.bigint();
+            const context = new PlayerContext(game, kyra, "test", message);
+            const contextInitConclude = process.hrtime.bigint();
+            const patterns = [
+                new Pattern([
+                    new Multislot(
+                        [
+                            new Slot(Puzzle, "puzzle"),
+                        ],
+                        "multislot",
+                    ),
+                ]),
+            ];
+            const patternInitConclude = process.hrtime.bigint();
+            const tokens = context.getLexicon(patterns);
+            const getLexiconConclude = process.hrtime.bigint();
+            for (const token of tokens) {
+                trie.insert(token.value, token);
+            }
+            const trieLoadConclude = process.hrtime.bigint();
+            if (DEBUG) {
+                console.log(`full trie load from context took ${Number(trieLoadConclude - start) / 1000000}ms`);
+                console.log(`  (excluding mock init: ${Number((trieLoadConclude - start) - (mockInitConclude - trieInitConclude)) / 1000000}ms)`);
+                console.log(`  trie init took ${Number(trieInitConclude - start) / 1000000}ms`);
+                console.log(`  mock message init took ${Number(mockInitConclude - trieInitConclude) / 1000000}ms`);
+                console.log(`  context init took ${Number(contextInitConclude - mockInitConclude) / 1000000}ms`);
+                console.log(`  pattern building took ${Number(patternInitConclude - contextInitConclude) / 1000000}ms`);
+                console.log(`  lexicon building took ${Number(getLexiconConclude - patternInitConclude) / 1000000}ms`);
+                console.log(`  trie loading took ${Number(trieLoadConclude - getLexiconConclude) / 1000000}ms`);
+                console.log(`final trie size is ${trie.size()}`);
+                console.log(game.clientContext.prettyPrinter.prettyString(trie));
+            }
+            expect(trie.size()).toBe(19);
+        });
+
+        test("feed Kyra Context [Room] to Trie", async () => {
+            const start = process.hrtime.bigint();
+            const trie = new Trie();
+            const trieInitConclude = process.hrtime.bigint();
+            const message = createMockMessage();
+            const mockInitConclude = process.hrtime.bigint();
+            const context = new PlayerContext(game, kyra, "test", message);
+            const contextInitConclude = process.hrtime.bigint();
+            const patterns = [
+                new Pattern([
+                    new Multislot(
+                        [
+                            new Slot(Room, "room"),
+                        ],
+                        "multislot",
+                    ),
+                ]),
+            ];
+            const patternInitConclude = process.hrtime.bigint();
+            const tokens = context.getLexicon(patterns);
+            const getLexiconConclude = process.hrtime.bigint();
+            for (const token of tokens) {
+                trie.insert(token.value, token);
+            }
+            const trieLoadConclude = process.hrtime.bigint();
+            if (DEBUG) {
+                console.log(`full trie load from context took ${Number(trieLoadConclude - start) / 1000000}ms`);
+                console.log(`  (excluding mock init: ${Number((trieLoadConclude - start) - (mockInitConclude - trieInitConclude)) / 1000000}ms)`);
+                console.log(`  trie init took ${Number(trieInitConclude - start) / 1000000}ms`);
+                console.log(`  mock message init took ${Number(mockInitConclude - trieInitConclude) / 1000000}ms`);
+                console.log(`  context init took ${Number(contextInitConclude - mockInitConclude) / 1000000}ms`);
+                console.log(`  pattern building took ${Number(patternInitConclude - contextInitConclude) / 1000000}ms`);
+                console.log(`  lexicon building took ${Number(getLexiconConclude - patternInitConclude) / 1000000}ms`);
+                console.log(`  trie loading took ${Number(trieLoadConclude - getLexiconConclude) / 1000000}ms`);
+                console.log(`final trie size is ${trie.size()}`);
+                console.log(game.clientContext.prettyPrinter.prettyString(trie));
+            }
+            expect(trie.size()).toBe(5);
+        });
+
+        test("feed Kyra Context [Exit] to Trie", async () => {
+            const start = process.hrtime.bigint();
+            const trie = new Trie();
+            const trieInitConclude = process.hrtime.bigint();
+            const message = createMockMessage();
+            const mockInitConclude = process.hrtime.bigint();
+            const context = new PlayerContext(game, kyra, "test", message);
+            const contextInitConclude = process.hrtime.bigint();
+            const patterns = [
+                new Pattern([
+                    new Multislot(
+                        [
+                            new Slot(Exit, "exit"),
+                        ],
+                        "multislot",
+                    ),
+                ]),
+            ];
+            const patternInitConclude = process.hrtime.bigint();
+            const tokens = context.getLexicon(patterns);
+            const getLexiconConclude = process.hrtime.bigint();
+            for (const token of tokens) {
+                trie.insert(token.value, token);
+            }
+            const trieLoadConclude = process.hrtime.bigint();
+            if (DEBUG) {
+                console.log(`full trie load from context took ${Number(trieLoadConclude - start) / 1000000}ms`);
+                console.log(`  (excluding mock init: ${Number((trieLoadConclude - start) - (mockInitConclude - trieInitConclude)) / 1000000}ms)`);
+                console.log(`  trie init took ${Number(trieInitConclude - start) / 1000000}ms`);
+                console.log(`  mock message init took ${Number(mockInitConclude - trieInitConclude) / 1000000}ms`);
+                console.log(`  context init took ${Number(contextInitConclude - mockInitConclude) / 1000000}ms`);
+                console.log(`  pattern building took ${Number(patternInitConclude - contextInitConclude) / 1000000}ms`);
+                console.log(`  lexicon building took ${Number(getLexiconConclude - patternInitConclude) / 1000000}ms`);
+                console.log(`  trie loading took ${Number(trieLoadConclude - getLexiconConclude) / 1000000}ms`);
+                console.log(`final trie size is ${trie.size()}`);
+                console.log(game.clientContext.prettyPrinter.prettyString(trie));
+            }
+            expect(trie.size()).toBe(5);
+        });
+
+        test("feed Kyra Context [Gesture] to Trie", async () => {
+            const start = process.hrtime.bigint();
+            const trie = new Trie();
+            const trieInitConclude = process.hrtime.bigint();
+            const message = createMockMessage();
+            const mockInitConclude = process.hrtime.bigint();
+            const context = new PlayerContext(game, kyra, "test", message);
+            const contextInitConclude = process.hrtime.bigint();
+            const patterns = [
+                new Pattern([
+                    new Multislot(
+                        [
+                            new Slot(Gesture, "gesture"),
+                        ],
+                        "multislot",
+                    ),
+                ]),
+            ];
+            const patternInitConclude = process.hrtime.bigint();
+            const tokens = context.getLexicon(patterns);
+            const getLexiconConclude = process.hrtime.bigint();
+            for (const token of tokens) {
+                trie.insert(token.value, token);
+            }
+            const trieLoadConclude = process.hrtime.bigint();
+            if (DEBUG) {
+                console.log(`full trie load from context took ${Number(trieLoadConclude - start) / 1000000}ms`);
+                console.log(`  (excluding mock init: ${Number((trieLoadConclude - start) - (mockInitConclude - trieInitConclude)) / 1000000}ms)`);
+                console.log(`  trie init took ${Number(trieInitConclude - start) / 1000000}ms`);
+                console.log(`  mock message init took ${Number(mockInitConclude - trieInitConclude) / 1000000}ms`);
+                console.log(`  context init took ${Number(contextInitConclude - mockInitConclude) / 1000000}ms`);
+                console.log(`  pattern building took ${Number(patternInitConclude - contextInitConclude) / 1000000}ms`);
+                console.log(`  lexicon building took ${Number(getLexiconConclude - patternInitConclude) / 1000000}ms`);
+                console.log(`  trie loading took ${Number(trieLoadConclude - getLexiconConclude) / 1000000}ms`);
+                console.log(`final trie size is ${trie.size()}`);
+                console.log(game.clientContext.prettyPrinter.prettyString(trie));
+            }
+            expect(trie.size()).toBe(199);
+        });
+
+        test("feed Kyra Context [] to Trie", async () => {
+            const start = process.hrtime.bigint();
+            const trie = new Trie();
+            const trieInitConclude = process.hrtime.bigint();
+            const message = createMockMessage();
+            const mockInitConclude = process.hrtime.bigint();
+            const context = new PlayerContext(game, kyra, "test", message);
+            const contextInitConclude = process.hrtime.bigint();
+            const patterns = [];
+            const patternInitConclude = process.hrtime.bigint();
+            const tokens = context.getLexicon(patterns);
+            const getLexiconConclude = process.hrtime.bigint();
+            for (const token of tokens) {
+                trie.insert(token.value, token);
+            }
+            const trieLoadConclude = process.hrtime.bigint();
+            if (DEBUG) {
+                console.log(`full trie load from context took ${Number(trieLoadConclude - start) / 1000000}ms`);
+                console.log(`  (excluding mock init: ${Number((trieLoadConclude - start) - (mockInitConclude - trieInitConclude)) / 1000000}ms)`);
+                console.log(`  trie init took ${Number(trieInitConclude - start) / 1000000}ms`);
+                console.log(`  mock message init took ${Number(mockInitConclude - trieInitConclude) / 1000000}ms`);
+                console.log(`  context init took ${Number(contextInitConclude - mockInitConclude) / 1000000}ms`);
+                console.log(`  pattern building took ${Number(patternInitConclude - contextInitConclude) / 1000000}ms`);
+                console.log(`  lexicon building took ${Number(getLexiconConclude - patternInitConclude) / 1000000}ms`);
+                console.log(`  trie loading took ${Number(trieLoadConclude - getLexiconConclude) / 1000000}ms`);
+                console.log(`final trie size is ${trie.size()}`);
+                console.log(game.clientContext.prettyPrinter.prettyString(trie));
+            }
+            expect(trie.size()).toBe(1);
         });
     });
 
