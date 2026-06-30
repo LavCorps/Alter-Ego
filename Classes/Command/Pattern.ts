@@ -90,8 +90,8 @@ export class Multislot implements PatternElement {
      * @param slots - The slots that make up the Multislot.
      * @param name - The name to refer to the Multislot with. Inherited by any Tokens that fit the Slot.
      */
-    constructor(slots: Set<Slot>, name: string) {
-        this.slots = slots;
+    constructor(slots: Slot[], name: string) {
+        this.slots = new Set(slots);
         this.name = name;
     }
 
