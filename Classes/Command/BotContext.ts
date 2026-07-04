@@ -32,12 +32,24 @@ export default class BotContext extends Context {
     readonly invokedAlias: string;
 
     /**
-     * @param game - The game containing all objects of this context.
-     * @param invoked - The alias the command was invoked with.
+     * The player who caused the command to be executed, if applicable.
      */
-    constructor(game: Game, invoked: string) {
+    readonly player: Player;
+
+    /**
+     * The in-game entity that caused the command to be executed, if applicable.
+     */
+    readonly callee: Callee;
+
+    /**
+     * @param game - The game containing all objects of this context.
+     * @param invokedAlias - The alias the command was invoked with.
+     */
+    constructor(game: Game, invokedAlias: string, player: Player, callee: Callee) {
         super(game);
-        this.invokedAlias = invoked;
+        this.invokedAlias = invokedAlias;
+        this.player = player;
+        this.callee = callee;
     }
 
     getLexicon(patterns: Pattern[]): Token[] {
