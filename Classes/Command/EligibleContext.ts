@@ -7,6 +7,7 @@ import type { User as DiscordUser } from "discord.js";
 import Context from "./Context.ts";
 import type { Token } from "./Token.ts";
 import type { Pattern } from "./Pattern.ts";
+import type Game from "../../Data/Game.ts";
 
 /**
  * Represents the command context of a new-generation eligible command.
@@ -32,8 +33,8 @@ export default class EligibleContext extends Context {
      * @param message - The message that invoked the command.
      *
      */
-    constructor(invoked: string, message: UserMessage) {
-        super();
+    constructor(game: Game, invoked: string, message: UserMessage) {
+        super(game);
         this.invokedAlias = invoked;
         this.message = message;
         this.author = this.message.author;
