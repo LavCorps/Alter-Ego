@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+// SPDX-FileCopyrightText: 2026 LavCorps <lavcorps@protonmail.com>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -12,12 +13,14 @@ import PrettyPrinter from "./PrettyPrinter.ts";
 import ClientInteractableManager from "./ClientInteractableManager.ts";
 import ClientInteractionHandler from "./ClientInteractionHandler.ts";
 import type Game from "../Data/Game.ts";
-import BotCommand from "./BotCommand.ts";
-import ModeratorCommand from "./ModeratorCommand.ts";
-import PlayerCommand from "./PlayerCommand.ts";
-import EligibleCommand from "./EligibleCommand.ts";
 import type { CommandType, CommandOf } from "../Modules/commandHandler.ts";
 import { loadCredentials } from "../Modules/credentialsLoader.ts";
+import BotCommand from "./Command/BotCommand.ts";
+import ModeratorCommand from "./Command/ModeratorCommand.ts";
+import PlayerCommand from "./Command/PlayerCommand.ts";
+import EligibleCommand from "./Command/EligibleCommand.ts";
+import type Command from "./Command/Command.ts";
+import type Context from "./Command/Context.ts";
 
 /**
  * Represents a log entry for a command executed in the game.
@@ -273,24 +276,28 @@ export default class ClientContext {
         ClientContext.#eligibleCommands.clear();
 
         const commandsDir = path.join(ClientContext.__dirname, "..", "Commands");
+        const botCommandsDir = path.join(ClientContext.__dirname, "..", "Commands", "Bot");
+        const eligibleCommandsDir = path.join(ClientContext.__dirname, "..", "Commands", "Eligible");
+        const moderatorCommandsDir = path.join(ClientContext.__dirname, "..", "Commands", "Moderator");
+        const playerCommandsDir = path.join(ClientContext.__dirname, "..", "Commands", "Player");
         try {
-            const files = await readdir(commandsDir);
-            const commandFiles = files.filter(filename => filename.split('.').pop() === 'js');
+            const files = (await readdir(botCommandsDir)).concat(await readdir(eligibleCommandsDir)).concat(await readdir(moderatorCommandsDir)).concat(await readdir(playerCommandsDir));
+            const commandFiles = files.filter(filename => filename.split('.').pop() === 'ts');
             if (commandFiles.length <= 0) {
                 console.log("Error: Couldn't find commands.");
                 return process.exit(1);
             }
             await Promise.all(commandFiles.map(async file => {
-                await import(path.join(commandsDir, file)).then(commandProps => {
-                    const config = commandProps.config as CommandConfig;
+                await import(path.join(commandsDir, file)).then(command => {
+                    const config = command.config as CommandConfig;
                     if (config.usableBy === "Bot")
-                        ClientContext.#botCommands.set(config.name, new BotCommand(config, commandProps.usage, commandProps.execute));
+                        ClientContext.#botCommands.set(config.name, command);
                     else if (config.usableBy === "Moderator")
-                        ClientContext.#moderatorCommands.set(config.name, new ModeratorCommand(config, commandProps.usage, commandProps.execute));
+                        ClientContext.#moderatorCommands.set(config.name, command);
                     else if (config.usableBy === "Player")
-                        ClientContext.#playerCommands.set(config.name, new PlayerCommand(config, commandProps.usage, commandProps.execute));
+                        ClientContext.#playerCommands.set(config.name, command);
                     else if (config.usableBy === "Eligible")
-                        ClientContext.#eligibleCommands.set(config.name, new EligibleCommand(config, commandProps.usage, commandProps.execute));
+                        ClientContext.#eligibleCommands.set(config.name, command);
                     else {
                         console.log(`Error: Invalid command at ${commandsDir}${file}`);
                         return process.exit(1);

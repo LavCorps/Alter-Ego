@@ -1,15 +1,27 @@
 ﻿// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+// SPDX-FileCopyrightText: 2026 LavCorps <lavcorps@protonmail.com>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import type Game from '../Data/Game.ts';
-import BotCommand from "../Classes/BotCommand.ts";
-import ModeratorCommand from "../Classes/ModeratorCommand.ts";
-import PlayerCommand from "../Classes/PlayerCommand.ts";
-import EligibleCommand from "../Classes/EligibleCommand.ts";
+import BotCommand from "../Classes/Command/BotCommand.ts";
+import ModeratorCommand from "../Classes/Command/ModeratorCommand.ts";
+import PlayerCommand from "../Classes/Command/PlayerCommand.ts";
+import EligibleCommand from "../Classes/Command/EligibleCommand.ts";
 import type Player from '../Data/Player.ts';
 import Puzzle from '../Data/Puzzle.ts';
 import Flag from '../Data/Flag.ts';
+import BotContext from '../Classes/Command/BotContext.ts';
+import Trie from '../Classes/Command/Trie.ts';
+import type { Token } from '../Classes/Command/Token.ts';
+import { MatchedInvocation, ValidatedInvocation, type InvalidInvocation, type MatchResult, type ValidationResult } from '../Classes/Command/Invocation.ts';
+import type { Pattern } from '../Classes/Command/Pattern.ts';
+import type Command from '../Classes/Command/Command.ts';
+import type Context from '../Classes/Command/Context.ts';
+import { Collection } from 'discord.js';
+import ModeratorContext from '../Classes/Command/ModeratorContext.ts';
+import PlayerContext from '../Classes/Command/PlayerContext.ts';
+import EligibleContext from '../Classes/Command/EligibleContext.ts';
 
 export type CommandType = "Bot" | "Moderator" | "Player" | "Eligible";
 export type CommandOf<T extends CommandType> =
@@ -18,6 +30,30 @@ export type CommandOf<T extends CommandType> =
             : T extends "Player" ? PlayerCommand
                 : T extends "Eligible" ? EligibleCommand
                     : undefined;
+
+/**
+ * Match a stream of tokens against command patterns.
+ * @param tokens - The array of token arrays to match with.
+ * @param patterns - The array of patterns to attempt matches against.
+ * @returns The array of pattern match results, that is, an array of Invalid Invocations and/or Matched Invocations.
+ */
+export async function matchTokens(tokens: Token[][], patterns: Pattern[]): Promise<MatchResult[]> {
+    return patterns.map(pattern => pattern.match(tokens));
+}
+
+/**
+ * Validate an array of matches against a command's validator function.
+ * @param matches - The array of matches to validate.
+ * @param command - The command to validate for.
+ * @param context - The context to validate within.
+ * @returns The array of validation results, that is, an array of Invalid Invocations and/or Validated Invocations.
+ */
+export async function validateMatches(matches: MatchedInvocation[], command: Command<Context>, context: Context): Promise<ValidationResult[]> {
+    const invocations: ValidationResult[] = [];
+    for (const match of matches)
+        invocations.push(await command.validate(context, match));
+    return invocations;
+}
 
 /**
  * Finds the right command file for the user and executes it.
@@ -41,7 +77,41 @@ export async function executeCommand(commandStr: string, game: Game, message?: U
 
     // Execute the command based on who issued it.
     if (command instanceof BotCommand) {
-        command.execute(game, commandAlias, args, player, callee);
+        const context = new BotContext(game, commandAlias, player, callee);
+        const trie = Trie.buildFromContextAndPatterns(context, command.patterns);
+        const tokens = trie.tokenize(args);
+        const errors: InvalidInvocation[] = [];
+        const matches: MatchedInvocation[] = [];
+        const validations: ValidatedInvocation[] = [];
+        {
+            const output = await matchTokens(tokens, command.patterns);
+            for (const result of output) {
+                if (result instanceof MatchedInvocation) matches.push(result);
+                else errors.push(result);
+            }
+        }
+        if (matches.length === 0) {
+            if (errors.length > 0) {
+                game.communicationHandler.sendToCommandChannel(errors.pop().errors[0]);
+                return false;
+            } else
+                matches.push(new MatchedInvocation(new Collection(), []))
+        }
+        {
+            const output = await validateMatches(matches, command, context);
+            for (const result of output) {
+                if (result instanceof ValidatedInvocation) validations.push(result);
+                else errors.push(result);
+            }
+        }
+        if (validations.length === 0) {
+            if (errors.length > 0) {
+                game.communicationHandler.sendToCommandChannel(errors.pop().errors[0]);
+                return false;
+            } else
+                validations.push(new ValidatedInvocation(new Collection(), []));
+        }
+        command.execute(context, validations[0]);
         game.clientContext.logCommand(game.clientContext.client.user.username, commandStr, timestamp);
         return true;
     }
@@ -65,7 +135,42 @@ export async function executeCommand(commandStr: string, game: Game, message?: U
         if (command.config.whitespaceSensitive) {
             args = commandStr.split(" ").slice(1);
         }
-        command.execute(game, message, commandAlias, args, moderator);
+        const context = new ModeratorContext(game, commandAlias, message, moderator);
+        const trie = Trie.buildFromContextAndPatterns(context, command.patterns);
+        const tokens = trie.tokenize(args);
+        const errors: InvalidInvocation[] = [];
+        const matches: MatchedInvocation[] = [];
+        const validations: ValidatedInvocation[] = [];
+        {
+            const output = await matchTokens(tokens, command.patterns);
+            for (const result of output) {
+                if (result instanceof MatchedInvocation) matches.push(result);
+                else errors.push(result);
+            }
+        }
+        if (matches.length === 0) {
+            if (errors.length > 0) {
+                game.communicationHandler.reply(message, errors.pop().errors[0]);
+                return false;
+            } else
+                matches.push(new MatchedInvocation(new Collection(), []))
+        }
+        {
+            const output = await validateMatches(matches, command, context);
+            for (const result of output) {
+                if (result instanceof ValidatedInvocation) validations.push(result);
+                else errors.push(result);
+            }
+        }
+        if (validations.length === 0) {
+            if (errors.length > 0) {
+                game.communicationHandler.reply(message, errors.pop().errors[0]);
+                return false;
+            } else {
+                validations.push(new ValidatedInvocation(new Collection(), []));
+            }
+        }
+        command.execute(context, validations[0]);
         if (message.channel.id !== game.guildContext.commandChannel.id)
             message.delete();
         game.clientContext.logCommand(message.author.username, message.content, timestamp);
@@ -104,7 +209,42 @@ export async function executeCommand(commandStr: string, game: Game, message?: U
             args = commandStr.split(" ").slice(1);
         }
 
-        command.execute(game, message, commandAlias, args, player).then(() => {
+        const context = new PlayerContext(game, player, commandAlias, message);
+        const trie = Trie.buildFromContextAndPatterns(context, command.patterns);
+        const tokens = trie.tokenize(args);
+        const errors: InvalidInvocation[] = [];
+        const matches: MatchedInvocation[] = [];
+        const validations: ValidatedInvocation[] = [];
+        {
+            const output = await matchTokens(tokens, command.patterns);
+            for (const result of output) {
+                if (result instanceof MatchedInvocation) matches.push(result);
+                else errors.push(result);
+            }
+        }
+        if (matches.length === 0) {
+            if (errors.length > 0) {
+                game.communicationHandler.reply(message, errors.pop().errors[0]);
+                return false;
+            } else
+                matches.push(new MatchedInvocation(new Collection(), []))
+        }
+        {
+            const output = await validateMatches(matches, command, context);
+            for (const result of output) {
+                if (result instanceof ValidatedInvocation) validations.push(result);
+                else errors.push(result);
+            }
+        }
+        if (validations.length === 0) {
+            if (errors.length > 0) {
+                game.communicationHandler.reply(message, errors.pop().errors[0]);
+                return false;
+            } else {
+                validations.push(new ValidatedInvocation(new Collection(), []));
+            }
+        }
+        command.execute(context, validations[0]).then(() => {
             if (!game.settings.debug && commandName !== "say" && !game.guildContext.sentInDMChannel(message))
                 message.delete().catch();
         });
@@ -116,7 +256,42 @@ export async function executeCommand(commandStr: string, game: Game, message?: U
             message.reply("There is no game currently running.");
             return false;
         }
-        command.execute(game, message, commandAlias, args).then(() => {
+        const context = new EligibleContext(game, commandAlias, message);
+        const trie = Trie.buildFromContextAndPatterns(context, command.patterns);
+        const tokens = trie.tokenize(args);
+        const errors: InvalidInvocation[] = [];
+        const matches: MatchedInvocation[] = [];
+        const validations: ValidatedInvocation[] = [];
+        {
+            const output = await matchTokens(tokens, command.patterns);
+            for (const result of output) {
+                if (result instanceof MatchedInvocation) matches.push(result);
+                else errors.push(result);
+            }
+        }
+        if (matches.length === 0) {
+            if (errors.length > 0) {
+                game.communicationHandler.reply(message, errors.pop().errors[0]);
+                return false;
+            } else
+                matches.push(new MatchedInvocation(new Collection(), []))
+        }
+        {
+            const output = await validateMatches(matches, command, context);
+            for (const result of output) {
+                if (result instanceof ValidatedInvocation) validations.push(result);
+                else errors.push(result);
+            }
+        }
+        if (validations.length === 0) {
+            if (errors.length > 0) {
+                game.communicationHandler.reply(message, errors.pop().errors[0]);
+                return false;
+            } else {
+                validations.push(new ValidatedInvocation(new Collection(), []));
+            }
+        }
+        command.execute(context, validations[0]).then(() => {
             if (!game.settings.debug && !game.guildContext.sentInDMChannel(message))
                 message.delete().catch();
         });
