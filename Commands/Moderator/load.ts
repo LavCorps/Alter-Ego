@@ -105,7 +105,7 @@ const command = new ModeratorCommand({
             inv.glob = ["all", "resume"];
 
         if (inv.glob[0] === "all") {
-            if (game.inProgress && !game.editMode)
+            if (ctx.game.inProgress && !ctx.game.editMode)
                 return new InvalidInvocation(["You must enable edit mode to load all data."]);
             if (inv.glob[1] === "start")
                 return new LoadInvocation("all", true, true);
@@ -113,11 +113,11 @@ const command = new ModeratorCommand({
                 return new LoadInvocation("all", true);
             else return new LoadInvocation("all");
         } else if (inv.glob[0] === "rooms") {
-            if (game.inProgress && !game.editMode)
+            if (ctx.game.inProgress && !ctx.game.editMode)
                 return new InvalidInvocation(["You must enable edit mode to load rooms."]);
             return new LoadInvocation("rooms");
         } else if (inv.glob[0] === "fixtures" || inv.glob[0] === "objects") {
-            if (game.inProgress && !game.editMode)
+            if (ctx.game.inProgress && !ctx.game.editMode)
                 return new InvalidInvocation(["You must enable edit mode to load fixtures."]);
             return new LoadInvocation("fixtures");
         } else if (inv.glob[0] === "prefabs")
@@ -125,15 +125,15 @@ const command = new ModeratorCommand({
         else if (inv.glob[0] === "recipes")
             return new LoadInvocation("recipes");
         else if (inv.glob[0] === "roomitems" || inv.glob[0] === "items" || inv.glob[0] === "room" && inv.glob[1] === "items") {
-            if (game.inProgress && !game.editMode)
+            if (ctx.game.inProgress && !ctx.game.editMode)
                 return new InvalidInvocation(["You must enable edit mode to load room items."]);
             return new LoadInvocation("room items");
         } else if (inv.glob[0] === "puzzles") {
-            if (game.inProgress && !game.editMode)
+            if (ctx.game.inProgress && !ctx.game.editMode)
                 return new InvalidInvocation(["You must enable edit mode to load puzzles."]);
             return new LoadInvocation("puzzles");
         } else if (inv.glob[0] === "events") {
-            if (game.inProgress && !game.editMode)
+            if (ctx.game.inProgress && !ctx.game.editMode)
                 return new InvalidInvocation(["You must enable edit mode to load events."]);
             return new LoadInvocation("events");
         } else if (inv.glob[0] === "statuses" || inv.glob[0] === "effects" || inv.glob[0] === "status" && inv.glob[1] === "effects")
@@ -141,13 +141,13 @@ const command = new ModeratorCommand({
         else if (inv.glob[0] === "players")
             return new LoadInvocation("players");
         else if (inv.glob[0] === "inventoryitems" || inv.glob[0] === "inventories" || inv.glob[0] === "inventory" && inv.glob[1] === "items") {
-            if (game.inProgress && !game.editMode)
+            if (ctx.game.inProgress && !ctx.game.editMode)
                 return new InvalidInvocation(["You must enable edit mode to load inventory items."]);
             return new LoadInvocation("inventory items");
         } else if (inv.glob[0] === "gestures")
             return new LoadInvocation("gestures");
         else if (inv.glob[0] === "flags") {
-            if (game.inProgress && !game.editMode)
+            if (ctx.game.inProgress && !ctx.game.editMode)
                 return new InvalidInvocation(["You must enable edit mode to load flags."]);
             return new LoadInvocation("flags");
         }
