@@ -19,7 +19,7 @@ export default abstract class Context {
     /**
      * The game containing all objects of this context.
      */
-    protected readonly game: Game;
+    readonly game: Game;
 
     /**
      * @param game - The Game the Context belongs to.
