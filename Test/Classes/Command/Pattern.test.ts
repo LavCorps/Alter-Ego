@@ -590,7 +590,7 @@ describe("Pattern file from NG Commands", () => {
                 expect(player).toBeInstanceOf(Player);
                 expect(player.name).toBe("Kyra");
             });
-            expect(invocation.glob).toStrictEqual(["Hello.\n\nI", "have", "overheard", "your", "conversation", "with", "Huiyu", "regarding", "your", "*very", "large", "rabbit*.\n\nPlease", "tell", "me", "more", "about", "the", "nature", "of", "this", "rabbit."])
+            expect(invocation.glob).toStrictEqual(["Hello.\n\nI", "have", "overheard", "your", "conversation", "with", "Huiyu", "regarding", "your", "*very", "large", "rabbit*.\n\nPlease", "tell", "me", "more", "about", "the", "nature", "of", "this", "rabbit."]);
         });
 
         test("Pattern.match(11)", async () => {
@@ -607,7 +607,7 @@ describe("Pattern file from NG Commands", () => {
                 expect(player).toBeInstanceOf(Player);
                 expect(player.name).toBe("Kyra");
             });
-            expect(invocation.glob).toStrictEqual([])
+            expect(invocation.glob).toStrictEqual([]);
         });
 
         test("Pattern.match(12)", async () => {
@@ -628,6 +628,16 @@ describe("Pattern file from NG Commands", () => {
             expect(invocation.errors[1]).toBe("Couldn't find anything for destination in your input.");
             expect(invocation.errors[2]).toBe("Found a preposition for destination, but no corresponding game object?");
             expect(invocation.errors[3]).toBe("Found a pocket for destination, but no corresponding game object?");
+        });
+
+        test("Pattern.match(13)", async () => {
+            const pattern = new Pattern([
+                new Glob(),
+            ]);
+            const invocation = pattern.match(trie.tokenize([])) as MatchedInvocation;
+            expect(invocation).toBeInstanceOf(MatchedInvocation);
+            expect(invocation.args.size).toBe(0);
+            expect(invocation.glob).toStrictEqual([]);
         });
     });
 });

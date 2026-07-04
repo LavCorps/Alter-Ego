@@ -444,7 +444,7 @@ export class Pattern implements PatternElement {
                     }
                 }
             } else if (element instanceof Glob) {
-                let globbed = data.index === data.streams.length - 1;
+                let globbed = data.index >= data.streams.length - 1;
                 let stream = data.stream;
                 while (!globbed) {
                     for (const token of stream) {
