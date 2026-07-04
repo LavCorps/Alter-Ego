@@ -3,6 +3,8 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import type Context from "./Context.ts";
+import type { Pattern } from "./Pattern.ts";
 import { SentinelToken, type Token } from "./Token.ts";
 import TrieNode from "./TrieNode.ts";
 
@@ -20,6 +22,19 @@ export default class Trie {
 
     constructor() {
         this.root = new TrieNode();
+    }
+
+    /**
+     * Construct and return a new Trie from the given Context and Patterns.
+     * @param ctx - Command context to get lexicon from.
+     * @param pat - Patterns to use when gathering lexicon.
+     */
+    static buildFromContextAndPatterns(ctx: Context, pat: Pattern[]): Trie {
+        const trie = new Trie();
+        const tokens = ctx.getLexicon(pat);
+        for (const token of tokens)
+            trie.insert(token.value, token);
+        return trie;
     }
 
     /**
