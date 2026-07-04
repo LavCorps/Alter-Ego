@@ -281,14 +281,19 @@ export default class ClientContext {
         const moderatorCommandsDir = path.join(ClientContext.__dirname, "..", "Commands", "Moderator");
         const playerCommandsDir = path.join(ClientContext.__dirname, "..", "Commands", "Player");
         try {
-            const files = (await readdir(botCommandsDir)).concat(await readdir(eligibleCommandsDir)).concat(await readdir(moderatorCommandsDir)).concat(await readdir(playerCommandsDir));
+            const botFiles = await readdir(botCommandsDir);
+            const eligibleFiles = await readdir(eligibleCommandsDir);
+            const moderatorFiles = await readdir(moderatorCommandsDir);
+            const playerFiles = await readdir(playerCommandsDir);
+            const files = botFiles.map(file => path.join("Bot", file)).concat(eligibleFiles.map(file => path.join("Eligible", file))).concat(moderatorFiles.map(file => path.join("Moderator", file))).concat(playerFiles.map(file => path.join("Player", file)));
             const commandFiles = files.filter(filename => filename.split('.').pop() === 'ts');
             if (commandFiles.length <= 0) {
                 console.log("Error: Couldn't find commands.");
                 return process.exit(1);
             }
             await Promise.all(commandFiles.map(async file => {
-                await import(path.join(commandsDir, file)).then(command => {
+                await import(path.join(commandsDir, file)).then(module => {
+                    const command = module.default as Command<Context>;
                     const config = command.config as CommandConfig;
                     if (config.usableBy === "Bot")
                         ClientContext.#botCommands.set(config.name, command);
