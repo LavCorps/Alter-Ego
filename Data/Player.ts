@@ -313,7 +313,7 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
      * Whether or not the player has depleted half of their stamina while moving.
      * When they do, they will be warned that they're starting to become tired.
      */
-    #reachedHalfStamina: boolean;
+    reachedHalfStamina: boolean;
     /**
      * A timeout that regenerates the player's stamina every 30 seconds while they're not moving.
      */
@@ -425,7 +425,7 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
         this.#ledPlayerNames = new Set();
         this.party = null;
 
-        this.#reachedHalfStamina = false;
+        this.reachedHalfStamina = false;
         let player = this;
         this.#staminaRegenerationInterval = setInterval(function () {
             if (!player.isMoving) player.#regenerateStamina();
@@ -646,8 +646,8 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
             if (!player.hasBehaviorAttribute("no stamina decrease")) player.stamina = player.stamina + lostStamina;
             // If player reaches half of their stamina, give them a warning.
             // Be sure to check player.#reachedHalfStamina so that this message is only sent once.
-            if (player.stamina <= player.maxStamina / 2 && !player.#reachedHalfStamina) {
-                player.#reachedHalfStamina = true;
+            if (player.stamina <= player.maxStamina / 2 && !player.reachedHalfStamina) {
+                player.reachedHalfStamina = true;
                 // The communication handler needs an action to prevent notification duplication, so create a dummy here.
                 const reachedHalfStaminaAction = new MoveAction(player.getGame(), undefined, player, player.location, true);
                 player.getGame().narrationHandler.narrateReachedHalfStamina(reachedHalfStaminaAction, player);
@@ -659,15 +659,17 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
                 const wearyStatus = player.getGame().entityFinder.getStatusEffect("weary");
                 if (wearyStatus) {
                     const wearyAction = new InflictAction(player.getGame(), undefined, player, player.location, true);
-                    wearyAction.performInflict(wearyStatus, false, true, true);
                     player.getGame().narrationHandler.narrateWeary(wearyAction, player);
+                    wearyAction.performInflict(wearyStatus, false, true, true);
                 }
             }
             if (player.remainingTime <= 0 && player.stamina !== 0) {
                 clearInterval(player.moveTimer);
+                player.moveTimer = null;
                 player.isMoving = false;
                 player.isRunning = false;
                 player.currentMovingSpeed = 0;
+                player.remainingTime = 0;
                 const restrictedExitPuzzle = player.getGame().entityFinder.getPuzzle(exit.name, player.location.id, "restricted exit", true);
                 const exitPuzzlePassable = restrictedExitPuzzle && restrictedExitPuzzle.solutions.includes(player.name);
                 if (exit.unlocked || exitPuzzlePassable) {
@@ -677,7 +679,7 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
                 else {
                     // The exit is locked.
                     const stopAction = new StopAction(player.getGame(), undefined, player, player.location, forced);
-                    stopAction.performStop(true, exit, false);
+                    stopAction.performStop(true, exit, !player.followedPlayerIsInRoom());
                     player.pos.x = exit.pos.x;
                     player.pos.y = exit.pos.y;
                     player.pos.z = exit.pos.z;
@@ -718,6 +720,16 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
     }
 
     /**
+     * Sets the player's position in 3D space.
+     * @param pos - The position to set.
+     */
+    setPos(pos: Pos): void {
+        this.pos.x = pos.x;
+        this.pos.y = pos.y;
+        this.pos.z = pos.z;
+    }
+
+    /**
      * Resets the player's stamina to its maximum value.
      */
     #regenerateStamina(): void {
@@ -739,7 +751,7 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
      */
     restoreStamina(): void {
         this.stamina = this.maxStamina;
-        this.#reachedHalfStamina = false;
+        this.reachedHalfStamina = false;
     }
 
     /**
@@ -768,8 +780,10 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
      * Stops the player, if they're moving.
      */
     stopMoving(): void {
-        if (this.moveTimer !== null)
+        if (this.moveTimer !== null) {
             clearInterval(this.moveTimer);
+            this.moveTimer = null;
+        }
         this.isMoving = false;
         this.isRunning = false;
         this.currentMovingSpeed = 0;
@@ -791,6 +805,15 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
      */
     isFollowing(player: Player): boolean {
         return this.#followedPlayerName !== "" && this.#followedPlayerName === player.name;
+    }
+
+    /**
+     * Returns true if the player this player is following is still visible in the room
+     * and has the same display name as when this player first started following them.
+     */
+    followedPlayerIsInRoom(): boolean {
+        return !!this.location.getOccupantsExcluding(this)
+            .find(occupant => this.isFollowing(occupant) && occupant.displayName === this.followedPlayerDisplayName);
     }
 
     /**

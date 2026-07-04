@@ -183,6 +183,7 @@ export const SCRIPT_SCOPE_OPTIONS = {
         'startFollowing',
         'stopFollowing',
 		'calculateMoveTime',
+        'setPos',
 		'regenerateStamina',
         'restoreStamina',
 		'createMoveAppendString',

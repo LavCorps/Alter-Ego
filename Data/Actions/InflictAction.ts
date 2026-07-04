@@ -9,6 +9,7 @@ import type InventoryItem from "../InventoryItem.ts";
 import type Status from "../Status.ts";
 import CureAction from "./CureAction.ts";
 import DisbandPartyAction from "./DisbandPartyAction.ts";
+import StopAction from "./StopAction.ts";
 import StopFollowingAction from "./StopFollowingAction.ts";
 
 /**
@@ -78,7 +79,19 @@ export default class InflictAction extends Action {
 		}
 		if (status.behaviorAttributes.has("disable all") || status.behaviorAttributes.has("disable move") || status.behaviorAttributes.has("disable run")) {
             this.player.stopMoving();
-            if (!this.player.party) this.player.stopFollowing();
+            // If the player is in a party, stop all other members from moving as well, but keep them in a party together.
+            if (this.player.party) {
+                for (const member of this.player.party.members.values()) {
+                    if (member.name !== this.player.name) {
+                        const stopAction = new StopAction(this.getGame(), undefined, member, member.location, true);
+                        stopAction.performStop(false, undefined, false);
+                    }
+                }
+            }
+            else {
+                this.player.stopFollowing();
+                this.getGame().movementHandler.stopFollowers(this.player, false, true);
+            }
         }
         if (this.player.followedPlayer &&
         (status.behaviorAttributes.has("disable follow") || status.behaviorAttributes.has("disable all") && !status.behaviorAttributes.has("enable follow"))) {

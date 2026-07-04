@@ -41,14 +41,15 @@ export default class StartMoveAction extends Action {
                 // We don't want the occupant to reach the destination before the player they're following, or they'll lose track of them.
                 // So, calculate how long to delay their movement.
                 let delay = 0;
-                const occupantTime = occupant.calculateMoveTime(exit, isRunning, occupant.getFollowingSpeed());
+                const followingSpeed = occupant.getFollowingSpeed();
+                const occupantTime = occupant.calculateMoveTime(exit, isRunning, followingSpeed);
                 if (occupantTime <= time) delay = time - occupantTime;
                 // Add one tick to the delay just to be safe.
                 delay += Game.tick;
                 occupant.doAfterDelay(delay, async () => {
                     occupant.moveQueue = [exit.name];
                     const queueMoveAction = new QueueMoveAction(this.getGame(), undefined, occupant, occupant.location, this.forced);
-                    await queueMoveAction.performQueueMove(this.player.isRunning, occupant.moveQueue[0], occupant.getFollowingSpeed());
+                    await queueMoveAction.performQueueMove(this.player.isRunning, occupant.moveQueue[0], followingSpeed);
                 });
             }
         }

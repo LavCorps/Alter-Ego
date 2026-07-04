@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import Description from "./Description.ts";
 import type Game from "./Game.ts";
 import GameEntity from "./GameEntity.ts";
@@ -73,6 +77,13 @@ export default class Exit extends GameEntity implements PersistentGameEntity {
         this.destDisplayName = destDisplayName;
         this.link = link;
         this.description = new Description(description, this, game);
+    }
+
+    /**
+     * Gets the exit in the destination room that this exit links to.
+     */
+    getLinkedExit(): Exit {
+        return this.getGame().entityFinder.getExit(this.dest, this.link);
     }
 
     /**
