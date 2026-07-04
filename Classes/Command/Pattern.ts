@@ -85,6 +85,10 @@ export class Multislot implements PatternElement {
      * The name to refer to the Multislot with. Inherited by any Tokens that fit the Slot.
      */
     readonly name: string;
+    /**
+     * The types of Game Entities contained within a multislot.
+     */
+    #types: Set<{ new (...args: any[]): GameEntity }>;
 
     /**
      * @param slots - The slots that make up the Multislot.
@@ -93,6 +97,21 @@ export class Multislot implements PatternElement {
     constructor(slots: Slot[], name: string) {
         this.slots = new Set(slots);
         this.name = name;
+        this.#types = new Set();
+        for (const slot of slots) {
+            this.types.add(slot.type)
+        }
+    }
+
+    /**
+     * The types of Game Entities contained within a multislot.
+     */
+    get types(): Set<{ new(...args: any[]): GameEntity }> {
+        return this.#types;
+    }
+
+    protected set types(types: Set<{ new(...args: any[]): GameEntity }>) {
+        this.#types = types;
     }
 
     /**
@@ -284,7 +303,12 @@ export class Pattern implements PatternElement {
     /**
      * The types of Game Entities contained within a pattern. Informs Contexts what must be gathered, to prevent gathering unnecessary context.
      */
-    readonly types: Set<{ new (...args: any[]): GameEntity }>;
+    #types: Set<{ new (...args: any[]): GameEntity }>;
+
+    /**
+     * The constants contained within a pattern. Informs Contexts what constants exist for the given pattern.
+     */
+    #constants: Set<ConstantToken>;
 
     /**
      * @param grammar - The grammar of the pattern. This is an ordered array, containing pattern elements, as well as other patterns.
@@ -294,21 +318,45 @@ export class Pattern implements PatternElement {
     constructor(grammar: Array<PatternElement>, optional: boolean = false, mandatory: boolean = true) {
         this.grammar = grammar;
         this.optional = optional;
-        this.types = new Set();
+        this.#types = new Set();
+        this.#constants = new Set();
         if (mandatory) this.mandatory = true;
         for (const element of grammar) {
             if (element instanceof Slot)
-                this.types.add(element.type)
+                this.types.add(element.type);
             else if (element instanceof Multislot)
-                for (const slot of element.slots)
-                    this.types.add(slot.type)
+                this.types = this.types.union(element.types);
+            else if (element instanceof Constant)
+                this.constants.add(new ConstantToken(element.value));
             else if (element instanceof Pattern) {
-                for (const ctor of element.types)
-                    this.types.add(ctor);
+                this.constants = this.constants.union(element.constants);
+                this.types = this.types.union(element.types);
                 if (element.mandatory)
                     this.mandatory = true;
             }
         }
+    }
+
+    /**
+     * The types of Game Entities contained within a pattern. Informs Contexts what must be gathered, to prevent gathering unnecessary context.
+     */
+    get types(): Set<{ new(...args: any[]): GameEntity }> {
+        return this.#types;
+    }
+
+    protected set types(types: Set<{ new(...args: any[]): GameEntity }>) {
+        this.#types = types;
+    }
+
+    /**
+     * The constants contained within a pattern. Informs Contexts what constants exist for the given pattern.
+     */
+    get constants(): Set<ConstantToken> {
+        return this.#constants;
+    }
+
+    protected set constants(constants: Set<ConstantToken>) {
+        this.#constants = constants;
     }
 
     /**
