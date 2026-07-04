@@ -44,6 +44,8 @@ export default class BotContext extends Context {
     /**
      * @param game - The game containing all objects of this context.
      * @param invokedAlias - The alias the command was invoked with.
+     * @param player - The player who caused the command to be executed, if applicable.
+     * @param callee - The in-game entity that caused the command to be executed, if applicable.
      */
     constructor(game: Game, invokedAlias: string, player: Player, callee: Callee) {
         super(game);
