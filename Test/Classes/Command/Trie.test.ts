@@ -12,6 +12,14 @@ import {
 import Trie from "../../../Classes/Command/Trie.ts";
 import { clearQueue } from "../../../Modules/messageHandler.js";
 
+/**
+ * @privateRemarks
+ * this is a little strange, but switching this to TRUE will print out some benchmarking times for GetLexicon() tests...
+ * any suggestions for doing this in a less terrible way would be appreciated!
+ * - AC
+ */
+const DEBUG = false;
+
 describe("Trie class from NG Commands", () => {
     beforeAll(async () => {
         if (!game.inProgress) await game.entityLoader.loadAll();
@@ -150,24 +158,22 @@ describe("Trie class from NG Commands", () => {
                 trie.insert(status.id, new EntityToken(status.id, status));
             }
             const statusConclude = process.hrtime.bigint();
-            console.log(`full trie load took ${Number(statusConclude - start) / 1000000}ms`);
-            console.log(`  player trie load took ${Number(playerConclude - start) / 1000000}ms`);
-            console.log(
-                `  inventory item trie load took ${Number(inventoryItemConclude - playerConclude) / 1000000}ms`,
-            );
-            console.log(`  room item trie load took ${Number(roomItemConclude - inventoryItemConclude) / 1000000}ms`);
-            console.log(`  fixture trie load took ${Number(fixtureConclude - roomItemConclude) / 1000000}ms`);
-            console.log(`  puzzle trie load took ${Number(puzzleConclude - fixtureConclude) / 1000000}ms`);
-            console.log(
-                `  equipment slot trie load took ${Number(equipmentSlotConclude - puzzleConclude) / 1000000}ms`,
-            );
-            console.log(`  room trie load took ${Number(roomConclude - equipmentSlotConclude) / 1000000}ms`);
-            console.log(`  exit trie load took ${Number(exitConclude - roomConclude) / 1000000}ms`);
-            console.log(`  event trie load took ${Number(eventConclude - exitConclude) / 1000000}ms`);
-            console.log(`  flag trie load took ${Number(flagConclude - eventConclude) / 1000000}ms`);
-            console.log(`  prefab trie load took ${Number(prefabConclude - flagConclude) / 1000000}ms`);
-            console.log(`  status trie load took ${Number(statusConclude - prefabConclude) / 1000000}ms`);
-            console.log(`final trie size is ${trie.size()}`);
+            if (DEBUG) {
+                console.log(`full trie load took ${Number(statusConclude - start) / 1000000}ms`);
+                console.log(`  player trie load took ${Number(playerConclude - start) / 1000000}ms`);
+                console.log(`  inventory item trie load took ${Number(inventoryItemConclude - playerConclude) / 1000000}ms`);
+                console.log(`  room item trie load took ${Number(roomItemConclude - inventoryItemConclude) / 1000000}ms`);
+                console.log(`  fixture trie load took ${Number(fixtureConclude - roomItemConclude) / 1000000}ms`);
+                console.log(`  puzzle trie load took ${Number(puzzleConclude - fixtureConclude) / 1000000}ms`);
+                console.log(`  equipment slot trie load took ${Number(equipmentSlotConclude - puzzleConclude) / 1000000}ms`);
+                console.log(`  room trie load took ${Number(roomConclude - equipmentSlotConclude) / 1000000}ms`);
+                console.log(`  exit trie load took ${Number(exitConclude - roomConclude) / 1000000}ms`);
+                console.log(`  event trie load took ${Number(eventConclude - exitConclude) / 1000000}ms`);
+                console.log(`  flag trie load took ${Number(flagConclude - eventConclude) / 1000000}ms`);
+                console.log(`  prefab trie load took ${Number(prefabConclude - flagConclude) / 1000000}ms`);
+                console.log(`  status trie load took ${Number(statusConclude - prefabConclude) / 1000000}ms`);
+                console.log(`final trie size is ${trie.size()}`);
+            }
             const lookupStart = process.hrtime.bigint();
             const amaLookup = trie.tokenize(["amadeus"]);
             const amaConclude = process.hrtime.bigint();
@@ -177,15 +183,17 @@ describe("Trie class from NG Commands", () => {
             const filledPotConclude = process.hrtime.bigint();
             const complexLookup = trie.tokenize(["drop", "pot", "filled", "with", "water", "on", "reception", "desk"]);
             const complexConclude = process.hrtime.bigint();
-            console.log(`all lookups took ${Number(complexConclude - lookupStart) / 1000}μs`);
-            console.log(`  amadeus lookup took ${Number(amaConclude - lookupStart) / 1000}μs`);
-            console.log(amaLookup);
-            console.log(`  pot lookup took ${Number(potConclude - amaConclude) / 1000}μs`);
-            console.log(potLookup);
-            console.log(`  filled pot lookup took ${Number(filledPotConclude - potConclude) / 1000}μs`);
-            console.log(filledPotLookup);
-            console.log(`  complex lookup took ${Number(complexConclude - filledPotConclude) / 1000}μs`);
-            console.log(complexLookup);
+            if (DEBUG) {
+                console.log(`all lookups took ${Number(complexConclude - lookupStart) / 1000}μs`);
+                console.log(`  amadeus lookup took ${Number(amaConclude - lookupStart) / 1000}μs`);
+                console.log(amaLookup);
+                console.log(`  pot lookup took ${Number(potConclude - amaConclude) / 1000}μs`);
+                console.log(potLookup);
+                console.log(`  filled pot lookup took ${Number(filledPotConclude - potConclude) / 1000}μs`);
+                console.log(filledPotLookup);
+                console.log(`  complex lookup took ${Number(complexConclude - filledPotConclude) / 1000}μs`);
+                console.log(complexLookup);
+            }
         });
     });
 });

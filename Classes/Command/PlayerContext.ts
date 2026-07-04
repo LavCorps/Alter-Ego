@@ -36,11 +36,6 @@ export default class PlayerContext extends Context {
     readonly message: UserMessage;
 
     /**
-     * The game containing all objects of this context.
-     */
-    private readonly game: Game;
-
-    /**
      * The player responsible for executing the command.
      */
     readonly player: Player;
@@ -167,18 +162,9 @@ export default class PlayerContext extends Context {
      * @param message - The message that invoked the command.
      */
     constructor(game: Game, player: Player, invokedAlias: string, message: UserMessage) {
-        /**
-         * @privateRemarks
-         * It might be unnecessary to fill out the entire player context for every single command invocation, especially
-         * commands that don't even have any arguments. So, we might want to consider filling out the context based on
-         * the patterns in the command being invoked. If not, some other way of avoiding filling this out with unneeded data
-         * might help speed things up. This is mostly a concern for room items, since there can potentially be thousands of them.
-         * - VM
-         */
-        super();
+        super(game);
         this.invokedAlias = invokedAlias;
         this.message = message;
-        this.game = game;
         this.player = player;
         this.room = this.player.location;
         this.exits = this.room.exits;
