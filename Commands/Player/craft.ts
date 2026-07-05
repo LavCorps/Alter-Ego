@@ -5,14 +5,17 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { Collection } from "discord.js";
-import { ValidatedInvocation, type MatchedInvocation } from "../../Classes/Command/Invocation.ts";
+import { InvalidInvocation, ValidatedInvocation, type MatchedInvocation } from "../../Classes/Command/Invocation.ts";
 import { Pattern, Slot, Constant } from "../../Classes/Command/Pattern.ts";
 import PlayerCommand from "../../Classes/Command/PlayerCommand.ts";
 import type PlayerContext from "../../Classes/Command/PlayerContext.ts";
 import type GameSettings from "../../Classes/GameSettings.js";
 import InventoryItem from "../../Data/InventoryItem.ts";
+import type GameEntity from "../../Data/GameEntity.ts";
+import type Recipe from "../../Data/Recipe.ts";
+import CraftAction from "../../Data/Actions/CraftAction.ts";
 
-export default new PlayerCommand({
+const command = new PlayerCommand({
     config: {
         name: "craft_player",
         description: "Crafts two items in your inventory together.",
@@ -38,22 +41,62 @@ export default new PlayerCommand({
 
     patterns: [
         new Pattern([
-            new Slot(InventoryItem, "item1"),
+            new Slot(InventoryItem, "item 1"),
             new Constant("and"),
-            new Slot(InventoryItem, "item2"),
+            new Slot(InventoryItem, "item 2"),
         ]),
         new Pattern([
-            new Slot(InventoryItem, "item1"),
+            new Slot(InventoryItem, "item 1"),
             new Constant("with"),
-            new Slot(InventoryItem, "item2"),
+            new Slot(InventoryItem, "item 2"),
         ]),
     ],
 
-    validate: async (context: PlayerContext, invocation: MatchedInvocation) => {
-        return new ValidatedInvocation(new Collection(), []);
+    validate: async (ctx: PlayerContext, inv: MatchedInvocation) => {
+        const status = ctx.player.getBehaviorAttributeStatusEffects("disable craft");
+        if (status.length > 0)
+            return new InvalidInvocation([`You cannot do that because you are **${status[0].id}**.`]);
+
+        const args: Collection<string, GameEntity> = new Collection();
+        const item1 = (inv.args.get("item 1") as InventoryItem[]).find(item => ctx.heldItems.has(item));
+        const item2 = (inv.args.get("item 2") as InventoryItem[]).find(item => ctx.heldItems.has(item));
+
+        if (item1 === undefined && item2 === undefined)
+            return new InvalidInvocation([`Couldn't find items "${(inv.args.get("item 1") as InventoryItem[])[0].name}" and "${(inv.args.get("item 2") as InventoryItem[])[0].name}" in either of your hands.`]);
+        else if (item1 === undefined)
+            return new InvalidInvocation([`Couldn't find item "${(inv.args.get("item 1") as InventoryItem[])[0].name}" in either of your hands.`]);
+        else if (item2 === undefined)
+            return new InvalidInvocation([`Couldn't find item "${(inv.args.get("item 2") as InventoryItem[])[0].name}" in either of your hands.`]);
+
+        const items = [item1, item2];
+        items.sort(function (a, b) {
+            if (a.prefab.id < b.prefab.id) return -1;
+            if (a.prefab.id > b.prefab.id) return 1;
+            return 0;
+        });
+
+        const recipes = game.recipes.filter(recipe => recipe.ingredients.length === 2 && recipe.fixtureTag === "");
+        let recipe: Recipe | null = null;
+        for (let i = 0; i < recipes.length; i++) {
+            if (ctx.player.canCraft(recipes[i], [items[0], items[1]])) {
+                recipe = recipes[i];
+                break;
+            }
+        }
+        if (recipe === null)
+            return new InvalidInvocation([`Couldn't find recipe requiring ${items[0].name} and ${items[1].name}. Contact a moderator if you think there should be one.`]);
+
+        args.set("item 1", item1);
+        args.set("item 2", item2);
+        args.set("recipe", recipe);
+
+        return new ValidatedInvocation(args);
     },
 
-    execute: async (ctx: PlayerContext) => {
-
+    execute: async (ctx: PlayerContext, inv: ValidatedInvocation) => {
+        const action = new CraftAction(game, ctx.message, ctx.player, ctx.player.location, false);
+        action.performCraft(inv.args.get("item 1") as InventoryItem, inv.args.get("item 2") as InventoryItem, inv.args.get("recipe") as Recipe);
     }
 });
+
+export default command;
