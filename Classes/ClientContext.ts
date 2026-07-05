@@ -13,14 +13,14 @@ import PrettyPrinter from "./PrettyPrinter.ts";
 import ClientInteractableManager from "./ClientInteractableManager.ts";
 import ClientInteractionHandler from "./ClientInteractionHandler.ts";
 import type Game from "../Data/Game.ts";
-import type { CommandType, CommandOf } from "../Modules/commandHandler.ts";
-import { loadCredentials } from "../Modules/credentialsLoader.ts";
+import type Command from "./Command/Command.ts";
+import type Context from "./Command/Context.ts";
 import BotCommand from "./Command/BotCommand.ts";
 import ModeratorCommand from "./Command/ModeratorCommand.ts";
 import PlayerCommand from "./Command/PlayerCommand.ts";
 import EligibleCommand from "./Command/EligibleCommand.ts";
-import type Command from "./Command/Command.ts";
-import type Context from "./Command/Context.ts";
+import type { CommandType, CommandOf } from "../Modules/commandHandler.ts";
+import { loadCredentials } from "../Modules/credentialsLoader.ts";
 
 /**
  * Represents a log entry for a command executed in the game.
@@ -276,16 +276,12 @@ export default class ClientContext {
         ClientContext.#eligibleCommands.clear();
 
         const commandsDir = path.join(ClientContext.__dirname, "..", "Commands");
-        const botCommandsDir = path.join(ClientContext.__dirname, "..", "Commands", "Bot");
-        const eligibleCommandsDir = path.join(ClientContext.__dirname, "..", "Commands", "Eligible");
-        const moderatorCommandsDir = path.join(ClientContext.__dirname, "..", "Commands", "Moderator");
-        const playerCommandsDir = path.join(ClientContext.__dirname, "..", "Commands", "Player");
         try {
-            const botFiles = await readdir(botCommandsDir);
-            const eligibleFiles = await readdir(eligibleCommandsDir);
-            const moderatorFiles = await readdir(moderatorCommandsDir);
-            const playerFiles = await readdir(playerCommandsDir);
-            const files = botFiles.map(file => path.join("Bot", file)).concat(eligibleFiles.map(file => path.join("Eligible", file))).concat(moderatorFiles.map(file => path.join("Moderator", file))).concat(playerFiles.map(file => path.join("Player", file)));
+            let files: string[] = [];
+            for (const dir of ["Bot", "Eligible", "Moderator", "Player"]) {
+                const dirFiles = await readdir(path.join(commandsDir, dir));
+                files = files.concat(dirFiles.map(file => path.join(dir, file)));
+            }
             const commandFiles = files.filter(filename => filename.split('.').pop() === 'ts');
             if (commandFiles.length <= 0) {
                 console.log("Error: Couldn't find commands.");
@@ -304,7 +300,7 @@ export default class ClientContext {
                     else if (config.usableBy === "Eligible")
                         ClientContext.#eligibleCommands.set(config.name, command);
                     else {
-                        console.log(`Error: Invalid command at ${commandsDir}${file}`);
+                        console.log(`Error: Invalid command at ${path.join(commandsDir, file)}`);
                         return process.exit(1);
                     }
                 });
