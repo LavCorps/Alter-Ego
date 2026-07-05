@@ -35,74 +35,74 @@ import type { Interaction, InteractionCallbackResponse } from "discord.js";
  * A set of functions for handling Interactions.
  */
 export default class ClientInteractionHandler {
-	/**
-	 * The game this belongs to.
-	 */
+    /**
+     * The game this belongs to.
+     */
     readonly #game: Game;
 
-	/**
-	 * @param game - The game this belongs to.
-	 */
-	constructor(game: Game) {
-		this.#game = game;
-	}
+    /**
+     * @param game - The game this belongs to.
+     */
+    constructor(game: Game) {
+        this.#game = game;
+    }
 
-	/**
-	 * Gets an interactable from the cache by the customId. If it doesn't exist, returns undefined.
-	 * @param customId
-	 */
-	getInteractable(customId: string): Interactable {
-		return this.#game.clientContext.interactableManager.getInteractableByCustomId(customId);
-	}
+    /**
+     * Gets an interactable from the cache by the customId. If it doesn't exist, returns undefined.
+     * @param customId
+     */
+    getInteractable(customId: string): Interactable {
+        return this.#game.clientContext.interactableManager.getInteractableByCustomId(customId);
+    }
 
-	/**
-	 * Intercepts an interaction event and directs it to the correct function.
-	 * @param interaction - The interaction that was created.
-	 */
-	interceptInteraction(interaction: Interaction): void {
+    /**
+     * Intercepts an interaction event and directs it to the correct function.
+     * @param interaction - The interaction that was created.
+     */
+    interceptInteraction(interaction: Interaction): void {
         const user = this.#game.entityFinder.getModeratorById(interaction.user.id) ?? this.#game.entityFinder.getLivingPlayerById(interaction.user.id);
-		if (!user) return;
-		if (interaction instanceof ButtonInteraction)
-			this.processButtonInteraction(interaction, user);
-		if (interaction instanceof StringSelectMenuInteraction)
-			this.processStringSelectMenuInteraction(interaction, user);
+        if (!user) return;
+        if (interaction instanceof ButtonInteraction)
+            this.processButtonInteraction(interaction, user);
+        if (interaction instanceof StringSelectMenuInteraction)
+            this.processStringSelectMenuInteraction(interaction, user);
         if (interaction instanceof ModalSubmitInteraction)
             this.processModalSubmitInteraction(interaction, user);
-		return;
-	}
+        return;
+    }
 
-	/**
-	 * Processes a button interaction.
-	 * @param interaction - The interaction being executed.
-	 * @param user - The user who triggered the interaction.
-	 */
-	processButtonInteraction(interaction: ButtonInteraction, user: User): void {
-		const customId = interaction.customId;
-		this.#processInteraction(customId, interaction, user);
-		return;
-	}
+    /**
+     * Processes a button interaction.
+     * @param interaction - The interaction being executed.
+     * @param user - The user who triggered the interaction.
+     */
+    processButtonInteraction(interaction: ButtonInteraction, user: User): void {
+        const customId = interaction.customId;
+        this.#processInteraction(customId, interaction, user);
+        return;
+    }
 
-	/**
-	 * Processes a string select interaction.
-	 * @param interaction - The interaction being executed.
-	 * @param user - The user who triggered the interaction.
-	 */
-	processStringSelectMenuInteraction(interaction: StringSelectMenuInteraction, user: User): void {
-		const selectedValue = interaction.values[0];
-		const customId = selectedValue;
-		this.#processInteraction(customId, interaction, user);
-		return;
-	}
+    /**
+     * Processes a string select interaction.
+     * @param interaction - The interaction being executed.
+     * @param user - The user who triggered the interaction.
+     */
+    processStringSelectMenuInteraction(interaction: StringSelectMenuInteraction, user: User): void {
+        const selectedValue = interaction.values[0];
+        const customId = selectedValue;
+        this.#processInteraction(customId, interaction, user);
+        return;
+    }
 
     /**
      * Processes a modal submit interaction.
      * @param interaction - The interaction being executed.
-	 * @param user - The user who triggered the interaction.
+     * @param user - The user who triggered the interaction.
      */
     processModalSubmitInteraction(interaction: ModalSubmitInteraction, user: User): void {
         const customId = interaction.customId;
-		this.#processInteraction(customId, interaction, user);
-		return;
+        this.#processInteraction(customId, interaction, user);
+        return;
     }
 
     /**
@@ -129,31 +129,31 @@ export default class ClientInteractionHandler {
                 errorMessage = error.message;
             }
         }
-		if (!successfullyProcessedInteractable) this.#replyToInteraction(errorMessage, interaction);
-		return;
+        if (!successfullyProcessedInteractable) this.#replyToInteraction(errorMessage, interaction);
+        return;
     }
 
-	/**
-	 * Process an interactable and calls the correct function.
+    /**
+     * Process an interactable and calls the correct function.
      * @param interactable - The interactable to process.
      * @param user - The user who triggered the interaction.
      * @param interaction - The interaction being executed.
-	 * @param reply - The reply that was sent.
-	 * @returns Whether the interactable successfully performed an action or not.
-	 */
-	async #processActionDirectiveInteractable(interactable: ActionDirectiveInteractable, user: User, interaction: BotInteraction, reply?: InteractionCallbackResponse<boolean>): Promise<boolean> {
+     * @param reply - The reply that was sent.
+     * @returns Whether the interactable successfully performed an action or not.
+     */
+    async #processActionDirectiveInteractable(interactable: ActionDirectiveInteractable, user: User, interaction: BotInteraction, reply?: InteractionCallbackResponse<boolean>): Promise<boolean> {
         const timestamp = new Date();
         const playerName = interactable.actionDirective.getPlayerName();
         const player = this.#game.entityFinder.getLivingPlayer(playerName);
         if (playerName && !player) throw new Error(`Invalid player.`);
         const author = user instanceof Moderator ? player ? `${player.name} (${user.member.user.username})` : user.member.user.username : player.name
         const forced = user instanceof Moderator;
-		const action = interactable.actionDirective.createAction(this.#game, undefined, player, player?.location, forced, undefined, user);
+        const action = interactable.actionDirective.createAction(this.#game, undefined, player, player?.location, forced, undefined, user);
         if (this.#game.editMode && !forced)
             return false;
-		if (action instanceof QueueMoveAction) {
-			const args = interactable.actionDirective.getArgs();
-			const parsedArgs = action.parseInteractionArgs(args);
+        if (action instanceof QueueMoveAction) {
+            const args = interactable.actionDirective.getArgs();
+            const parsedArgs = action.parseInteractionArgs(args);
             try {
                 const validatedArgs = action.validateInteractionArgs(parsedArgs);
                 if (validatedArgs.length === 2) {
@@ -164,7 +164,7 @@ export default class ClientInteractionHandler {
                 }
             }
             catch (error) { throw new Error(error.message); }
-		}
+        }
         if (action instanceof StopAction) {
             if (player && player.isMoving) {
                 action.performStop();
@@ -173,50 +173,50 @@ export default class ClientInteractionHandler {
                 return true;
             }
         }
-		if (action instanceof InspectAction) {
-			const args = interactable.actionDirective.getArgs();
-			const parsedArgs = action.parseInteractionArgs(args);
-			const validatedArgs = action.validateInteractionArgs(parsedArgs);
-			if (validatedArgs.length === 1) {
-				await action.performInspect(validatedArgs[0]);
-				this.#replyOrDeleteActionResponse(action, interaction, reply);
+        if (action instanceof InspectAction) {
+            const args = interactable.actionDirective.getArgs();
+            const parsedArgs = action.parseInteractionArgs(args);
+            const validatedArgs = action.validateInteractionArgs(parsedArgs);
+            if (validatedArgs.length === 1) {
+                action.performInspect(validatedArgs[0]);
+                this.#replyOrDeleteActionResponse(action, interaction, reply);
                 this.#logInteraction("InspectAction", author, timestamp, validatedArgs);
-				return true;
-			}
-		}
-		if (action instanceof TakeAction) {
-			const args = interactable.actionDirective.getArgs();
-			const parsedArgs = action.parseInteractionArgs(args);
-			const validatedArgs = action.validateInteractionArgs(parsedArgs);
-			if (validatedArgs.length === 4) {
-				await action.performTake(validatedArgs[0], validatedArgs[1], validatedArgs[2], validatedArgs[3]);
-				this.#replyOrDeleteActionResponse(action, interaction, reply);
+                return true;
+            }
+        }
+        if (action instanceof TakeAction) {
+            const args = interactable.actionDirective.getArgs();
+            const parsedArgs = action.parseInteractionArgs(args);
+            const validatedArgs = action.validateInteractionArgs(parsedArgs);
+            if (validatedArgs.length === 4) {
+                action.performTake(validatedArgs[0], validatedArgs[1], validatedArgs[2], validatedArgs[3]);
+                this.#replyOrDeleteActionResponse(action, interaction, reply);
                 this.#logInteraction("TakeAction", author, timestamp, validatedArgs);
-				return true;
-			}
-		}
-		if (action instanceof DropAction) {
-			const args = interactable.actionDirective.getArgs();
-			const parsedArgs = action.parseInteractionArgs(args);
-			const validatedArgs = action.validateInteractionArgs(parsedArgs);
-			if (validatedArgs.length === 4) {
-				await action.performDrop(validatedArgs[0], validatedArgs[1], validatedArgs[2], validatedArgs[3]);
-				this.#replyOrDeleteActionResponse(action, interaction, reply);
+                return true;
+            }
+        }
+        if (action instanceof DropAction) {
+            const args = interactable.actionDirective.getArgs();
+            const parsedArgs = action.parseInteractionArgs(args);
+            const validatedArgs = action.validateInteractionArgs(parsedArgs);
+            if (validatedArgs.length === 4) {
+                action.performDrop(validatedArgs[0], validatedArgs[1], validatedArgs[2], validatedArgs[3]);
+                this.#replyOrDeleteActionResponse(action, interaction, reply);
                 this.#logInteraction("DropAction", author, timestamp, validatedArgs);
-				return true;
-			}
-		}
-		if (action instanceof StashAction) {
-			const args = interactable.actionDirective.getArgs();
-			const parsedArgs = action.parseInteractionArgs(args);
-			const validatedArgs = action.validateInteractionArgs(parsedArgs);
-			if (validatedArgs.length === 4) {
-				action.performStash(validatedArgs[0], validatedArgs[1], validatedArgs[2], validatedArgs[3]);
-				this.#replyOrDeleteActionResponse(action, interaction, reply);
+                return true;
+            }
+        }
+        if (action instanceof StashAction) {
+            const args = interactable.actionDirective.getArgs();
+            const parsedArgs = action.parseInteractionArgs(args);
+            const validatedArgs = action.validateInteractionArgs(parsedArgs);
+            if (validatedArgs.length === 4) {
+                action.performStash(validatedArgs[0], validatedArgs[1], validatedArgs[2], validatedArgs[3]);
+                this.#replyOrDeleteActionResponse(action, interaction, reply);
                 this.#logInteraction("StashAction", author, timestamp, validatedArgs);
-				return true;
-			}
-		}
+                return true;
+            }
+        }
         if (action instanceof UnstashAction) {
             const args = interactable.actionDirective.getArgs();
             const parsedArgs = action.parseInteractionArgs(args);
@@ -255,7 +255,7 @@ export default class ClientInteractionHandler {
             const parsedArgs = action.parseInteractionArgs(args);
             const validatedArgs = action.validateInteractionArgs(parsedArgs);
             if (validatedArgs.length === 3) {
-                await action.performCraft(validatedArgs[0], validatedArgs[1], validatedArgs[2]);
+                action.performCraft(validatedArgs[0], validatedArgs[1], validatedArgs[2]);
                 this.#replyOrDeleteActionResponse(action, interaction, reply);
                 this.#logInteraction("CraftAction", author, timestamp, validatedArgs);
                 return true;
@@ -266,7 +266,7 @@ export default class ClientInteractionHandler {
             const parsedArgs = action.parseInteractionArgs(args);
             const validatedArgs = action.validateInteractionArgs(parsedArgs);
             if (validatedArgs.length === 2) {
-                await action.performUncraft(validatedArgs[0], validatedArgs[1]);
+                action.performUncraft(validatedArgs[0], validatedArgs[1]);
                 this.#replyOrDeleteActionResponse(action, interaction, reply);
                 this.#logInteraction("UncraftAction", author, timestamp, validatedArgs);
                 return true;
@@ -289,7 +289,7 @@ export default class ClientInteractionHandler {
             try {
                 const validatedArgs = action.validateInteractionArgs(parsedArgs);
                 if (validatedArgs.length === 2) {
-                    await action.performActivate(validatedArgs[0], validatedArgs[1]);
+                    action.performActivate(validatedArgs[0], validatedArgs[1]);
                     this.#replyOrDeleteActionResponse(action, interaction, reply);
                     this.#logInteraction("ActivateAction", author, timestamp, validatedArgs);
                     return true;
@@ -303,7 +303,7 @@ export default class ClientInteractionHandler {
             try {
                 const validatedArgs = action.validateInteractionArgs(parsedArgs);
                 if (validatedArgs.length === 2) {
-                    await action.performDeactivate(validatedArgs[0], validatedArgs[1]);
+                    action.performDeactivate(validatedArgs[0], validatedArgs[1]);
                     this.#replyOrDeleteActionResponse(action, interaction, reply);
                     this.#logInteraction("DeactivateAction", author, timestamp, validatedArgs);
                     return true;
@@ -333,7 +333,7 @@ export default class ClientInteractionHandler {
             else {
                 const args = interactable.actionDirective.getArgs();
                 if (args.length === 5 && args[0] === "II") {
-                    const modal = await this.#game.clientContext.interactableManager.createInstantiateInventoryItemActionModalInteractable(args as [string, string, string, string], player, user);
+                    const modal = this.#game.clientContext.interactableManager.createInstantiateInventoryItemActionModalInteractable(args as [string, string, string, string], player, user);
                     await interaction.showModal(modal.component);
                     return true;
                 }
@@ -361,7 +361,7 @@ export default class ClientInteractionHandler {
             else {
                 const args = interactable.actionDirective.getArgs();
                 if (args.length >= 4 && (args[0] === "F" || args[0] === "RI" || args[0] === "PZ")) {
-                    const modal = await this.#game.clientContext.interactableManager.createInstantiateRoomItemActionModalInteractable(args, user);
+                    const modal = this.#game.clientContext.interactableManager.createInstantiateRoomItemActionModalInteractable(args, user);
                     await interaction.showModal(modal.component);
                     return true;
                 }
@@ -418,21 +418,21 @@ export default class ClientInteractionHandler {
             const parsedArgs = action.parseInteractionArgs(args);
             try {
                 const validatedArgs = action.validateInteractionArgs(parsedArgs);
-                await action.performView(validatedArgs[0], validatedArgs[1]);
+                action.performView(validatedArgs[0], validatedArgs[1]);
                 if (reply) reply.resource.message.delete();
                 return true;
             }
             catch (error) { throw new Error(error.message); }
         }
-		return false;
-	}
+        return false;
+    }
 
     /**
      * Processes a standard interactable, i.e. an interactable that doesn't contain an action directive.
      * @param interactable - The interactable to process.
      * @param user - The user who triggered the interaction.
      * @param interaction - The interaction being executed.
-	 * @param reply - The reply that was sent.
+     * @param reply - The reply that was sent.
      * @returns Whether the interactable successfully performed an action or not.
      */
     async #processStandardInteractable(interactable: Interactable, user: User, interaction: BotInteraction, reply?: InteractionCallbackResponse<boolean>): Promise<boolean> {
@@ -441,29 +441,29 @@ export default class ClientInteractionHandler {
             interactable.callback(interaction);
             if (reply) reply.resource.message.delete();
         }
-       return true;
+        return true;
     }
 
     /**
      * Replies to the interaction if it was initiated by a moderator. Otherwise, deletes the deferred response.
      * @param action - The action that was performed.
      * @param interaction - The interaction being executed.
-	 * @param reply - The reply that was sent.
+     * @param reply - The reply that was sent.
      */
     #replyOrDeleteActionResponse(action: Action, interaction: BotInteraction, reply?: InteractionCallbackResponse<boolean>) {
         if (action.forced && action.successMessage) this.#replyToInteraction(action.successMessage, interaction);
         else if (reply) reply.resource.message.delete();
     }
 
-	/**
-	 * Replies to an interaction.
-	 * @param response - The response to send.
-	 * @param interaction - The interaction to reply to.
-	 */
-	#replyToInteraction(response: string, interaction: BotInteraction): void {
+    /**
+     * Replies to an interaction.
+     * @param response - The response to send.
+     * @param interaction - The interaction to reply to.
+     */
+    #replyToInteraction(response: string, interaction: BotInteraction): void {
         if (interaction.replied || interaction.deferred) interaction.editReply({ content: response });
         else interaction.reply({ content: response });
-	}
+    }
 
     /**
      * Logs the occurrence of an interaction.

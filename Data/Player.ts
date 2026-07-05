@@ -279,10 +279,6 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
      */
     currentMovingSpeed: number;
     /**
-     * A timeout that updates the player's position and stamina every 100 milliseconds while the player is moving.
-     */
-    moveTimer: NodeJS.Timeout | null;
-    /**
      * How many milliseconds until the player is done moving to the exit they're currently moving to.
      */
     remainingTime: number;
@@ -313,7 +309,7 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
      * Whether or not the player has depleted half of their stamina while moving.
      * When they do, they will be warned that they're starting to become tired.
      */
-    #reachedHalfStamina: boolean;
+    reachedHalfStamina: boolean;
     /**
      * A timeout that regenerates the player's stamina every 30 seconds while they're not moving.
      */
@@ -417,7 +413,6 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
         this.isMoving = false;
         this.isRunning = false;
         this.currentMovingSpeed = 0;
-        this.moveTimer = null;
         this.remainingTime = 0;
         this.moveQueue = [];
         this.#followedPlayerName = "";
@@ -425,7 +420,7 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
         this.#ledPlayerNames = new Set();
         this.party = null;
 
-        this.#reachedHalfStamina = false;
+        this.reachedHalfStamina = false;
         let player = this;
         this.#staminaRegenerationInterval = setInterval(function () {
             if (!player.isMoving) player.#regenerateStamina();
@@ -565,126 +560,21 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
     }
 
     /**
+     * A timeout that updates the player's position and stamina every 100 milliseconds while the player is moving.
+     * If the player isn't moving, this is `null`.
+     */
+    get moveTimer(): NodeJS.Timeout | null {
+        return this.getGame().movementHandler.getMoveTimer(this);
+    }
+
+    /**
      * Executes the given callback function after a set delay.
      * Overwrites the player's `moveTimer` and `remainingTime`.
      * @param delay - The amount of time to delay the callback function in milliseconds.
      * @param callback - The function to call when the delay is over.
      */
     doAfterDelay(delay: number, callback: (...args: any[]) => Promise<void>): void {
-        clearInterval(this.moveTimer);
-        this.remainingTime = delay;
-        const player = this;
-        this.moveTimer = setInterval(async () => {
-            let subtractedTime = Game.tick;
-            if (player.getGame().heated) subtractedTime = player.getGame().settings.heatedSlowdownRate * subtractedTime;
-            player.remainingTime -= subtractedTime;
-            if (player.remainingTime <= 0) {
-                clearInterval(player.moveTimer);
-                try {
-                    await callback();
-                }
-                catch (error) {
-                    console.error(`${player.name} doAfterDelay callback error:`, error);
-                }
-            }
-        }, Game.tick);
-    }
-
-    /**
-     * Moves the player to the desired room.
-     *
-     * @param isRunning - Whether the player is running.
-     * @param currentRoom - The room the player is currently in.
-     * @param destinationRoom - The room the player will be moved to.
-     * @param exit - The exit the player will leave their current room through.
-     * @param entrance - The exit the player will enter the desired room from.
-     * @param time - The number of milliseconds it will take to move to the destination.
-     * @param forced - Whether or not the player was forced to move to the destination.
-     */
-    move(isRunning: boolean, currentRoom: Room, destinationRoom: Room, exit: Exit, entrance: Exit, time: number, forced: boolean): void {
-        this.remainingTime = time;
-        this.isMoving = true;
-        this.isRunning = isRunning;
-        const startingPos: Pos = { x: this.pos.x, y: this.pos.y, z: this.pos.z };
-
-        let player = this;
-        this.moveTimer = setInterval(async function () {
-            const settings = player.getGame().settings;
-            let subtractedTime = 100;
-            if (player.getGame().heated) subtractedTime = settings.heatedSlowdownRate * subtractedTime;
-            if (time >= subtractedTime) player.remainingTime -= subtractedTime;
-            // Get the current coordinates based on what percentage of the duration has passed.
-            const elapsedTime = time - player.remainingTime;
-            const timeRatio = elapsedTime / time;
-            let x = startingPos.x + Math.round(timeRatio * (exit.pos.x - startingPos.x));
-            let y = startingPos.y + Math.round(timeRatio * (exit.pos.y - startingPos.y));
-            let z = startingPos.z + Math.round(timeRatio * (exit.pos.z - startingPos.z));
-            // Calculate the distance the player has traveled in this time.
-            let distance = Math.sqrt(Math.pow(x - player.pos.x, 2) + Math.pow(z - player.pos.z, 2)) / settings.pixelsPerMeter;
-            let rise = (y - player.pos.y) / settings.pixelsPerMeter;
-            // Calculate the amount of stamina the player has lost traveling this distance.
-            const staminaUseMultiplier = isRunning ? 3 : 1;
-            let lostStamina: number;
-            // If distance is 0, we'll treat it like a staircase.
-            if (distance === 0 && rise !== 0) {
-                const uphill = rise > 0 ? true : false;
-                distance = rise;
-                lostStamina = uphill
-                    ? 4 * staminaUseMultiplier * settings.staminaUseRate * distance
-                    : staminaUseMultiplier * settings.staminaUseRate / 4 * -distance;
-            }
-            else {
-                const slope = rise / distance;
-                lostStamina = !isNaN(slope) ? staminaUseMultiplier *
-                    (settings.staminaUseRate + slope * settings.staminaUseRate) * distance : staminaUseMultiplier *
-                    settings.staminaUseRate * distance;
-                if (isNaN(lostStamina)) lostStamina = 0;
-            }
-            player.pos.x = x;
-            player.pos.y = y;
-            player.pos.z = z;
-            if (!player.hasBehaviorAttribute("no stamina decrease")) player.stamina = player.stamina + lostStamina;
-            // If player reaches half of their stamina, give them a warning.
-            // Be sure to check player.#reachedHalfStamina so that this message is only sent once.
-            if (player.stamina <= player.maxStamina / 2 && !player.#reachedHalfStamina) {
-                player.#reachedHalfStamina = true;
-                // The communication handler needs an action to prevent notification duplication, so create a dummy here.
-                const reachedHalfStaminaAction = new MoveAction(player.getGame(), undefined, player, player.location, true);
-                player.getGame().narrationHandler.narrateReachedHalfStamina(reachedHalfStaminaAction, player);
-            }
-            // If player runs out of stamina, stop them in their tracks.
-            if (player.stamina <= 0) {
-                clearInterval(player.moveTimer);
-                player.stamina = 0;
-                const wearyStatus = player.getGame().entityFinder.getStatusEffect("weary");
-                if (wearyStatus) {
-                    const wearyAction = new InflictAction(player.getGame(), undefined, player, player.location, true);
-                    wearyAction.performInflict(wearyStatus, false, true, true);
-                    player.getGame().narrationHandler.narrateWeary(wearyAction, player);
-                }
-            }
-            if (player.remainingTime <= 0 && player.stamina !== 0) {
-                clearInterval(player.moveTimer);
-                player.isMoving = false;
-                player.isRunning = false;
-                player.currentMovingSpeed = 0;
-                const restrictedExitPuzzle = player.getGame().entityFinder.getPuzzle(exit.name, player.location.id, "restricted exit", true);
-                const exitPuzzlePassable = restrictedExitPuzzle && restrictedExitPuzzle.solutions.includes(player.name);
-                if (exit.unlocked || exitPuzzlePassable) {
-                    const moveAction = new MoveAction(player.getGame(), undefined, player, player.location, forced);
-                    await moveAction.performMove(isRunning, currentRoom, destinationRoom, exit, entrance);
-                }
-                else {
-                    // The exit is locked.
-                    const stopAction = new StopAction(player.getGame(), undefined, player, player.location, forced);
-                    stopAction.performStop(true, exit, false);
-                    player.pos.x = exit.pos.x;
-                    player.pos.y = exit.pos.y;
-                    player.pos.z = exit.pos.z;
-                    player.moveQueue.length = 0;
-                }
-            }
-        }, Game.tick);
+        this.getGame().movementHandler.doAfterDelay(new Set([this]), delay, callback);
     }
 
     /**
@@ -713,38 +603,18 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
      * @returns The number of milliseconds it will take to move to the desired exit.
      */
     calculateMoveTime(exit: Exit, isRunning: boolean, customSpeed?: number): number {
-        let rate = this.calculateMoveRate(isRunning, customSpeed);
-        let distance = Math.sqrt(Math.pow(exit.pos.x - this.pos.x, 2) + Math.pow(exit.pos.z - this.pos.z, 2));
-        distance = distance / this.getGame().settings.pixelsPerMeter;
-        // Slope should affect the rate.
-        const rise = (exit.pos.y - this.pos.y) / this.getGame().settings.pixelsPerMeter;
-        let time = 0;
-        // If distance is 0, we'll treat it like a staircase and just use the rise to calculate the time.
-        if (distance === 0 && rise !== 0) {
-            const uphill = rise > 0;
-            // Assume that the staircase is a right triangle leading to another right triangle flipped horizontally.
-            const legs = rise / 2;
-            // Calculate the length of the hypotenuse of these right triangles.
-            distance = Math.sqrt(2 * Math.pow(legs, 2));
-            // The distance should be two hypotenuses.
-            distance = distance * 2;
-            // If the player is moving uphill, reduce their rate of movement by 1/3.
-            // Otherwise, increase it by 1/3;
-            rate = uphill ? 2 * rate / 3 : 4 * rate / 3;
-            // To make it feel a little more realistic, multiply it by 2.
-            time = distance / rate * 2 * 1000;
-        }
-        else {
-            const slope = rise / distance;
-            // Prevent division errors.
-            rate = !isNaN(slope) && slope * rate !== rate ? rate - slope * rate : rate;
-            time = distance / rate * 1000;
-        }
-        if (time < 0 || isNaN(time)) time = 0;
-        // Cap out the maximum length of time at 1 hour.
-        const maxLength = 60 * 60 * 1000;
-        if (time > maxLength) time = maxLength;
-        return time;
+        const rate = this.calculateMoveRate(isRunning, customSpeed);
+        return this.getGame().movementHandler.calculateMoveTime(rate, this, exit);
+    }
+
+    /**
+     * Sets the player's position in 3D space.
+     * @param pos - The position to set.
+     */
+    setPos(pos: Pos): void {
+        this.pos.x = pos.x;
+        this.pos.y = pos.y;
+        this.pos.z = pos.z;
     }
 
     /**
@@ -769,7 +639,7 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
      */
     restoreStamina(): void {
         this.stamina = this.maxStamina;
-        this.#reachedHalfStamina = false;
+        this.reachedHalfStamina = false;
     }
 
     /**
@@ -798,8 +668,9 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
      * Stops the player, if they're moving.
      */
     stopMoving(): void {
-        if (this.moveTimer !== null)
-            clearInterval(this.moveTimer);
+        if (this.moveTimer !== null) {
+            this.getGame().movementHandler.stopMoveTimer(this);
+        }
         this.isMoving = false;
         this.isRunning = false;
         this.currentMovingSpeed = 0;
@@ -821,6 +692,15 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
      */
     isFollowing(player: Player): boolean {
         return this.#followedPlayerName !== "" && this.#followedPlayerName === player.name;
+    }
+
+    /**
+     * Returns true if the player this player is following is still visible in the room
+     * and has the same display name as when this player first started following them.
+     */
+    followedPlayerIsInRoom(): boolean {
+        return !!this.location.getOccupantsExcluding(this)
+            .find(occupant => this.isFollowing(occupant) && occupant.displayName === this.followedPlayerDisplayName);
     }
 
     /**
@@ -936,8 +816,11 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
                 }
             }
         }
-        else if (this.followedPlayer)
-            partyString += ` not in a party. However, you are following ${moderatorView ? this.followedPlayer.name : this.followedPlayerDisplayName}.`;
+        else if (this.followedPlayer) {
+            partyString += ` not in a party. However, `;
+            partyString += moderatorView ? `${this.originalPronouns.sbj} ${this.originalPronouns.plural ? "are" : "is"}` : `you are`;
+            partyString += ` following ${moderatorView ? this.followedPlayer.name : this.followedPlayerDisplayName}.`;
+        }
         else partyString += ` not in a party.`;
         return partyString;
     }
@@ -1188,6 +1071,14 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
      */
     isHidden(): boolean {
         return this.hasBehaviorAttribute("hidden");
+    }
+
+    /**
+     * Returns true if the player is in the same hiding spot as the given player.
+     * @param player - The other player to check if they are hiding together.
+     */
+    isHiddenWith(player: Player): boolean {
+        return this.isHidden() && player.isHidden() && this.hidingSpot === player.hidingSpot;
     }
 
     /**
@@ -1836,10 +1727,12 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
      *
      * @param action - The action that caused the player to die.
      */
-    die(action: Action): void {
+    async die(action: Action): Promise<void> {
         this.location.removePlayer(this);
         const whisperRemovalMessage = this.getGame().notificationGenerator.generateDieNotification(this, false);
-        this.removeFromWhispers(whisperRemovalMessage, action);
+        await this.removeFromWhispers(whisperRemovalMessage, action);
+        const hidingSpot = this.getGame().entityFinder.getFixture(this.hidingSpot, this.location.id)?.hidingSpot ?? undefined;
+        if (hidingSpot) await hidingSpot.removePlayer(this, action);
         // Update various data.
         this.alive = false;
         this.location = null;
@@ -1865,10 +1758,10 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
      * @param action - The action that caused the player to be removed. If a narration is supplied, this is required.
      * @param removeFromParty - Whether or not to remove the player from party whispers. Defaults to true.
      */
-    removeFromWhispers(narration: string, action?: Action, removeFromParty: boolean = true): void {
+    async removeFromWhispers(narration: string, action?: Action, removeFromParty: boolean = true): Promise<void> {
         for (const whisper of this.getGame().whispers.values()) {
             if (whisper.players.has(this.name) && (removeFromParty || whisper.type !== WhisperType.PARTY))
-                whisper.removePlayer(this, narration, action);
+                await whisper.removePlayer(this, narration, action);
         }
     }
 

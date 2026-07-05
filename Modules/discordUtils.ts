@@ -62,7 +62,6 @@ export function generateMessageDisplayCreateOptions(messageDisplayType: MessageD
  * @param embeds - An array of embeds to send in the message. Optional.
  * @param files - An array of file URLs to send. Optional.
  * @param player - The player the message is about. Optional.
- *
  */
 export function generateWebhookMessageDisplayCreateOptions(messageDisplayType: MessageDisplayType, game: Game, messageText: string, username: string, avatarURL: string, embeds: Embed[] = [], files: string[] = [], player?: Player): WebhookMessageCreateOptions {
     return {
@@ -243,21 +242,24 @@ export function createRoomDescriptionComponents(location: Room, descriptionText:
     [mediaGalleryBuilder, descriptionText] = getMediaGalleryComponents(descriptionText);
 
     let components: TopLevelComponent[] = [];
-    components.push(new ContainerBuilder()
-        .setAccentColor(Number(`0x${color}`))
-        .addSectionComponents(
-            new SectionBuilder()
-                .setThumbnailAccessory(
-                    new ThumbnailBuilder()
-                        .setURL(location.getIconURL())
-                )
-                .addTextDisplayComponents(
-                    new TextDisplayBuilder().setContent("_ _"),
-                    new TextDisplayBuilder().setContent(`**${location.displayName}**`),
-                    new TextDisplayBuilder().setContent("_ _")
-                )
-        )
-    );
+
+    const containerComponent = new ContainerBuilder().setAccentColor(Number(`0x${color}`));
+    const inlineComponents: TextDisplayBuilder[] = [
+        new TextDisplayBuilder().setContent("_ _"),
+        new TextDisplayBuilder().setContent(`**${location.displayName}**`),
+        new TextDisplayBuilder().setContent("_ _")
+    ];
+    const iconUrl = location.getIconURL();
+    if (iconUrl) {
+        const sectionBuilder = new SectionBuilder()
+            .setThumbnailAccessory(new ThumbnailBuilder().setURL(iconUrl))
+            .addTextDisplayComponents(inlineComponents);
+        containerComponent.addSectionComponents(sectionBuilder);
+    }
+    else
+        containerComponent.addTextDisplayComponents(inlineComponents);
+    components.push(containerComponent);
+
     components.push(new SeparatorBuilder().setSpacing(SeparatorSpacingSize.Small).setDivider(false));
     components.push(new TextDisplayBuilder().setContent(descriptionText));
     if (mediaGalleryBuilder.items.length !== 0) components.push(mediaGalleryBuilder);

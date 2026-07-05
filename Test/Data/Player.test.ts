@@ -113,7 +113,7 @@ describe('Player test', () => {
          * @remarks
          * All of these values were calculated with a TI-84 Plus CE, using the following equations and variables:
          *
-         * Y₁=(0.018x(RX)²+0.005RX+0.916)Y₂
+         * Y₁=(0.0183(RX)²+0.005RX+0.916)Y₂
          *
          * Y₂=min(max(15/C,0.25),1)
          *
@@ -129,7 +129,7 @@ describe('Player test', () => {
          *
          * C=player carry weight
          *
-         * D=[X distance in pixels]
+         * D=[X distance in pixels]/P (flat distance in meters)
          *
          * P=25 (pixels per meter)
          *

@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 Ms. VBLANK <alteregomolly@pm.me>
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import type { ButtonInteraction } from "discord.js";
 import Action from "../Action.ts";
 import type Event from "../Event.ts";
@@ -419,7 +423,7 @@ export default class FindAction extends Action {
     /**
      * Sends the result list message and edits it when the user requests the next or previous page.
      */
-    async #sendResultListMessage<T extends PersistentGameEntity>(results: T[]): Promise<void> {
+    #sendResultListMessage<T extends PersistentGameEntity>(results: T[]): void {
         const pages = this.#createResultPages(results);
         let page = 0;
         const resultCountString = `Found ${results.length} result${results.length === 1 ? '' : 's'}.`;
@@ -445,22 +449,22 @@ export default class FindAction extends Action {
             interactables = interactables.concat(this.getGame().clientContext.interactableManager.createPaginationInteractables(this, prevPageCallback, nextPageCallback));
         }
         else {
-            interactables = interactables.concat(await this.#getInteractables(results));
+            interactables = interactables.concat(this.#getInteractables(results));
         }
         this.getGame().communicationHandler.sendToChannel(this.getGame().guildContext.commandChannel, resultCountString + pageString + resultsDisplay, [], interactables);
     }
 
-    async #getInteractables<T extends PersistentGameEntity>(results: T[]): Promise<Interactable[]> {
+    #getInteractables<T extends PersistentGameEntity>(results: T[]): Interactable[] {
         let interactables: Interactable[] = [];
         const interactableManager = this.getGame().clientContext.interactableManager;
-        interactables = await interactableManager.getViewInteractables(undefined, [], results, this.user);
+        interactables = interactableManager.getViewInteractables(undefined, [], results, this.user);
         if (results.every(result => result instanceof Fixture || result instanceof RoomItem || result instanceof Puzzle)) {
-            interactables = interactables.concat(await interactableManager.getInstantiateRoomItemInteractables(results, this.user));
-            interactables = interactables.concat(await interactableManager.getDestroyRoomItemInteractables(results, this.user));
+            interactables = interactables.concat(interactableManager.getInstantiateRoomItemInteractables(results, this.user));
+            interactables = interactables.concat(interactableManager.getDestroyRoomItemInteractables(results, this.user));
         }
         else if (results.every(result => result instanceof InventoryItem)) {
-            interactables = interactables.concat(await interactableManager.getInstantiateInventoryItemInteractables(undefined, this.user, [], results));
-            interactables = interactables.concat(await interactableManager.createDestroyInventoryItemActionInteractables(results, undefined, this.user));
+            interactables = interactables.concat(interactableManager.getInstantiateInventoryItemInteractables(undefined, this.user, [], results));
+            interactables = interactables.concat(interactableManager.createDestroyInventoryItemActionInteractables(results, undefined, this.user));
         }
         return interactables;
     }

@@ -30,11 +30,6 @@ export default class StopAction extends Action {
         }
 
         // If anyone is following this player, they need to stop moving.
-        for (const occupant of this.location.occupants) {
-            if (occupant.isMoving && occupant.isFollowing(this.player)) {
-                const stopAction = new StopAction(this.getGame(), undefined, occupant, occupant.location, this.forced);
-                stopAction.performStop(undefined, undefined, false);
-            }
-        }
+        this.getGame().movementHandler.stopFollowers(this.player, false, this.forced);
 	}
 }

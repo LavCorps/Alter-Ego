@@ -560,8 +560,8 @@ describe('messageHandler test', () => {
                         expect(asukaSpectateMessage).toBeWebhookMessage();
                         expect(asukaSpectateMessage).toBeMessageWith("Luna", luna.member.avatarURL(), "Oh, hello!");
 
-                        hidingSpot.removePlayer(luna);
-                        hidingSpot.removePlayer(asuka);
+                        await hidingSpot.removePlayer(luna);
+                        await hidingSpot.removePlayer(asuka);
                         luna.cure(hidden);
                         asuka.cure(hidden);
                     });
@@ -590,8 +590,8 @@ describe('messageHandler test', () => {
                         expect(asukaSpectateMessage).toBeWebhookMessage();
                         expect(asukaSpectateMessage).toBeMessageWith("An individual wearing a MASK", game.settings.defaultConcealedIconURL, "Oh, hello!");
 
-                        hidingSpot.removePlayer(luna);
-                        hidingSpot.removePlayer(asuka);
+                        await hidingSpot.removePlayer(luna);
+                        await hidingSpot.removePlayer(asuka);
                         luna.cure(hidden);
                         asuka.cure(hidden);
                         luna.displayName = luna.name;
@@ -792,8 +792,8 @@ describe('messageHandler test', () => {
                         expect(asukaNotificationMessage.content).toBe(`Luna says "( Oh, hello!"`);
                         expect(asuka.spectateChannel.messages.cache).toHaveSize(0);
 
-                        hidingSpot.removePlayer(luna);
-                        hidingSpot.removePlayer(asuka);
+                        await hidingSpot.removePlayer(luna);
+                        await hidingSpot.removePlayer(asuka);
                         luna.cure(hidden);
                         asuka.cure(hidden);
                     });
@@ -818,8 +818,8 @@ describe('messageHandler test', () => {
                         expect(asukaNotificationMessage.content).toBe(`An individual wearing a MASK says "( Oh, hello!"`);
                         expect(asuka.spectateChannel.messages.cache).toHaveSize(0);
 
-                        hidingSpot.removePlayer(luna);
-                        hidingSpot.removePlayer(asuka);
+                        await hidingSpot.removePlayer(luna);
+                        await hidingSpot.removePlayer(asuka);
                         luna.cure(hidden);
                         asuka.cure(hidden);
                         luna.displayName = luna.name;
@@ -1027,8 +1027,8 @@ describe('messageHandler test', () => {
                         expect(astridSpectateMessage).toBeWebhookMessage();
                         expect(astridSpectateMessage).toBeMessageWith("Kiara", kiara.member.avatarURL(), "Bonjour!");
 
-                        hidingSpot.removePlayer(kiara);
-                        hidingSpot.removePlayer(astrid);
+                        await hidingSpot.removePlayer(kiara);
+                        await hidingSpot.removePlayer(astrid);
                         kiara.cure(hidden);
                         astrid.cure(hidden);
                     });
@@ -1057,8 +1057,8 @@ describe('messageHandler test', () => {
                         expect(astridSpectateMessage).toBeWebhookMessage();
                         expect(astridSpectateMessage).toBeMessageWith("An individual wearing a MASK (Kiara)", game.settings.defaultConcealedIconURL, "Bonjour!");
 
-                        hidingSpot.removePlayer(kiara);
-                        hidingSpot.removePlayer(astrid);
+                        await hidingSpot.removePlayer(kiara);
+                        await hidingSpot.removePlayer(astrid);
                         kiara.cure(hidden);
                         astrid.cure(hidden);
                         kiara.displayName = kiara.name;
@@ -1276,8 +1276,8 @@ describe('messageHandler test', () => {
                         expect(astridNotificationMessage.content).toBe(`Kiara says "( Bonjour!"`);
                         expect(astrid.spectateChannel.messages.cache).toHaveSize(0);
 
-                        hidingSpot.removePlayer(kiara);
-                        hidingSpot.removePlayer(astrid);
+                        await hidingSpot.removePlayer(kiara);
+                        await hidingSpot.removePlayer(astrid);
                         kiara.cure(hidden);
                         astrid.cure(hidden);
                     });
@@ -1302,8 +1302,8 @@ describe('messageHandler test', () => {
                         expect(astridNotificationMessage.content).toBe(`An individual wearing a MASK says "( Bonjour!"`);
                         expect(astrid.spectateChannel.messages.cache).toHaveSize(0);
 
-                        hidingSpot.removePlayer(kiara);
-                        hidingSpot.removePlayer(astrid);
+                        await hidingSpot.removePlayer(kiara);
+                        await hidingSpot.removePlayer(astrid);
                         kiara.cure(hidden);
                         astrid.cure(hidden);
                         kiara.displayName = kiara.name;
@@ -1552,8 +1552,8 @@ describe('messageHandler test', () => {
                             expect(astridSpectateMessage).toBeWebhookMessage();
                             expect(astridSpectateMessage).toBeMessageWith("Someone in the room with a gentle voice", game.settings.hiddenIconURL, "-# *(Whispered):*\nHello!");
 
-                            hidingSpot.removePlayer(luna);
-                            hidingSpot.removePlayer(kiara);
+                            await hidingSpot.removePlayer(luna);
+                            await hidingSpot.removePlayer(kiara);
                             luna.cure(hidden);
                             kiara.cure(hidden);
                             await game.entityLoader.deleteWhisper(hidingSpot.whisper);
@@ -1582,7 +1582,7 @@ describe('messageHandler test', () => {
                             expect(astridSpectateMessage).toBeWebhookMessage();
                             expect(astridSpectateMessage).toBeMessageWith("Someone in the room with a gentle voice", game.settings.hiddenIconURL, "-# *(Whispered):*\nHello!");
 
-                            hidingSpot.removePlayer(luna);
+                            await hidingSpot.removePlayer(luna);
                             luna.cure(hidden);
                             await game.entityLoader.deleteWhisper(hidingSpot.whisper);
                             whisperLunaKiara = await game.entityLoader.createWhisper([luna, kiara]);
@@ -1813,8 +1813,8 @@ describe('messageHandler test', () => {
                             expect(astridSpectateMessage).toBeWebhookMessage();
                             expect(astridSpectateMessage).toBeMessageWith("Kiara", game.settings.hiddenIconURL, "-# *(Whispered):*\nHello!");
 
-                            hidingSpot.removePlayer(luna);
-                            hidingSpot.removePlayer(kiara);
+                            await hidingSpot.removePlayer(luna);
+                            await hidingSpot.removePlayer(kiara);
                             luna.cure(hidden);
                             kiara.cure(hidden);
                             await game.entityLoader.deleteWhisper(hidingSpot.whisper);
@@ -1843,7 +1843,7 @@ describe('messageHandler test', () => {
                             expect(astridSpectateMessage).toBeWebhookMessage();
                             expect(astridSpectateMessage).toBeMessageWith("Kiara", game.settings.hiddenIconURL, "-# *(Whispered):*\nHello!");
 
-                            hidingSpot.removePlayer(kiara);
+                            await hidingSpot.removePlayer(kiara);
                             kiara.cure(hidden);
                             await game.entityLoader.deleteWhisper(hidingSpot.whisper);
                             whisperLunaKiara = await game.entityLoader.createWhisper([luna, kiara]);
@@ -2071,8 +2071,8 @@ describe('messageHandler test', () => {
                         expect(lunaSpectateMessage).toBeWebhookMessage();
                         expect(lunaSpectateMessage).toBeMessageWith("Amadeus", amadeus.member.avatarURL(), "-# *(Whispered to Luna in the RECEPTION DESK):*\nHello.");
 
-                        hidingSpot.removePlayer(amadeus);
-                        hidingSpot.removePlayer(luna);
+                        await hidingSpot.removePlayer(amadeus);
+                        await hidingSpot.removePlayer(luna);
                         amadeus.cure(hidden);
                         luna.cure(hidden);
                         await game.entityLoader.deleteWhisper(hidingSpot.whisper);
@@ -2096,7 +2096,7 @@ describe('messageHandler test', () => {
                         expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                         expect(luna.spectateChannel.messages.cache).toHaveSize(0);
 
-                        hidingSpot.removePlayer(amadeus);
+                        await hidingSpot.removePlayer(amadeus);
                         amadeus.cure(hidden);
                         await game.entityLoader.deleteWhisper(hidingSpot.whisper);
                         whisperAmadeusLuna = await game.entityLoader.createWhisper([amadeus, luna]);
@@ -2125,8 +2125,8 @@ describe('messageHandler test', () => {
                         expect(lunaSpectateMessage).toBeWebhookMessage();
                         expect(lunaSpectateMessage).toBeMessageWith("An individual wearing a MASK", game.settings.defaultConcealedIconURL, "-# *(Whispered to Luna in the RECEPTION DESK):*\nHello.");
 
-                        hidingSpot.removePlayer(amadeus);
-                        hidingSpot.removePlayer(luna);
+                        await hidingSpot.removePlayer(amadeus);
+                        await hidingSpot.removePlayer(luna);
                         amadeus.cure(hidden);
                         luna.cure(hidden);
                         amadeus.displayName = amadeus.name;
@@ -2248,8 +2248,8 @@ describe('messageHandler test', () => {
                             });
 
                             afterAll(async () => {
-                                hidingSpot.removePlayer(amadeus);
-                                hidingSpot.removePlayer(luna);
+                                await hidingSpot.removePlayer(amadeus);
+                                await hidingSpot.removePlayer(luna);
                                 amadeus.cure(hidden);
                                 luna.cure(hidden);
                                 await game.entityLoader.deleteWhisper(hidingSpot.whisper);
@@ -2399,8 +2399,8 @@ describe('messageHandler test', () => {
                             });
 
                             afterAll(async () => {
-                                hidingSpot.removePlayer(amadeus);
-                                hidingSpot.removePlayer(luna);
+                                await hidingSpot.removePlayer(amadeus);
+                                await hidingSpot.removePlayer(luna);
                                 amadeus.cure(hidden);
                                 luna.cure(hidden);
                                 await game.entityLoader.deleteWhisper(hidingSpot.whisper);
@@ -2520,8 +2520,8 @@ describe('messageHandler test', () => {
                         expect(lunaSpectateMessage).toBeWebhookMessage();
                         expect(lunaSpectateMessage).toBeMessageWith("Luna", luna.member.avatarURL(), "-# *(Whispered to Amadeus in the RECEPTION DESK):*\nOh, hello!");
 
-                        hidingSpot.removePlayer(amadeus);
-                        hidingSpot.removePlayer(luna);
+                        await hidingSpot.removePlayer(amadeus);
+                        await hidingSpot.removePlayer(luna);
                         amadeus.cure(hidden);
                         luna.cure(hidden);
                         await game.entityLoader.deleteWhisper(hidingSpot.whisper);
@@ -2545,7 +2545,7 @@ describe('messageHandler test', () => {
                         expect(amadeus.notificationChannel.messages.cache).toHaveSize(0);
                         expect(amadeus.spectateChannel.messages.cache).toHaveSize(0);
 
-                        hidingSpot.removePlayer(luna);
+                        await hidingSpot.removePlayer(luna);
                         luna.cure(hidden);
                         await game.entityLoader.deleteWhisper(hidingSpot.whisper);
                         whisperAmadeusLuna = await game.entityLoader.createWhisper([amadeus, luna]);
@@ -2575,8 +2575,8 @@ describe('messageHandler test', () => {
                         expect(lunaSpectateMessage).toBeWebhookMessage();
                         expect(lunaSpectateMessage).toBeMessageWith("An individual wearing a MASK (Luna)", game.settings.defaultConcealedIconURL, "-# *(Whispered to Amadeus in the RECEPTION DESK):*\nOh, hello!");
 
-                        hidingSpot.removePlayer(amadeus);
-                        hidingSpot.removePlayer(luna);
+                        await hidingSpot.removePlayer(amadeus);
+                        await hidingSpot.removePlayer(luna);
                         amadeus.cure(hidden);
                         luna.cure(hidden);
                         luna.displayName = luna.name;
@@ -2698,8 +2698,8 @@ describe('messageHandler test', () => {
                             });
 
                             afterAll(async () => {
-                                hidingSpot.removePlayer(amadeus);
-                                hidingSpot.removePlayer(luna);
+                                await hidingSpot.removePlayer(amadeus);
+                                await hidingSpot.removePlayer(luna);
                                 amadeus.cure(hidden);
                                 luna.cure(hidden);
                                 await game.entityLoader.deleteWhisper(hidingSpot.whisper);
@@ -2819,8 +2819,8 @@ describe('messageHandler test', () => {
                         expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                         expect(luna.spectateChannel.messages.cache).toHaveSize(0);
 
-                        hidingSpot.removePlayer(amadeus);
-                        hidingSpot.removePlayer(luna);
+                        await hidingSpot.removePlayer(amadeus);
+                        await hidingSpot.removePlayer(luna);
                         amadeus.cure(hidden);
                         luna.cure(hidden);
                         luna.displayName = luna.name;
@@ -2896,8 +2896,8 @@ describe('messageHandler test', () => {
                             });
 
                             afterAll(async () => {
-                                hidingSpot.removePlayer(amadeus);
-                                hidingSpot.removePlayer(luna);
+                                await hidingSpot.removePlayer(amadeus);
+                                await hidingSpot.removePlayer(luna);
                                 amadeus.cure(hidden);
                                 luna.cure(hidden);
                                 await game.entityLoader.deleteWhisper(hidingSpot.whisper);
@@ -3662,7 +3662,7 @@ describe('messageHandler test', () => {
                             }
                         }
 
-                        hidingSpot.removePlayer(kyra);
+                        await hidingSpot.removePlayer(kyra);
                         kyra.cure(hidden);
                     });
 
@@ -4135,7 +4135,7 @@ describe('messageHandler test', () => {
                             }
                         }
 
-                        hidingSpot.removePlayer(nero);
+                        await hidingSpot.removePlayer(nero);
                         nero.cure(hidden);
                     });
 
@@ -4461,7 +4461,7 @@ describe('messageHandler test', () => {
                         }
                     }
 
-                    hidingSpot.removePlayer(nero);
+                    await hidingSpot.removePlayer(nero);
                     nero.cure(hidden);
                 });
 

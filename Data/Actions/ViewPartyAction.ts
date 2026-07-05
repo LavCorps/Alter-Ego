@@ -14,11 +14,11 @@ export default class ViewPartyAction extends Action {
 	/**
 	 * Performs a view party action.
 	 */
-	async performViewParty(): Promise<void> {
+	performViewParty(): void {
 		if (this.performed) return;
 		super.perform();
 		const partyString = this.player.viewParty(this.forced);
-		const interactables = await this.#getInteractables();
+		const interactables = this.#getInteractables();
 
 		if (this.forced)
 			this.getGame().communicationHandler.sendToCommandChannel(partyString, interactables);
@@ -26,7 +26,7 @@ export default class ViewPartyAction extends Action {
 			this.getGame().communicationHandler.sendMessageToPlayer(this.player, partyString, true, undefined, undefined, interactables);
 	}
 
-    async #getInteractables(): Promise<Interactable[]> {
+    #getInteractables(): Interactable[] {
         let interactables: Interactable[] = [];
         return interactables;
     }
