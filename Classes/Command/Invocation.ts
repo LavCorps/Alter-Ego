@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import type { Collection } from "discord.js";
+import { Collection } from "discord.js";
 import type GameEntity from "../../Data/GameEntity.ts";
 
 /** Abstract class representing all Invocations. */
@@ -41,10 +41,10 @@ export class ValidatedInvocation extends BaseInvocation<true, true> {
     glob: string[];
 
     /**
-     * @param args - The key-value pairs of slot names to Game Entities. One Game Entity per key.
-     * @param glob - Any globbed data caught by the pattern matching.
+     * @param args - The key-value pairs of slot names to Game Entities. One Game Entity per key. Defaults to an empty collection.
+     * @param glob - Any globbed data caught by the pattern matching. Defaults to an empty array.
      */
-    constructor(args: Collection<string, GameEntity>, glob: string[]) {
+    constructor(args: Collection<string, GameEntity> = new Collection(), glob: string[] = []) {
         super(true, true);
         this.args = args;
         this.glob = glob;
@@ -60,10 +60,10 @@ export class MatchedInvocation extends BaseInvocation<true, false> {
     glob: string[];
 
     /**
-     * @param args - The key-value pairs of slot names to Game Entities. Multiple Game Entities allowed per key.
-     * @param glob - Any globbed data caught by the pattern matching.
+     * @param args - The key-value pairs of slot names to Game Entities. Multiple Game Entities allowed per key. Defaults to an empty collection.
+     * @param glob - Any globbed data caught by the pattern matching. Defaults to an empty array.
      */
-    constructor(args: Collection<string, GameEntity[]>, glob: string[]) {
+    constructor(args: Collection<string, GameEntity[]> = new Collection(), glob: string[] = []) {
         super(true, false);
         this.args = args;
         this.glob = glob;
