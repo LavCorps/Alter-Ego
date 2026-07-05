@@ -1,27 +1,27 @@
 ﻿// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+// SPDX-FileCopyrightText: 2026 Ms. VBLANK <alteregomolly@pm.me>
 // SPDX-FileCopyrightText: 2026 LavCorps <lavcorps@protonmail.com>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import type Game from '../Data/Game.ts';
-import BotCommand from "../Classes/Command/BotCommand.ts";
-import ModeratorCommand from "../Classes/Command/ModeratorCommand.ts";
-import PlayerCommand from "../Classes/Command/PlayerCommand.ts";
-import EligibleCommand from "../Classes/Command/EligibleCommand.ts";
+import Flag from '../Data/Flag.ts';
 import type Player from '../Data/Player.ts';
 import Puzzle from '../Data/Puzzle.ts';
-import Flag from '../Data/Flag.ts';
-import BotContext from '../Classes/Command/BotContext.ts';
-import Trie from '../Classes/Command/Trie.ts';
-import type { Token } from '../Classes/Command/Token.ts';
-import { MatchedInvocation, ValidatedInvocation, type InvalidInvocation, type MatchResult, type ValidationResult } from '../Classes/Command/Invocation.ts';
-import type { Pattern } from '../Classes/Command/Pattern.ts';
 import type Command from '../Classes/Command/Command.ts';
+import BotCommand from '../Classes/Command/BotCommand.ts';
+import ModeratorCommand from '../Classes/Command/ModeratorCommand.ts';
+import PlayerCommand from '../Classes/Command/PlayerCommand.ts';
+import EligibleCommand from '../Classes/Command/EligibleCommand.ts';
 import type Context from '../Classes/Command/Context.ts';
-import { Collection } from 'discord.js';
+import BotContext from '../Classes/Command/BotContext.ts';
 import ModeratorContext from '../Classes/Command/ModeratorContext.ts';
 import PlayerContext from '../Classes/Command/PlayerContext.ts';
 import EligibleContext from '../Classes/Command/EligibleContext.ts';
+import { MatchedInvocation, ValidatedInvocation, type InvalidInvocation, type MatchResult, type ValidationResult } from '../Classes/Command/Invocation.ts';
+import type { Pattern } from '../Classes/Command/Pattern.ts';
+import type { Token } from '../Classes/Command/Token.ts';
+import Trie from '../Classes/Command/Trie.ts';
 
 export type CommandType = "Bot" | "Moderator" | "Player" | "Eligible";
 export type CommandOf<T extends CommandType> =
@@ -37,7 +37,7 @@ export type CommandOf<T extends CommandType> =
  * @param patterns - The array of patterns to attempt matches against.
  * @returns The array of pattern match results, that is, an array of Invalid Invocations and/or Matched Invocations.
  */
-export async function matchTokens(tokens: Token[][], patterns: Pattern[]): Promise<MatchResult[]> {
+async function matchTokens(tokens: Token[][], patterns: Pattern[]): Promise<MatchResult[]> {
     return patterns.map(pattern => pattern.match(tokens));
 }
 
@@ -48,11 +48,49 @@ export async function matchTokens(tokens: Token[][], patterns: Pattern[]): Promi
  * @param context - The context to validate within.
  * @returns The array of validation results, that is, an array of Invalid Invocations and/or Validated Invocations.
  */
-export async function validateMatches(matches: MatchedInvocation[], command: Command<Context>, context: Context): Promise<ValidationResult[]> {
+async function validateMatches(matches: MatchedInvocation[], command: Command<Context>, context: Context): Promise<ValidationResult[]> {
     const invocations: ValidationResult[] = [];
     for (const match of matches)
         invocations.push(await command.validate(context, match));
     return invocations;
+}
+
+/**
+ * Validates the command and returns the first validated invocation.
+ * @param command - The command to validate.
+ * @param context - The context with which the command was invoked.
+ * @param args - The args the command was invoked with.
+ * @returns The first validated invocation.
+ * @throws {@link Error}
+ * Thrown if the command invocation is invalid.
+ */
+async function validateCommand<T extends Context>(command: Command<T>, context: T, args: string[]): Promise<ValidatedInvocation> {
+    const trie = Trie.buildFromContextAndPatterns(context, command.patterns);
+    const tokens = trie.tokenize(args);
+    const errors: InvalidInvocation[] = [];
+    const matches: MatchedInvocation[] = [];
+    const validations: ValidatedInvocation[] = [];
+
+    const matchResults = await matchTokens(tokens, command.patterns);
+    for (const result of matchResults) {
+        if (result instanceof MatchedInvocation) matches.push(result);
+        else errors.push(result);
+    }
+    if (matches.length === 0) {
+        if (errors.length > 0) throw new Error(errors.pop().errors[0]);
+        else matches.push(new MatchedInvocation());
+    }
+
+    const validationResults = await validateMatches(matches, command, context);
+    for (const result of validationResults) {
+        if (result instanceof ValidatedInvocation) validations.push(result);
+        else errors.push(result);
+    }
+    if (validations.length === 0) {
+        if (errors.length > 0) throw new Error(errors.pop().errors[0]);
+        else validations.push(new ValidatedInvocation());
+    }
+    return validations[0];
 }
 
 /**
@@ -78,115 +116,50 @@ export async function executeCommand(commandStr: string, game: Game, message?: U
     // Execute the command based on who issued it.
     if (command instanceof BotCommand) {
         const context = new BotContext(game, commandAlias, player, callee);
-        const trie = Trie.buildFromContextAndPatterns(context, command.patterns);
-        const tokens = trie.tokenize(args);
-        const errors: InvalidInvocation[] = [];
-        const matches: MatchedInvocation[] = [];
-        const validations: ValidatedInvocation[] = [];
-        {
-            const output = await matchTokens(tokens, command.patterns);
-            for (const result of output) {
-                if (result instanceof MatchedInvocation) matches.push(result);
-                else errors.push(result);
-            }
+        try {
+            const invocation = await validateCommand(command, context, args);
+            await command.execute(context, invocation);
+            game.clientContext.logCommand(game.clientContext.user.username, commandStr, timestamp);
+            return true;
         }
-        if (matches.length === 0) {
-            if (errors.length > 0) {
-                game.communicationHandler.sendToCommandChannel(errors.pop().errors[0]);
-                return false;
-            } else
-                matches.push(new MatchedInvocation());
+        catch (error) {
+            game.communicationHandler.sendToCommandChannel(error.message ?? error);
+            return false;
         }
-        {
-            const output = await validateMatches(matches, command, context);
-            for (const result of output) {
-                if (result instanceof ValidatedInvocation) validations.push(result);
-                else errors.push(result);
-            }
-        }
-        if (validations.length === 0) {
-            if (errors.length > 0) {
-                game.communicationHandler.sendToCommandChannel(errors.pop().errors[0]);
-                return false;
-            } else
-                validations.push(new ValidatedInvocation());
-        }
-        command.execute(context, validations[0]);
-        game.clientContext.logCommand(game.clientContext.client.user.username, commandStr, timestamp);
-        return true;
     }
     else if (command instanceof ModeratorCommand && game.clientContext.commandIssuedInValidChannel(command, message)) {
+        const messageDeletable = message.deletable && message.channel.id !== game.guildContext.commandChannel.id;
         if (command.config.requiresGame && !game.inProgress) {
-            if (message.channel.id === game.guildContext.commandChannel.id) {
-                message.reply("There is no game currently running.");
-                return false;
-            }
-            else {
-                message.author.send("There is no game currently running.");
-                message.delete();
-                return false;
-            }
+            game.communicationHandler.reply(message, "There is no game currently running.");
+            if (messageDeletable) await message.delete();
+            return false;
         }
         const moderator = message.member ? game.entityLoader.getOrCreateModerator(message.member) : undefined;
         if (!moderator) {
             game.communicationHandler.reply(message, "You are not a moderator.");
             return false;
         }
-        if (command.config.whitespaceSensitive) {
+        if (command.config.whitespaceSensitive)
             args = commandStr.split(" ").slice(1);
-        }
         const context = new ModeratorContext(game, commandAlias, message, moderator);
-        const trie = Trie.buildFromContextAndPatterns(context, command.patterns);
-        const tokens = trie.tokenize(args);
-        const errors: InvalidInvocation[] = [];
-        const matches: MatchedInvocation[] = [];
-        const validations: ValidatedInvocation[] = [];
-        {
-            const output = await matchTokens(tokens, command.patterns);
-            for (const result of output) {
-                if (result instanceof MatchedInvocation) matches.push(result);
-                else errors.push(result);
-            }
+        try {
+            const invocation = await validateCommand(command, context, args);
+            await command.execute(context, invocation);
+            if (messageDeletable) await message.delete();
+            game.clientContext.logCommand(message.author.username, message.content, timestamp);
+            return true;
         }
-        if (matches.length === 0) {
-            if (errors.length > 0) {
-                game.communicationHandler.reply(message, errors.pop().errors[0]);
-                return false;
-            } else
-                matches.push(new MatchedInvocation());
+        catch (error) {
+            game.communicationHandler.reply(message, error.message ?? error);
+            return false;
         }
-        {
-            const output = await validateMatches(matches, command, context);
-            for (const result of output) {
-                if (result instanceof ValidatedInvocation) validations.push(result);
-                else errors.push(result);
-            }
-        }
-        if (validations.length === 0) {
-            if (errors.length > 0) {
-                game.communicationHandler.reply(message, errors.pop().errors[0]);
-                return false;
-            } else {
-                validations.push(new ValidatedInvocation());
-            }
-        }
-        command.execute(context, validations[0]);
-        if (message.channel.id !== game.guildContext.commandChannel.id)
-            message.delete();
-        game.clientContext.logCommand(message.author.username, message.content, timestamp);
-        return true;
     }
     else if (command instanceof PlayerCommand && game.clientContext.commandIssuedInValidChannel(command, message)) {
         if (command.config.requiresGame && !game.inProgress) {
-            message.reply("There is no game currently running.");
+            game.communicationHandler.reply(message, "There is no game currently running.");
             return false;
         }
-        for (const livingPlayer of game.livingPlayers.values()) {
-            if (livingPlayer.id === message.author.id) {
-                player = livingPlayer;
-                break;
-            }
-        }
+        const player = game.entityFinder.getLivingPlayerById(message.author.id);
         if (!player) {
             game.communicationHandler.reply(message, "You are not on the list of living players.");
             return false;
@@ -204,99 +177,47 @@ export async function executeCommand(commandStr: string, game: Game, message?: U
         }
 
         player.setOnline();
-
-        if (command.config.whitespaceSensitive) {
+        if (command.config.whitespaceSensitive)
             args = commandStr.split(" ").slice(1);
-        }
-
         const context = new PlayerContext(game, player, commandAlias, message);
-        const trie = Trie.buildFromContextAndPatterns(context, command.patterns);
-        const tokens = trie.tokenize(args);
-        const errors: InvalidInvocation[] = [];
-        const matches: MatchedInvocation[] = [];
-        const validations: ValidatedInvocation[] = [];
-        {
-            const output = await matchTokens(tokens, command.patterns);
-            for (const result of output) {
-                if (result instanceof MatchedInvocation) matches.push(result);
-                else errors.push(result);
-            }
-        }
-        if (matches.length === 0) {
-            if (errors.length > 0) {
-                game.communicationHandler.reply(message, errors.pop().errors[0]);
-                return false;
-            } else
-                matches.push(new MatchedInvocation());
-        }
-        {
-            const output = await validateMatches(matches, command, context);
-            for (const result of output) {
-                if (result instanceof ValidatedInvocation) validations.push(result);
-                else errors.push(result);
-            }
-        }
-        if (validations.length === 0) {
-            if (errors.length > 0) {
-                game.communicationHandler.reply(message, errors.pop().errors[0]);
-                return false;
-            } else {
-                validations.push(new ValidatedInvocation());
-            }
-        }
-        command.execute(context, validations[0]).then(() => {
+        try {
+            const invocation = await validateCommand(command, context, args);
+            await command.execute(context, invocation);
+            /**
+             * @privateRemarks
+             * We make an exception here for the say command because it handles its own deletion after using some of the
+             * properties of the original message. However, if we're awaiting the command execution, is this necessary
+             * anymore? This will require some investigation.
+             * - MS
+             */
             if (!game.settings.debug && commandName !== "say" && !game.guildContext.sentInDMChannel(message))
-                message.delete().catch();
-        });
-        game.clientContext.logCommand(player.name, message.content, timestamp);
-        return true;
+                await message.delete().catch();
+            game.clientContext.logCommand(player.name, message.content, timestamp);
+            return true;
+        }
+        catch (error) {
+            game.communicationHandler.reply(message, error.message ?? error);
+            return false;
+        }
     }
     else if (command instanceof EligibleCommand && game.clientContext.commandIssuedInValidChannel(command, message)) {
         if (command.config.requiresGame && !game.inProgress) {
-            message.reply("There is no game currently running.");
+            game.communicationHandler.reply(message, "There is no game currently running.");
             return false;
         }
         const context = new EligibleContext(game, commandAlias, message);
-        const trie = Trie.buildFromContextAndPatterns(context, command.patterns);
-        const tokens = trie.tokenize(args);
-        const errors: InvalidInvocation[] = [];
-        const matches: MatchedInvocation[] = [];
-        const validations: ValidatedInvocation[] = [];
-        {
-            const output = await matchTokens(tokens, command.patterns);
-            for (const result of output) {
-                if (result instanceof MatchedInvocation) matches.push(result);
-                else errors.push(result);
-            }
-        }
-        if (matches.length === 0) {
-            if (errors.length > 0) {
-                game.communicationHandler.reply(message, errors.pop().errors[0]);
-                return false;
-            } else
-                matches.push(new MatchedInvocation());
-        }
-        {
-            const output = await validateMatches(matches, command, context);
-            for (const result of output) {
-                if (result instanceof ValidatedInvocation) validations.push(result);
-                else errors.push(result);
-            }
-        }
-        if (validations.length === 0) {
-            if (errors.length > 0) {
-                game.communicationHandler.reply(message, errors.pop().errors[0]);
-                return false;
-            } else {
-                validations.push(new ValidatedInvocation());
-            }
-        }
-        command.execute(context, validations[0]).then(() => {
+        try {
+            const invocation = await validateCommand(command, context, args);
+            await command.execute(context, invocation);
             if (!game.settings.debug && !game.guildContext.sentInDMChannel(message))
-                message.delete().catch();
-        });
-        game.clientContext.logCommand(message.author.username, message.content, timestamp);
-        return true;
+                await message.delete().catch();
+            game.clientContext.logCommand(message.author.username, message.content, timestamp);
+            return true;
+        }
+        catch (error) {
+            game.communicationHandler.reply(message, error.message ?? error);
+            return false;
+        }
     }
 
     return false;
@@ -331,7 +252,7 @@ export async function parseAndExecuteBotCommands(commandSet: string[], game: Gam
                     }
                 }
             }
-            executeCommand(command, game, null, player, callee);
+            await executeCommand(command, game, null, player, callee);
         }
     }
 }
