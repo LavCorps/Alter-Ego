@@ -14,6 +14,7 @@ import StartMoveAction from "../../../Data/Actions/StartMoveAction.ts";
 import QueueMoveAction from "../../../Data/Actions/QueueMoveAction.ts";
 import StopAction from "../../../Data/Actions/StopAction.ts";
 import GameEntityManager from "../../../Classes/GameEntityManager.ts";
+import GameMovementHandler from "../../../Classes/GameMovementHandler.ts";
 import GameNarrationHandler from "../../../Classes/GameNarrationHandler.ts";
 import { sendQueuedMessages } from "../../../Modules/messageHandler.ts";
 import type { Mock } from "vitest";
@@ -119,7 +120,7 @@ describe('StartMoveAction test', () => {
     let astridNotificationMessage: Message<boolean>;
     let asukaNotificationMessage: Message<boolean>;
     let neroNotificationMessage: Message<boolean>;
-    let calculateMoveTimeSpy: Mock<typeof Player.prototype.calculateMoveTime>;
+    let calculateMoveTimeSpy: Mock<typeof GameMovementHandler.prototype.calculateMoveTime>;
     let doAfterDelaySpy: Mock<typeof Player.prototype.doAfterDelay>;
     let narrateStartMoveSpy: Mock<typeof GameNarrationHandler.prototype.narrateStartMove>;
     let narrateReachedHalfStaminaSpy: Mock<typeof GameNarrationHandler.prototype.narrateReachedHalfStamina>;
@@ -175,7 +176,7 @@ describe('StartMoveAction test', () => {
     });
 
     beforeEach(async () => {
-        calculateMoveTimeSpy = vi.spyOn(Player.prototype, 'calculateMoveTime');
+        calculateMoveTimeSpy = vi.spyOn(GameMovementHandler.prototype, 'calculateMoveTime');
         doAfterDelaySpy = vi.spyOn(Player.prototype, 'doAfterDelay');
         narrateStartMoveSpy = vi.spyOn(GameNarrationHandler.prototype, 'narrateStartMove');
         narrateReachedHalfStaminaSpy = vi.spyOn(GameNarrationHandler.prototype, 'narrateReachedHalfStamina');
@@ -730,7 +731,7 @@ describe('StartMoveAction test', () => {
             expect(asuka.isRunning).toBe(false);
             expect(asuka.moveTimer).not.toBeNull();
             expect(asuka.currentMovingSpeed).toEqual(5);
-            expect(moveSpy).not.toBeCalled();
+            expect(moveSpy).not.toHaveBeenCalled();
             /**
              * Fast forward to the end of Asuka's move timer.
              */

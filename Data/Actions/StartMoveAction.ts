@@ -28,12 +28,13 @@ export default class StartMoveAction extends Action {
         if (this.performed) return;
         super.perform();
         this.player.currentMovingSpeed = speed;
-        const time = this.player.calculateMoveTime(exit, isRunning, speed);
+        const rate = this.player.calculateMoveRate(isRunning, speed);
+        const time = this.getGame().movementHandler.calculateMoveTime(rate, this.player, exit);
         if (time > 1000) {
             const interactables = this.getGame().clientContext.interactableManager.createStopActionInteractable(this.player, this.user);
             this.getGame().narrationHandler.narrateStartMove(this, isRunning, exit, this.player, interactables);
         }
-        this.player.move(isRunning, currentRoom, destinationRoom, exit, entrance, time, this.forced);
+        this.getGame().movementHandler.movePlayers(new Set([this.player]), isRunning, exit, time, this.forced);
 
         // If anyone is following this player, they need to start moving.
         for (const occupant of this.location.occupants) {
@@ -42,7 +43,8 @@ export default class StartMoveAction extends Action {
                 // So, calculate how long to delay their movement.
                 let delay = 0;
                 const followingSpeed = occupant.getFollowingSpeed();
-                const occupantTime = occupant.calculateMoveTime(exit, isRunning, followingSpeed);
+                const occupantRate = occupant.calculateMoveRate(isRunning, followingSpeed);
+                const occupantTime = this.getGame().movementHandler.calculateMoveTime(occupantRate, occupant, exit);
                 if (occupantTime <= time) delay = time - occupantTime;
                 // Add one tick to the delay just to be safe.
                 delay += Game.tick;

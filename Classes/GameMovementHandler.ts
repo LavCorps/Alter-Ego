@@ -184,9 +184,8 @@ export default class GameMovementHandler {
      * @returns The first position found in the set. If no position is found, returns { x: 0, y: 0, z: 0 }.
      */
     #getPosition(entities: Set<Positionable>): Pos {
-        for (const entity of entities) {
-            if (entity.pos) return entity.pos;
-        }
+        const firstEntity = this.#first(entities);
+        if (firstEntity) return structuredClone(firstEntity.pos);
         return { x: 0, y: 0, z: 0 };
     }
 
@@ -269,8 +268,8 @@ export default class GameMovementHandler {
                     if (wearyStatus) {
                         // Inflicting one player with weary should cause all players in their party to stop, as well.
                         const wearyAction = new InflictAction(this.#game, undefined, player, player.location, true);
-                        wearyAction.performInflict(wearyStatus, false, true, true);
                         this.#game.narrationHandler.narrateWeary(wearyAction, player);
+                        wearyAction.performInflict(wearyStatus, false, true, true);
                     }
                 }
             }
@@ -310,7 +309,7 @@ export default class GameMovementHandler {
                         else {
                             // The exit is locked.
                             const stopAction = new StopAction(this.#game, undefined, player, player.location, forced);
-                            stopAction.performStop(true, exit, false);
+                            stopAction.performStop(true, exit, !player.followedPlayerIsInRoom());
                             player.moveQueue.length = 0;
                         }
                     }
@@ -320,13 +319,55 @@ export default class GameMovementHandler {
     }
 
     /**
+     * Executes the given callback function for the given players after a set delay.
+     * Overwrites the players' move timers and `remainingTime` properties.
+     * @param players - The players on which to execute the callback function.
+     * @param delay - The amount of time to delay the callback function in milliseconds.
+     * @param callback - The function to call when the delay is over.
+     */
+    public doAfterDelay(players: Set<Player>, delay: number, callback: (...args: any[]) => Promise<void>): void {
+        if (players.size === 0) return;
+        for (const player of players)
+            player.remainingTime = delay;
+        this.#createMoveTimerFor(players, async () => {
+            const settings = this.#game.settings;
+            const firstPlayer = this.#first(players);
+            let remainingTime = firstPlayer.remainingTime;
+            let subtractedTime = Game.tick;
+            if (this.#game.heated) subtractedTime = settings.heatedSlowdownRate * subtractedTime;
+            if (delay >= subtractedTime) remainingTime -= subtractedTime;
+            for (const player of players)
+                player.remainingTime = remainingTime;
+            if (remainingTime <= 0) {
+                this.#clearMoveTimerFor(players);
+                try {
+                    await callback();
+                }
+                catch (error) {
+                    console.error(`${Array.from(players).map(player => player.name).join(',')} doAfterDelay callback error:`, error);
+                }
+            }
+        });
+    }
+
+    /**
+     * Stops the move timer for the given players.
+     * @param players - The player or players to stop the move timer for.
+     */
+    public stopMoveTimer(players: Player | Set<Player>): void {
+        if (!(players instanceof Set))
+            players = this.#getPlayerSet(players);
+        this.#clearMoveTimerFor(players);
+    }
+
+    /**
      * Stops the given player's followers from moving.
      * This will only stop followers in the same room as the player.
      * @param player - The player whose followers will stop moving.
      * @param stopFollowing - Whether or not to make the followers stop following the player. Defaults to true.
      * @param forced - Whether or not the action was performed by someone other than the player themselves. Defaults to true.
      */
-    public stopFollowers(player: Player, stopFollowing: boolean = true, forced: boolean = true) {
+    public stopFollowers(player: Player, stopFollowing: boolean = true, forced: boolean = true): void {
         for (const occupant of player.location.occupants) {
             if (occupant.isMoving && occupant.isFollowing(player)) {
                 const stopAction = new StopAction(this.#game, undefined, occupant, occupant.location, forced);

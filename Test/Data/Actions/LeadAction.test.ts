@@ -12,6 +12,7 @@ import QueueMoveAction from "../../../Data/Actions/QueueMoveAction.ts";
 import StartMoveAction from "../../../Data/Actions/StartMoveAction.ts";
 import StopAction from "../../../Data/Actions/StopAction.ts";
 import GameEntityManager from "../../../Classes/GameEntityManager.ts";
+import GameMovementHandler from "../../../Classes/GameMovementHandler.ts";
 import { WhisperType } from "../../../Modules/enums.js";
 import type { Mock } from "vitest";
 
@@ -95,8 +96,8 @@ describe('LeadAction test', () => {
         let doAfterDelaySpy: Mock<typeof Player.prototype.doAfterDelay>;
         let queueMoveSpy: Mock<typeof QueueMoveAction.prototype.performQueueMove>;
         let performStartMoveSpy: Mock<typeof StartMoveAction.prototype.performStartMove>;
-        let calculateMoveTimeSpy: Mock<typeof Player.prototype.calculateMoveTime>;
-        let moveSpy: Mock<typeof Player.prototype.move>;
+        let calculateMoveTimeSpy: Mock<typeof GameMovementHandler.prototype.calculateMoveTime>;
+        let movePlayersSpy: Mock<typeof GameMovementHandler.prototype.movePlayers>;
 
         beforeEach(() => {
             createPartySpy = vi.spyOn(GameEntityManager.prototype, 'createParty');
@@ -106,8 +107,8 @@ describe('LeadAction test', () => {
             doAfterDelaySpy = vi.spyOn(Player.prototype, 'doAfterDelay');
             queueMoveSpy = vi.spyOn(QueueMoveAction.prototype, 'performQueueMove');
             performStartMoveSpy = vi.spyOn(StartMoveAction.prototype, 'performStartMove');
-            calculateMoveTimeSpy = vi.spyOn(Player.prototype, 'calculateMoveTime');
-            moveSpy = vi.spyOn(Player.prototype, 'move');
+            calculateMoveTimeSpy = vi.spyOn(GameMovementHandler.prototype, 'calculateMoveTime');
+            movePlayersSpy = vi.spyOn(GameMovementHandler.prototype, 'movePlayers');
         });
 
         afterEach(() => {
@@ -274,7 +275,7 @@ describe('LeadAction test', () => {
                 expect(queueMoveSpy).toHaveBeenCalledOnce();
                 expect(performStartMoveSpy).toHaveBeenCalledOnce();
                 expect(calculateMoveTimeSpy).toHaveBeenCalledTimes(3);
-                expect(moveSpy).toHaveBeenCalledOnce();
+                expect(movePlayersSpy).toHaveBeenCalledOnce();
 
                 await vi.advanceTimersByTimeAsync(1000);
 
@@ -283,7 +284,7 @@ describe('LeadAction test', () => {
                 expect(queueMoveSpy).toHaveBeenCalledTimes(3);
                 expect(performStartMoveSpy).toHaveBeenCalledTimes(3);
                 expect(calculateMoveTimeSpy).toHaveBeenCalledTimes(5);
-                expect(moveSpy).toHaveBeenCalledTimes(3);
+                expect(movePlayersSpy).toHaveBeenCalledTimes(3);
                 expect(astrid.isMoving).toBe(true);
                 expect(asuka.isMoving).toBe(true);
                 expect(nero.isMoving).toBe(true);
@@ -303,12 +304,13 @@ describe('LeadAction test', () => {
             });
 
             test('moving player leads two moving players and all players stop', async () => {
+                console.log('moving player leads two moving players and all players stop');
                 // Ensure Astrid is the only player to have started moving at this point.
                 expect(doAfterDelaySpy).toHaveBeenCalledTimes(2);
                 expect(queueMoveSpy).toHaveBeenCalledOnce();
                 expect(performStartMoveSpy).toHaveBeenCalledOnce();
                 expect(calculateMoveTimeSpy).toHaveBeenCalledTimes(3);
-                expect(moveSpy).toHaveBeenCalledOnce();
+                expect(movePlayersSpy).toHaveBeenCalledOnce();
 
                 await vi.advanceTimersByTimeAsync(1000);
 
@@ -317,7 +319,7 @@ describe('LeadAction test', () => {
                 expect(queueMoveSpy).toHaveBeenCalledTimes(3);
                 expect(performStartMoveSpy).toHaveBeenCalledTimes(3);
                 expect(calculateMoveTimeSpy).toHaveBeenCalledTimes(5);
-                expect(moveSpy).toHaveBeenCalledTimes(3);
+                expect(movePlayersSpy).toHaveBeenCalledTimes(3);
                 expect(astrid.isMoving).toBe(true);
                 expect(asuka.isMoving).toBe(true);
                 expect(nero.isMoving).toBe(true);
