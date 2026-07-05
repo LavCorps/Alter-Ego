@@ -47,7 +47,6 @@ export default class ModeratorContext extends Context {
      * @param invoked - The alias the command was invoked with.
      * @param message - The message that invoked the command.
      * @param moderator - The moderator that invoked the command.
-     *
      */
     constructor(game: Game, invoked: string, message: UserMessage, moderator: Moderator) {
         super(game);

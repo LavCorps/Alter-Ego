@@ -29,9 +29,9 @@ export default class EligibleContext extends Context {
     readonly author: DiscordUser;
 
     /**
+     * @param game - The Game the Context belongs to.
      * @param invoked - The alias the command was invoked with.
      * @param message - The message that invoked the command.
-     *
      */
     constructor(game: Game, invoked: string, message: UserMessage) {
         super(game);

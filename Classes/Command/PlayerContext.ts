@@ -56,13 +56,7 @@ export default class PlayerContext extends Context {
      * The hands of the player.
      * May be undefined. Consumers should use the corresponding private get method.
      */
-    #hands: Set<EquipmentSlot> | undefined;
-
-    /**
-     * The IDs of the hands of the player.
-     * May be undefined. Consumers should use the corresponding private get method.
-     */
-    #handIDs: Set<string> | undefined;
+    #hands: Collection<string, EquipmentSlot> | undefined;
 
     /**
      * Equipment slots of the player that are not their hands.
@@ -137,6 +131,9 @@ export default class PlayerContext extends Context {
      * If the player is in a hiding spot, this should only be the child puzzle of the fixture associated with the hiding spot.
      * I think, anyway. It might also be possible for it to be a puzzle with an identical name.
      * - VM
+     * Update: It is not possible for it to be a puzzle with an identical name. The puzzle will only be considered accessible
+     * to a hidden player if that puzzle is a child puzzle of the fixture they're hiding in.
+     * - MS
      */
     #puzzles: Set<Puzzle> | undefined;
 
@@ -144,7 +141,7 @@ export default class PlayerContext extends Context {
      * The room items within the room.
      * May be undefined. Consumers should use the corresponding get method.
      * @privateRemarks
-     * If the player is in a hiding spot, this should only be the room items that are contained in the hiding spot, its child puzzle,
+     * If the player is in a hiding spot, this will only be the room items that are contained in the hiding spot, its child puzzle,
      * or any room items contained in those recursively. It might be useful to create a `getTopContainer` method for room items.
      * - VM
      */
@@ -211,21 +208,12 @@ export default class PlayerContext extends Context {
     /**
      * The hands of the player.
      */
-    private get hands(): Set<EquipmentSlot> {
-        if (!this.#hands)
-            this.#hands = new Set(this.game.entityFinder.getPlayerHands(this.player));
-        return this.#hands;
-    }
-
-    /**
-     * The IDs of the hands of the player.
-     */
-    private get handIDs(): Set<string> {
-        if (!this.#handIDs) {
-            this.#handIDs = new Set();
-            this.hands.forEach((hand) => this.#handIDs.add(hand.id));
+    private get hands(): Collection<string, EquipmentSlot> {
+        if (!this.#hands) {
+            this.#hands = new Collection<string, EquipmentSlot>();
+            this.game.entityFinder.getPlayerHands(this.player).forEach(hand => this.#hands.set(hand.id, hand));
         }
-        return this.#handIDs;
+        return this.#hands;
     }
 
     /**
@@ -233,7 +221,7 @@ export default class PlayerContext extends Context {
      */
     private get notHands(): Collection<string, EquipmentSlot> {
         if (!this.#notHands)
-            this.#notHands = this.player.inventory.filter((slot) => !this.handIDs.has(slot.id));
+            this.#notHands = this.player.inventory.filter((slot) => !this.hands.has(slot.id));
         return this.#notHands;
     }
 
@@ -241,12 +229,8 @@ export default class PlayerContext extends Context {
      * The inventory items held by the player.
      */
     get heldItems(): Set<InventoryItem> {
-        if (!this.#heldItems) {
-            this.#heldItems = new Set();
-            this.hands.forEach((slot) => {
-                if (slot.equippedItem !== null) this.#heldItems.add(slot.equippedItem);
-            });
-        }
+        if (!this.#heldItems)
+            this.#heldItems = new Set(this.hands.map(slot => slot.equippedItem).filter(item => item !== null));
         return this.#heldItems;
     }
 
@@ -255,7 +239,7 @@ export default class PlayerContext extends Context {
      */
     get equippedItems(): Set<InventoryItem> {
         if (!this.#equippedItems)
-            this.#equippedItems = new Set(this.notHands.map((slot) => slot.equippedItem).filter((item) => item !== null));
+            this.#equippedItems = new Set(this.notHands.map(slot => slot.equippedItem).filter(item => item !== null));
         return this.#equippedItems;
     }
 
@@ -265,7 +249,7 @@ export default class PlayerContext extends Context {
     get stashedItems(): Set<InventoryItem> {
         if (!this.#stashedItems) {
             const intermediateArray: InventoryItem[] = [];
-            this.inventoryItems.forEach((item) => getChildItems(intermediateArray, item))
+            this.inventoryItems.forEach(item => getChildItems(intermediateArray, item));
             this.#stashedItems = new Set(intermediateArray);
         }
         return this.#stashedItems;
@@ -286,7 +270,7 @@ export default class PlayerContext extends Context {
      */
     get roomOccupants(): Set<Player> {
         if (!this.#roomOccupants)
-            this.#roomOccupants = new Set(this.room.occupants.filter((roomPlayer) => roomPlayer !== this.player));
+            this.#roomOccupants = new Set(this.room.occupants.filter(roomPlayer => roomPlayer !== this.player));
         return this.#roomOccupants;
     }
 
@@ -299,7 +283,7 @@ export default class PlayerContext extends Context {
             if (!this.hidingSpot)
                 this.#spotOccupants = new Set();
             else
-                this.#spotOccupants = new Set(this.room.occupants.filter((roomPlayer) => roomPlayer.hidingSpot === this.player.hidingSpot && roomPlayer !== this.player));
+                this.#spotOccupants = new Set(this.room.occupants.filter(roomPlayer => roomPlayer.isHiddenWith(this.player) && roomPlayer !== this.player));
         }
         return this.#spotOccupants;
     }
@@ -309,7 +293,7 @@ export default class PlayerContext extends Context {
      */
     get adjacentRooms(): Set<Room> {
         if (!this.#adjacentRooms)
-            this.#adjacentRooms = new Set(this.exits.map((exit) => exit.dest));
+            this.#adjacentRooms = new Set(this.exits.map(exit => exit.dest).filter(room => room.id !== this.room.id));
         return this.#adjacentRooms;
     }
 
@@ -322,11 +306,8 @@ export default class PlayerContext extends Context {
             this.#fixtures = new Set();
             if (this.hidingSpot)
                 this.#fixtures.add(this.hidingSpot.getFixture());
-            else {
-                game.entityFinder.getFixtures(undefined, this.room.id).forEach((fixture) => {
-                    if (fixture.accessible) this.#fixtures.add(fixture);
-                });
-            }
+            else
+                game.entityFinder.getFixtures(undefined, this.room.id, true).forEach(fixture => this.#fixtures.add(fixture));
         }
         return this.#fixtures;
     }
@@ -348,7 +329,7 @@ export default class PlayerContext extends Context {
     get roomItems(): Set<RoomItem> {
         // TODO: this is subject to similar uncertainty as puzzles...
         if (!this.#roomItems)
-            this.#roomItems = new Set(this.room.getContainedItems().filter((item) => item.accessible));
+            this.#roomItems = new Set(this.room.getContainedItems().filter(item => item.accessible));
         return this.#roomItems;
     }
 

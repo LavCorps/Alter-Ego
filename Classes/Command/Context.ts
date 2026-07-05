@@ -24,7 +24,7 @@ export default abstract class Context {
     /**
      * @param game - The Game the Context belongs to.
      */
-    constructor(game: Game) {
+    protected constructor(game: Game) {
         this.game = game;
     }
 
