@@ -34,7 +34,7 @@ class LoadInvocation extends ValidatedInvocation {
      * @param sendDescription - Whether players should have room descriptions sent to them after loading.
      */
     constructor(target: "all" | "rooms" | "fixtures" | "prefabs" | "recipes" | "room items" | "puzzles" | "events" | "status effects" | "players" | "inventory items" | "gestures" | "flags", start: boolean = false, sendDescription: boolean = false) {
-        super(new Collection(), []);
+        super();
         this.target = target;
         this.start = start;
         this.sendDescription = sendDescription;

@@ -49,7 +49,7 @@ export default new ClientEvent({
             let loadCommand = clientContext.getCommand("Moderator", "load");
             if (loadCommand) {
                 const context = new ModeratorContext(game, "lar", undefined, undefined);
-                const invocation = (await loadCommand.validate(context, new MatchedInvocation(new Collection(), []))) as ValidatedInvocation
+                const invocation = (await loadCommand.validate(context, new MatchedInvocation(new Collection(), []))) as ValidatedInvocation;
                 await loadCommand.execute(context, invocation);
             }
         }

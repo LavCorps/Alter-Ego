@@ -95,7 +95,7 @@ export async function executeCommand(commandStr: string, game: Game, message?: U
                 game.communicationHandler.sendToCommandChannel(errors.pop().errors[0]);
                 return false;
             } else
-                matches.push(new MatchedInvocation(new Collection(), []))
+                matches.push(new MatchedInvocation());
         }
         {
             const output = await validateMatches(matches, command, context);
@@ -109,7 +109,7 @@ export async function executeCommand(commandStr: string, game: Game, message?: U
                 game.communicationHandler.sendToCommandChannel(errors.pop().errors[0]);
                 return false;
             } else
-                validations.push(new ValidatedInvocation(new Collection(), []));
+                validations.push(new ValidatedInvocation());
         }
         command.execute(context, validations[0]);
         game.clientContext.logCommand(game.clientContext.client.user.username, commandStr, timestamp);
@@ -153,7 +153,7 @@ export async function executeCommand(commandStr: string, game: Game, message?: U
                 game.communicationHandler.reply(message, errors.pop().errors[0]);
                 return false;
             } else
-                matches.push(new MatchedInvocation(new Collection(), []))
+                matches.push(new MatchedInvocation());
         }
         {
             const output = await validateMatches(matches, command, context);
@@ -167,7 +167,7 @@ export async function executeCommand(commandStr: string, game: Game, message?: U
                 game.communicationHandler.reply(message, errors.pop().errors[0]);
                 return false;
             } else {
-                validations.push(new ValidatedInvocation(new Collection(), []));
+                validations.push(new ValidatedInvocation());
             }
         }
         command.execute(context, validations[0]);
@@ -227,7 +227,7 @@ export async function executeCommand(commandStr: string, game: Game, message?: U
                 game.communicationHandler.reply(message, errors.pop().errors[0]);
                 return false;
             } else
-                matches.push(new MatchedInvocation(new Collection(), []))
+                matches.push(new MatchedInvocation());
         }
         {
             const output = await validateMatches(matches, command, context);
@@ -241,7 +241,7 @@ export async function executeCommand(commandStr: string, game: Game, message?: U
                 game.communicationHandler.reply(message, errors.pop().errors[0]);
                 return false;
             } else {
-                validations.push(new ValidatedInvocation(new Collection(), []));
+                validations.push(new ValidatedInvocation());
             }
         }
         command.execute(context, validations[0]).then(() => {
@@ -274,7 +274,7 @@ export async function executeCommand(commandStr: string, game: Game, message?: U
                 game.communicationHandler.reply(message, errors.pop().errors[0]);
                 return false;
             } else
-                matches.push(new MatchedInvocation(new Collection(), []))
+                matches.push(new MatchedInvocation());
         }
         {
             const output = await validateMatches(matches, command, context);
@@ -288,7 +288,7 @@ export async function executeCommand(commandStr: string, game: Game, message?: U
                 game.communicationHandler.reply(message, errors.pop().errors[0]);
                 return false;
             } else {
-                validations.push(new ValidatedInvocation(new Collection(), []));
+                validations.push(new ValidatedInvocation());
             }
         }
         command.execute(context, validations[0]).then(() => {
