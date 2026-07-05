@@ -50,13 +50,13 @@ export default class PlayerContext extends Context {
      * The inventory items held, equipped, or stashed by the player.
      * May be undefined. Consumers should use the corresponding get method.
      */
-    #inventoryItems: InventoryItem[] | undefined;
+    #inventoryItems: Set<InventoryItem> | undefined;
 
     /**
      * The hands of the player.
      * May be undefined. Consumers should use the corresponding private get method.
      */
-    #hands: EquipmentSlot[] | undefined;
+    #hands: Set<EquipmentSlot> | undefined;
 
     /**
      * The IDs of the hands of the player.
@@ -74,19 +74,19 @@ export default class PlayerContext extends Context {
      * The inventory items held by the player.
      * May be undefined. Consumers should use the corresponding get method.
      */
-    #heldItems: InventoryItem[] | undefined;
+    #heldItems: Set<InventoryItem> | undefined;
 
     /**
      * The inventory items equipped by the player.
      * May be undefined. Consumers should use the corresponding get method.
      */
-    #equippedItems: InventoryItem[] | undefined;
+    #equippedItems: Set<InventoryItem> | undefined;
 
     /**
      * The inventory items stashed by the player.
      * May be undefined. Consumers should use the corresponding get method.
      */
-    #stashedItems: InventoryItem[] | undefined;
+    #stashedItems: Set<InventoryItem> | undefined;
 
     /**
      * The room the player occupies.
@@ -104,13 +104,13 @@ export default class PlayerContext extends Context {
      * The other players in the same room as the player.
      * May be undefined. Consumers should use the corresponding get method.
      */
-    #roomOccupants: Player[] | undefined;
+    #roomOccupants: Set<Player> | undefined;
 
     /**
      * The other players in the same hiding spot as the player.
      * May be undefined. Consumers should use the corresponding get method.
      */
-    #spotOccupants: Player[] | undefined;
+    #spotOccupants: Set<Player> | undefined;
 
     /**
      * The exits within the room.
@@ -121,14 +121,14 @@ export default class PlayerContext extends Context {
      * The rooms adjacent to the player's location.
      * May be undefined. Consumers should use the corresponding get method.
      */
-    #adjacentRooms: Room[] | undefined;
+    #adjacentRooms: Set<Room> | undefined;
 
     /**
      * The fixtures within the room.
      * If the player is in a hiding spot, this will only be the fixture associated with the hiding spot.
      * May be undefined. Consumers should use the corresponding get method.
      */
-    #fixtures: Fixture[] | undefined;
+    #fixtures: Set<Fixture> | undefined;
 
     /**
      * The puzzles within the room.
@@ -138,7 +138,7 @@ export default class PlayerContext extends Context {
      * I think, anyway. It might also be possible for it to be a puzzle with an identical name.
      * - VM
      */
-    #puzzles: Puzzle[] | undefined;
+    #puzzles: Set<Puzzle> | undefined;
 
     /**
      * The room items within the room.
@@ -148,7 +148,7 @@ export default class PlayerContext extends Context {
      * or any room items contained in those recursively. It might be useful to create a `getTopContainer` method for room items.
      * - VM
      */
-    #roomItems: RoomItem[] | undefined;
+    #roomItems: Set<RoomItem> | undefined;
 
     /**
      * The gestures of the game.
@@ -202,18 +202,18 @@ export default class PlayerContext extends Context {
     /**
      * The inventory items held, equipped, or stashed by the player.
      */
-    get inventoryItems(): InventoryItem[] {
+    get inventoryItems(): Set<InventoryItem> {
         if (!this.#inventoryItems)
-            this.#inventoryItems = this.player.getContainedItems().filter((item) => item !== null);
+            this.#inventoryItems = new Set(this.player.getContainedItems().filter((item) => item !== null));
         return this.#inventoryItems;
     }
 
     /**
      * The hands of the player.
      */
-    private get hands(): EquipmentSlot[] {
+    private get hands(): Set<EquipmentSlot> {
         if (!this.#hands)
-            this.#hands = this.game.entityFinder.getPlayerHands(this.player);
+            this.#hands = new Set(this.game.entityFinder.getPlayerHands(this.player));
         return this.#hands;
     }
 
@@ -221,8 +221,10 @@ export default class PlayerContext extends Context {
      * The IDs of the hands of the player.
      */
     private get handIDs(): Set<string> {
-        if (!this.#handIDs)
-            this.#handIDs = new Set(this.hands.map((hand) => hand.id));
+        if (!this.#handIDs) {
+            this.#handIDs = new Set();
+            this.hands.forEach((hand) => this.#handIDs.add(hand.id));
+        }
         return this.#handIDs;
     }
 
@@ -238,28 +240,33 @@ export default class PlayerContext extends Context {
     /**
      * The inventory items held by the player.
      */
-    get heldItems(): InventoryItem[] {
-        if (!this.#heldItems)
-            this.#heldItems = this.hands.map((slot) => slot.equippedItem).filter((item) => item !== null);
+    get heldItems(): Set<InventoryItem> {
+        if (!this.#heldItems) {
+            this.#heldItems = new Set();
+            this.hands.forEach((slot) => {
+                if (slot.equippedItem !== null) this.#heldItems.add(slot.equippedItem);
+            });
+        }
         return this.#heldItems;
     }
 
     /**
      * The inventory items equipped by the player.
      */
-    get equippedItems(): InventoryItem[] {
+    get equippedItems(): Set<InventoryItem> {
         if (!this.#equippedItems)
-            this.#equippedItems = this.notHands.map((slot) => slot.equippedItem).filter((item) => item !== null);
+            this.#equippedItems = new Set(this.notHands.map((slot) => slot.equippedItem).filter((item) => item !== null));
         return this.#equippedItems;
     }
 
     /**
      * The inventory items stashed by the player.
      */
-    get stashedItems(): InventoryItem[] {
+    get stashedItems(): Set<InventoryItem> {
         if (!this.#stashedItems) {
-            this.#stashedItems = [];
-            this.inventoryItems.forEach((item) => getChildItems(this.#stashedItems, item))
+            const intermediateArray: InventoryItem[] = [];
+            this.inventoryItems.forEach((item) => getChildItems(intermediateArray, item))
+            this.#stashedItems = new Set(intermediateArray);
         }
         return this.#stashedItems;
     }
@@ -277,9 +284,9 @@ export default class PlayerContext extends Context {
     /**
      * The other players in the same room as the player.
      */
-    get roomOccupants(): Player[] {
+    get roomOccupants(): Set<Player> {
         if (!this.#roomOccupants)
-            this.#roomOccupants = this.room.occupants.filter((roomPlayer) => roomPlayer !== this.player);
+            this.#roomOccupants = new Set(this.room.occupants.filter((roomPlayer) => roomPlayer !== this.player));
         return this.#roomOccupants;
     }
 
@@ -287,20 +294,22 @@ export default class PlayerContext extends Context {
      * The other players in the same hiding spot as the player.
      * Will be empty if the player is in a hiding spot alone, or not in a hiding spot.
      */
-    get spotOccupants(): Player[] {
-        if (!this.hidingSpot)
-            return [];
-        if (!this.#spotOccupants)
-            this.#spotOccupants = this.room.occupants.filter((roomPlayer) => roomPlayer.hidingSpot === this.player.hidingSpot && roomPlayer !== this.player);
+    get spotOccupants(): Set<Player> {
+        if (!this.#spotOccupants) {
+            if (!this.hidingSpot)
+                this.#spotOccupants = new Set();
+            else
+                this.#spotOccupants = new Set(this.room.occupants.filter((roomPlayer) => roomPlayer.hidingSpot === this.player.hidingSpot && roomPlayer !== this.player));
+        }
         return this.#spotOccupants;
     }
 
     /**
      * The rooms adjacent to the player's location.
      */
-    get adjacentRooms(): Room[] {
+    get adjacentRooms(): Set<Room> {
         if (!this.#adjacentRooms)
-            this.#adjacentRooms = this.exits.map((exit) => exit.dest);
+            this.#adjacentRooms = new Set(this.exits.map((exit) => exit.dest));
         return this.#adjacentRooms;
     }
 
@@ -308,12 +317,16 @@ export default class PlayerContext extends Context {
      * The fixtures within the room.
      * If the player is in a hiding spot, this will only be the fixture associated with the hiding spot.
      */
-    get fixtures(): Fixture[] {
+    get fixtures(): Set<Fixture> {
         if (!this.#fixtures) {
+            this.#fixtures = new Set();
             if (this.hidingSpot)
-                this.#fixtures = [this.hidingSpot.getFixture()];
-            else
-                this.#fixtures = game.entityFinder.getFixtures(undefined, this.room.id).filter((fixture) => fixture.accessible);
+                this.#fixtures.add(this.hidingSpot.getFixture());
+            else {
+                game.entityFinder.getFixtures(undefined, this.room.id).forEach((fixture) => {
+                    if (fixture.accessible) this.#fixtures.add(fixture);
+                });
+            }
         }
         return this.#fixtures;
     }
@@ -321,21 +334,21 @@ export default class PlayerContext extends Context {
     /**
      * The puzzles within the room.
      */
-    get puzzles(): Puzzle[] {
+    get puzzles(): Set<Puzzle> {
         // TODO: "I think, anyway"...?
         // investigate what she meant by this, and implement puzzle lookup accordingly...
         if (!this.#puzzles)
-            this.#puzzles = this.game.entityFinder.getPuzzles(undefined, this.room.id);
+            this.#puzzles = new Set(this.game.entityFinder.getPuzzles(undefined, this.room.id));
         return this.#puzzles;
     }
 
     /**
      * The room items within the room.
      */
-    get roomItems(): RoomItem[] {
-        // TODO: this is subject to similar uncertainty as 
+    get roomItems(): Set<RoomItem> {
+        // TODO: this is subject to similar uncertainty as puzzles...
         if (!this.#roomItems)
-            this.#roomItems = this.room.getContainedItems().filter((item) => item.accessible);
+            this.#roomItems = new Set(this.room.getContainedItems().filter((item) => item.accessible));
         return this.#roomItems;
     }
 
