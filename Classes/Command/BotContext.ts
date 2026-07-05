@@ -34,12 +34,12 @@ export default class BotContext extends Context {
     /**
      * The player who caused the command to be executed, if applicable.
      */
-    readonly player: Player;
+    readonly player?: Player;
 
     /**
      * The in-game entity that caused the command to be executed, if applicable.
      */
-    readonly callee: Callee;
+    readonly callee?: Callee;
 
     /**
      * @param game - The game containing all objects of this context.
@@ -47,7 +47,7 @@ export default class BotContext extends Context {
      * @param player - The player who caused the command to be executed, if applicable.
      * @param callee - The in-game entity that caused the command to be executed, if applicable.
      */
-    constructor(game: Game, invokedAlias: string, player: Player, callee: Callee) {
+    constructor(game: Game, invokedAlias: string, player?: Player, callee?: Callee) {
         super(game);
         this.invokedAlias = invokedAlias;
         this.player = player;
