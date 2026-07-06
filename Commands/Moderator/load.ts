@@ -172,84 +172,84 @@ const command = new ModeratorCommand({
                 ctx.game.communicationHandler.sendToCommandChannel(resultMessage);
                 break;
             case "rooms":
-                const roomCount = await game.entityLoader.loadRooms(true, errors);
+                const roomCount = await ctx.game.entityLoader.loadRooms(true, errors);
                 if (errors.length === 0)
                     ctx.game.communicationHandler.sendToCommandChannel(`${roomCount} rooms retrieved.`);
                 else
                     ctx.game.communicationHandler.sendToCommandChannel(errors.join('\n'));
                 break;
             case "fixtures":
-                const fixtureCount = await game.entityLoader.loadFixtures(true, errors);
+                const fixtureCount = await ctx.game.entityLoader.loadFixtures(true, errors);
                 if (errors.length === 0)
                     ctx.game.communicationHandler.sendToCommandChannel(`${fixtureCount} fixtures retrieved.`);
                 else
                     ctx.game.communicationHandler.sendToCommandChannel(errors.join('\n'));
                 break;
             case "prefabs":
-                const prefabCount = await game.entityLoader.loadPrefabs(true, errors);
+                const prefabCount = await ctx.game.entityLoader.loadPrefabs(true, errors);
                 if (errors.length === 0)
                     ctx.game.communicationHandler.sendToCommandChannel(`${prefabCount} prefabs retrieved.`);
                 else
                     ctx.game.communicationHandler.sendToCommandChannel(errors.join('\n'));
                 break;
             case "recipes":
-                const recipeCount = await game.entityLoader.loadRecipes(true, errors);
+                const recipeCount = await ctx.game.entityLoader.loadRecipes(true, errors);
                 if (errors.length === 0)
                     ctx.game.communicationHandler.sendToCommandChannel(`${recipeCount} recipes retrieved.`);
                 else
                     ctx.game.communicationHandler.sendToCommandChannel(errors.join('\n'));
                 break;
             case "room items":
-                const roomItemCount = await game.entityLoader.loadRoomItems(true, errors);
+                const roomItemCount = await ctx.game.entityLoader.loadRoomItems(true, errors);
                 if (errors.length === 0)
                     ctx.game.communicationHandler.sendToCommandChannel(`${roomItemCount} room items retrieved.`);
                 else
                     ctx.game.communicationHandler.sendToCommandChannel(errors.join('\n'));
                 break;
             case "puzzles":
-                const puzzleCount = await game.entityLoader.loadPuzzles(true, errors);
+                const puzzleCount = await ctx.game.entityLoader.loadPuzzles(true, errors);
                 if (errors.length === 0)
                     ctx.game.communicationHandler.sendToCommandChannel(`${puzzleCount} puzzles retrieved.`);
                 else
                     ctx.game.communicationHandler.sendToCommandChannel(errors.join('\n'));
                 break;
             case "events":
-                const eventCount = await game.entityLoader.loadEvents(true, errors);
+                const eventCount = await ctx.game.entityLoader.loadEvents(true, errors);
                 if (errors.length === 0)
                     ctx.game.communicationHandler.sendToCommandChannel(`${eventCount} events retrieved.`);
                 else
                     ctx.game.communicationHandler.sendToCommandChannel(errors.join('\n'));
                 break;
             case "status effects":
-                const statusEffectCount = await game.entityLoader.loadStatusEffects(true, errors);
+                const statusEffectCount = await ctx.game.entityLoader.loadStatusEffects(true, errors);
                 if (errors.length === 0)
                     ctx.game.communicationHandler.sendToCommandChannel(`${statusEffectCount} status effects retrieved.`);
                 else
                     ctx.game.communicationHandler.sendToCommandChannel(errors.join('\n'));
                 break;
             case "players":
-                const playerCount = await game.entityLoader.loadPlayers(true, errors);
+                const playerCount = await ctx.game.entityLoader.loadPlayers(true, errors);
                 if (errors.length === 0)
                     ctx.game.communicationHandler.sendToCommandChannel(`${playerCount} players retrieved.`);
                 else
                     ctx.game.communicationHandler.sendToCommandChannel(errors.join('\n'));
                 break;
             case "inventory items":
-                const inventoryItemCount = await game.entityLoader.loadInventoryItems(true, errors);
+                const inventoryItemCount = await ctx.game.entityLoader.loadInventoryItems(true, errors);
                 if (errors.length === 0)
                     ctx.game.communicationHandler.sendToCommandChannel(`${inventoryItemCount} inventory items retrieved.`);
                 else
                     ctx.game.communicationHandler.sendToCommandChannel(errors.join('\n'));
                 break;
             case "gestures":
-                const gestureCount = await game.entityLoader.loadGestures(true, errors);
+                const gestureCount = await ctx.game.entityLoader.loadGestures(true, errors);
                 if (errors.length === 0)
                     ctx.game.communicationHandler.sendToCommandChannel(`${gestureCount} gestures retrieved.`);
                 else
                     ctx.game.communicationHandler.sendToCommandChannel(errors.join('\n'));
                 break;
             case "flags":
-                const flagCount = await game.entityLoader.loadFlags(true, errors);
+                const flagCount = await ctx.game.entityLoader.loadFlags(true, errors);
                 if (errors.length === 0)
                     ctx.game.communicationHandler.sendToCommandChannel(`${flagCount} flags retrieved.`);
                 else
