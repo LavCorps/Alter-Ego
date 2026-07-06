@@ -5,6 +5,21 @@
 
 import { Collection } from "discord.js";
 import type GameEntity from "../../Data/GameEntity.ts";
+import type Room from "../../Data/Room.ts";
+import type Exit from "../../Data/Exit.ts";
+import type Fixture from "../../Data/Fixture.ts";
+import type Prefab from "../../Data/Prefab.ts";
+import type InventorySlot from "../../Data/InventorySlot.ts";
+import type Recipe from "../../Data/Recipe.ts";
+import type RoomItem from "../../Data/RoomItem.ts";
+import type Puzzle from "../../Data/Puzzle.ts";
+import type Event from "../../Data/Event.ts";
+import type Status from "../../Data/Status.ts";
+import type Player from "../../Data/Player.ts";
+import type InventoryItem from "../../Data/InventoryItem.ts";
+import type EquipmentSlot from "../../Data/EquipmentSlot.ts";
+import type Gesture from "../../Data/Gesture.ts";
+import type Flag from "../../Data/Flag.ts";
 
 /** Abstract class representing all Invocations. */
 abstract class BaseInvocation<M extends boolean, V extends boolean> {
@@ -49,6 +64,66 @@ export class ValidatedInvocation extends BaseInvocation<true, true> {
         this.args = args;
         this.glob = glob;
     }
+
+    getRoom(patternSlot: string): Room {
+        return this.args.get(patternSlot) as Room;
+    }
+
+    getExit(patternSlot: string): Exit {
+        return this.args.get(patternSlot) as Exit;
+    }
+
+    getFixture(patternSlot: string): Fixture {
+        return this.args.get(patternSlot) as Fixture;
+    }
+
+    getPrefab(patternSlot: string): Prefab {
+        return this.args.get(patternSlot) as Prefab;
+    }
+
+    getInventorySlot(patternSlot: string): InventorySlot<any> {
+        return this.args.get(patternSlot) as InventorySlot<any>;
+    }
+
+    getRecipe(patternSlot: string): Recipe {
+        return this.args.get(patternSlot) as Recipe;
+    }
+
+    getRoomItem(patternSlot: string): RoomItem {
+        return this.args.get(patternSlot) as RoomItem;
+    }
+
+    getPuzzle(patternSlot: string): Puzzle {
+        return this.args.get(patternSlot) as Puzzle;
+    }
+
+    getEvent(patternSlot: string): Event {
+        return this.args.get(patternSlot) as Event;
+    }
+
+    getStatus(patternSlot: string): Status {
+        return this.args.get(patternSlot) as Status;
+    }
+
+    getPlayer(patternSlot: string): Player {
+        return this.args.get(patternSlot) as Player;
+    }
+
+    getInventoryItem(patternSlot: string): InventoryItem {
+        return this.args.get(patternSlot) as InventoryItem;
+    }
+
+    getEquipmentSlot(patternSlot: string): EquipmentSlot {
+        return this.args.get(patternSlot) as EquipmentSlot;
+    }
+
+    getGesture(patternSlot: string): Gesture {
+        return this.args.get(patternSlot) as Gesture;
+    }
+
+    getFlag(patternSlot: string): Flag {
+        return this.args.get(patternSlot) as Flag;
+    }
 }
 
 /** Invocation whose arguments have been matched. */
@@ -67,6 +142,66 @@ export class MatchedInvocation extends BaseInvocation<true, false> {
         super(true, false);
         this.args = args;
         this.glob = glob;
+    }
+
+    getRooms(patternSlot: string): Room[] {
+        return this.args.get(patternSlot) as Room[];
+    }
+
+    getExits(patternSlot: string): Exit[] {
+        return this.args.get(patternSlot) as Exit[];
+    }
+
+    getFixtures(patternSlot: string): Fixture[] {
+        return this.args.get(patternSlot) as Fixture[];
+    }
+
+    getPrefabs(patternSlot: string): Prefab[] {
+        return this.args.get(patternSlot) as Prefab[];
+    }
+
+    getInventorySlots(patternSlot: string): InventorySlot<any>[] {
+        return this.args.get(patternSlot) as InventorySlot<any>[];
+    }
+
+    getRecipes(patternSlot: string): Recipe[] {
+        return this.args.get(patternSlot) as Recipe[];
+    }
+
+    getRoomItems(patternSlot: string): RoomItem[] {
+        return this.args.get(patternSlot) as RoomItem[];
+    }
+
+    getPuzzles(patternSlot: string): Puzzle[] {
+        return this.args.get(patternSlot) as Puzzle[];
+    }
+
+    getEvents(patternSlot: string): Event[] {
+        return this.args.get(patternSlot) as Event[];
+    }
+
+    getStatuses(patternSlot: string): Status[] {
+        return this.args.get(patternSlot) as Status[];
+    }
+
+    getPlayers(patternSlot: string): Player[] {
+        return this.args.get(patternSlot) as Player[];
+    }
+
+    getInventoryItems(patternSlot: string): InventoryItem[] {
+        return this.args.get(patternSlot) as InventoryItem[];
+    }
+
+    getEquipmentSlots(patternSlot: string): EquipmentSlot[] {
+        return this.args.get(patternSlot) as EquipmentSlot[];
+    }
+
+    getGestures(patternSlot: string): Gesture[] {
+        return this.args.get(patternSlot) as Gesture[];
+    }
+
+    getFlags(patternSlot: string): Flag[] {
+        return this.args.get(patternSlot) as Flag[];
     }
 }
 

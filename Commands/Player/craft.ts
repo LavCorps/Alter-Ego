@@ -58,24 +58,20 @@ const command = new PlayerCommand({
             return new InvalidInvocation([`You cannot do that because you are **${status[0].id}**.`]);
 
         const args: Collection<string, GameEntity> = new Collection();
-        const item1 = (inv.args.get("item 1") as InventoryItem[]).find(item => ctx.heldItems.has(item));
-        const item2 = (inv.args.get("item 2") as InventoryItem[]).find(item => ctx.heldItems.has(item));
+        const item1 = inv.getInventoryItems("item 1").find(item => ctx.heldItems.has(item));
+        const item2 = inv.getInventoryItems("item 2").find(item => ctx.heldItems.has(item));
 
         if (item1 === undefined && item2 === undefined)
-            return new InvalidInvocation([`Couldn't find items "${(inv.args.get("item 1") as InventoryItem[])[0].name}" and "${(inv.args.get("item 2") as InventoryItem[])[0].name}" in either of your hands.`]);
+            return new InvalidInvocation([`Couldn't find items "${inv.getInventoryItems("item 1")[0].name}" and "${inv.getInventoryItems("item 2")[0].name}" in either of your hands.`]);
         else if (item1 === undefined)
-            return new InvalidInvocation([`Couldn't find item "${(inv.args.get("item 1") as InventoryItem[])[0].name}" in either of your hands.`]);
+            return new InvalidInvocation([`Couldn't find item "${inv.getInventoryItems("item 1")[0].name}" in either of your hands.`]);
         else if (item2 === undefined)
-            return new InvalidInvocation([`Couldn't find item "${(inv.args.get("item 2") as InventoryItem[])[0].name}" in either of your hands.`]);
+            return new InvalidInvocation([`Couldn't find item "${inv.getInventoryItems("item 2")[0].name}" in either of your hands.`]);
 
         const items = [item1, item2];
-        items.sort(function (a, b) {
-            if (a.prefab.id < b.prefab.id) return -1;
-            if (a.prefab.id > b.prefab.id) return 1;
-            return 0;
-        });
+        items.sort((a, b) => a.prefab.id.localeCompare(b.prefab.id));
 
-        const recipes = game.recipes.filter(recipe => recipe.ingredients.length === 2 && recipe.fixtureTag === "");
+        const recipes = game.entityFinder.getRecipes("crafting");
         let recipe: Recipe | null = null;
         for (let i = 0; i < recipes.length; i++) {
             if (ctx.player.canCraft(recipes[i], [items[0], items[1]])) {
@@ -95,7 +91,7 @@ const command = new PlayerCommand({
 
     execute: async (ctx: PlayerContext, inv: ValidatedInvocation) => {
         const action = new CraftAction(game, ctx.message, ctx.player, ctx.player.location, false);
-        action.performCraft(inv.args.get("item 1") as InventoryItem, inv.args.get("item 2") as InventoryItem, inv.args.get("recipe") as Recipe);
+        action.performCraft(inv.getInventoryItem("item 1"), inv.getInventoryItem("item 2"), inv.getRecipe("recipe"));
     }
 });
 

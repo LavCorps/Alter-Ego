@@ -4,15 +4,14 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { Collection } from "discord.js";
 import { InvalidInvocation, ValidatedInvocation, type MatchedInvocation } from "../../Classes/Command/Invocation.ts";
-import { Pattern, Slot, Constant, Glob } from "../../Classes/Command/Pattern.ts";
+import { Pattern, Glob } from "../../Classes/Command/Pattern.ts";
 import type GameSettings from "../../Classes/GameSettings.js";
-import InventoryItem from "../../Data/InventoryItem.ts";
 import ModeratorCommand from "../../Classes/Command/ModeratorCommand.ts";
 import type ModeratorContext from "../../Classes/Command/ModeratorContext.ts";
 
 class LoadInvocation extends ValidatedInvocation {
+    static readonly targetRegex = /^((?<All>all)|(?<Room>room(?! ?item)s?)|(?<Fixture>objects?|fixtures?)|(?<Prefab>prefabs?)|(?<Recipe>recipes?)|(?<RoomItem>(room ?)?items?)|(?<Puzzle>puzzles?)|(?<Event>events?)|(?<Status>status(?:es)? ?(?:effects?)?)|(?<Player>players?)|(?<InventoryItem>inventory(?: ?items?)?)|(?<Gesture>gestures?)|(?<Flag>flags?)) ?(?<options>.*)/i
     /**
      * Which category of game entity should be targeted by the load command.
      */
@@ -104,55 +103,64 @@ const command = new ModeratorCommand({
         else if (ctx.invokedAlias === "lar")
             inv.glob = ["all", "resume"];
 
-        if (inv.glob[0] === "all") {
+        const globMatch = inv.glob.join(" ").match(LoadInvocation.targetRegex);
+        if (!globMatch || !globMatch.groups)
+            return new InvalidInvocation([`You need to specify a valid type of data to get. Usage:\n${command.usage(ctx.game.settings)}`]);
+        if (globMatch.groups.All) {
             if (ctx.game.inProgress && !ctx.game.editMode)
                 return new InvalidInvocation(["You must enable edit mode to load all data."]);
-            if (inv.glob[1] === "start")
+            const options = globMatch.groups.options?.toLocaleLowerCase();
+            if (options && options === "start")
                 return new LoadInvocation("all", true, true);
-            else if (inv.glob[1] === "resume")
+            else if (options && options === "resume")
                 return new LoadInvocation("all", true);
             else return new LoadInvocation("all");
-        } else if (inv.glob[0] === "rooms") {
+        }
+        else if (globMatch.groups.Room) {
             if (ctx.game.inProgress && !ctx.game.editMode)
                 return new InvalidInvocation(["You must enable edit mode to load rooms."]);
             return new LoadInvocation("rooms");
-        } else if (inv.glob[0] === "fixtures" || inv.glob[0] === "objects") {
+        }
+        else if (globMatch.groups.Fixture) {
             if (ctx.game.inProgress && !ctx.game.editMode)
                 return new InvalidInvocation(["You must enable edit mode to load fixtures."]);
             return new LoadInvocation("fixtures");
-        } else if (inv.glob[0] === "prefabs")
+        }
+        else if (globMatch.groups.Prefab)
             return new LoadInvocation("prefabs");
-        else if (inv.glob[0] === "recipes")
+        else if (globMatch.groups.Recipe)
             return new LoadInvocation("recipes");
-        else if (inv.glob[0] === "roomitems" || inv.glob[0] === "items" || inv.glob[0] === "room" && inv.glob[1] === "items") {
+        else if (globMatch.groups.RoomItem) {
             if (ctx.game.inProgress && !ctx.game.editMode)
                 return new InvalidInvocation(["You must enable edit mode to load room items."]);
             return new LoadInvocation("room items");
-        } else if (inv.glob[0] === "puzzles") {
+        }
+        else if (globMatch.groups.Puzzle) {
             if (ctx.game.inProgress && !ctx.game.editMode)
                 return new InvalidInvocation(["You must enable edit mode to load puzzles."]);
             return new LoadInvocation("puzzles");
-        } else if (inv.glob[0] === "events") {
+        }
+        else if (globMatch.groups.Event) {
             if (ctx.game.inProgress && !ctx.game.editMode)
                 return new InvalidInvocation(["You must enable edit mode to load events."]);
             return new LoadInvocation("events");
-        } else if (inv.glob[0] === "statuses" || inv.glob[0] === "effects" || inv.glob[0] === "status" && inv.glob[1] === "effects")
+        }
+        else if (globMatch.groups.Status)
             return new LoadInvocation("status effects");
-        else if (inv.glob[0] === "players")
+        else if (globMatch.groups.Player)
             return new LoadInvocation("players");
-        else if (inv.glob[0] === "inventoryitems" || inv.glob[0] === "inventories" || inv.glob[0] === "inventory" && inv.glob[1] === "items") {
+        else if (globMatch.groups.InventoryItem) {
             if (ctx.game.inProgress && !ctx.game.editMode)
                 return new InvalidInvocation(["You must enable edit mode to load inventory items."]);
             return new LoadInvocation("inventory items");
-        } else if (inv.glob[0] === "gestures")
+        }
+        else if (globMatch.groups.Gesture)
             return new LoadInvocation("gestures");
-        else if (inv.glob[0] === "flags") {
+        else if (globMatch.groups.Flag) {
             if (ctx.game.inProgress && !ctx.game.editMode)
                 return new InvalidInvocation(["You must enable edit mode to load flags."]);
             return new LoadInvocation("flags");
         }
-
-        return new InvalidInvocation([`You need to specify a valid type of data to get. Usage:\n${command.usage(ctx.game.settings)}`])
     },
 
     execute: async (ctx: ModeratorContext, inv: LoadInvocation) => {
