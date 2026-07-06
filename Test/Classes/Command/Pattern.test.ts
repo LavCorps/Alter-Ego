@@ -674,5 +674,35 @@ describe("Pattern file from NG Commands", () => {
                 expect(pocket.id).toBe("RIGHT POCKET");
             });
         });
+
+        test("Pattern.match(15)", async () => {
+            const pattern = new Pattern([
+                new Glob(),
+            ]);
+            const invocation = pattern.match(trie.tokenize([])) as MatchedInvocation;
+            expect(invocation).toBeInstanceOf(MatchedInvocation);
+            expect(invocation.args.size).toBe(0);
+            expect(invocation.glob).toStrictEqual([]);
+        });
+
+        test("Pattern.match(16)", async () => {
+            const pattern = new Pattern([
+                new Glob(),
+            ]);
+            const invocation = pattern.match(trie.tokenize(["Hello", "world!"])) as MatchedInvocation;
+            expect(invocation).toBeInstanceOf(MatchedInvocation);
+            expect(invocation.args.size).toBe(0);
+            expect(invocation.glob).toStrictEqual(["Hello", "world!"]);
+        });
+
+        test("Pattern.match(17)", async () => {
+            const pattern = new Pattern([
+                new Glob(),
+            ]);
+            const invocation = pattern.match(trie.tokenize(["Hello?"])) as MatchedInvocation;
+            expect(invocation).toBeInstanceOf(MatchedInvocation);
+            expect(invocation.args.size).toBe(0);
+            expect(invocation.glob).toStrictEqual(["Hello?"]);
+        });
     });
 });
