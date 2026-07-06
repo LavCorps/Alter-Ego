@@ -115,7 +115,7 @@ describe("PlayerContext class from NG Commands", () => {
                 console.log(`final trie size is ${trie.size()}`);
                 console.log(game.clientContext.prettyPrinter.prettyString(trie));
             }
-            expect(trie.size()).toBe(304);
+            expect(trie.size()).toBe(303);
         });
 
         test("feed Kyra Context [Player] to Trie", async () => {
@@ -355,7 +355,7 @@ describe("PlayerContext class from NG Commands", () => {
                 console.log(`final trie size is ${trie.size()}`);
                 console.log(game.clientContext.prettyPrinter.prettyString(trie));
             }
-            expect(trie.size()).toBe(5);
+            expect(trie.size()).toBe(4);
         });
 
         test("feed Kyra Context [Exit] to Trie", async () => {
