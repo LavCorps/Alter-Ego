@@ -608,6 +608,14 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
     }
 
     /**
+     * Returns true if the player's position is exactly the same as the given entity.
+     * @param entity - Another player, or an exit.
+     */
+    positionMatches(entity: Player | Exit): boolean {
+        return this.getGame().movementHandler.positionsEqual(this, entity);
+    }
+
+    /**
      * Sets the player's position in 3D space.
      * @param pos - The position to set.
      */

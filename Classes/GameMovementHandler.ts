@@ -190,6 +190,15 @@ export default class GameMovementHandler {
     }
 
     /**
+     * Returns true if the two entities have the same position.
+     * @param entity1 - A player or room.
+     * @param entity2 - A player or room.
+     */
+    public positionsEqual(entity1: Positionable, entity2: Positionable): boolean {
+        return entity1.pos.x === entity2.pos.x && entity1.pos.y === entity2.pos.y && entity1.pos.z === entity2.pos.z;
+    }
+
+    /**
      * Moves the given players to the desired room.
      *
      * @param players - The players to move. They will all be moved together, and will all arrive at the same time.

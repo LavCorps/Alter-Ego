@@ -631,7 +631,7 @@ describe('StartMoveAction test', () => {
 
             /**
              * Fast forward to when we might expect Nero to have depleted half of his stamina.
-             * For the sake of simplicity, we'll go with 17 seconds (making up for the advance by 100ms earlier).
+             * For the sake of simplicity, we'll go with 17 seconds.
              */
             const elapsedTime = 17000;
             vi.advanceTimersByTime(elapsedTime);

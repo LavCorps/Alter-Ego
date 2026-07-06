@@ -322,6 +322,15 @@ export default class GameNotificationGenerator {
     }
 
     /**
+     * Generates a notification indicating the given players couldn't keep up with the party
+     * because they stopped moving during position synchronization, and have been removed.
+     * @param ledPlayersString - A list of the players who couldn't keep up.
+     */
+    generateLedPlayerCouldNotSynchronizePositionNotification(ledPlayersString: string) {
+        return `${ledPlayersString} can't seem to keep up with the party.`;
+    }
+
+    /**
      * Generates a notification indicating that the player has stopped leading the given followers.
      * @param player - The player referred to in this notification.
      * @param secondPerson - Whether or not the player should be referred to in second person.

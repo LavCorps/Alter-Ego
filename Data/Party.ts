@@ -50,6 +50,13 @@ export default class Party extends GameConstruct {
      * The whisper associated with the party. This is the whisper that the party members are using to communicate with each other.
      */
     whisper: Whisper;
+    /**
+     * Whether or not the positions of all party members are synchronized.
+     * During party formation, this is usually false, unless all members happen to be at the same position.
+     * Once the leader starts leading, the rest of the party will start moving toward their position.
+     * When all followers have reached the leader's position, this is true.
+     */
+    positionsAreSynchronized: boolean;
 
     /**
      * @param game - The game this party belongs to.
@@ -73,6 +80,7 @@ export default class Party extends GameConstruct {
             this.#memberDisplayNames.set(follower.name, follower.displayName);
             follower.joinParty(this);
         }
+        this.positionsAreSynchronized = this.getMisalignedFollowers().length === 0;
     }
 
     /**
@@ -165,6 +173,7 @@ export default class Party extends GameConstruct {
     /**
      * Returns true if the party can move. If any player in the party is unable to move, the party cannot move.
      * This can be used to prevent the party from moving if, for example, one of the members is paralyzed or restrained.
+     * The party cannot move if all members' positions are not synchronized.
      * Also returns false if the party's movement speed is less than or equal to 0.
      * @param isRunning - Whether or not the party is trying to run.
      */
@@ -173,6 +182,7 @@ export default class Party extends GameConstruct {
         for (const member of this.members.values()) {
             if (!member.canUseCommand(command)) return false;
         }
+        if (this.getMisalignedFollowers().length > 0) return false;
         if (this.speed <= 0) return false;
         return true;
     }
@@ -183,8 +193,15 @@ export default class Party extends GameConstruct {
      */
     getImmovablePlayers(isRunning: boolean): Player[] {
         const command = isRunning ? "run" : "move";
-        const immovablePlayers = this.members.filter(player => !player.canUseCommand(command) || player.speed <= 0);
+        const immovablePlayers = this.members.filter(player => !player.canUseCommand(command) || !player.positionMatches(this.leader) || player.speed <= 0);
         return Array.from(immovablePlayers.values()).toSorted((a, b) => this.getMemberDisplayName(a).localeCompare(this.getMemberDisplayName(b)));
+    }
+
+    /**
+     * Gets all followers whose positions are out of sync with the leader's.
+     */
+    getMisalignedFollowers(): Player[] {
+        return this.followers.filter(follower => !follower.positionMatches(this.leader)).map(player => player);
     }
 
     /**
