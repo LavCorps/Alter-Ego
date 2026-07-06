@@ -232,7 +232,7 @@ describe('StartMoveAction test', () => {
     describe('one player starts moving with no party', () => {
         test('player moves to the destination room (walking)', async () => {
             const startMoveAction = new StartMoveAction(game, undefined, astrid, astrid.location, false);
-            await startMoveAction.performStartMove(false, astrid.location, hall5.dest, hall5, hall5.getLinkedExit());
+            await startMoveAction.performStartMove(false, hall5);
             expect(calculateMoveTimeSpy).toHaveBeenCalledOnce();
             const calculatedTime = 3852.926;
             expect(calculateMoveTimeSpy.mock.results[0].value).toBeCloseTo(calculatedTime, 3);
@@ -288,7 +288,7 @@ describe('StartMoveAction test', () => {
         test('player moves to the destination room (walking) (with next move in queue)', async () => {
             astrid.moveQueue = ["HALL 5", "LOVE SUITE"];
             const startMoveAction = new StartMoveAction(game, undefined, astrid, astrid.location, false);
-            await startMoveAction.performStartMove(false, astrid.location, hall5.dest, hall5, hall5.getLinkedExit());
+            await startMoveAction.performStartMove(false, hall5);
             expect(calculateMoveTimeSpy).toHaveBeenCalledOnce();
             const calculatedTime = 3852.926;
             expect(calculateMoveTimeSpy.mock.results[0].value).toBeCloseTo(calculatedTime, 3);
@@ -334,7 +334,7 @@ describe('StartMoveAction test', () => {
             nero.setPos(meatballBeginning.pos);
             nero.moveQueue = ["END", "NEXT ROOM"];
             const startMoveAction = new StartMoveAction(game, undefined, nero, nero.location, false);
-            await startMoveAction.performStartMove(true, nero.location, meatballEnd.dest, meatballEnd, meatballEnd.getLinkedExit());
+            await startMoveAction.performStartMove(true, meatballEnd);
             expect(calculateMoveTimeSpy).toHaveBeenCalledOnce();
             const calculatedTime = 424339.472;
             expect(calculateMoveTimeSpy.mock.results[0].value).toBeCloseTo(calculatedTime, 3);
@@ -390,7 +390,7 @@ describe('StartMoveAction test', () => {
             const noStaminaDecrease = game.entityFinder.getStatusEffect("meatball stamina");
             astrid.inflict(noStaminaDecrease);
             const startMoveAction = new StartMoveAction(game, undefined, astrid, astrid.location, false);
-            await startMoveAction.performStartMove(false, astrid.location, hall5.dest, hall5, hall5.getLinkedExit());
+            await startMoveAction.performStartMove(false, hall5);
             expect(astrid.isMoving).toBe(true);
             expect(astrid.isRunning).toBe(false);
             expect(astrid.moveTimer).not.toBeNull();
@@ -425,7 +425,7 @@ describe('StartMoveAction test', () => {
             hall5.lock();
             astrid.moveQueue = ["HALL 5", "LOVE SUITE"];
             const startMoveAction = new StartMoveAction(game, undefined, astrid, astrid.location, false);
-            await startMoveAction.performStartMove(false, astrid.location, hall5.dest, hall5, hall5.getLinkedExit());
+            await startMoveAction.performStartMove(false, hall5);
             expect(narrateStartMoveSpy).toHaveBeenCalledOnce();
             await sendMessages();
 
@@ -452,7 +452,7 @@ describe('StartMoveAction test', () => {
             const cave9Puzzle = game.entityFinder.getPuzzle("DOOR", "cave-9", "restricted exit");
             cave9Puzzle.setAccessible();
             const startMoveAction = new StartMoveAction(game, undefined, astrid, astrid.location, false);
-            await startMoveAction.performStartMove(false, astrid.location, cave9Door.dest, cave9Door, cave9Door.getLinkedExit());
+            await startMoveAction.performStartMove(false, cave9Door);
             expect(narrateStartMoveSpy).toHaveBeenCalledOnce();
             await sendMessages();
 
@@ -478,7 +478,7 @@ describe('StartMoveAction test', () => {
             const cave9Puzzle = game.entityFinder.getPuzzle("DOOR", "cave-9", "restricted exit");
             cave9Puzzle.setAccessible();
             const startMoveAction = new StartMoveAction(game, undefined, nero, nero.location, false);
-            await startMoveAction.performStartMove(false, nero.location, cave9Door.dest, cave9Door, cave9Door.getLinkedExit());
+            await startMoveAction.performStartMove(false, cave9Door);
             expect(narrateStartMoveSpy).toHaveBeenCalledOnce();
             await sendMessages();
 
@@ -513,7 +513,7 @@ describe('StartMoveAction test', () => {
             clearMessages();
 
             const startMoveAction = new StartMoveAction(game, undefined, nero, nero.location, false);
-            await startMoveAction.performStartMove(true, nero.location, meatballEnd.dest, meatballEnd, meatballEnd.getLinkedExit());
+            await startMoveAction.performStartMove(true, meatballEnd);
             expect(calculateMoveTimeSpy).toHaveBeenCalledTimes(2);
             const calculatedTime = 424339.472;
             expect(calculateMoveTimeSpy.mock.results[0].value).toBeCloseTo(calculatedTime, 3);
@@ -601,7 +601,7 @@ describe('StartMoveAction test', () => {
             clearMessages();
 
             const startMoveAction = new StartMoveAction(game, undefined, asuka, asuka.location, false);
-            await startMoveAction.performStartMove(true, asuka.location, meatballEnd.dest, meatballEnd, meatballEnd.getLinkedExit());
+            await startMoveAction.performStartMove(true, meatballEnd);
             expect(calculateMoveTimeSpy).toHaveBeenCalledTimes(2);
             const asukaCalculatedTime = 151645.207;
             const neroCalculatedTime = 424339.472;
@@ -685,7 +685,7 @@ describe('StartMoveAction test', () => {
             clearMessages();
 
             const startMoveAction = new StartMoveAction(game, undefined, astrid, astrid.location, false);
-            await startMoveAction.performStartMove(false, astrid.location, hall5.dest, hall5, hall5.getLinkedExit());
+            await startMoveAction.performStartMove(false, hall5);
             expect(calculateMoveTimeSpy).toHaveBeenCalledTimes(2);
             const asukaCalculatedTime = 0;
             const astridCalculatedTime = 3852.926;
@@ -753,7 +753,7 @@ describe('StartMoveAction test', () => {
             clearMessages();
 
             const startMoveAction = new StartMoveAction(game, undefined, astrid, astrid.location, false);
-            await startMoveAction.performStartMove(false, astrid.location, hall5.dest, hall5, hall5.getLinkedExit());
+            await startMoveAction.performStartMove(false, hall5);
             expect(calculateMoveTimeSpy).toHaveBeenCalledTimes(2);
             const astridCalculatedTime = 3852.926;
             const neroCalculatedTime = 11310.121;
@@ -839,7 +839,7 @@ describe('StartMoveAction test', () => {
             clearMessages();
 
             const startMoveAction = new StartMoveAction(game, undefined, nero, nero.location, false);
-            await startMoveAction.performStartMove(false, nero.location, cave9Door.dest, cave9Door, cave9Door.getLinkedExit());
+            await startMoveAction.performStartMove(false, cave9Door);
             expect(calculateMoveTimeSpy).toHaveBeenCalledTimes(2);
             const calculatedTime = 8523.792;
             expect(calculateMoveTimeSpy.mock.results[0].value).toBeCloseTo(calculatedTime, 3);

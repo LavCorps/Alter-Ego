@@ -6,11 +6,13 @@ import { Collection } from "discord.js";
 import Exit from "../Data/Exit.ts";
 import Game from "../Data/Game.ts";
 import type Player from "../Data/Player.ts";
+import type Action from "../Data/Action.ts";
 import InflictAction from "../Data/Actions/InflictAction.ts";
 import MoveAction from "../Data/Actions/MoveAction.ts";
 import StopAction from "../Data/Actions/StopAction.ts";
 
-type Positionable = Exit | Player;
+
+export type Positionable = Exit | Player;
 
 /**
  * A set of functions to handle movement.
@@ -203,14 +205,11 @@ export default class GameMovementHandler {
      *
      * @param players - The players to move. They will all be moved together, and will all arrive at the same time.
      * @param running - Whether the players are running.
-     * @param currentRoom - The room the players are currently in.
-     * @param destinationRoom - The room the players will be moved to.
-     * @param exit - The exit the players will leave their current room through.
-     * @param entrance - The exit the players will enter the desired room from.
+     * @param destination - The player or exit the players are moving toward.
      * @param time - The number of milliseconds it will take to move to the destination.
-     * @param forced - Whether or not the players were forced to move to the destination.
+     * @param action - The action that called this function.
      */
-    public movePlayers(players: Set<Player>, running: boolean, destination: Positionable, time: number, forced: boolean): void {
+    public movePlayers(players: Set<Player>, running: boolean, destination: Positionable, time: number, action: Action): void {
         if (players.size === 0) return;
         for (const player of players) {
             player.remainingTime = time;
@@ -281,10 +280,12 @@ export default class GameMovementHandler {
                         wearyAction.performInflict(wearyStatus, false, true, true);
                         // If the player is moving toward the leader during party formation, remove them from the party.
                         if (player.party && !player.party.positionsSynchronized && !(destination instanceof Exit) && !player.positionMatches(player.party.leader)) {
-                            const removalMessage = this.#game.notificationGenerator.generateLedPlayerCouldNotSynchronizeNotification(player.party.getMemberDisplayName(player));
-                            // Create a fake action so the removal can be narrated.
-                            const dummyAction = new InflictAction(this.#game, undefined, player, player.location, true);
-                            await player.party.removeFollower(player, dummyAction, removalMessage);
+                            const removalMessage = this.#game.notificationGenerator.generateLedPlayerCouldNotSynchronizeNotification(
+                                player.party.getMemberDisplayName(player),
+                                player.party.getMemberDisplayName(player.party.leader)
+                            );
+                            player.party.leader.stopLeading(player);
+                            await player.party.removeFollower(player, wearyAction, removalMessage);
                         }
 
                     }
@@ -320,20 +321,25 @@ export default class GameMovementHandler {
                         const restrictedExitPuzzle = this.#game.entityFinder.getPuzzle(exit.name, player.location.id, "restricted exit", true);
                         const exitPuzzlePassable = restrictedExitPuzzle && restrictedExitPuzzle.solutions.includes(player.name);
                         if (destination.unlocked || exitPuzzlePassable) {
-                            const moveAction = new MoveAction(this.#game, undefined, player, player.location, forced);
+                            const moveAction = new MoveAction(this.#game, undefined, player, player.location, action.forced);
                             await moveAction.performMove(running, currentRoom, destinationRoom, exit, entrance);
                         }
                         else {
                             // The exit is locked.
-                            const stopAction = new StopAction(this.#game, undefined, player, player.location, forced);
+                            const stopAction = new StopAction(this.#game, undefined, player, player.location, action.forced);
                             stopAction.performStop(true, exit, !player.followedPlayerIsInRoom());
                             player.moveQueue.length = 0;
                         }
+                    }
+                    else if (time > 1000) {
+                        const dummyAction = new MoveAction(this.#game, undefined, player, player.location, action.forced);
+                        this.#game.narrationHandler.narrateFinishApproaching(dummyAction, player, destination);
                     }
                 }
                 // If the players are in a party and the party members' positions are now synchronized, the party is ready to go.
                 if (firstPlayer.party && !firstPlayer.party.positionsSynchronized && firstPlayer.party.getMisalignedFollowers().length === 0) {
                     firstPlayer.party.positionsSynchronized = true;
+                    if (time > 1000) this.#game.narrationHandler.narratePartyReady(action, firstPlayer.party.leader);
                 }
             }
         });

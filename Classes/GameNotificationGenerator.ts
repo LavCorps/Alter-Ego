@@ -2,12 +2,12 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { capitalizeFirstLetter, endsWithPunctuation } from "../Modules/helpers.ts";
+import { capitalizeFirstLetter, endsWithPunctuation, generatePlayerListString } from "../Modules/helpers.ts";
 import type Dialog from "../Data/Dialog.ts";
 import type Fixture from "../Data/Fixture.ts";
 import type Game from "../Data/Game.ts";
 import type Player from "../Data/Player.ts";
-import type Exit from "../Data/Exit.js";
+import type Exit from "../Data/Exit.ts";
 import type ItemInstance from "../Data/ItemInstance.ts";
 import type Puzzle from "../Data/Puzzle.ts";
 import type Recipe from "../Data/Recipe.ts";
@@ -304,30 +304,77 @@ export default class GameNotificationGenerator {
      * Generates a notification indicating the player has begun leading other players.
      * @param player - The player referred to in this notification.
      * @param secondPerson - Whether or not the player should be referred to in second person.
-     * @param followerListString - A list of the players being led.
+     * @param followers - The players being led.
+     * @param partySynchronized - Whether or not the party members' positions are all synchronized.
+     * @param partyHasOtherFollowers - Whether or not the party has other followers aside from the ones being added.
      */
-    generateLeadNotification(player: Player, secondPerson: boolean, followerListString: string) {
-        const subject = secondPerson ? `You` : capitalizeFirstLetter(player.displayName);
-        const verb = secondPerson ? `begin leading` : `begins leading`;
-        return `${subject} ${verb} ${followerListString}.`;
+    generateLeadNotification(player: Player, secondPerson: boolean, followers: Player[], partySynchronized: boolean, partyHasOtherFollowers: boolean) {
+        const subject1 = secondPerson ? `You` : capitalizeFirstLetter(player.displayName);
+        const verb1 = secondPerson ? `begin leading` : `begins leading`;
+        const followerListString = generatePlayerListString(followers);
+        let addendum = "";
+        if (partySynchronized && secondPerson) {
+            const opening = partyHasOtherFollowers
+                ? `Everyone in your party is all`
+                : followers.length > 1
+                    ? `You're all`
+                    : `You're both`;
+            addendum = `. ${opening} together, and ready to go`;
+        }
+        else if (!partySynchronized) {
+            const punctuation = secondPerson ? `.` : `,`;
+            const subject2 = secondPerson && followers.length === 1
+                ? followers[0].pronouns.Sbj
+                : secondPerson && followers.length > 1
+                    ? `They`
+                    : `who`;
+            const pluralizeVerb = followers.length > 1 || followers.length === 1 && followers[0].pronouns.plural;
+            const verb2 = pluralizeVerb ? `start` : `starts`;
+            const object = secondPerson ? `you` : player.pronouns.obj;
+            addendum = `${punctuation} ${subject2} ${verb2} approaching ${object}`;
+        }
+        return `${subject1} ${verb1} ${followerListString}${addendum}.`;
     }
 
     /**
      * Generates a notification indicating the player is being led.
-     * @param leaderDisplayName - The display name of the player leading the player being addressed.
+     * @param leader - The player leading the player being addressed.
      * @param followerListString - A list of the players being led by the same leader.
+     * @param ledPlayerSynchronized - Whether or not the position of the player being addressed matches the leader's position.
      */
-    generateBeingLedNotification(leaderDisplayName: string, followerListString: string) {
-        return `${capitalizeFirstLetter(leaderDisplayName)} is now leading ${followerListString}.`;
+    generateBeingLedNotification(leader: Player, followerListString: string, ledPlayerSynchronized: boolean) {
+        const addendum = ledPlayerSynchronized ? `` : ` You start approaching ${leader.pronouns.obj}.`;
+        return `${capitalizeFirstLetter(leader.displayName)} is now leading ${followerListString}.${addendum}`;
+    }
+
+    /**
+     * Generates a notification that the player is finished approaching their leader.
+     * @param player - The player referred to in this notification.
+     * @param secondPerson - Whether or not the player should be referred to in second person.
+     * @param leader - The leader of the party, who the player being addressed was approaching.
+     */
+    generateFinishApproachingNotification(player: Player, secondPerson: boolean, leader: Player) {
+        const subject = secondPerson ? `You` : capitalizeFirstLetter(player.displayName);
+        const verb1 = secondPerson ? `finish` : `finishes`;
+        const verb2 = secondPerson ? `wait` : `waits`;
+        return `${subject} ${verb1} approaching ${leader.displayName}, and ${verb2} behind ${leader.pronouns.obj}.`;
+    }
+
+    /**
+     * Generates a notification indicating that the players in the leader's party all have their positions synchronized.
+     */
+    generatePartyReadyNotification() {
+        return `Everyone in your party is all together now, and ready to go.`;
     }
 
     /**
      * Generates a notification indicating the given players couldn't keep up with the party
      * because they stopped moving during position synchronization, and have been removed.
      * @param ledPlayersString - A list of the players who couldn't keep up.
+     * @param leaderDisplayName - The display name of the party leader.
      */
-    generateLedPlayerCouldNotSynchronizeNotification(ledPlayersString: string) {
-        return `${ledPlayersString} can't seem to keep up with the party.`;
+    generateLedPlayerCouldNotSynchronizeNotification(ledPlayersString: string, leaderDisplayName: string) {
+        return `${ledPlayersString} can't seem to keep up with ${leaderDisplayName}.`;
     }
 
     /**

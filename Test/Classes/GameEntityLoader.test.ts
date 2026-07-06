@@ -37,13 +37,13 @@ describe('GameEntityLoader test', () => {
             let updatePresenceSpy: Mock<() => void>;
             let eventStartTimerSpy: Mock<() => void>;
             let eventStartEffectsTimerSpy: Mock<() => void>;
-            let playerSendDescriptionSpy: Mock<(player: Player, container?: GameEntity) => Promise<void>>;
+            let playerSendDescriptionSpy: Mock<(player: Player, container?: GameEntity) => void>;
 
             beforeEach(() => {
                 updatePresenceSpy = vi.spyOn(game.clientContext, 'updatePresence').mockImplementation(() => {});
                 eventStartTimerSpy = vi.spyOn(Event.prototype, 'startTimer').mockImplementation(async () => {});
                 eventStartEffectsTimerSpy = vi.spyOn(Event.prototype, 'startEffectsTimer').mockImplementation(() => {});
-                playerSendDescriptionSpy = vi.spyOn(Description.prototype, 'parseAndSendTo').mockImplementation(async () => {});
+                playerSendDescriptionSpy = vi.spyOn(Description.prototype, 'parseAndSendTo').mockImplementation(() => {});
             });
 
             afterEach(() => {

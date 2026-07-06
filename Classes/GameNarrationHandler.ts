@@ -283,21 +283,48 @@ export default class GameNarrationHandler {
      * @param action - The action that initiated this narration.
      * @param leader - The player performing the lead action.
      * @param ledPlayers - The players being led.
+     * @param partySynchronized - Whether or not the party members' positions are all synchronized.
      * @param interactables - An array of interactables to send to the leader alongside their notification. Optional.
      */
-    narrateLead(action: Action, leader: Player, ledPlayers: Player[], interactables: Interactable[] = []) {
+    narrateLead(action: Action, leader: Player, ledPlayers: Player[], partySynchronized: boolean, interactables: Interactable[] = []) {
         const messageType = MessageDisplayType.MINOR;
-        const followerListString = generatePlayerListString(ledPlayers);
-        const leaderNotification = this.#game.notificationGenerator.generateLeadNotification(leader, true, followerListString);
+        const partyHasOtherFollowers = leader.party ? leader.party.followers.size !== ledPlayers.length : false;
+        const leaderNotification = this.#game.notificationGenerator.generateLeadNotification(leader, true, ledPlayers, partySynchronized, partyHasOtherFollowers);
         this.sendNotification(leader, action, leaderNotification, MessageDisplayType.STANDARD, undefined, undefined, interactables);
         for (const ledPlayer of ledPlayers) {
-            const tailoredFollowers = ledPlayers.filter(player => player.name !== ledPlayer.name).map(player => player.displayName).concat("you");
+            const tailoredFollowers = ["you"].concat(ledPlayers.filter(player => player.name !== ledPlayer.name).map(player => player.displayName));
             const tailoredFollowerListString = generateListString(tailoredFollowers);
-            const ledPlayerNotification = this.#game.notificationGenerator.generateBeingLedNotification(leader.displayName, tailoredFollowerListString);
+            const ledPlayerSynchronized = partySynchronized || ledPlayer.positionMatches(leader);
+            const ledPlayerNotification = this.#game.notificationGenerator.generateBeingLedNotification(leader, tailoredFollowerListString, ledPlayerSynchronized);
             this.sendNotification(ledPlayer, action, ledPlayerNotification, MessageDisplayType.STANDARD);
         }
-        const narration = this.#game.notificationGenerator.generateLeadNotification(leader, false, followerListString);
+        const narration = this.#game.notificationGenerator.generateLeadNotification(leader, false, ledPlayers, partySynchronized, partyHasOtherFollowers);
         this.#sendNarration(messageType, action, leader, narration);
+    }
+
+    /**
+     * Narrates that a player has finished approaching their party leader.
+     * @param action - The action that initiated this narration.
+     * @param player - The player who finished approaching their leader.
+     * @param leader - The leader of the party who was being approached.
+     */
+    narrateFinishApproaching(action: Action, player: Player, leader: Player) {
+        const messageType = MessageDisplayType.MINOR;
+        const notification = this.#game.notificationGenerator.generateFinishApproachingNotification(player, true, leader);
+        const narration = this.#game.notificationGenerator.generateFinishApproachingNotification(player, false, leader);
+        this.sendNotification(player, action, notification, messageType);
+        this.#sendNarration(messageType, action, player, narration);
+    }
+
+    /**
+     * Narrates that the players in the leader's party all have their positions synchronized.
+     * @param action - The action that initiated this narration.
+     * @param player - The leader of the party.
+     */
+    narratePartyReady(action: Action, player: Player) {
+        const messageType = MessageDisplayType.STANDARD;
+        const notification = this.#game.notificationGenerator.generatePartyReadyNotification();
+        this.sendNotification(player, action, notification, messageType);
     }
 
     /**

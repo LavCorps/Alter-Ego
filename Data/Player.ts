@@ -15,7 +15,6 @@ import CureAction from "./Actions/CureAction.ts";
 import DieAction from "./Actions/DieAction.ts";
 import InflictAction from "./Actions/InflictAction.ts";
 import InstantiateInventoryItemAction from "./Actions/InstantiateInventoryItemAction.ts";
-import MoveAction from "./Actions/MoveAction.ts";
 import StopAction from "./Actions/StopAction.ts";
 import CollatedItem from "./CollatedItem.ts";
 import type EquipmentSlot from "./EquipmentSlot.ts";
@@ -35,6 +34,7 @@ import RecipeProcessor, { type Process } from "./RecipeProcessor.ts";
 import Room from "./Room.ts";
 import RoomItem from "./RoomItem.ts";
 import Status from "./Status.ts";
+import type { Positionable } from "../Classes/GameMovementHandler.ts";
 
 export type PlayerField =
     "id" |
@@ -611,7 +611,7 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
      * Returns true if the player's position is exactly the same as the given entity.
      * @param entity - Another player, or an exit.
      */
-    positionMatches(entity: Player | Exit): boolean {
+    positionMatches(entity: Positionable): boolean {
         return this.getGame().movementHandler.positionsEqual(this, entity);
     }
 
