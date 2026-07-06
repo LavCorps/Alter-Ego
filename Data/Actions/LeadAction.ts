@@ -54,7 +54,7 @@ export default class LeadAction extends Action {
         let misalignedFollowers = party.getMisalignedFollowers();
         if (misalignedFollowers.length > 0) {
             // This will prevent the party from moving until all positions are synchronized.
-            party.positionsAreSynchronized = false;
+            party.positionsSynchronized = false;
 
             // Keep track of the longest travel time.
             let maxTime = 0;
@@ -62,20 +62,24 @@ export default class LeadAction extends Action {
                 const rate = follower.calculateMoveRate(false);
                 const time = this.getGame().movementHandler.calculateMoveTime(rate, follower, this.player);
                 if (time > maxTime) maxTime = time;
+                // TODO: It might be nice to use a StartMoveAction here so that we can send a narration/notifications about the players approaching.
+                // However, that would require StartMoveAction be refactored (inevitable anyway?).
+                // Otherwise, adjusting the narrateLead function might do the trick.
                 this.getGame().movementHandler.movePlayers(new Set([follower]), false, this.player, time, this.forced);
             }
 
+            // This is a fallback in case any members of the party didn't make it to the leader
+            // for some reason other than being inflicted with the weary status.
             // Mark all positions as synchronized after all followers have reached the leader.
-            // Add a tick just to be safe.
             this.player.doAfterDelay(maxTime + Game.tick, async () => {
                 misalignedFollowers = party.getMisalignedFollowers();
                 if (misalignedFollowers.length > 0) {
                     const misalignedFollowersString = generateListString(misalignedFollowers.map(follower => party.getMemberDisplayName(follower) ?? follower.displayName));
-                    const removalMessage = this.getGame().notificationGenerator.generateLedPlayerCouldNotSynchronizePositionNotification(misalignedFollowersString);
+                    const removalMessage = this.getGame().notificationGenerator.generateLedPlayerCouldNotSynchronizeNotification(misalignedFollowersString);
                     for (const follower of misalignedFollowers)
                         await this.player.party.removeFollower(follower, this, removalMessage);
                 }
-                this.player.party.positionsAreSynchronized = true;
+                this.player.party.positionsSynchronized = true;
             });
         }
 

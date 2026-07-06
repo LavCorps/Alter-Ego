@@ -326,7 +326,7 @@ export default class GameNotificationGenerator {
      * because they stopped moving during position synchronization, and have been removed.
      * @param ledPlayersString - A list of the players who couldn't keep up.
      */
-    generateLedPlayerCouldNotSynchronizePositionNotification(ledPlayersString: string) {
+    generateLedPlayerCouldNotSynchronizeNotification(ledPlayersString: string) {
         return `${ledPlayersString} can't seem to keep up with the party.`;
     }
 

@@ -81,7 +81,7 @@ export default class InflictAction extends Action {
             this.player.stopMoving();
             // If the player is in a party, stop all other members from moving as well, but keep them in a party together.
             // Only do this if the positions are synchronized, as the party is not fully formed until this occurs.
-            if (this.player.party && this.player.party.positionsAreSynchronized) {
+            if (this.player.party && this.player.party.positionsSynchronized) {
                 for (const member of this.player.party.members.values()) {
                     if (member.name !== this.player.name) {
                         const stopAction = new StopAction(this.getGame(), undefined, member, member.location, true);

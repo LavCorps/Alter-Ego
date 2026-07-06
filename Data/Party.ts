@@ -56,7 +56,7 @@ export default class Party extends GameConstruct {
      * Once the leader starts leading, the rest of the party will start moving toward their position.
      * When all followers have reached the leader's position, this is true.
      */
-    positionsAreSynchronized: boolean;
+    positionsSynchronized: boolean;
 
     /**
      * @param game - The game this party belongs to.
@@ -80,7 +80,7 @@ export default class Party extends GameConstruct {
             this.#memberDisplayNames.set(follower.name, follower.displayName);
             follower.joinParty(this);
         }
-        this.positionsAreSynchronized = this.getMisalignedFollowers().length === 0;
+        this.positionsSynchronized = this.getMisalignedFollowers().length === 0;
     }
 
     /**

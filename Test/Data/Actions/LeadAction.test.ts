@@ -216,7 +216,7 @@ describe('LeadAction test', () => {
                 expect(nero.viewParty(true)).toBe(`Nero is not in a party. However, he is following Astrid.`);
 
                 // Verify that upon party formation, followers move toward their leader until their positions are synchronized.
-                expect(astrid.party.positionsAreSynchronized).toBe(false);
+                expect(astrid.party.positionsSynchronized).toBe(false);
                 expect(astrid.isMoving).toBe(false);
                 expect(asuka.isMoving).toBe(true);
                 expect(nero.isMoving).toBe(false);
@@ -225,7 +225,7 @@ describe('LeadAction test', () => {
                 expect(doAfterDelaySpy).toHaveBeenCalledOnce();
                 const asukaTravelTime = calculateMoveTimeSpy.mock.results[0].value + (2 * Game.tick);
                 await vi.advanceTimersByTimeAsync(asukaTravelTime);
-                expect(astrid.party.positionsAreSynchronized).toBe(true);
+                expect(astrid.party.positionsSynchronized).toBe(true);
                 expect(astrid.isMoving).toBe(false);
                 expect(asuka.isMoving).toBe(false);
                 expect(nero.isMoving).toBe(false);
@@ -263,7 +263,7 @@ describe('LeadAction test', () => {
                 expect(nero.viewParty(true)).toBe(`Nero is not in a party. However, he is following Astrid.`);
 
                 // Positions should already be synchronized from the previous test.
-                expect(astrid.party.positionsAreSynchronized).toBe(true);
+                expect(astrid.party.positionsSynchronized).toBe(true);
                 expect(astrid.isMoving).toBe(false);
                 expect(asuka.isMoving).toBe(false);
                 expect(nero.isMoving).toBe(false);
@@ -308,7 +308,7 @@ describe('LeadAction test', () => {
                 expect(nero.viewParty(true)).toBe(`Nero is in a party led by Astrid.\n\nAsuka is also traveling with him.`);
 
                 // Asuka's position should already be synchronized with Astrid's. Only Nero needs to start moving.
-                expect(astrid.party.positionsAreSynchronized).toBe(false);
+                expect(astrid.party.positionsSynchronized).toBe(false);
                 expect(astrid.isMoving).toBe(false);
                 expect(asuka.isMoving).toBe(false);
                 expect(nero.isMoving).toBe(true);
@@ -317,7 +317,7 @@ describe('LeadAction test', () => {
                 expect(doAfterDelaySpy).toHaveBeenCalledOnce();
                 const neroTravelTime = calculateMoveTimeSpy.mock.results[0].value + (2 * Game.tick);
                 await vi.advanceTimersByTimeAsync(neroTravelTime);
-                expect(astrid.party.positionsAreSynchronized).toBe(true);
+                expect(astrid.party.positionsSynchronized).toBe(true);
                 expect(astrid.isMoving).toBe(false);
                 expect(asuka.isMoving).toBe(false);
                 expect(nero.isMoving).toBe(false);
@@ -391,7 +391,7 @@ describe('LeadAction test', () => {
                 expect(astrid.party).toStrictEqual(asuka.party);
 
                 // Verify that upon party formation, followers move toward their leader until their positions are synchronized.
-                expect(astrid.party.positionsAreSynchronized).toBe(false);
+                expect(astrid.party.positionsSynchronized).toBe(false);
                 expect(astrid.isMoving).toBe(false);
                 expect(asuka.isMoving).toBe(true);
                 expect(nero.isMoving).toBe(false);
@@ -400,7 +400,7 @@ describe('LeadAction test', () => {
                 expect(doAfterDelaySpy).toHaveBeenCalledOnce();
                 const asukaTravelTime = calculateMoveTimeSpy.mock.results[0].value + (2 * Game.tick);
                 await vi.advanceTimersByTimeAsync(asukaTravelTime);
-                expect(astrid.party.positionsAreSynchronized).toBe(true);
+                expect(astrid.party.positionsSynchronized).toBe(true);
                 expect(astrid.isMoving).toBe(false);
                 expect(asuka.isMoving).toBe(false);
                 expect(nero.isMoving).toBe(false);
@@ -442,7 +442,7 @@ describe('LeadAction test', () => {
                 expect(astrid.party).toStrictEqual(nero.party);
 
                 // Verify that upon party formation, followers move toward their leader until their positions are synchronized.
-                expect(astrid.party.positionsAreSynchronized).toBe(false);
+                expect(astrid.party.positionsSynchronized).toBe(false);
                 expect(astrid.isMoving).toBe(false);
                 expect(asuka.isMoving).toBe(true);
                 expect(nero.isMoving).toBe(true);
@@ -453,7 +453,7 @@ describe('LeadAction test', () => {
                 const neroTravelTime = calculateMoveTimeSpy.mock.results[1].value + (2 * Game.tick);
                 const maxTravelTime = Math.max(asukaTravelTime, neroTravelTime);
                 await vi.advanceTimersByTimeAsync(maxTravelTime);
-                expect(astrid.party.positionsAreSynchronized).toBe(true);
+                expect(astrid.party.positionsSynchronized).toBe(true);
                 expect(astrid.isMoving).toBe(false);
                 expect(asuka.isMoving).toBe(false);
                 expect(nero.isMoving).toBe(false);
@@ -495,31 +495,32 @@ describe('LeadAction test', () => {
                 expect(astrid.party).toStrictEqual(nero.party);
 
                 // Verify that upon party formation, followers move toward their leader.
-                expect(astrid.party.positionsAreSynchronized).toBe(false);
+                expect(astrid.party.positionsSynchronized).toBe(false);
                 expect(astrid.isMoving).toBe(false);
                 expect(asuka.isMoving).toBe(true);
                 expect(nero.isMoving).toBe(true);
                 expect(movePlayersSpy).toHaveBeenCalledTimes(2);
                 expect(calculateMoveTimeSpy).toHaveBeenCalledTimes(2);
                 expect(doAfterDelaySpy).toHaveBeenCalledOnce();
-                // Make Nero unable to move.
-                nero.stamina = 0.01;
-                const asukaTravelTime = calculateMoveTimeSpy.mock.results[0].value + (2 * Game.tick);
+                // Make Asuka unable to move.
+                asuka.stamina = 0.01;
+                // Here, we only need to advance the time by nero's travel time, which is shorter than Asuka's.
+                // This is because Asuka will have been removed from the party by the movement handler, mid-movement,
+                // so when Nero reaches Astrid, the party members' positions will be considered synchronized.
                 const neroTravelTime = calculateMoveTimeSpy.mock.results[1].value + (2 * Game.tick);
-                const maxTravelTime = Math.max(asukaTravelTime, neroTravelTime);
-                await vi.advanceTimersByTimeAsync(maxTravelTime);
-                expect(astrid.party.positionsAreSynchronized).toBe(true);
+                await vi.advanceTimersByTimeAsync(neroTravelTime);
+                expect(astrid.party.positionsSynchronized).toBe(true);
                 expect(astrid.isMoving).toBe(false);
                 expect(asuka.isMoving).toBe(false);
                 expect(nero.isMoving).toBe(false);
-                expect(asuka.positionMatches(astrid)).toBe(true);
-                expect(nero.positionMatches(astrid)).toBe(false);
-                expect(astrid.party.hasMember(asuka)).toBe(true);
-                expect(astrid.party.hasMember(nero)).toBe(false);
+                expect(asuka.positionMatches(astrid)).toBe(false);
+                expect(nero.positionMatches(astrid)).toBe(true);
+                expect(astrid.party.hasMember(asuka)).toBe(false);
+                expect(astrid.party.hasMember(nero)).toBe(true);
                 await sendQueuedMessages(game);
                 const whisperChannel = astrid.party.whisper.channel;
                 expect(whisperChannel.messages.cache).toHaveSize(1);
-                expect(whisperChannel.messages.cache.last().content).toBe(`Nero can't seem to keep up with the party.`);
+                expect(whisperChannel.messages.cache.last().content).toBe(`Asuka can't seem to keep up with the party.`);
             });
         });
     });

@@ -279,6 +279,14 @@ export default class GameMovementHandler {
                         const wearyAction = new InflictAction(this.#game, undefined, player, player.location, true);
                         this.#game.narrationHandler.narrateWeary(wearyAction, player);
                         wearyAction.performInflict(wearyStatus, false, true, true);
+                        // If the player is moving toward the leader during party formation, remove them from the party.
+                        if (player.party && !player.party.positionsSynchronized && !(destination instanceof Exit) && !player.positionMatches(player.party.leader)) {
+                            const removalMessage = this.#game.notificationGenerator.generateLedPlayerCouldNotSynchronizeNotification(player.party.getMemberDisplayName(player));
+                            // Create a fake action so the removal can be narrated.
+                            const dummyAction = new InflictAction(this.#game, undefined, player, player.location, true);
+                            await player.party.removeFollower(player, dummyAction, removalMessage);
+                        }
+
                     }
                 }
             }
@@ -322,6 +330,10 @@ export default class GameMovementHandler {
                             player.moveQueue.length = 0;
                         }
                     }
+                }
+                // If the players are in a party and the party members' positions are now synchronized, the party is ready to go.
+                if (firstPlayer.party && !firstPlayer.party.positionsSynchronized && firstPlayer.party.getMisalignedFollowers().length === 0) {
+                    firstPlayer.party.positionsSynchronized = true;
                 }
             }
         });
