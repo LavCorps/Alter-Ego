@@ -1595,12 +1595,19 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
         let ingredient2 = oneDiscreet && recipe.ingredients[0].prefab.discreet ? recipe.ingredients[1] : recipe.ingredients[0];
         const proceduralSelections = item.proceduralSelections;
 
-        const rightHand = this.inventory.get("RIGHT HAND");
+        const hands = this.getGame().entityFinder.getPlayerHands(this);
+        const dominantHand = hands[0];
+        /**
+         * @privateRemarks
+         * this may very well be undefined...
+         * uncraft invocations should check for the existence of at least two hands
+         */
+        const auxiliaryHand = hands[1];
         const ingredient1Instance = itemManager.replaceInventoryItem(item, ingredient1.prefab);
         const instantiateAction = new InstantiateInventoryItemAction(this.getGame(), undefined, this, this.location, true);
         const ingredient2Instance = instantiateAction.performInstantiateInventoryItem(
             ingredient2.prefab,
-            rightHand.equippedItem === null ? "RIGHT HAND" : "LEFT HAND",
+            dominantHand.equippedItem === null ? dominantHand.id : auxiliaryHand.id,
             null,
             "",
             1,
