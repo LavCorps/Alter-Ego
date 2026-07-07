@@ -288,9 +288,9 @@ describe('LeadAction test', () => {
                 expect(astrid.notificationChannel.messages.cache).toHaveSize(2);
                 expect(asuka.notificationChannel.messages.cache).toHaveSize(1);
                 expect(nero.notificationChannel.messages.cache).toHaveSize(0);
-                expect(lobbyFirstNarrationMessage.content).toBe(`> -# Asuka finishes approaching an individual wearing a MASK, and waits behind them.`);
+                expect(lobbyFirstNarrationMessage.content).toBe(`> -# Asuka finishes approaching an individual wearing a MASK, and waits with them.`);
                 expect(astridLastNotificationMessage.content).toBe(`Everyone in your party is all together now, and ready to go.`);
-                expect(asukaFirstNotificationMessage.content).toBe(`> -# You finish approaching an individual wearing a MASK, and wait behind them.`);
+                expect(asukaFirstNotificationMessage.content).toBe(`> -# You finish approaching an individual wearing a MASK, and wait with them.`);
             });
 
             test('stationary player leads stationary player she was already leading', async () => {
@@ -416,9 +416,9 @@ describe('LeadAction test', () => {
                 expect(astrid.notificationChannel.messages.cache).toHaveSize(2);
                 expect(asuka.notificationChannel.messages.cache).toHaveSize(0);
                 expect(nero.notificationChannel.messages.cache).toHaveSize(1);
-                expect(lobbyFirstNarrationMessage.content).toBe(`> -# Nero finishes approaching an individual wearing a MASK, and waits behind them.`);
+                expect(lobbyFirstNarrationMessage.content).toBe(`> -# Nero finishes approaching an individual wearing a MASK, and waits with them.`);
                 expect(astridLastNotificationMessage.content).toBe(`Everyone in your party is all together now, and ready to go.`);
-                expect(neroFirstNotificationMessage.content).toBe(`> -# You finish approaching an individual wearing a MASK, and wait behind them.`);
+                expect(neroFirstNotificationMessage.content).toBe(`> -# You finish approaching an individual wearing a MASK, and wait with them.`);
             });
         });
 
@@ -529,9 +529,9 @@ describe('LeadAction test', () => {
                 expect(astrid.notificationChannel.messages.cache).toHaveSize(2);
                 expect(asuka.notificationChannel.messages.cache).toHaveSize(1);
                 expect(nero.notificationChannel.messages.cache).toHaveSize(0);
-                expect(lobbyFirstNarrationMessage.content).toBe(`> -# Asuka finishes approaching an individual wearing a MASK, and waits behind them.`);
+                expect(lobbyFirstNarrationMessage.content).toBe(`> -# Asuka finishes approaching an individual wearing a MASK, and waits with them.`);
                 expect(astridLastNotificationMessage.content).toBe(`Everyone in your party is all together now, and ready to go.`);
-                expect(asukaFirstNotificationMessage.content).toBe(`> -# You finish approaching an individual wearing a MASK, and wait behind them.`);
+                expect(asukaFirstNotificationMessage.content).toBe(`> -# You finish approaching an individual wearing a MASK, and wait with them.`);
             });
 
             test('moving player leads two moving players and all players stop', async () => {
@@ -610,11 +610,11 @@ describe('LeadAction test', () => {
                 expect(astrid.notificationChannel.messages.cache).toHaveSize(3);
                 expect(asuka.notificationChannel.messages.cache).toHaveSize(1);
                 expect(nero.notificationChannel.messages.cache).toHaveSize(1);
-                expect(lobbyFirstNarrationMessage.content).toBe(`> -# Nero finishes approaching an individual wearing a MASK, and waits behind them.`);
-                expect(lobbyLastNarrationMessage.content).toBe(`> -# Asuka finishes approaching an individual wearing a MASK, and waits behind them.`);
+                expect(lobbyFirstNarrationMessage.content).toBe(`> -# Nero finishes approaching an individual wearing a MASK, and waits with them.`);
+                expect(lobbyLastNarrationMessage.content).toBe(`> -# Asuka finishes approaching an individual wearing a MASK, and waits with them.`);
                 expect(astridLastNotificationMessage.content).toBe(`Everyone in your party is all together now, and ready to go.`);
-                expect(asukaFirstNotificationMessage.content).toBe(`> -# You finish approaching an individual wearing a MASK, and wait behind them.`);
-                expect(neroFirstNotificationMessage.content).toBe(`> -# You finish approaching an individual wearing a MASK, and wait behind them.`);
+                expect(asukaFirstNotificationMessage.content).toBe(`> -# You finish approaching an individual wearing a MASK, and wait with them.`);
+                expect(neroFirstNotificationMessage.content).toBe(`> -# You finish approaching an individual wearing a MASK, and wait with them.`);
             });
 
             test('moving player leads two moving players with one unable to synchronize positions', async () => {
@@ -703,11 +703,11 @@ describe('LeadAction test', () => {
                 expect(nero.notificationChannel.messages.cache).toHaveSize(1);
                 expect(lobbyFirstNarrationMessage.content).toBe(`> -# Asuka's breathing is getting heavy. It seems like she's starting to get tired.`);
                 expect(lobby.channel.messages.cache.at(1).content).toBe(`> -# Asuka stops moving. She seems weary.`);
-                expect(lobbyLastNarrationMessage.content).toBe(`> -# Nero finishes approaching an individual wearing a MASK, and waits behind them.`);
+                expect(lobbyLastNarrationMessage.content).toBe(`> -# Nero finishes approaching an individual wearing a MASK, and waits with them.`);
                 expect(astridLastNotificationMessage.content).toBe(`Everyone in your party is all together now, and ready to go.`);
                 expect(asukaFirstNotificationMessage.content).toBe(`Your breathing is getting heavy. You might want to stop moving and rest soon.`);
                 expect(asukaLastNotificationMessage.content).toBe(`After to moving to this room, you have become **weary**. You need to take a short break before moving to another room.`);
-                expect(neroFirstNotificationMessage.content).toBe(`> -# You finish approaching an individual wearing a MASK, and wait behind them.`);
+                expect(neroFirstNotificationMessage.content).toBe(`> -# You finish approaching an individual wearing a MASK, and wait with them.`);
             });
 
             test('moving player leads one moving player who takes less than a second to synchronize', async () => {

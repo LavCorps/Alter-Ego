@@ -357,7 +357,7 @@ export default class GameNotificationGenerator {
         const subject = secondPerson ? `You` : capitalizeFirstLetter(player.displayName);
         const verb1 = secondPerson ? `finish` : `finishes`;
         const verb2 = secondPerson ? `wait` : `waits`;
-        return `${subject} ${verb1} approaching ${leader.displayName}, and ${verb2} behind ${leader.pronouns.obj}.`;
+        return `${subject} ${verb1} approaching ${leader.displayName}, and ${verb2} with ${leader.pronouns.obj}.`;
     }
 
     /**
