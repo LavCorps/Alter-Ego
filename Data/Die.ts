@@ -97,12 +97,10 @@ export default class Die extends GameConstruct {
         if (attacker) {
             if (attacker.hasBehaviorAttribute("coin flipper")) {
                 let hasCoin = false;
-                const rightHand = attacker.inventory.get("RIGHT HAND");
-                const leftHand = attacker.inventory.get("LEFT HAND");
-                if (rightHand && rightHand.equippedItem !== null && rightHand.equippedItem.name.includes("COIN")
-                    || leftHand && leftHand.equippedItem !== null && leftHand.equippedItem.name.includes("COIN")) {
-                    hasCoin = true;
-                }
+                const hands = this.getGame().entityFinder.getPlayerHands(attacker);
+                for (const hand of hands)
+                    if (hand.equippedItem.name.includes("COIN"))
+                        hasCoin = true;
                 if (hasCoin) {
                     const coinModifier = this.doBaseRoll(0, 1);
                     if (coinModifier === 1) {
