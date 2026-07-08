@@ -213,6 +213,26 @@ export default class Party extends GameConstruct {
     }
 
     /**
+     * Gets the lowest move rate of all players in the party.
+     * @param running - Whether the players are running.
+     * @param speed - The speed at which to move the players. Optional. Defaults to the party's speed.
+     */
+    calculateMoveRate(running: boolean, speed: number = this.speed): number {
+        return Math.min(...Array.from(this.members.values()).map(member => member.calculateMoveRate(running, speed)));
+    }
+
+    /**
+     * Gets all of the members of the party as a set. The leader will always be the first player in the set.
+     */
+    getMemberSet(): Set<Player> {
+        const set: Set<Player> = new Set();
+        set.add(this.leader);
+        for (const follower of this.followers.values())
+            set.add(follower);
+        return set;
+    }
+
+    /**
      * Gets the phrase that should be used to refer to the party's associated entity.
      * If there is no associated entity, returns the `idPrefix` preceded by "a".
      */

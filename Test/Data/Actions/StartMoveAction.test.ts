@@ -125,6 +125,7 @@ describe('StartMoveAction test', () => {
     let narrateStartMoveSpy: Mock<typeof GameNarrationHandler.prototype.narrateStartMove>;
     let narrateReachedHalfStaminaSpy: Mock<typeof GameNarrationHandler.prototype.narrateReachedHalfStamina>;
     let queueMoveSpy: Mock<typeof QueueMoveAction.prototype.performQueueMove>;
+    let movePlayersSpy: Mock<typeof GameMovementHandler.prototype.movePlayers>;
     let moveSpy: Mock<typeof MoveAction.prototype.performMove>;
     let deletePartySpy: Mock<typeof GameEntityManager.prototype.deleteParty>;
     const clearMessages = () => {
@@ -182,6 +183,7 @@ describe('StartMoveAction test', () => {
         narrateReachedHalfStaminaSpy = vi.spyOn(GameNarrationHandler.prototype, 'narrateReachedHalfStamina');
         deletePartySpy = vi.spyOn(GameEntityManager.prototype, 'deleteParty');
         queueMoveSpy = vi.spyOn(QueueMoveAction.prototype, 'performQueueMove');
+        movePlayersSpy = vi.spyOn(GameMovementHandler.prototype, 'movePlayers');
         moveSpy = vi.spyOn(MoveAction.prototype, 'performMove');
         await sendMessages();
         clearMessages();
@@ -237,6 +239,7 @@ describe('StartMoveAction test', () => {
             const calculatedTime = 3852.926;
             expect(calculateMoveTimeSpy.mock.results[0].value).toBeCloseTo(calculatedTime, 3);
             expect(narrateStartMoveSpy).toHaveBeenCalledOnce();
+            expect(movePlayersSpy).toHaveBeenCalledOnce();
             expect(doAfterDelaySpy).not.toHaveBeenCalled();
             expect(queueMoveSpy).not.toHaveBeenCalled();
             expect(astrid.remainingTime).toBeCloseTo(calculatedTime, 3);
@@ -256,7 +259,7 @@ describe('StartMoveAction test', () => {
              * The timeRatio at this point should be about 0.493.
              */
             const elapsedTime = 1900;
-            vi.advanceTimersByTime(elapsedTime);
+            await vi.advanceTimersByTimeAsync(elapsedTime);
             expect(astrid.remainingTime).toBeCloseTo(1952.926, 3);
             expect(elapsedTime / calculatedTime).toBeCloseTo(0.493, 3);
             expect(astrid.pos).toStrictEqual({ x: 2630, y: 100, z: 3109 });
@@ -266,7 +269,7 @@ describe('StartMoveAction test', () => {
             /**
              * Fast forward to the end of the move.
              */
-            vi.advanceTimersByTime(2000);
+            await vi.advanceTimersByTimeAsync(2000);
             expect(astrid.remainingTime).toBeCloseTo(0, 3);
             expect(astrid.isMoving).toBe(false);
             expect(astrid.isRunning).toBe(false);
@@ -280,9 +283,9 @@ describe('StartMoveAction test', () => {
 
             clearMessages();
             await sendMessages();
-            expect(lobbyNarrationMessage.content).toBe(`An individual wearing a MASK exits into HALL 5.`);
-            expect(astridNotificationMessage.content).toBe(`> -# You exit into HALL 5.`);
-            expect(hall5NarrationMessage.content).toBe(`An individual wearing a MASK enters from the LOBBY.`);
+            expect(lobbyNarrationMessage.content).toBe(`An individual wearing a MASK exits into HALL 5 carrying an APPLE and an unpeeled ORANGE.`);
+            expect(astridNotificationMessage.content).toBe(`> -# You exit into HALL 5 carrying an APPLE and an unpeeled ORANGE.`);
+            expect(hall5NarrationMessage.content).toBe(`An individual wearing a MASK enters from the LOBBY carrying an APPLE and an unpeeled ORANGE.`);
         });
 
         test('player moves to the destination room (walking) (with next move in queue)', async () => {
@@ -293,6 +296,7 @@ describe('StartMoveAction test', () => {
             const calculatedTime = 3852.926;
             expect(calculateMoveTimeSpy.mock.results[0].value).toBeCloseTo(calculatedTime, 3);
             expect(narrateStartMoveSpy).toHaveBeenCalledOnce();
+            expect(movePlayersSpy).toHaveBeenCalledOnce();
             expect(doAfterDelaySpy).not.toHaveBeenCalled();
             expect(queueMoveSpy).not.toHaveBeenCalled();
             expect(astrid.remainingTime).toBeCloseTo(calculatedTime, 3);
@@ -308,7 +312,7 @@ describe('StartMoveAction test', () => {
              * The timeRatio at this point should be about 0.493.
              */
             const elapsedTime = 1900;
-            vi.advanceTimersByTime(elapsedTime);
+            await vi.advanceTimersByTimeAsync(elapsedTime);
             expect(astrid.remainingTime).toBeCloseTo(1952.926, 3);
             expect(elapsedTime / calculatedTime).toBeCloseTo(0.493, 3);
             expect(astrid.pos).toStrictEqual({ x: 2630, y: 100, z: 3109 });
@@ -318,7 +322,7 @@ describe('StartMoveAction test', () => {
             /**
              * Fast forward to the end of the move.
              */
-            vi.advanceTimersByTime(2000);
+            await vi.advanceTimersByTimeAsync(2000);
             expect(astrid.remainingTime).not.toBeCloseTo(0, 3);
             expect(astrid.isMoving).toBe(true);
             expect(astrid.isRunning).toBe(false);
@@ -339,6 +343,7 @@ describe('StartMoveAction test', () => {
             const calculatedTime = 424339.472;
             expect(calculateMoveTimeSpy.mock.results[0].value).toBeCloseTo(calculatedTime, 3);
             expect(narrateStartMoveSpy).toHaveBeenCalledOnce();
+            expect(movePlayersSpy).toHaveBeenCalledOnce();
             expect(doAfterDelaySpy).not.toHaveBeenCalled();
             expect(queueMoveSpy).not.toHaveBeenCalled();
             expect(nero.remainingTime).toBeCloseTo(calculatedTime, 3);
@@ -356,7 +361,7 @@ describe('StartMoveAction test', () => {
              * For the sake of simplicity, we'll go with 17 seconds.
              */
             const elapsedTime = 17000;
-            vi.advanceTimersByTime(elapsedTime);
+            await vi.advanceTimersByTimeAsync(elapsedTime);
             expect(nero.remainingTime).toBeCloseTo(407339.472, 3);
             expect(nero.stamina).toBeCloseTo(0.490, 3);
             expect(narrateReachedHalfStaminaSpy).toHaveBeenCalledOnce();
@@ -369,7 +374,7 @@ describe('StartMoveAction test', () => {
             /**
              * Fast forward to when we expect Nero to have run out of stamina.
              */
-            vi.advanceTimersByTime(elapsedTime);
+            await vi.advanceTimersByTimeAsync(elapsedTime);
             expect(nero.remainingTime).toBeCloseTo(0, 3);
             expect(nero.isMoving).toBe(false);
             expect(nero.isRunning).toBe(false);
@@ -401,14 +406,14 @@ describe('StartMoveAction test', () => {
              * Fast forward halfway through the move.
              */
             const elapsedTime = 1900;
-            vi.advanceTimersByTime(elapsedTime);
+            await vi.advanceTimersByTimeAsync(elapsedTime);
             expect(astrid.stamina).toBeCloseTo(astrid.maxStamina, 3);
             expect(moveSpy).not.toHaveBeenCalled();
 
             /**
              * Fast forward to the end of the move.
              */
-            vi.advanceTimersByTime(2000);
+            await vi.advanceTimersByTimeAsync(2000);
             expect(astrid.remainingTime).toBeCloseTo(0, 3);
             expect(astrid.isMoving).toBe(false);
             expect(astrid.isRunning).toBe(false);
@@ -427,9 +432,10 @@ describe('StartMoveAction test', () => {
             const startMoveAction = new StartMoveAction(game, undefined, astrid, astrid.location, false);
             await startMoveAction.performStartMove(false, hall5);
             expect(narrateStartMoveSpy).toHaveBeenCalledOnce();
+            expect(movePlayersSpy).toHaveBeenCalledOnce();
             await sendMessages();
 
-            vi.advanceTimersByTime(3900);
+            await vi.advanceTimersByTimeAsync(3900);
             expect(astrid.remainingTime).toBeCloseTo(0, 3);
             expect(astrid.isMoving).toBe(false);
             expect(astrid.isRunning).toBe(false);
@@ -454,9 +460,10 @@ describe('StartMoveAction test', () => {
             const startMoveAction = new StartMoveAction(game, undefined, astrid, astrid.location, false);
             await startMoveAction.performStartMove(false, cave9Door);
             expect(narrateStartMoveSpy).toHaveBeenCalledOnce();
+            expect(movePlayersSpy).toHaveBeenCalledOnce();
             await sendMessages();
 
-            vi.advanceTimersByTime(2900);
+            await vi.advanceTimersByTimeAsync(2900);
             expect(astrid.remainingTime).toBeCloseTo(0, 3);
             expect(astrid.isMoving).toBe(false);
             expect(astrid.isRunning).toBe(false);
@@ -468,8 +475,8 @@ describe('StartMoveAction test', () => {
 
             clearMessages();
             await sendMessages();
-            expect(cave9NarrationMessage.content).toBe(`An individual wearing a MASK exits into the DOOR.`);
-            expect(astridNotificationMessage.content).toBe(`> -# You exit into the DOOR.`);
+            expect(cave9NarrationMessage.content).toBe(`An individual wearing a MASK exits into the DOOR carrying an APPLE and an unpeeled ORANGE.`);
+            expect(astridNotificationMessage.content).toBe(`> -# You exit into the DOOR carrying an APPLE and an unpeeled ORANGE.`);
         });
 
         test('exit has restricted exit puzzle that the player cannot pass', async () => {
@@ -480,9 +487,10 @@ describe('StartMoveAction test', () => {
             const startMoveAction = new StartMoveAction(game, undefined, nero, nero.location, false);
             await startMoveAction.performStartMove(false, cave9Door);
             expect(narrateStartMoveSpy).toHaveBeenCalledOnce();
+            expect(movePlayersSpy).toHaveBeenCalledOnce();
             await sendMessages();
 
-            vi.advanceTimersByTime(8600);
+            await vi.advanceTimersByTimeAsync(8600);
             expect(nero.remainingTime).toBeCloseTo(0, 3);
             expect(nero.isMoving).toBe(false);
             expect(nero.isRunning).toBe(false);
@@ -519,6 +527,7 @@ describe('StartMoveAction test', () => {
             expect(calculateMoveTimeSpy.mock.results[0].value).toBeCloseTo(calculatedTime, 3);
             expect(calculateMoveTimeSpy.mock.results[1].value).toBeCloseTo(calculatedTime, 3);
             expect(narrateStartMoveSpy).toHaveBeenCalledOnce();
+            expect(movePlayersSpy).toHaveBeenCalledOnce();
             expect(doAfterDelaySpy).toHaveBeenCalledOnce();
             expect(nero.remainingTime).toBeCloseTo(calculatedTime, 3);
             expect(nero.isMoving).toBe(true);
@@ -526,8 +535,9 @@ describe('StartMoveAction test', () => {
             expect(nero.moveTimer).not.toBeNull();
             expect(nero.currentMovingSpeed).toEqual(1);
 
-            vi.advanceTimersByTime(100);
+            await vi.advanceTimersByTimeAsync(100);
             expect(queueMoveSpy).toHaveBeenCalledOnce();
+            expect(movePlayersSpy).toHaveBeenCalledTimes(2);
             expect(asuka.remainingTime).toBeCloseTo(calculatedTime, 3);
             expect(asuka.isMoving).toBe(true);
             expect(asuka.isRunning).toBe(true);
@@ -545,7 +555,7 @@ describe('StartMoveAction test', () => {
              * For the sake of simplicity, we'll go with 16.9 seconds (making up for the advance by 100ms earlier).
              */
             const elapsedTime = 16900;
-            vi.advanceTimersByTime(elapsedTime);
+            await vi.advanceTimersByTimeAsync(elapsedTime);
             expect(nero.remainingTime).toBeCloseTo(407339.472, 3);
             expect(nero.stamina).toBeCloseTo(0.490, 3);
             expect(asuka.stamina).toBeGreaterThan(nero.stamina);
@@ -559,7 +569,7 @@ describe('StartMoveAction test', () => {
             /**
              * Fast forward to when we expect Nero to have run out of stamina.
              */
-            vi.advanceTimersByTime(elapsedTime + 100);
+            await vi.advanceTimersByTimeAsync(elapsedTime + 100);
             expect(nero.remainingTime).toBeCloseTo(0, 3);
             expect(nero.isMoving).toBe(false);
             expect(nero.isRunning).toBe(false);
@@ -608,6 +618,7 @@ describe('StartMoveAction test', () => {
             expect(calculateMoveTimeSpy.mock.results[0].value).toBeCloseTo(asukaCalculatedTime, 3);
             expect(calculateMoveTimeSpy.mock.results[1].value).toBeCloseTo(neroCalculatedTime, 3);
             expect(narrateStartMoveSpy).toHaveBeenCalledOnce();
+            expect(movePlayersSpy).toHaveBeenCalledOnce();
             expect(doAfterDelaySpy).toHaveBeenCalledOnce();
             expect(asuka.remainingTime).toBeCloseTo(asukaCalculatedTime, 3);
             expect(asuka.isMoving).toBe(true);
@@ -615,8 +626,9 @@ describe('StartMoveAction test', () => {
             expect(asuka.moveTimer).not.toBeNull();
             expect(asuka.currentMovingSpeed).toEqual(5);
 
-            vi.advanceTimersByTime(100);
+            await vi.advanceTimersByTimeAsync(100);
             expect(queueMoveSpy).toHaveBeenCalledOnce();
+            expect(movePlayersSpy).toHaveBeenCalledTimes(2);
             expect(nero.remainingTime).toBeCloseTo(neroCalculatedTime, 3);
             expect(nero.isMoving).toBe(true);
             expect(nero.isRunning).toBe(true);
@@ -634,7 +646,7 @@ describe('StartMoveAction test', () => {
              * For the sake of simplicity, we'll go with 17 seconds.
              */
             const elapsedTime = 17000;
-            vi.advanceTimersByTime(elapsedTime);
+            await vi.advanceTimersByTimeAsync(elapsedTime);
             expect(nero.remainingTime).toBeCloseTo(407339.472, 3);
             expect(nero.stamina).toBeCloseTo(0.490, 3);
             expect(asuka.stamina).toBeGreaterThan(nero.stamina);
@@ -648,7 +660,7 @@ describe('StartMoveAction test', () => {
             /**
              * Fast forward to when we expect Nero to have run out of stamina.
              */
-            vi.advanceTimersByTime(elapsedTime);
+            await vi.advanceTimersByTimeAsync(elapsedTime);
             expect(nero.remainingTime).toBeCloseTo(0, 3);
             expect(nero.isMoving).toBe(false);
             expect(nero.isRunning).toBe(false);
@@ -692,6 +704,7 @@ describe('StartMoveAction test', () => {
             expect(calculateMoveTimeSpy.mock.results[0].value).toBeCloseTo(astridCalculatedTime, 3);
             expect(calculateMoveTimeSpy.mock.results[1].value).toBeCloseTo(asukaCalculatedTime, 3);
             expect(narrateStartMoveSpy).toHaveBeenCalledOnce();
+            expect(movePlayersSpy).toHaveBeenCalledOnce();
             expect(doAfterDelaySpy).toHaveBeenCalledOnce();
             expect(astrid.remainingTime).toBeCloseTo(astridCalculatedTime, 3);
             expect(astrid.isMoving).toBe(true);
@@ -707,7 +720,7 @@ describe('StartMoveAction test', () => {
             /**
              * Fast forward to the end of Astrid's move.
              */
-            vi.advanceTimersByTime(3900);
+            await vi.advanceTimersByTimeAsync(3900);
             expect(astrid.remainingTime).toBeCloseTo(0, 3);
             expect(astrid.isMoving).toBe(false);
             expect(astrid.isRunning).toBe(false);
@@ -724,8 +737,9 @@ describe('StartMoveAction test', () => {
             /**
              * Fast forward to the end of Asuka's delay timer.
              */
-            vi.advanceTimersByTime(100);
+            await vi.advanceTimersByTimeAsync(100);
             expect(queueMoveSpy).toHaveBeenCalledOnce();
+            expect(movePlayersSpy).toHaveBeenCalledTimes(2);
             expect(asuka.remainingTime).toBeCloseTo(0, 3);
             expect(asuka.isMoving).toBe(true);
             expect(asuka.isRunning).toBe(false);
@@ -735,7 +749,7 @@ describe('StartMoveAction test', () => {
             /**
              * Fast forward to the end of Asuka's move timer.
              */
-            vi.advanceTimersByTime(100);
+            await vi.advanceTimersByTimeAsync(100);
             expect(asuka.remainingTime).toBeCloseTo(0, 3);
             expect(asuka.isMoving).toBe(false);
             expect(asuka.isRunning).toBe(false);
@@ -760,6 +774,7 @@ describe('StartMoveAction test', () => {
             expect(calculateMoveTimeSpy.mock.results[0].value).toBeCloseTo(astridCalculatedTime, 3);
             expect(calculateMoveTimeSpy.mock.results[1].value).toBeCloseTo(neroCalculatedTime, 3);
             expect(narrateStartMoveSpy).toHaveBeenCalledOnce();
+            expect(movePlayersSpy).toHaveBeenCalledOnce();
             expect(doAfterDelaySpy).toHaveBeenCalledOnce();
             expect(astrid.remainingTime).toBeCloseTo(astridCalculatedTime, 3);
             expect(astrid.isMoving).toBe(true);
@@ -767,8 +782,9 @@ describe('StartMoveAction test', () => {
             expect(astrid.moveTimer).not.toBeNull();
             expect(astrid.currentMovingSpeed).toEqual(10);
 
-            vi.advanceTimersByTime(100);
+            await vi.advanceTimersByTimeAsync(100);
             expect(queueMoveSpy).toHaveBeenCalledOnce();
+            expect(movePlayersSpy).toHaveBeenCalledTimes(2);
             expect(nero.remainingTime).toBeCloseTo(neroCalculatedTime, 3);
             expect(nero.isMoving).toBe(true);
             expect(nero.isRunning).toBe(false);
@@ -784,7 +800,7 @@ describe('StartMoveAction test', () => {
             /**
              * Fast forward to the end of Astrid's move.
              */
-            vi.advanceTimersByTime(3800);
+            await vi.advanceTimersByTimeAsync(3800);
             expect(astrid.remainingTime).toBeCloseTo(0, 3);
             expect(astrid.isMoving).toBe(false);
             expect(astrid.isRunning).toBe(false);
@@ -799,16 +815,16 @@ describe('StartMoveAction test', () => {
             moveSpy.mockClear();
             clearMessages();
             await sendMessages();
-            expect(lobbyNarrationMessage.content).toBe(`An individual wearing a MASK exits into HALL 5.`);
-            expect(astridNotificationMessage.content).toBe(`> -# You exit into HALL 5.`);
-            expect(hall5NarrationMessage.content).toBe(`An individual wearing a MASK enters from the LOBBY.`);
+            expect(lobbyNarrationMessage.content).toBe(`An individual wearing a MASK exits into HALL 5 carrying an APPLE and an unpeeled ORANGE.`);
+            expect(astridNotificationMessage.content).toBe(`> -# You exit into HALL 5 carrying an APPLE and an unpeeled ORANGE.`);
+            expect(hall5NarrationMessage.content).toBe(`An individual wearing a MASK enters from the LOBBY carrying an APPLE and an unpeeled ORANGE.`);
 
             hall5.lock();
 
             /**
              * Fast forward to the end of Nero's move.
              */
-            vi.advanceTimersByTime(7600);
+            await vi.advanceTimersByTimeAsync(7600);
             expect(nero.remainingTime).toBeCloseTo(0, 3);
             expect(nero.isMoving).toBe(false);
             expect(nero.isRunning).toBe(false);
@@ -845,6 +861,7 @@ describe('StartMoveAction test', () => {
             expect(calculateMoveTimeSpy.mock.results[0].value).toBeCloseTo(calculatedTime, 3);
             expect(calculateMoveTimeSpy.mock.results[1].value).toBeCloseTo(calculatedTime, 3);
             expect(narrateStartMoveSpy).toHaveBeenCalledOnce();
+            expect(movePlayersSpy).toHaveBeenCalledOnce();
             expect(doAfterDelaySpy).toHaveBeenCalledOnce();
             expect(nero.remainingTime).toBeCloseTo(calculatedTime, 3);
             expect(nero.isMoving).toBe(true);
@@ -852,8 +869,9 @@ describe('StartMoveAction test', () => {
             expect(nero.moveTimer).not.toBeNull();
             expect(nero.currentMovingSpeed).toEqual(1);
 
-            vi.advanceTimersByTime(100);
+            await vi.advanceTimersByTimeAsync(100);
             expect(queueMoveSpy).toHaveBeenCalledOnce();
+            expect(movePlayersSpy).toHaveBeenCalledTimes(2);
             expect(astrid.remainingTime).toBeCloseTo(calculatedTime, 3);
             expect(astrid.isMoving).toBe(true);
             expect(astrid.isRunning).toBe(false);
@@ -870,7 +888,7 @@ describe('StartMoveAction test', () => {
             /**
              * Fast forward to the end of Nero's move.
              */
-            vi.advanceTimersByTime(8600);
+            await vi.advanceTimersByTimeAsync(8600);
             expect(nero.remainingTime).toBeCloseTo(0, 3);
             expect(nero.isMoving).toBe(false);
             expect(nero.isRunning).toBe(false);
@@ -904,11 +922,105 @@ describe('StartMoveAction test', () => {
             await followAction2.performFollow(astrid);
             const leadAction = new LeadAction(game, undefined, astrid, astrid.location, false);
             await leadAction.performLead([asuka, nero]);
+            await vi.advanceTimersByTimeAsync(7800);
+            vi.clearAllMocks();
         });
 
         afterEach(async () => {
             const disbandAction = new DisbandPartyAction(game, undefined, astrid, astrid.location, false);
             await disbandAction.performDisbandParty(true);
+        });
+
+        test('party member positions are always the same', async () => {
+            const party = astrid.party;
+            for (const member of party.members.values())
+                expect(member.positionMatches(party.leader));
+
+            const startMoveAction = new StartMoveAction(game, undefined, astrid, astrid.location, false);
+            await startMoveAction.performStartMove(false, mainEntrance);
+            expect(calculateMoveTimeSpy).toHaveBeenCalledOnce();
+            const calculatedTime = 4045.566;
+            expect(calculateMoveTimeSpy.mock.results[0].value).toBeCloseTo(calculatedTime, 3);
+            expect(narrateStartMoveSpy).toHaveBeenCalledOnce();
+            expect(movePlayersSpy).toHaveBeenCalledOnce();
+            expect(doAfterDelaySpy).not.toHaveBeenCalled();
+            expect(queueMoveSpy).not.toHaveBeenCalled();
+            for (const member of party.members.values()) {
+                expect(member.remainingTime).toBeCloseTo(calculatedTime, 3);
+                expect(member.isMoving).toBe(true);
+                expect(member.isRunning).toBe(false);
+                expect(member.moveTimer).not.toBeNull();
+                expect(member.currentMovingSpeed).toEqual(1);
+            }
+
+            /*await sendMessages();
+            expect(lobby.channel.messages.cache).toHaveSize(1);
+            expect(astrid.notificationChannel.messages.cache).toHaveSize(1);
+            expect(asuka.notificationChannel.messages.cache).toHaveSize(1);
+            expect(nero.notificationChannel.messages.cache).toHaveSize(1);
+            let narration = `An individual wearing a MASK starts walking toward the MAIN ENTRANCE with Asuka and Nero. `
+                + `An individual wearing a MASK carries an APPLE and an ORANGE; Asuka carries a POT.`;
+            expect(lobbyNarrationMessage.content).toBe(`> -# ${narration}`);
+            expect(astridNotificationMessage.content).toBe(`> -# You start walking toward HALL 5 with Asuka and Nero.`);
+            expect(asukaNotificationMessage.content).toBe(`> -# Following an individual wearing a MASK, you start walking toward HALL 5 with Nero.`);
+            expect(neroNotificationMessage.content).toBe(`> -# Following an individual wearing a MASK, you start walking toward HALL 5 with Asuka.`);*/
+
+            /**
+             * Fast forward a quarter of the way through the move to ensure that the players are moving in sync.
+             * The timeRatio at this point should be about 0.247.
+             */
+            let elapsedTime = 1000;
+            await vi.advanceTimersByTimeAsync(elapsedTime);
+            expect(elapsedTime / calculatedTime).toBeCloseTo(0.247, 3);
+            for (const member of party.members.values()) {
+                expect(member.remainingTime).toBeCloseTo(3045.566, 3);
+                expect(member.pos).toStrictEqual({ x: 2500, y: 100, z: 3103 });
+            }
+            expect(moveSpy).not.toHaveBeenCalled();
+            /**
+             * Fast forward to the halfway mark.
+             */
+            await vi.advanceTimersByTimeAsync(elapsedTime);
+            expect(2 * elapsedTime / calculatedTime).toBeCloseTo(0.494, 3);
+            for (const member of party.members.values()) {
+                expect(member.remainingTime).toBeCloseTo(2045.566, 3);
+                expect(member.pos).toStrictEqual({ x: 2500, y: 100, z: 3127 });
+            }
+            expect(moveSpy).not.toHaveBeenCalled();
+            /**
+             * Fast forward to the three quarters mark.
+             */
+            await vi.advanceTimersByTimeAsync(elapsedTime);
+            expect(3 * elapsedTime / calculatedTime).toBeCloseTo(0.742, 3);
+            for (const member of party.members.values()) {
+                expect(member.remainingTime).toBeCloseTo(1045.566, 3);
+                expect(member.pos).toStrictEqual({ x: 2500, y: 100, z: 3150 });
+            }
+            expect(moveSpy).not.toHaveBeenCalled();
+
+            /**
+             * Fast forward to the end of the move.
+             */
+            await vi.advanceTimersByTimeAsync(1100);
+            expect(movePlayersSpy).toHaveBeenCalledOnce();
+            expect(narrateReachedHalfStaminaSpy).not.toHaveBeenCalled();
+            expect(moveSpy).toHaveBeenCalledTimes(3);
+            expect(moveSpy).toBeInvokedWith(false, lobby, mainEntrance.dest, mainEntrance, mainEntrance.getLinkedExit());
+            for (const member of party.members.values()) {
+                expect(member.remainingTime).toBeCloseTo(0, 3);
+                expect(member.isMoving).toBe(false);
+                expect(member.isRunning).toBe(false);
+                expect(member.moveTimer).toBeNull();
+                expect(member.currentMovingSpeed).toEqual(0);
+                expect(member.pos).toStrictEqual(mainEntrance.pos);
+                expect(member.hasStatus("weary")).toBe(false);
+            }
+
+            /*clearMessages();
+            await sendMessages();
+            expect(lobbyNarrationMessage.content).toBe(`An individual wearing a MASK exits into HALL 5.`);
+            expect(astridNotificationMessage.content).toBe(`> -# You exit into HALL 5.`);
+            expect(hall5NarrationMessage.content).toBe(`An individual wearing a MASK enters from the LOBBY.`);*/
         });
 
         test('party leader runs out of stamina', async () => {

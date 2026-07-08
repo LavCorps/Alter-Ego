@@ -331,9 +331,11 @@ export default class GameMovementHandler {
                             player.moveQueue.length = 0;
                         }
                     }
-                    else if (time > 1000) {
-                        const dummyAction = new MoveAction(this.#game, undefined, player, player.location, action.forced);
-                        this.#game.narrationHandler.narrateFinishApproaching(dummyAction, player, destination);
+                    else {
+                        if (time > 1000) {
+                            const dummyAction = new MoveAction(this.#game, undefined, player, player.location, action.forced);
+                            this.#game.narrationHandler.narrateFinishApproaching(dummyAction, player, destination);
+                        }
                     }
                 }
                 // If the players are in a party and the party members' positions are now synchronized, the party is ready to go.

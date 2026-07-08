@@ -23,17 +23,24 @@ export default class StartMoveAction extends Action {
     async performStartMove(isRunning: boolean, destination: Exit, speed = this.player.party ? this.player.party.speed : this.player.speed): Promise<void> {
         if (this.performed) return;
         super.perform();
-        this.player.currentMovingSpeed = speed;
-        const rate = this.player.calculateMoveRate(isRunning, speed);
+
+        const party = this.player.party;
+        if (party) party.members.forEach(member => member.currentMovingSpeed = speed);
+        else this.player.currentMovingSpeed = speed;
+
+        const rate = party ? party.calculateMoveRate(isRunning, speed) : this.player.calculateMoveRate(isRunning, speed);
         const time = this.getGame().movementHandler.calculateMoveTime(rate, this.player, destination);
         if (time > 1000) {
             const interactables = this.getGame().clientContext.interactableManager.createStopActionInteractable(this.player, this.user);
             this.getGame().narrationHandler.narrateStartMove(this, isRunning, destination, this.player, interactables);
         }
-        this.getGame().movementHandler.movePlayers(new Set([this.player]), isRunning, destination, time, this);
+        const players = party ? party.getMemberSet() : new Set([this.player]);
+        this.getGame().movementHandler.movePlayers(players, isRunning, destination, time, this);
 
         // If anyone is following this player, they need to start moving.
         for (const occupant of this.location.occupants) {
+            // If the moving player is in a party, their party members will have already started moving. Skip over them.
+            if (party && party.hasMember(occupant)) continue;
             if (occupant.moveQueue.length === 0 && occupant.isFollowing(this.player)) {
                 // We don't want the occupant to reach the destination before the player they're following, or they'll lose track of them.
                 // So, calculate how long to delay their movement.
