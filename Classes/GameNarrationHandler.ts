@@ -148,6 +148,12 @@ export default class GameNarrationHandler {
         const notification = this.#game.notificationGenerator.generateStartMoveNotification(player, true, isRunning, exitPhrase);
         const narration = this.#game.notificationGenerator.generateStartMoveNotification(player, false, isRunning, exitPhrase);
         this.sendNotification(player, action, notification, messageType, undefined, undefined, interactables);
+        if (player.party && player.party.hasLeader(player)) {
+            for (const follower of player.party.followers.values()) {
+                const followerNotification = this.#game.notificationGenerator.generateStartMoveNotification(follower, true, isRunning, exitPhrase);
+                this.sendNotification(follower, action, followerNotification, messageType);
+            }
+        }
         this.#sendNarration(messageType, action, player, narration);
     }
 

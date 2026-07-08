@@ -8,6 +8,7 @@ import GameConstruct from "./GameConstruct.ts";
 import type Player from "./Player.ts";
 import Whisper from "./Whisper.ts";
 import { WhisperType } from "../Modules/enums.js";
+import { generateListString } from "../Modules/helpers.ts";
 import { Collection } from "discord.js";
 
 /**
@@ -230,6 +231,15 @@ export default class Party extends GameConstruct {
         for (const follower of this.followers.values())
             set.add(follower);
         return set;
+    }
+
+    /**
+     * Generates a grammatically correct list using the member display names of the given players.
+     * @param players - The players to list. They should be members of the party.
+     */
+    generatePlayerListString(players: Collection<string, Player> | Player[]): string {
+        const playerNames: string[] = players.values().toArray().map(player => this.getMemberDisplayName(player) ?? player.displayName).toSorted();
+        return generateListString(playerNames);
     }
 
     /**

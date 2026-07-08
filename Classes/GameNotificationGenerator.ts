@@ -223,10 +223,36 @@ export default class GameNotificationGenerator {
      * @param exitPhrase - The phrase of the exit the player is moving toward.
      */
     generateStartMoveNotification(player: Player, secondPerson: boolean, isRunning: boolean, exitPhrase: string) {
-        const subject = secondPerson ? `You` : capitalizeFirstLetter(player.displayName);
+        const party = player.party;
+        const isFollower = !!player.followedPlayer;
+        const prefix = isFollower && secondPerson ? `following ${player.followedPlayerDisplayName}, ` : ``;
+        const subject = secondPerson ? `you` : player.displayName;
         const verb = secondPerson ? `start` : `starts`;
         const action = isRunning ? `running` : `walking`;
-        return `${subject} ${verb} ${action} toward ${exitPhrase}.`;
+        let followersString = ``;
+        if (party && isFollower) {
+            const otherFollowers = party.followers.filter(follower => follower.name !== player.name);
+            if (otherFollowers) followersString = ` with ${party.generatePlayerListString(otherFollowers)}`;
+        }
+        else if (party)
+            followersString = ` with ${party.generatePlayerListString(party.followers)}`;
+        let carryString = ``;
+        if (!secondPerson) {
+            if (followersString) {
+                const members = player.party ? player.party.members.values().toArray() : [];
+                const memberCarryStrings: string[] = [];
+                members.forEach(member => {
+                    const memberAppendString = member.createMoveAppendString("carries");
+                    if (memberAppendString) {
+                        const memberDisplayName = player.party?.getMemberDisplayName(member) ?? member.displayName;
+                        memberCarryStrings.push(`${memberDisplayName}${memberAppendString}`);
+                    }
+                });
+                if (memberCarryStrings) carryString = `. ${capitalizeFirstLetter(memberCarryStrings.join("; "))}`;
+            }
+            else carryString = player.createMoveAppendString("carrying");
+        }
+        return `${capitalizeFirstLetter(`${prefix}${subject}`)} ${verb} ${action} toward ${exitPhrase}${followersString}${carryString}.`;
     }
 
     /**

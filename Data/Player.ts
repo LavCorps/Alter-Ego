@@ -652,8 +652,9 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
 
     /**
      * Creates a string of non-discreet inventory items in the player's hands.
+     * @param verb - The verb to use before listing the inventory items. Defaults to "carrying".
      */
-    createMoveAppendString(): string {
+    createMoveAppendString(verb: string = "carrying"): string {
         // Get the player's held items, sorted by size.
         const heldItems = this.getGame().entityFinder.getPlayerHands(this)
             .filter(hand => hand.equippedItem !== null && !hand.equippedItem.prefab.discreet)
@@ -667,7 +668,7 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
 
         let appendString = "";
         if (nonDiscreetItems.length > 0)
-            appendString = ` carrying ${generateListString(nonDiscreetItems)}`;
+            appendString = ` ${verb} ${generateListString(nonDiscreetItems)}`;
 
         return appendString;
     }

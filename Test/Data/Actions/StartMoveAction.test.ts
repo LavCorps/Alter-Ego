@@ -923,6 +923,8 @@ describe('StartMoveAction test', () => {
             const leadAction = new LeadAction(game, undefined, astrid, astrid.location, false);
             await leadAction.performLead([asuka, nero]);
             await vi.advanceTimersByTimeAsync(7800);
+            await sendMessages();
+            clearMessages();
             vi.clearAllMocks();
         });
 
@@ -953,17 +955,17 @@ describe('StartMoveAction test', () => {
                 expect(member.currentMovingSpeed).toEqual(1);
             }
 
-            /*await sendMessages();
+            await sendMessages();
             expect(lobby.channel.messages.cache).toHaveSize(1);
             expect(astrid.notificationChannel.messages.cache).toHaveSize(1);
             expect(asuka.notificationChannel.messages.cache).toHaveSize(1);
             expect(nero.notificationChannel.messages.cache).toHaveSize(1);
             let narration = `An individual wearing a MASK starts walking toward the MAIN ENTRANCE with Asuka and Nero. `
-                + `An individual wearing a MASK carries an APPLE and an ORANGE; Asuka carries a POT.`;
+                + `An individual wearing a MASK carries an APPLE and an unpeeled ORANGE; Asuka carries a POT.`;
             expect(lobbyNarrationMessage.content).toBe(`> -# ${narration}`);
-            expect(astridNotificationMessage.content).toBe(`> -# You start walking toward HALL 5 with Asuka and Nero.`);
-            expect(asukaNotificationMessage.content).toBe(`> -# Following an individual wearing a MASK, you start walking toward HALL 5 with Nero.`);
-            expect(neroNotificationMessage.content).toBe(`> -# Following an individual wearing a MASK, you start walking toward HALL 5 with Asuka.`);*/
+            expect(astridNotificationMessage.content).toBe(`> -# You start walking toward the MAIN ENTRANCE with Asuka and Nero.`);
+            expect(asukaNotificationMessage.content).toBe(`> -# Following an individual wearing a MASK, you start walking toward the MAIN ENTRANCE with Nero.`);
+            expect(neroNotificationMessage.content).toBe(`> -# Following an individual wearing a MASK, you start walking toward the MAIN ENTRANCE with Asuka.`);
 
             /**
              * Fast forward a quarter of the way through the move to ensure that the players are moving in sync.
