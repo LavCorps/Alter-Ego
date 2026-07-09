@@ -241,14 +241,18 @@ export default class GameNotificationGenerator {
         if (followersString && !secondPerson) {
             const members = player.party ? player.party.members.values().toArray() : [];
             const memberCarryStrings: string[] = [];
+            let onlyLeaderHasCarryString = true;
             members.forEach(member => {
                 const memberCarryString = member.createMoveAppendString("carries");
                 if (memberCarryString) {
+                    if (member.name !== player.name) onlyLeaderHasCarryString = false;
                     const memberDisplayName = player.party?.getMemberDisplayName(member) ?? member.displayName;
                     memberCarryStrings.push(`${memberDisplayName}${memberCarryString}`);
                 }
             });
-            if (memberCarryStrings.length > 0) carryString = `. ${capitalizeFirstLetter(memberCarryStrings.join("; "))}`;
+            if (memberCarryStrings.length === 1 && onlyLeaderHasCarryString)
+                carryString = ` while${player.createMoveAppendString()}`;
+            else if (memberCarryStrings.length > 0) carryString = `. ${capitalizeFirstLetter(memberCarryStrings.join("; "))}`;
         }
         else if (followersString) {
             const memberCarryString = player.createMoveAppendString();
