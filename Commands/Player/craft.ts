@@ -6,7 +6,7 @@
 
 import { Collection } from "discord.js";
 import { InvalidInvocation, ValidatedInvocation, type MatchedInvocation } from "../../Classes/Command/Invocation.ts";
-import { Pattern, Slot, Constant } from "../../Classes/Command/Pattern.ts";
+import { Pattern, Slot, Multiconstant } from "../../Classes/Command/Pattern.ts";
 import PlayerCommand from "../../Classes/Command/PlayerCommand.ts";
 import type PlayerContext from "../../Classes/Command/PlayerContext.ts";
 import type GameSettings from "../../Classes/GameSettings.js";
@@ -42,12 +42,7 @@ const command = new PlayerCommand({
     patterns: [
         new Pattern([
             new Slot(InventoryItem, "item 1"),
-            new Constant("and"),
-            new Slot(InventoryItem, "item 2"),
-        ]),
-        new Pattern([
-            new Slot(InventoryItem, "item 1"),
-            new Constant("with"),
+            new Multiconstant(["and", "with"]),
             new Slot(InventoryItem, "item 2"),
         ]),
     ],
@@ -86,7 +81,7 @@ const command = new PlayerCommand({
         args.set("item 2", item2);
         args.set("recipe", recipe);
 
-        return new ValidatedInvocation(args);
+        return new ValidatedInvocation({ args: args });
     },
 
     execute: async (ctx: PlayerContext, inv: ValidatedInvocation) => {

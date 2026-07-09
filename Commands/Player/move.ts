@@ -34,12 +34,12 @@ const command = new PlayerCommand({
 
     usage: (settings: GameSettings) => {
         return `${settings.commandPrefix}move DOOR 1\n`
-        + `${settings.commandPrefix}enter Kitchen\n`
-        + `${settings.commandPrefix}go locker-room\n`
-        + `${settings.commandPrefix}exit DOOR\n`
-        + `${settings.commandPrefix}move DOOR 1>DOOR 1>DOOR 1\n`
-        + `${settings.commandPrefix}walk HALL 1 > HALL 2 > HALL 3 > HALL 4\n`
-        + `${settings.commandPrefix}m Lobby>Path 3>Path 1>Park>Path 7>Botanical garden`;
+            + `${settings.commandPrefix}enter Kitchen\n`
+            + `${settings.commandPrefix}go locker-room\n`
+            + `${settings.commandPrefix}exit DOOR\n`
+            + `${settings.commandPrefix}move DOOR 1>DOOR 1>DOOR 1\n`
+            + `${settings.commandPrefix}walk HALL 1 > HALL 2 > HALL 3 > HALL 4\n`
+            + `${settings.commandPrefix}m Lobby>Path 3>Path 1>Park>Path 7>Botanical garden`;
     },
 
     patterns: [new Pattern([new Glob()])],
@@ -61,7 +61,7 @@ const command = new PlayerCommand({
         if (ctx.player.followedPlayer)
             return new InvalidInvocation([game.errorMessageGenerator.generateCannotMoveAlreadyFollowingPlayerError(ctx.player)]);
 
-        return new ValidatedInvocation(new Collection(), inv.glob);
+        return new ValidatedInvocation({ glob: inv.glob });
     },
 
     execute: async (ctx: PlayerContext, inv: ValidatedInvocation) => {
