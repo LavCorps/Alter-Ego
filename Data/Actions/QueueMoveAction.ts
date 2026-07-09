@@ -64,7 +64,7 @@ export default class QueueMoveAction extends Action {
 
         if (exit) {
             const startMoveAction = new StartMoveAction(this.getGame(), this.message, this.player, this.player.location, this.forced);
-            await startMoveAction.performStartMove(isRunning, currentRoom, destinationRoom, exit, entrance, customSpeed);
+            await startMoveAction.performStartMove(isRunning, exit, customSpeed);
             const verb = isRunning ? `running` : `moving`;
             this.successMessage = `Successfully started ${verb} ${this.player.name} to ${exit.name} in ${this.location.channel}.`;
             if (this.player.moveQueue.length > 1)

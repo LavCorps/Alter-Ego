@@ -4,6 +4,7 @@
 
 import Action from "../Action.ts";
 import type Exit from "../Exit.js";
+import type Player from "../Player.ts";
 import type Room from "../Room.ts";
 import QueueMoveAction from "./QueueMoveAction.ts";
 
@@ -16,23 +17,28 @@ export default class EnterAction extends Action {
     /**
      * Performs an enter action.
      *
-     * @param destinationRoom - The room the player will be moved to.
-     * @param entrance - The exit the player will enter the destination room from.
-     * @param isMovingFreely - Whether or not the player is performing free movement.
-     * @param isRunning - Whether the player is running. False by default.
+     * @param destinationRoom - The room the players will be moved to.
+     * @param entrance - The exit the players will enter the destination room from.
+     * @param movingFreely - Whether or not the players are performing free movement.
+     * @param running - Whether or not the players are running. False by default.
+     * @param players - A set of players to move simultaneously. Defaults to a set containing only the player the action was created with.
      */
-    async performEnter(destinationRoom: Room, entrance: Exit, isMovingFreely: boolean, isRunning: boolean = false): Promise<void> {
+    async performEnter(destinationRoom: Room, entrance: Exit, movingFreely: boolean, running: boolean = false, players: Set<Player> = new Set([this.player])): Promise<void> {
         if (this.performed) return;
         super.perform();
-        destinationRoom.addPlayer(this.player, entrance);
-        this.getGame().narrationHandler.narrateEnter(this, this.player, destinationRoom, entrance, isMovingFreely);
-        this.player.moveQueue.splice(0, 1);
+        for (const player of players) {
+            destinationRoom.addPlayer(player, entrance);
+            player.moveQueue.splice(0, 1);
+        }
+        this.getGame().narrationHandler.narrateEnter(this, this.player, players, destinationRoom, entrance, movingFreely);
         const followedPlayer = this.player.followedPlayer;
         if (!followedPlayer && this.player.moveQueue.length > 0) {
             const queueMoveAction = new QueueMoveAction(this.player.getGame(), undefined, this.player, this.player.location, this.forced);
-            await queueMoveAction.performQueueMove(isRunning, this.player.moveQueue[0]);
+            await queueMoveAction.performQueueMove(running, this.player.moveQueue[0]);
         }
 
+        // Everything after this should only be done if we're moving exactly one player.
+        if (players.size > 1) return;
         const followedPlayerIsVisible = followedPlayer && destinationRoom.occupants.includes(followedPlayer)
             && destinationRoom.generateOccupantsStringExcluding(this.player).includes(this.player.followedPlayerDisplayName);
         if (followedPlayer && !followedPlayerIsVisible) {

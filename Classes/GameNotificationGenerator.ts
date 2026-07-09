@@ -2,12 +2,12 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { capitalizeFirstLetter, endsWithPunctuation } from "../Modules/helpers.ts";
+import { capitalizeFirstLetter, endsWithPunctuation, generateListString, generatePlayerListString } from "../Modules/helpers.ts";
 import type Dialog from "../Data/Dialog.ts";
 import type Fixture from "../Data/Fixture.ts";
 import type Game from "../Data/Game.ts";
 import type Player from "../Data/Player.ts";
-import type Exit from "../Data/Exit.js";
+import type Exit from "../Data/Exit.ts";
 import type ItemInstance from "../Data/ItemInstance.ts";
 import type Puzzle from "../Data/Puzzle.ts";
 import type Recipe from "../Data/Recipe.ts";
@@ -223,10 +223,38 @@ export default class GameNotificationGenerator {
      * @param exitPhrase - The phrase of the exit the player is moving toward.
      */
     generateStartMoveNotification(player: Player, secondPerson: boolean, isRunning: boolean, exitPhrase: string) {
-        const subject = secondPerson ? `You` : capitalizeFirstLetter(player.displayName);
+        const party = player.party;
+        const isFollower = !!player.followedPlayer;
+        const prefix = isFollower ? `following ${player.followedPlayerDisplayName}, ` : ``;
+        const subject = secondPerson ? `you` : player.displayName;
         const verb = secondPerson ? `start` : `starts`;
         const action = isRunning ? `running` : `walking`;
-        return `${subject} ${verb} ${action} toward ${exitPhrase}.`;
+        let followersString = ``;
+        if (party && isFollower) {
+            const otherFollowers = party.followers.filter(follower => follower.name !== player.name);
+            if (otherFollowers) followersString = ` with ${party.generatePlayerListString(otherFollowers)}`;
+        }
+        else if (party)
+            followersString = ` with ${party.generatePlayerListString(party.followers)}`;
+        let carryString = ``;
+        if (followersString && !secondPerson) {
+            const members = player.party ? player.party.members.values().toArray() : [];
+            const memberCarryStrings: string[] = [];
+            members.forEach(member => {
+                const memberCarryString = member.createMoveAppendString("carries");
+                if (memberCarryString) {
+                    const memberDisplayName = player.party?.getMemberDisplayName(member) ?? member.displayName;
+                    memberCarryStrings.push(`${memberDisplayName}${memberCarryString}`);
+                }
+            });
+            if (memberCarryStrings.length > 0) carryString = `. ${capitalizeFirstLetter(memberCarryStrings.join("; "))}`;
+        }
+        else if (followersString) {
+            const memberCarryString = player.createMoveAppendString();
+            if (memberCarryString) carryString = ` while${memberCarryString}`;
+        }
+        else carryString = player.createMoveAppendString();
+        return `${capitalizeFirstLetter(`${prefix}${subject}`)} ${verb} ${action} toward ${exitPhrase}${followersString}${carryString}.`;
     }
 
     /**
@@ -304,21 +332,77 @@ export default class GameNotificationGenerator {
      * Generates a notification indicating the player has begun leading other players.
      * @param player - The player referred to in this notification.
      * @param secondPerson - Whether or not the player should be referred to in second person.
-     * @param followerListString - A list of the players being led.
+     * @param followers - The players being led.
+     * @param partySynchronized - Whether or not the party members' positions are all synchronized.
+     * @param partyHasOtherFollowers - Whether or not the party has other followers aside from the ones being added.
      */
-    generateLeadNotification(player: Player, secondPerson: boolean, followerListString: string) {
-        const subject = secondPerson ? `You` : capitalizeFirstLetter(player.displayName);
-        const verb = secondPerson ? `begin leading` : `begins leading`;
-        return `${subject} ${verb} ${followerListString}.`;
+    generateLeadNotification(player: Player, secondPerson: boolean, followers: Player[], partySynchronized: boolean, partyHasOtherFollowers: boolean) {
+        const subject1 = secondPerson ? `You` : capitalizeFirstLetter(player.displayName);
+        const verb1 = secondPerson ? `begin leading` : `begins leading`;
+        const followerListString = generatePlayerListString(followers);
+        let addendum = "";
+        if (partySynchronized && secondPerson) {
+            const opening = partyHasOtherFollowers
+                ? `Everyone in your party is all`
+                : followers.length > 1
+                    ? `You're all`
+                    : `You're both`;
+            addendum = `. ${opening} together, and ready to go`;
+        }
+        else if (!partySynchronized) {
+            const punctuation = secondPerson ? `.` : `,`;
+            const subject2 = secondPerson && followers.length === 1
+                ? followers[0].pronouns.Sbj
+                : secondPerson && followers.length > 1
+                    ? `They`
+                    : `who`;
+            const pluralizeVerb = followers.length > 1 || followers.length === 1 && followers[0].pronouns.plural;
+            const verb2 = pluralizeVerb ? `start` : `starts`;
+            const object = secondPerson ? `you` : player.pronouns.obj;
+            addendum = `${punctuation} ${subject2} ${verb2} approaching ${object}`;
+        }
+        return `${subject1} ${verb1} ${followerListString}${addendum}.`;
     }
 
     /**
      * Generates a notification indicating the player is being led.
-     * @param leaderDisplayName - The display name of the player leading the player being addressed.
+     * @param leader - The player leading the player being addressed.
      * @param followerListString - A list of the players being led by the same leader.
+     * @param ledPlayerSynchronized - Whether or not the position of the player being addressed matches the leader's position.
      */
-    generateBeingLedNotification(leaderDisplayName: string, followerListString: string) {
-        return `${capitalizeFirstLetter(leaderDisplayName)} is now leading ${followerListString}.`;
+    generateBeingLedNotification(leader: Player, followerListString: string, ledPlayerSynchronized: boolean) {
+        const addendum = ledPlayerSynchronized ? `` : ` You start approaching ${leader.pronouns.obj}.`;
+        return `${capitalizeFirstLetter(leader.displayName)} is now leading ${followerListString}.${addendum}`;
+    }
+
+    /**
+     * Generates a notification that the player is finished approaching their leader.
+     * @param player - The player referred to in this notification.
+     * @param secondPerson - Whether or not the player should be referred to in second person.
+     * @param leader - The leader of the party, who the player being addressed was approaching.
+     */
+    generateFinishApproachingNotification(player: Player, secondPerson: boolean, leader: Player) {
+        const subject = secondPerson ? `You` : capitalizeFirstLetter(player.displayName);
+        const verb1 = secondPerson ? `finish` : `finishes`;
+        const verb2 = secondPerson ? `wait` : `waits`;
+        return `${subject} ${verb1} approaching ${leader.displayName}, and ${verb2} with ${leader.pronouns.obj}.`;
+    }
+
+    /**
+     * Generates a notification indicating that the players in the leader's party all have their positions synchronized.
+     */
+    generatePartyReadyNotification() {
+        return `Everyone in your party is all together now, and ready to go.`;
+    }
+
+    /**
+     * Generates a notification indicating the given players couldn't keep up with the party
+     * because they stopped moving during position synchronization, and have been removed.
+     * @param ledPlayersString - A list of the players who couldn't keep up.
+     * @param leaderDisplayName - The display name of the party leader.
+     */
+    generateLedPlayerCouldNotSynchronizeNotification(ledPlayersString: string, leaderDisplayName: string) {
+        return `${ledPlayersString} can't seem to keep up with ${leaderDisplayName}.`;
     }
 
     /**
@@ -393,59 +477,104 @@ export default class GameNotificationGenerator {
     }
 
     /**
-     * Generates a notification indicating the player exited a room.
+     * Generates an array of three strings to use in movement-related notifications.
      * @param player - The player referred to in this notification.
      * @param secondPerson - Whether or not the player should be referred to in second person.
+     * @param allPlayers - All players moving with the player being addressed, including the player being addressed.
+     * @returns [subject, otherPlayerList (may be blank), carryString (may be blank)]
+     */
+    generateCollectiveMovePlayerStrings(player: Player, secondPerson: boolean, allPlayers: Set<Player>): [string, string, string] {
+        let subject = ``;
+        let otherPlayerList = ``;
+        let carryString = ``;
+        const party = player.party;
+        const playerDisplayName = party?.getMemberDisplayName(player) ?? player.displayName;
+        const playerDisplayNames: Map<Player, string> = new Map();
+        allPlayers.forEach(player => playerDisplayNames.set(player, party?.getMemberDisplayName(player) ?? player.displayName));
+        const otherDisplayNames = [...playerDisplayNames].filter(([other]) => other.name !== player.name).map(([_, displayName]) => displayName);
+        if (secondPerson) {
+            subject = `you`;
+            otherPlayerList = generateListString(otherDisplayNames);
+            if (otherPlayerList) {
+                const appendString = player.createMoveAppendString();
+                if (appendString) carryString = ` while${appendString}`;
+            }
+            else carryString = player.createMoveAppendString();
+        }
+        else {
+            const listedPlayers = [playerDisplayName].concat(otherDisplayNames);
+            subject = generateListString(listedPlayers);
+            const playerCarryStrings: string[] = [];
+            if (listedPlayers.length > 1) {
+                for (const [player, displayName] of playerDisplayNames) {
+                    const playerCarryString = player.createMoveAppendString("carries");
+                    if (playerCarryString) playerCarryStrings.push(`${displayName}${playerCarryString}`);
+                }
+                if (playerCarryStrings.length > 0) carryString = `. ${capitalizeFirstLetter(playerCarryStrings.join("; "))}`;
+            }
+            else carryString = player.createMoveAppendString();
+        }
+        return [subject, otherPlayerList, carryString];
+    }
+
+    /**
+     * Generates a notification indicating the players exited a room.
+     * @param secondPerson - Whether or not the player being addressed should be referred to in second person.
+     * @param subject - The subject of the notification. This should be obtained from {@link generateCollectiveMovePlayerStrings}.
      * @param exitPhrase - The phrase of the exit the player exited through.
-     * @param appendString - A string describing any non-discreet inventory items the player is carrying.
+     * @param otherPlayerList - A list of other players exiting with the player being addressed. This should be obtained from {@link generateCollectiveMovePlayerStrings}.
+     * @param carryString - A string describing any non-discreet inventory items the player is carrying. This should be obtained from {@link generateCollectiveMovePlayerStrings}.
      */
-    generateExitNotification(player: Player, secondPerson: boolean, exitPhrase: string, appendString: string) {
-        const subject = secondPerson ? `You` : capitalizeFirstLetter(player.displayName);
-        const verb = secondPerson ? `exit` : `exits`;
+    generateExitNotification(secondPerson: boolean, subject: string, exitPhrase: string, otherPlayerList: string, carryString: string) {
+        const verb = secondPerson || subject.includes(" and ") ? `exit` : `exits`;
         const destinationPhrase = exitPhrase ? ` into ${exitPhrase}` : ``;
-        return `${subject} ${verb}${destinationPhrase}${appendString}.`;
+        const otherPlayersPhrase = otherPlayerList ? ` with ${otherPlayerList}` : ``;
+        return `${capitalizeFirstLetter(subject)} ${verb}${destinationPhrase}${otherPlayersPhrase}${carryString}.`;
     }
 
     /**
-     * Generates a notification indicating the player with the free movement role exited a room.
-     * @param player - The player referred to in this notification.
-     * @param secondPerson - Whether or not the player should be referred to in second person.
-     * @param roomName - The display name of the room the player exited.
-     * @param appendString - A string describing any non-discreet inventory items the player is carrying.
+     * Generates a notification indicating players with the free movement role exited a room.
+     * @param secondPerson - Whether or not the player being addressed should be referred to in second person.
+     * @param subject - The subject of the notification. This should be obtained from {@link generateCollectiveMovePlayerStrings}.
+     * @param roomName - The display name of the room the players exited.
+     * @param otherPlayerList - A list of other players exiting with the player being addressed. This should be obtained from {@link generateCollectiveMovePlayerStrings}.
+     * @param carryString - A string describing any non-discreet inventory items the player is carrying. This should be obtained from {@link generateCollectiveMovePlayerStrings}.
      */
-    generateSuddenExitNotification(player: Player, secondPerson: boolean, roomName: string, appendString: string) {
-        const subject = secondPerson ? `You` : capitalizeFirstLetter(player.displayName);
-        const verb = secondPerson ? `exit ${roomName}` : `suddenly disappears`;
+    generateSuddenExitNotification(secondPerson: boolean, subject: string, roomName: string, otherPlayerList: string, carryString: string) {
+        const verb = secondPerson ? `exit ${roomName}` : subject.includes(" and ") ? `suddenly disappear` : `suddenly disappears`;
+        const otherPlayersPhrase = otherPlayerList ? ` with ${otherPlayerList}` : ``;
         const punctuation = secondPerson ? `.` : `!`;
-        return `${subject} ${verb}${appendString}${punctuation}`;
+        return `${capitalizeFirstLetter(subject)} ${verb}${otherPlayersPhrase}${carryString}${punctuation}`;
     }
 
     /**
-     * Generates a notification indicating the player entered a room.
-     * @param player - The player referred to in this notification.
-     * @param secondPerson - Whether or not the player should be referred to in second person.
-     * @param entranceName - The name of the exit the player entered through.
-     * @param appendString - A string describing any non-discreet inventory items the player is carrying.
+     * Generates a notification indicating the players entered a room.
+     * @param secondPerson - Whether or not the player being addressed should be referred to in second person.
+     * @param subject - The subject of the notification. This should be obtained from {@link generateCollectiveMovePlayerStrings}.
+     * @param entrancePhrase - The phrase of the exit the player entered through.
+     * @param otherPlayerList - A list of other players entering with the player being addressed. This should be obtained from {@link generateCollectiveMovePlayerStrings}.
+     * @param carryString - A string describing any non-discreet inventory items the player is carrying. This should be obtained from {@link generateCollectiveMovePlayerStrings}.
      */
-    generateEnterNotification(player: Player, secondPerson: boolean, entranceName: string, appendString: string) {
-        const subject = secondPerson ? `You` : capitalizeFirstLetter(player.displayName);
-        const verb = secondPerson ? `enter` : `enters`;
-        const exitPhrase = entranceName ? ` from ${entranceName}` : ``;
-        return `${subject} ${verb}${exitPhrase}${appendString}.`;
+    generateEnterNotification(secondPerson: boolean, subject: string, entrancePhrase: string, otherPlayerList: string, carryString: string) {
+        const verb = secondPerson || subject.includes(" and ") ? `enter` : `enters`;
+        const exitPhrase = entrancePhrase ? ` from ${entrancePhrase}` : ``;
+        const otherPlayersPhrase = otherPlayerList ? ` with ${otherPlayerList}` : ``;
+        return `${capitalizeFirstLetter(subject)} ${verb}${exitPhrase}${otherPlayersPhrase}${carryString}.`;
     }
 
     /**
-     * Generates a notification indicating the player with the free movement role entered a room.
-     * @param player - The player referred to in this notification.
-     * @param secondPerson - Whether or not the player should be referred to in second person.
-     * @param roomName - The display name of the room the player entered.
-     * @param appendString - A string describing any non-discreet inventory items the player is carrying.
+     * Generates a notification indicating players with the free movement role entered a room.
+     * @param secondPerson - Whether or not the player being addressed should be referred to in second person.
+     * @param subject - The subject of the notification. This should be obtained from {@link generateCollectiveMovePlayerStrings}.
+     * @param roomName - The display name of the room the players exited.
+     * @param otherPlayerList - A list of other players exiting with the player being addressed. This should be obtained from {@link generateCollectiveMovePlayerStrings}.
+     * @param carryString - A string describing any non-discreet inventory items the player is carrying. This should be obtained from {@link generateCollectiveMovePlayerStrings}.
      */
-    generateSuddenEnterNotification(player: Player, secondPerson: boolean, roomName: string, appendString: string) {
-        const subject = secondPerson ? `You` : capitalizeFirstLetter(player.displayName);
-        const verb = secondPerson ? `enter ${roomName}` : `suddenly appears`;
+    generateSuddenEnterNotification(secondPerson: boolean, subject: string, roomName: string, otherPlayerList: string, carryString: string) {
+        const verb = secondPerson ? `enter ${roomName}` : subject.includes(" and ") ? `suddenly appear` : `suddenly appears`;
+        const otherPlayersPhrase = otherPlayerList ? ` with ${otherPlayerList}` : ``;
         const punctuation = secondPerson ? `.` : `!`;
-        return `${subject} ${verb}${appendString}${punctuation}`;
+        return `${capitalizeFirstLetter(subject)} ${verb}${otherPlayersPhrase}${carryString}${punctuation}`;
     }
 
     /**

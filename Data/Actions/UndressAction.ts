@@ -28,23 +28,21 @@ export default class UndressAction extends Action {
         if (this.performed) return;
         super.perform();
         // First, drop the items in the player's hands.
-        const rightHand = this.player.inventory.get("RIGHT HAND");
-        const leftHand = this.player.inventory.get("LEFT HAND");
-        if (rightHand && rightHand.equippedItem !== null) {
-            const rightHandDropAction = new DropAction(this.getGame(), undefined, this.player, this.location, this.forced);
-            rightHandDropAction.performDrop(rightHand.equippedItem, rightHand, container, inventorySlot, true);
+        const hands = this.getGame().entityFinder.getPlayerHands(this.player);
+        for (const hand of hands) {
+            if (hand.equippedItem !== null) {
+                const dropAction = new DropAction(this.getGame(), undefined, this.player, this.location, this.forced);
+                dropAction.performDrop(hand.equippedItem, hand, container, inventorySlot, true);
+            }
         }
-        if (leftHand && leftHand.equippedItem !== null) {
-            const leftHandDropAction = new DropAction(this.getGame(), undefined, this.player, this.location, this.forced);
-            leftHandDropAction.performDrop(leftHand.equippedItem, leftHand, container, inventorySlot, true);
-        }
+        const dominantHand = hands[0];
         const droppedItems: InventoryItem[] = [];
         for (const equipmentSlot of this.player.inventory.values()) {
             if (equipmentSlot.equippedItem !== null && equipmentSlot.equippedItem.prefab.equippable) {
                 const droppedItem = equipmentSlot.equippedItem;
                 droppedItems.push(droppedItem);
-                this.player.unequip(equipmentSlot.equippedItem, equipmentSlot, rightHand);
-                this.player.drop(rightHand.equippedItem, rightHand, container, inventorySlot);
+                this.player.unequip(equipmentSlot.equippedItem, equipmentSlot, dominantHand);
+                this.player.drop(dominantHand.equippedItem, dominantHand, container, inventorySlot);
                 // Container is a drop puzzle.
                 if (container instanceof Puzzle && container.type === "drop") {
                     const attemptAction = new AttemptAction(this.getGame(), undefined, this.player, this.location, this.forced);

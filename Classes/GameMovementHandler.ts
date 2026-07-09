@@ -6,11 +6,13 @@ import { Collection } from "discord.js";
 import Exit from "../Data/Exit.ts";
 import Game from "../Data/Game.ts";
 import type Player from "../Data/Player.ts";
+import type Action from "../Data/Action.ts";
 import InflictAction from "../Data/Actions/InflictAction.ts";
 import MoveAction from "../Data/Actions/MoveAction.ts";
 import StopAction from "../Data/Actions/StopAction.ts";
 
-type Positionable = Exit | Player;
+
+export type Positionable = Exit | Player;
 
 /**
  * A set of functions to handle movement.
@@ -190,18 +192,24 @@ export default class GameMovementHandler {
     }
 
     /**
+     * Returns true if the two entities have the same position.
+     * @param entity1 - A player or room.
+     * @param entity2 - A player or room.
+     */
+    public positionsEqual(entity1: Positionable, entity2: Positionable): boolean {
+        return entity1.pos.x === entity2.pos.x && entity1.pos.y === entity2.pos.y && entity1.pos.z === entity2.pos.z;
+    }
+
+    /**
      * Moves the given players to the desired room.
      *
      * @param players - The players to move. They will all be moved together, and will all arrive at the same time.
      * @param running - Whether the players are running.
-     * @param currentRoom - The room the players are currently in.
-     * @param destinationRoom - The room the players will be moved to.
-     * @param exit - The exit the players will leave their current room through.
-     * @param entrance - The exit the players will enter the desired room from.
+     * @param destination - The player or exit the players are moving toward.
      * @param time - The number of milliseconds it will take to move to the destination.
-     * @param forced - Whether or not the players were forced to move to the destination.
+     * @param action - The action that called this function.
      */
-    public movePlayers(players: Set<Player>, running: boolean, destination: Positionable, time: number, forced: boolean): void {
+    public movePlayers(players: Set<Player>, running: boolean, destination: Positionable, time: number, action: Action): void {
         if (players.size === 0) return;
         for (const player of players) {
             player.remainingTime = time;
@@ -270,6 +278,16 @@ export default class GameMovementHandler {
                         const wearyAction = new InflictAction(this.#game, undefined, player, player.location, true);
                         this.#game.narrationHandler.narrateWeary(wearyAction, player);
                         wearyAction.performInflict(wearyStatus, false, true, true);
+                        // If the player is moving toward the leader during party formation, remove them from the party.
+                        if (player.party && !player.party.positionsSynchronized && !(destination instanceof Exit) && !player.positionMatches(player.party.leader)) {
+                            const removalMessage = this.#game.notificationGenerator.generateLedPlayerCouldNotSynchronizeNotification(
+                                player.party.getMemberDisplayName(player),
+                                player.party.getMemberDisplayName(player.party.leader)
+                            );
+                            player.party.leader.stopLeading(player);
+                            await player.party.removeFollower(player, wearyAction, removalMessage);
+                        }
+
                     }
                 }
             }
@@ -281,6 +299,8 @@ export default class GameMovementHandler {
                 const exit = destinationIsExit ? destination : undefined;
                 const destinationRoom = destinationIsExit ? destination.dest : undefined;
                 const entrance = destinationIsExit ? destination.dest.getExit(destination.link) : undefined;
+                const restrictedExitPuzzle = this.#game.entityFinder.getPuzzle(exit?.name, firstPlayer.location.id, "restricted exit", true);
+                const exitPuzzlePassable = restrictedExitPuzzle && players.values().every(player => restrictedExitPuzzle.solutions.includes(player.name));
                 for (const player of players) {
                     player.pos.x = destination.pos.x;
                     player.pos.y = destination.pos.y;
@@ -289,30 +309,30 @@ export default class GameMovementHandler {
                     player.isRunning = false;
                     player.currentMovingSpeed = 0;
                     player.remainingTime = 0;
-                    if (destinationIsExit) {
-                        // TODO: What happens if the restricted exit puzzle is passable to one player, but not to others?
-                        /**
-                         * ANSWER: Because the leader is the one moving the party, if they cannot proceed through the restricted exit,
-                         * no one should be able to. However, this raises an interesting question: what if the leader can pass through
-                         * the restricted exit, but one of the followers cannot? Perhaps we can split the party, but that could be
-                         * problematic if the party is traveling together in, say, a vehicle. Perhaps the best solution is to treat the
-                         * restricted exit as impassable if even a single player in the party is unable to pass through it.
-                         * If multiple members of the party can pass through it and they are listed as solutions, then how many times
-                         * should the puzzle be solved? Much to think about.
-                         */
-                        const restrictedExitPuzzle = this.#game.entityFinder.getPuzzle(exit.name, player.location.id, "restricted exit", true);
-                        const exitPuzzlePassable = restrictedExitPuzzle && restrictedExitPuzzle.solutions.includes(player.name);
-                        if (destination.unlocked || exitPuzzlePassable) {
-                            const moveAction = new MoveAction(this.#game, undefined, player, player.location, forced);
-                            await moveAction.performMove(running, currentRoom, destinationRoom, exit, entrance);
-                        }
-                        else {
-                            // The exit is locked.
-                            const stopAction = new StopAction(this.#game, undefined, player, player.location, forced);
+                    if (!destinationIsExit && time > 1000) {
+                        const dummyAction = new MoveAction(this.#game, undefined, player, player.location, action.forced);
+                        this.#game.narrationHandler.narrateFinishApproaching(dummyAction, player, destination);
+                    }
+                }
+                if (destinationIsExit) {
+                    if (destination.unlocked || exitPuzzlePassable) {
+                        const moveAction = new MoveAction(this.#game, undefined, action.player, action.player.location, action.forced);
+                        await moveAction.performMove(running, currentRoom, destinationRoom, exit, entrance, false, players);
+                    }
+                    else {
+                        // The exit is locked.
+                        // TODO: Refactor performStop and related methods to allow multiple players to stop at once.
+                        for (const player of players) {
+                            const stopAction = new StopAction(this.#game, undefined, player, player.location, action.forced);
                             stopAction.performStop(true, exit, !player.followedPlayerIsInRoom());
                             player.moveQueue.length = 0;
                         }
                     }
+                }
+                // If the players are in a party and the party members' positions are now synchronized, the party is ready to go.
+                if (firstPlayer.party && !firstPlayer.party.positionsSynchronized && firstPlayer.party.getMisalignedFollowers().length === 0) {
+                    firstPlayer.party.positionsSynchronized = true;
+                    if (time > 1000) this.#game.narrationHandler.narratePartyReady(action, firstPlayer.party.leader);
                 }
             }
         });

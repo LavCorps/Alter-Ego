@@ -148,6 +148,12 @@ export default class GameNarrationHandler {
         const notification = this.#game.notificationGenerator.generateStartMoveNotification(player, true, isRunning, exitPhrase);
         const narration = this.#game.notificationGenerator.generateStartMoveNotification(player, false, isRunning, exitPhrase);
         this.sendNotification(player, action, notification, messageType, undefined, undefined, interactables);
+        if (player.party && player.party.hasLeader(player)) {
+            for (const follower of player.party.followers.values()) {
+                const followerNotification = this.#game.notificationGenerator.generateStartMoveNotification(follower, true, isRunning, exitPhrase);
+                this.sendNotification(follower, action, followerNotification, messageType);
+            }
+        }
         this.#sendNarration(messageType, action, player, narration);
     }
 
@@ -180,47 +186,57 @@ export default class GameNarrationHandler {
     }
 
     /**
-     * Narrates a player exiting a room.
+     * Narrates one or more players exiting a room.
      * @param action - The action that initiated this narration.
-     * @param player - The player performing the move action.
-     * @param currentRoom - The room the player is currently in.
-     * @param exit - The exit the player will leave their current room through.
-     * @param isMovingFreely - Whether or not the player is performing free movement.
+     * @param player - The player performing the exit action.
+     * @param exitingPlayers - The set of all players who exited together.
+     * @param currentRoom - The room the players are currently in.
+     * @param exit - The exit the players will leave their current room through.
+     * @param movingFreely - Whether or not the players are performing free movement.
      */
-    narrateExit(action: Action, player: Player, currentRoom: Room, exit: Exit, isMovingFreely: boolean) {
+    narrateExit(action: Action, player: Player, exitingPlayers: Set<Player>, currentRoom: Room, exit: Exit, movingFreely: boolean) {
         const messageType = MessageDisplayType.STANDARD;
         const exitPhrase = exit?.getNamePhrase();
-        const appendString = player.createMoveAppendString();
-        const notification = isMovingFreely ? this.#game.notificationGenerator.generateSuddenExitNotification(player, true, currentRoom.displayName, appendString)
-            : this.#game.notificationGenerator.generateExitNotification(player, true, exitPhrase, appendString);
-        const narration = isMovingFreely ? this.#game.notificationGenerator.generateSuddenExitNotification(player, false, currentRoom.displayName, appendString)
-            : this.#game.notificationGenerator.generateExitNotification(player, false, exitPhrase, appendString);
-        this.sendNotification(player, action, notification, MessageDisplayType.MINOR);
+        const [subject, otherPlayerList, carryString] = this.#game.notificationGenerator.generateCollectiveMovePlayerStrings(player, false, exitingPlayers);
+        const narration = movingFreely
+            ? this.#game.notificationGenerator.generateSuddenExitNotification(false, subject, currentRoom.displayName, otherPlayerList, carryString)
+            : this.#game.notificationGenerator.generateExitNotification(false, subject, exitPhrase, otherPlayerList, carryString);
+        for (const exitingPlayer of exitingPlayers) {
+            const [subject, otherPlayerList, carryString] = this.#game.notificationGenerator.generateCollectiveMovePlayerStrings(exitingPlayer, true, exitingPlayers);
+            const notification = movingFreely
+                ? this.#game.notificationGenerator.generateSuddenExitNotification(true, subject, currentRoom.displayName, otherPlayerList, carryString)
+                : this.#game.notificationGenerator.generateExitNotification(true, subject, exitPhrase, otherPlayerList, carryString);
+            this.sendNotification(exitingPlayer, action, notification, MessageDisplayType.MINOR);
+        }
         this.#sendNarration(messageType, action, player, narration, currentRoom);
     }
 
     /**
-     * Narrates a player entering a room.
+     * Narrates one or more players entering a room.
      * @param action - The action that initiated this narration.
-     * @param player - The player performing the move action.
-     * @param destinationRoom  The room the player is moving to.
-     * @param entrance - The exit the player will enter the destination room from.
-     * @param isMovingFreely - Whether or not the player is performing free movement.
+     * @param player - The player performing the enter action.
+     * @param enteringPlayers - The set of all players who entered together.
+     * @param destinationRoom  The room the players are moving to.
+     * @param entrance - The exit the players will enter the destination room from.
+     * @param movingFreely - Whether or not the players are performing free movement.
      */
-    narrateEnter(action: Action, player: Player, destinationRoom: Room, entrance: Exit, isMovingFreely: boolean) {
+    narrateEnter(action: Action, player: Player, enteringPlayers: Set<Player>, destinationRoom: Room, entrance: Exit, movingFreely: boolean) {
         const messageType = MessageDisplayType.STANDARD;
         const entrancePhrase = entrance?.getNamePhrase();
-        const appendString = player.createMoveAppendString();
-        const narration = isMovingFreely ? this.#game.notificationGenerator.generateSuddenEnterNotification(player, false, destinationRoom.displayName, appendString)
-            : this.#game.notificationGenerator.generateEnterNotification(player, false, entrancePhrase, appendString);
+        const [subject, otherPlayerList, carryString] = this.#game.notificationGenerator.generateCollectiveMovePlayerStrings(player, false, enteringPlayers);
+        const narration = movingFreely
+            ? this.#game.notificationGenerator.generateSuddenEnterNotification(false, subject, destinationRoom.displayName, otherPlayerList, carryString)
+            : this.#game.notificationGenerator.generateEnterNotification(false, subject, entrancePhrase, otherPlayerList, carryString);
         this.#sendNarration(messageType, action, player, narration, destinationRoom);
-        if (!player.canSee()) {
-            const notification = this.#game.notificationGenerator.generateNoSightEnterNotification();
-            this.sendNotification(player, action, notification, messageType);
-        }
-        else {
-            const description = entrance ? entrance.description : destinationRoom.description;
-            description.parseAndSendTo(player, destinationRoom);
+        for (const enteringPlayer of enteringPlayers) {
+            if (!enteringPlayer.canSee()) {
+                const notification = this.#game.notificationGenerator.generateNoSightEnterNotification();
+                this.sendNotification(enteringPlayer, action, notification, messageType);
+            }
+            else {
+                const description = entrance ? entrance.description : destinationRoom.description;
+                description.parseAndSendTo(enteringPlayer, destinationRoom);
+            }
         }
     }
 
@@ -283,21 +299,48 @@ export default class GameNarrationHandler {
      * @param action - The action that initiated this narration.
      * @param leader - The player performing the lead action.
      * @param ledPlayers - The players being led.
+     * @param partySynchronized - Whether or not the party members' positions are all synchronized.
      * @param interactables - An array of interactables to send to the leader alongside their notification. Optional.
      */
-    narrateLead(action: Action, leader: Player, ledPlayers: Player[], interactables: Interactable[] = []) {
+    narrateLead(action: Action, leader: Player, ledPlayers: Player[], partySynchronized: boolean, interactables: Interactable[] = []) {
         const messageType = MessageDisplayType.MINOR;
-        const followerListString = generatePlayerListString(ledPlayers);
-        const leaderNotification = this.#game.notificationGenerator.generateLeadNotification(leader, true, followerListString);
+        const partyHasOtherFollowers = leader.party ? leader.party.followers.size !== ledPlayers.length : false;
+        const leaderNotification = this.#game.notificationGenerator.generateLeadNotification(leader, true, ledPlayers, partySynchronized, partyHasOtherFollowers);
         this.sendNotification(leader, action, leaderNotification, MessageDisplayType.STANDARD, undefined, undefined, interactables);
         for (const ledPlayer of ledPlayers) {
-            const tailoredFollowers = ledPlayers.filter(player => player.name !== ledPlayer.name).map(player => player.displayName).concat("you");
+            const tailoredFollowers = ["you"].concat(ledPlayers.filter(player => player.name !== ledPlayer.name).map(player => player.displayName));
             const tailoredFollowerListString = generateListString(tailoredFollowers);
-            const ledPlayerNotification = this.#game.notificationGenerator.generateBeingLedNotification(leader.displayName, tailoredFollowerListString);
+            const ledPlayerSynchronized = partySynchronized || ledPlayer.positionMatches(leader);
+            const ledPlayerNotification = this.#game.notificationGenerator.generateBeingLedNotification(leader, tailoredFollowerListString, ledPlayerSynchronized);
             this.sendNotification(ledPlayer, action, ledPlayerNotification, MessageDisplayType.STANDARD);
         }
-        const narration = this.#game.notificationGenerator.generateLeadNotification(leader, false, followerListString);
+        const narration = this.#game.notificationGenerator.generateLeadNotification(leader, false, ledPlayers, partySynchronized, partyHasOtherFollowers);
         this.#sendNarration(messageType, action, leader, narration);
+    }
+
+    /**
+     * Narrates that a player has finished approaching their party leader.
+     * @param action - The action that initiated this narration.
+     * @param player - The player who finished approaching their leader.
+     * @param leader - The leader of the party who was being approached.
+     */
+    narrateFinishApproaching(action: Action, player: Player, leader: Player) {
+        const messageType = MessageDisplayType.MINOR;
+        const notification = this.#game.notificationGenerator.generateFinishApproachingNotification(player, true, leader);
+        const narration = this.#game.notificationGenerator.generateFinishApproachingNotification(player, false, leader);
+        this.sendNotification(player, action, notification, messageType);
+        this.#sendNarration(messageType, action, player, narration);
+    }
+
+    /**
+     * Narrates that the players in the leader's party all have their positions synchronized.
+     * @param action - The action that initiated this narration.
+     * @param player - The leader of the party.
+     */
+    narratePartyReady(action: Action, player: Player) {
+        const messageType = MessageDisplayType.STANDARD;
+        const notification = this.#game.notificationGenerator.generatePartyReadyNotification();
+        this.sendNotification(player, action, notification, messageType);
     }
 
     /**

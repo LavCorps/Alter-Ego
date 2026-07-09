@@ -15,7 +15,6 @@ import CureAction from "./Actions/CureAction.ts";
 import DieAction from "./Actions/DieAction.ts";
 import InflictAction from "./Actions/InflictAction.ts";
 import InstantiateInventoryItemAction from "./Actions/InstantiateInventoryItemAction.ts";
-import MoveAction from "./Actions/MoveAction.ts";
 import StopAction from "./Actions/StopAction.ts";
 import CollatedItem from "./CollatedItem.ts";
 import type EquipmentSlot from "./EquipmentSlot.ts";
@@ -35,6 +34,7 @@ import RecipeProcessor, { type Process } from "./RecipeProcessor.ts";
 import Room from "./Room.ts";
 import RoomItem from "./RoomItem.ts";
 import Status from "./Status.ts";
+import type { Positionable } from "../Classes/GameMovementHandler.ts";
 
 export type PlayerField =
     "id" |
@@ -608,6 +608,14 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
     }
 
     /**
+     * Returns true if the player's position is exactly the same as the given entity.
+     * @param entity - Another player, or an exit.
+     */
+    positionMatches(entity: Positionable): boolean {
+        return this.getGame().movementHandler.positionsEqual(this, entity);
+    }
+
+    /**
      * Sets the player's position in 3D space.
      * @param pos - The position to set.
      */
@@ -644,8 +652,9 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
 
     /**
      * Creates a string of non-discreet inventory items in the player's hands.
+     * @param verb - The verb to use before listing the inventory items. Defaults to "carrying".
      */
-    createMoveAppendString(): string {
+    createMoveAppendString(verb: string = "carrying"): string {
         // Get the player's held items, sorted by size.
         const heldItems = this.getGame().entityFinder.getPlayerHands(this)
             .filter(hand => hand.equippedItem !== null && !hand.equippedItem.prefab.discreet)
@@ -659,7 +668,7 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
 
         let appendString = "";
         if (nonDiscreetItems.length > 0)
-            appendString = ` carrying ${generateListString(nonDiscreetItems)}`;
+            appendString = ` ${verb} ${generateListString(nonDiscreetItems)}`;
 
         return appendString;
     }
@@ -1587,12 +1596,19 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
         let ingredient2 = oneDiscreet && recipe.ingredients[0].prefab.discreet ? recipe.ingredients[1] : recipe.ingredients[0];
         const proceduralSelections = item.proceduralSelections;
 
-        const rightHand = this.inventory.get("RIGHT HAND");
+        const hands = this.getGame().entityFinder.getPlayerHands(this);
+        const dominantHand = hands[0];
+        /**
+         * @privateRemarks
+         * this may very well be undefined...
+         * uncraft invocations should check for the existence of at least two hands
+         */
+        const auxiliaryHand = hands[1];
         const ingredient1Instance = itemManager.replaceInventoryItem(item, ingredient1.prefab);
         const instantiateAction = new InstantiateInventoryItemAction(this.getGame(), undefined, this, this.location, true);
         const ingredient2Instance = instantiateAction.performInstantiateInventoryItem(
             ingredient2.prefab,
-            rightHand.equippedItem === null ? "RIGHT HAND" : "LEFT HAND",
+            dominantHand.equippedItem === null ? dominantHand.id : auxiliaryHand.id,
             null,
             "",
             1,
