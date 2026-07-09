@@ -36,7 +36,7 @@ export default class LeadAction extends Action {
 
         if (this.player.isMoving) {
             const stopAction = new StopAction(this.getGame(), undefined, this.player, this.player.location, this.forced);
-            stopAction.performStop(false, undefined, false);
+            await stopAction.performStop(false, undefined, false);
         }
 
         const newFollowers: Player[] = [];

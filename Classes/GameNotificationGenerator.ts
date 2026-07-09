@@ -2,7 +2,6 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { capitalizeFirstLetter, endsWithPunctuation, generateListString, generatePlayerListString } from "../Modules/helpers.ts";
 import type Dialog from "../Data/Dialog.ts";
 import type Fixture from "../Data/Fixture.ts";
 import type Game from "../Data/Game.ts";
@@ -12,6 +11,8 @@ import type ItemInstance from "../Data/ItemInstance.ts";
 import type Puzzle from "../Data/Puzzle.ts";
 import type Recipe from "../Data/Recipe.ts";
 import type Room from "../Data/Room.ts";
+import { capitalizeFirstLetter, endsWithPunctuation, generateListString, generatePlayerListString } from "../Modules/helpers.ts";
+import { Collection } from "discord.js";
 
 /**
  * A set of functions to generate notification messages to send to players.
@@ -231,8 +232,8 @@ export default class GameNotificationGenerator {
         const action = isRunning ? `running` : `walking`;
         let followersString = ``;
         if (party && isFollower) {
-            const otherFollowers = party.followers.filter(follower => follower.name !== player.name);
-            if (otherFollowers) followersString = ` with ${party.generatePlayerListString(otherFollowers)}`;
+            const otherFollowers = party.generatePlayerListString(party.followers.filter(follower => follower.name !== player.name));
+            if (otherFollowers) followersString = ` with ${otherFollowers}`;
         }
         else if (party)
             followersString = ` with ${party.generatePlayerListString(party.followers)}`;
@@ -280,11 +281,23 @@ export default class GameNotificationGenerator {
      * Generates a notification indicating the player has stopped moving.
      * @param player - The player referred to in this notification.
      * @param secondPerson - Whether or not the player should be referred to in second person.
+     * @param allPlayers - All players stopping with the player being addressed, including the player being addressed.
      */
-    generateStopNotification(player: Player, secondPerson: boolean) {
-        const subject = secondPerson ? `You` : capitalizeFirstLetter(player.displayName);
-        const verb = secondPerson ? `stop` : `stops`;
-        return `${subject} ${verb} moving.`;
+    generateStopNotification(player: Player, secondPerson: boolean, allPlayers: Set<Player>) {
+        let [playerDisplayName, _, otherDisplayNames] = this.getPlayerDisplayNames(player, allPlayers);
+        let playerDisplayNames: string[] = [];
+        if (secondPerson) {
+            playerDisplayNames.push(`you`);
+            if (allPlayers.values().every(otherPlayer => otherPlayer.party?.hasMember(player) && otherPlayer.party?.positionsSynchronized))
+                playerDisplayNames = playerDisplayNames.concat(otherDisplayNames);
+        }
+        else {
+            playerDisplayNames = [playerDisplayName].concat(otherDisplayNames);
+            playerDisplayNames.sort();
+        }
+        const subject = generateListString(playerDisplayNames);
+        const verb = secondPerson || otherDisplayNames.length > 0 ? `stop` : `stops`;
+        return `${capitalizeFirstLetter(subject)} ${verb} moving.`;
     }
 
     /**
@@ -311,13 +324,14 @@ export default class GameNotificationGenerator {
      * Generates a notification indicating the player has stopped following the given target.
      * @param player - The player referred to in this notification.
      * @param secondPerson - Whether or not the player should be referred to in second person.
+     * @param allPlayers - All players stopping with the player being addressed, including the player being addressed.
      * @param targetDisplayName - The display name of the player that they were following.
      */
-    generateStopFollowingNotification(player: Player, secondPerson: boolean, targetDisplayName: string) {
-        const displayName = player.party && targetDisplayName === "you" ? player.party.getMemberDisplayName(player) : player.displayName;
-        const subject = secondPerson ? `You` : capitalizeFirstLetter(displayName);
-        const verb = secondPerson ? `stop following` : `stops following`;
-        return `${subject} ${verb} ${targetDisplayName}.`;
+    generateStopFollowingNotification(player: Player, secondPerson: boolean, allPlayers: Set<Player>, targetDisplayName: string) {
+        let [playerDisplayName, playerDisplayNames, otherDisplayNames] = this.getPlayerDisplayNames(player, allPlayers);
+        const subject = secondPerson ? `you` : generateListString([playerDisplayName].concat(otherDisplayNames));
+        const verb = secondPerson ? `stop` : otherDisplayNames.length > 0 ? `stop` : `stops`;
+        return `${capitalizeFirstLetter(subject)} ${verb} following ${targetDisplayName}.`;
     }
 
     /**
@@ -477,6 +491,22 @@ export default class GameNotificationGenerator {
     }
 
     /**
+     * Gets the display name of the given player, the display names of all players as a collection, and an array of player display names excluding the given player.
+     * @param player - The player being referred to in a notification.
+     * @param allPlayers - All players moving with the player being addressed, including the player being addressed.
+     * @returns [playerDisplayName, playerDisplayNames, otherDisplayNames]
+     */
+    private getPlayerDisplayNames(player: Player, allPlayers: Set<Player>): [string, Collection<Player, string>, string[]] {
+        const party = player.party;
+        const playerDisplayName = party?.getMemberDisplayName(player) ?? player.displayName;
+        const playerDisplayNames: Collection<Player, string> = new Collection();
+        allPlayers.forEach(player => playerDisplayNames.set(player, party?.getMemberDisplayName(player) ?? player.displayName));
+        playerDisplayNames.sort((a, b) => a.localeCompare(b));
+        const otherDisplayNames = [...playerDisplayNames].filter(([other]) => other.name !== player.name).map(([_, displayName]) => displayName);
+        return [playerDisplayName, playerDisplayNames, otherDisplayNames];
+    }
+
+    /**
      * Generates an array of three strings to use in movement-related notifications.
      * @param player - The player referred to in this notification.
      * @param secondPerson - Whether or not the player should be referred to in second person.
@@ -487,11 +517,7 @@ export default class GameNotificationGenerator {
         let subject = ``;
         let otherPlayerList = ``;
         let carryString = ``;
-        const party = player.party;
-        const playerDisplayName = party?.getMemberDisplayName(player) ?? player.displayName;
-        const playerDisplayNames: Map<Player, string> = new Map();
-        allPlayers.forEach(player => playerDisplayNames.set(player, party?.getMemberDisplayName(player) ?? player.displayName));
-        const otherDisplayNames = [...playerDisplayNames].filter(([other]) => other.name !== player.name).map(([_, displayName]) => displayName);
+        const [playerDisplayName, playerDisplayNames, otherDisplayNames] = this.getPlayerDisplayNames(player, allPlayers);
         if (secondPerson) {
             subject = `you`;
             otherPlayerList = generateListString(otherDisplayNames);

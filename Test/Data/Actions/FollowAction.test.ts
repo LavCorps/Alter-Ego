@@ -81,11 +81,9 @@ describe('FollowAction test', () => {
     });
 
     describe('FollowAction.performFollow tests', () => {
-        afterEach(() => {
-            for (const player of [astrid, asuka, nero]) {
-                const action = new StopAction(game, undefined, player, player.location, false);
-                action.performStop(false, undefined, true);
-            }
+        afterEach(async () => {
+            const action = new StopAction(game, undefined, astrid, astrid.location, false);
+            await action.performStop(false, undefined, true, new Set([astrid, asuka, nero]));
         });
 
         test('stationary player follows stationary player', async () => {

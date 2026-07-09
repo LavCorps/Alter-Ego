@@ -202,11 +202,11 @@ describe('StartMoveAction test', () => {
     });
 
     afterEach(async () => {
+        const action = new StopAction(game, undefined, astrid, astrid.location, false);
+        await action.performStop(false, undefined, true, new Set([astrid, asuka, nero]));
         for (const player of [astrid, asuka, nero]) {
             player.location.removePlayer(player);
             lobby.addPlayer(player);
-            const action = new StopAction(game, undefined, player, player.location, false);
-            action.performStop(false, undefined, true);
             player.restoreStamina();
         }
         await sendMessages();

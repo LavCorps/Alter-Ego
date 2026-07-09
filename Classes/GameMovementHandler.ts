@@ -113,11 +113,17 @@ export default class GameMovementHandler {
         if (timer) {
             clearInterval(timer);
             this.#moveTimers.delete(players);
+            // Clean up the associated player set.
+            for (const player of players)
+                this.#indexedPlayerSets.delete(player.name);
+            this.#playerSets.delete(players);
         }
-        // Clean up the associated player set.
-        for (const player of players)
-            this.#indexedPlayerSets.delete(player.name);
-        this.#playerSets.delete(players);
+        else {
+            for (const player of players) {
+                const playerSet = this.#getPlayerSet(player);
+                if (playerSet) this.#clearMoveTimerFor(playerSet);
+            }
+        }
     }
 
     /**
@@ -321,12 +327,10 @@ export default class GameMovementHandler {
                     }
                     else {
                         // The exit is locked.
-                        // TODO: Refactor performStop and related methods to allow multiple players to stop at once.
-                        for (const player of players) {
-                            const stopAction = new StopAction(this.#game, undefined, player, player.location, action.forced);
-                            stopAction.performStop(true, exit, !player.followedPlayerIsInRoom());
-                            player.moveQueue.length = 0;
-                        }
+                        const stopFollowing = players.values().every(player => player.followedPlayer && !player.followedPlayerIsInRoom());
+                        const stopAction = new StopAction(this.#game, undefined, action.player, action.player.location, action.forced);
+                        await stopAction.performStop(true, exit, stopFollowing, players);
+                        players.forEach(player => player.moveQueue.length = 0);
                     }
                 }
                 // If the players are in a party and the party members' positions are now synchronized, the party is ready to go.
@@ -371,6 +375,16 @@ export default class GameMovementHandler {
     }
 
     /**
+     * Stops moving the given players.
+     * @param players - The players to stop moving.
+     */
+    public stopMoving(players: Set<Player>): void {
+        this.stopMoveTimer(players);
+        for (const player of players)
+            player.stopMoving();
+    }
+
+    /**
      * Stops the move timer for the given players.
      * @param players - The player or players to stop the move timer for.
      */
@@ -384,15 +398,13 @@ export default class GameMovementHandler {
      * Stops the given player's followers from moving.
      * This will only stop followers in the same room as the player.
      * @param player - The player whose followers will stop moving.
-     * @param stopFollowing - Whether or not to make the followers stop following the player. Defaults to true.
+     * @param stopFollowing - Whether or not to make the followers stop following the player. Defaults to false.
      * @param forced - Whether or not the action was performed by someone other than the player themselves. Defaults to true.
      */
-    public stopFollowers(player: Player, stopFollowing: boolean = true, forced: boolean = true): void {
-        for (const occupant of player.location.occupants) {
-            if (occupant.isMoving && occupant.isFollowing(player)) {
-                const stopAction = new StopAction(this.#game, undefined, occupant, occupant.location, forced);
-                stopAction.performStop(undefined, undefined, stopFollowing);
-            }
-        }
+    public async stopFollowers(player: Player, stopFollowing: boolean = false, forced: boolean = true): Promise<void> {
+        const followers = new Set(player.location.occupants.filter(occupant => occupant.isMoving && occupant.isFollowing(player)));
+        if (followers.size === 0) return;
+        const stopAction = new StopAction(this.#game, undefined, this.#first(followers), player.location, forced);
+        await stopAction.performStop(undefined, undefined, stopFollowing, followers);
     }
 }

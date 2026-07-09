@@ -207,10 +207,8 @@ describe('LeadAction test', () => {
             afterAll(async () => {
                 const disbandPartyAction = new DisbandPartyAction(game, undefined, astrid, astrid.location, false);
                 await disbandPartyAction.performDisbandParty(true);
-                for (const player of [astrid, asuka, nero]) {
-                    const stopAction = new StopAction(game, undefined, player, player.location, false);
-                    stopAction.performStop(false, undefined, true);
-                }
+                const stopAction = new StopAction(game, undefined, astrid, astrid.location, false);
+                await stopAction.performStop(false, undefined, true, new Set([astrid, asuka, nero]));
             });
 
             test('stationary player leads stationary player', async () => {
@@ -492,14 +490,13 @@ describe('LeadAction test', () => {
 
                 clearMessages();
                 await sendMessages();
-                expect(lobby.channel.messages.cache).toHaveSize(4);
-                expect(astrid.notificationChannel.messages.cache).toHaveSize(4);
+                expect(lobby.channel.messages.cache).toHaveSize(3);
+                expect(astrid.notificationChannel.messages.cache).toHaveSize(3);
                 expect(asuka.notificationChannel.messages.cache).toHaveSize(2);
                 expect(nero.notificationChannel.messages.cache).toHaveSize(1);
                 expect(lobbyFirstNarrationMessage.content).toBe(`> -# An individual wearing a MASK stops moving.`);
-                expect(lobby.channel.messages.cache.at(1).content).toBe(`> -# Nero stops moving.`);
-                expect(lobby.channel.messages.cache.at(2).content).toBe(`> -# Asuka stops moving.`);
-                expect(lobby.channel.messages.cache.at(3).content).toBe(`> -# An individual wearing a MASK begins leading Asuka, who starts approaching them.`);
+                expect(lobby.channel.messages.cache.at(1).content).toBe(`> -# Asuka and Nero stop moving.`);
+                expect(lobby.channel.messages.cache.at(2).content).toBe(`> -# An individual wearing a MASK begins leading Asuka, who starts approaching them.`);
                 expect(astridFirstNotificationMessage.content).toBe(`> -# You stop moving.`);
                 expect(asukaFirstNotificationMessage.content).toBe(`> -# You stop moving.`);
                 expect(neroFirstNotificationMessage.content).toBe(`> -# You stop moving.`);
@@ -570,14 +567,13 @@ describe('LeadAction test', () => {
 
                 clearMessages();
                 await sendMessages();
-                expect(lobby.channel.messages.cache).toHaveSize(4);
-                expect(astrid.notificationChannel.messages.cache).toHaveSize(4);
+                expect(lobby.channel.messages.cache).toHaveSize(3);
+                expect(astrid.notificationChannel.messages.cache).toHaveSize(3);
                 expect(asuka.notificationChannel.messages.cache).toHaveSize(2);
                 expect(nero.notificationChannel.messages.cache).toHaveSize(2);
                 expect(lobbyFirstNarrationMessage.content).toBe(`> -# An individual wearing a MASK stops moving.`);
-                expect(lobby.channel.messages.cache.at(1).content).toBe(`> -# Asuka stops moving.`);
-                expect(lobby.channel.messages.cache.at(2).content).toBe(`> -# Nero stops moving.`);
-                expect(lobby.channel.messages.cache.at(3).content).toBe(`> -# An individual wearing a MASK begins leading Asuka and Nero, who start approaching them.`);
+                expect(lobby.channel.messages.cache.at(1).content).toBe(`> -# Asuka and Nero stop moving.`);
+                expect(lobby.channel.messages.cache.at(2).content).toBe(`> -# An individual wearing a MASK begins leading Asuka and Nero, who start approaching them.`);
                 expect(astridFirstNotificationMessage.content).toBe(`> -# You stop moving.`);
                 expect(asukaFirstNotificationMessage.content).toBe(`> -# You stop moving.`);
                 expect(neroFirstNotificationMessage.content).toBe(`> -# You stop moving.`);
@@ -653,14 +649,13 @@ describe('LeadAction test', () => {
 
                 clearMessages();
                 await sendMessages();
-                expect(lobby.channel.messages.cache).toHaveSize(4);
-                expect(astrid.notificationChannel.messages.cache).toHaveSize(4);
+                expect(lobby.channel.messages.cache).toHaveSize(3);
+                expect(astrid.notificationChannel.messages.cache).toHaveSize(3);
                 expect(asuka.notificationChannel.messages.cache).toHaveSize(2);
                 expect(nero.notificationChannel.messages.cache).toHaveSize(2);
                 expect(lobbyFirstNarrationMessage.content).toBe(`> -# An individual wearing a MASK stops moving.`);
-                expect(lobby.channel.messages.cache.at(1).content).toBe(`> -# Asuka stops moving.`);
-                expect(lobby.channel.messages.cache.at(2).content).toBe(`> -# Nero stops moving.`);
-                expect(lobby.channel.messages.cache.at(3).content).toBe(`> -# An individual wearing a MASK begins leading Asuka and Nero, who start approaching them.`);
+                expect(lobby.channel.messages.cache.at(1).content).toBe(`> -# Asuka and Nero stop moving.`);
+                expect(lobby.channel.messages.cache.at(2).content).toBe(`> -# An individual wearing a MASK begins leading Asuka and Nero, who start approaching them.`);
                 expect(astridFirstNotificationMessage.content).toBe(`> -# You stop moving.`);
                 expect(asukaFirstNotificationMessage.content).toBe(`> -# You stop moving.`);
                 expect(neroFirstNotificationMessage.content).toBe(`> -# You stop moving.`);
@@ -745,14 +740,13 @@ describe('LeadAction test', () => {
 
                 clearMessages();
                 await sendMessages();
-                expect(lobby.channel.messages.cache).toHaveSize(4);
-                expect(astrid.notificationChannel.messages.cache).toHaveSize(4);
+                expect(lobby.channel.messages.cache).toHaveSize(3);
+                expect(astrid.notificationChannel.messages.cache).toHaveSize(3);
                 expect(asuka.notificationChannel.messages.cache).toHaveSize(1);
                 expect(nero.notificationChannel.messages.cache).toHaveSize(2);
                 expect(lobbyFirstNarrationMessage.content).toBe(`> -# An individual wearing a MASK stops moving.`);
-                expect(lobby.channel.messages.cache.at(1).content).toBe(`> -# Asuka stops moving.`);
-                expect(lobby.channel.messages.cache.at(2).content).toBe(`> -# Nero stops moving.`);
-                expect(lobby.channel.messages.cache.at(3).content).toBe(`> -# An individual wearing a MASK begins leading Nero.`);
+                expect(lobby.channel.messages.cache.at(1).content).toBe(`> -# Asuka and Nero stop moving.`);
+                expect(lobby.channel.messages.cache.at(2).content).toBe(`> -# An individual wearing a MASK begins leading Nero.`);
                 expect(astridFirstNotificationMessage.content).toBe(`> -# You stop moving.`);
                 expect(asukaFirstNotificationMessage.content).toBe(`> -# You stop moving.`);
                 expect(neroFirstNotificationMessage.content).toBe(`> -# You stop moving.`);
