@@ -14,11 +14,8 @@ function isBasic(value: unknown): value is null | undefined | string | number | 
     );
 }
 
-/**
-* @privateRemarks
-* we make the decision here to reuse the constructors of certain arbitrary objects simply to prevent some painful breakages...
-* notably, with collections, or any surprise subclasses of Set, Map, Array, et cetera...
-*/
+// we make the decision here to reuse the constructors of certain arbitrary objects simply to prevent some painful breakages...
+// notably, with collections, or any surprise subclasses of Set, Map, Array, et cetera...
 function prettyObject<T extends any>(object: T, level: number = 0): T | string {
     if (level >= 2) return `<Truncated [Depth]>`;
     else if (isBasic(object)) return object;
