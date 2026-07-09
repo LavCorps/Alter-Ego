@@ -292,7 +292,7 @@ describe('StartMoveAction test', () => {
             expect(astrid.stamina).toBeCloseTo(5.891, 3);
             expect(narrateReachedHalfStaminaSpy).not.toHaveBeenCalled();
             expect(astrid.hasStatus("weary")).toBe(false);
-            expect(moveSpy).toBeInvokedWith(false, lobby, hall5.dest, hall5, hall5.getLinkedExit(), new Set([astrid]));
+            expect(moveSpy).toBeInvokedWith(false, lobby, hall5.dest, hall5, hall5.getLinkedExit(), false, new Set([astrid]));
 
             clearMessages();
             await sendMessages();
@@ -345,7 +345,7 @@ describe('StartMoveAction test', () => {
             expect(astrid.isRunning).toBe(false);
             expect(astrid.moveTimer).not.toBeNull();
             expect(astrid.currentMovingSpeed).toEqual(10);
-            expect(moveSpy).toBeInvokedWith(false, lobby, hall5.dest, hall5, hall5.getLinkedExit(), new Set([astrid]));
+            expect(moveSpy).toBeInvokedWith(false, lobby, hall5.dest, hall5, hall5.getLinkedExit(), false, new Set([astrid]));
             expect(astrid.moveQueue).not.toHaveLength(0);
         });
 
@@ -503,7 +503,7 @@ describe('StartMoveAction test', () => {
             expect(astrid.moveTimer).toBeNull();
             expect(astrid.currentMovingSpeed).toEqual(0);
             expect(astrid.pos).toStrictEqual(cave9Door.pos);
-            expect(moveSpy).toBeInvokedWith(false, cave9, cave9Door.dest, cave9Door, cave9Door.getLinkedExit(), new Set([astrid]));
+            expect(moveSpy).toBeInvokedWith(false, cave9, cave9Door.dest, cave9Door, cave9Door.getLinkedExit(), false, new Set([astrid]));
             expect(astrid.moveQueue).toHaveLength(0);
 
             clearMessages();
@@ -800,7 +800,7 @@ describe('StartMoveAction test', () => {
             expect(astrid.moveTimer).toBeNull();
             expect(astrid.currentMovingSpeed).toEqual(0);
             expect(astrid.pos).toStrictEqual(hall5.pos);
-            expect(moveSpy).toBeInvokedWith(false, lobby, hall5.dest, hall5, hall5.getLinkedExit(), new Set([astrid]));
+            expect(moveSpy).toBeInvokedWith(false, lobby, hall5.dest, hall5, hall5.getLinkedExit(), false, new Set([astrid]));
             moveSpy.mockClear();
             // Asuka still shouldn't have started moving yet.
             expect(asuka.location).toStrictEqual(lobby);
@@ -829,7 +829,7 @@ describe('StartMoveAction test', () => {
             expect(asuka.moveTimer).toBeNull();
             expect(asuka.currentMovingSpeed).toEqual(0);
             expect(asuka.pos).toStrictEqual(hall5.pos);
-            expect(moveSpy).toBeInvokedWith(false, lobby, hall5.dest, hall5, hall5.getLinkedExit(), new Set([astrid]));
+            expect(moveSpy).toBeInvokedWith(false, lobby, hall5.dest, hall5, hall5.getLinkedExit(), false, new Set([asuka]));
             expect(asuka.location).toStrictEqual(astrid.location);
 
             clearMessages();
@@ -898,7 +898,7 @@ describe('StartMoveAction test', () => {
             expect(astrid.stamina).toBeCloseTo(5.891, 3);
             expect(narrateReachedHalfStaminaSpy).not.toHaveBeenCalled();
             expect(astrid.hasStatus("weary")).toBe(false);
-            expect(moveSpy).toBeInvokedWith(false, lobby, hall5.dest, hall5, hall5.getLinkedExit(), new Set([astrid]));
+            expect(moveSpy).toBeInvokedWith(false, lobby, hall5.dest, hall5, hall5.getLinkedExit(), false, new Set([astrid]));
 
             moveSpy.mockClear();
             clearMessages();
@@ -1116,7 +1116,7 @@ describe('StartMoveAction test', () => {
             expect(movePlayersSpy).toHaveBeenCalledOnce();
             expect(narrateReachedHalfStaminaSpy).not.toHaveBeenCalled();
             expect(moveSpy).toHaveBeenCalledTimes(1);
-            expect(moveSpy).toBeInvokedWith(false, lobby, mainEntrance.dest, mainEntrance, mainEntrance.getLinkedExit(), new Set([astrid, asuka, nero]));
+            expect(moveSpy).toBeInvokedWith(false, lobby, mainEntrance.dest, mainEntrance, mainEntrance.getLinkedExit(), false, new Set([astrid, asuka, nero]));
             for (const member of party.members.values()) {
                 expect(member.remainingTime).toBeCloseTo(0, 3);
                 expect(member.isMoving).toBe(false);

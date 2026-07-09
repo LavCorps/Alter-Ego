@@ -228,7 +228,8 @@ export default class Party extends GameConstruct {
     getMemberSet(): Set<Player> {
         const set: Set<Player> = new Set();
         set.add(this.leader);
-        for (const follower of this.followers.values())
+        const sortedFollowers = this.followers.sorted((a, b) => this.getMemberDisplayName(a).localeCompare(this.getMemberDisplayName(b)));
+        for (const follower of sortedFollowers.values())
             set.add(follower);
         return set;
     }

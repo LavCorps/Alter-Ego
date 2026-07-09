@@ -491,10 +491,10 @@ export default class GameNotificationGenerator {
         const playerDisplayName = party?.getMemberDisplayName(player) ?? player.displayName;
         const playerDisplayNames: Map<Player, string> = new Map();
         allPlayers.forEach(player => playerDisplayNames.set(player, party?.getMemberDisplayName(player) ?? player.displayName));
+        const otherDisplayNames = [...playerDisplayNames].filter(([other]) => other.name !== player.name).map(([_, displayName]) => displayName);
         if (secondPerson) {
             subject = `you`;
-            playerDisplayNames.delete(player);
-            otherPlayerList = generateListString(playerDisplayNames.values().toArray().filter(name => !!name));
+            otherPlayerList = generateListString(otherDisplayNames);
             if (otherPlayerList) {
                 const appendString = player.createMoveAppendString();
                 if (appendString) carryString = ` while${appendString}`;
@@ -502,11 +502,7 @@ export default class GameNotificationGenerator {
             else carryString = player.createMoveAppendString();
         }
         else {
-            const otherPlayerDisplayNames: string[] = [];
-            for (const [otherPlayer, displayName] of playerDisplayNames) {
-                if (otherPlayer.name !== player.name) otherPlayerDisplayNames.push(displayName);
-            }
-            const listedPlayers = [playerDisplayName].concat(otherPlayerDisplayNames).filter(name => !!name);
+            const listedPlayers = [playerDisplayName].concat(otherDisplayNames);
             subject = generateListString(listedPlayers);
             const playerCarryStrings: string[] = [];
             if (listedPlayers.length > 1) {
@@ -514,8 +510,8 @@ export default class GameNotificationGenerator {
                     const playerCarryString = player.createMoveAppendString("carries");
                     if (playerCarryString) playerCarryStrings.push(`${displayName}${playerCarryString}`);
                 }
+                if (playerCarryStrings.length > 0) carryString = `. ${capitalizeFirstLetter(playerCarryStrings.join("; "))}`;
             }
-            if (playerCarryStrings.length > 0) carryString = `. ${capitalizeFirstLetter(playerCarryStrings.join("; "))}`;
             else carryString = player.createMoveAppendString();
         }
         return [subject, otherPlayerList, carryString];
