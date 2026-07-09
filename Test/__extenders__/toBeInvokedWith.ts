@@ -2,11 +2,9 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import type { Collection } from "discord.js";
-
 const truncateProperties = new Set(["game", "guild", "member", "channel", "spectateChannel", "timer"]);
 
-type Constructable<T extends any> = new (...args: any[]) => any;
+type Constructable<T extends any> = new (...args: any[]) => T;
 
 function isBasic(value: unknown): value is null | undefined | string | number | boolean | symbol | bigint | Function {
     return (
@@ -15,38 +13,28 @@ function isBasic(value: unknown): value is null | undefined | string | number | 
     );
 }
 
-function isCollection(value: unknown): value is Collection<any, any> {
-    return !isBasic(value) && value.constructor.name === "Collection";
-}
-
+/**
+* @privateRemarks
+* we make the decision here to reuse the constructors of certain arbitrary objects simply to prevent some painful breakages...
+* notably, with collections, or any surprise subclasses of Set, Map, Array, et cetera...
+*/
 function prettyObject<T extends any>(object: T, level: number = 0): T | string {
     if (level >= 2) return `<Truncated [Depth]>`;
     else if (isBasic(object)) return object;
     else if (Array.isArray(object)) {
-        const ctor = object.constructor as Constructable<T>;
+        const ctor = object.constructor as Constructable<T & any[]>;
         const clone = new ctor();
         for (const item of object)
             clone.push(prettyObject(item, level + 1));
         return clone;
     } else if (object instanceof Set) {
-        const ctor = object.constructor as Constructable<T>;
+        const ctor = object.constructor as Constructable<T & Set<any>>;
         const clone = new ctor();
         for (const value of object)
             clone.add(prettyObject(value, level + 1));
         return clone;
-    } else if (isCollection(object)) {
-        /**
-        * @privateRemarks
-        * we cannot import the discord.js Collection class here without causing very annoying problems for the configuration
-        * of the test suites... simply reuse the constructor of anything whose constructor is named "Collection"
-        */
-        const ctor = object.constructor as Constructable<T>;
-        const clone = new ctor();
-        for (const [key, value] of object)
-            clone.set(key, prettyObject(value, level + 1));
-        return clone;
     } else if (object instanceof Map) {
-        const ctor = object.constructor as Constructable<T>;
+        const ctor = object.constructor as Constructable<T & Map<any, any>>;
         const clone = new ctor();
         for (const [key, value] of object)
             clone.set(key, prettyObject(value, level + 1));
@@ -61,18 +49,12 @@ function prettyObject<T extends any>(object: T, level: number = 0): T | string {
                     if (object[key] instanceof Array) {
                         clone[key] = object[key].map((value) => prettyObject(value, level + 1));
                     } else if (object[key] instanceof Set) {
-                        clone[key] = new Set();
+                        const ctor = object.constructor as Constructable<T & Set<any>>;
+                        clone[key] = new ctor();
                         object[key].forEach(val => clone[key].add(prettyObject(val, level + 1)));
-                    } else if (isCollection(object[key])) {
-                        /**
-                         * @privateRemarks
-                         * same as above... reuse the constructor
-                         */
-                        clone[key] = new object[key].constructor();
-                        for (const [k, v] of object[key])
-                            clone[key].set(k, prettyObject(v, level + 1));
                     } else if (object[key] instanceof Map) {
-                        clone[key] = new Map();
+                        const ctor = object.constructor as Constructable<T & Map<any, any>>;
+                        clone[key] = new ctor();
                         for (const [k, v] of object[key])
                             clone[key].set(k, prettyObject(v, level + 1));
                     } else clone[key] = prettyObject(object[key], level + 1);
