@@ -86,7 +86,7 @@ export class ValidatedInvocation extends BaseInvocation<true, true> {
     /**
      * @param args - The arguments object for the ValidatedInvocation constructor.
      */
-    constructor(args: ValidatedInvocationArgs) {
+    constructor(args: ValidatedInvocationArgs = {}) {
         super(true, true);
         this.args = args.args ?? new Collection();
         this.opts = args.opts ?? new DefaultMap(() => new DefaultMap(() => false));
@@ -172,7 +172,7 @@ export class MatchedInvocation extends BaseInvocation<true, false> {
     /**
      * @param args - The arguments object for the MatchedInvocation constructor.
      */
-    constructor(args: MatchedInvocationArgs) {
+    constructor(args: MatchedInvocationArgs = {}) {
         super(true, false);
         this.args = args.args ?? new Collection();
         this.opts = args.opts ?? new DefaultMap(() => new DefaultMap(() => false));
