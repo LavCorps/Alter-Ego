@@ -186,47 +186,57 @@ export default class GameNarrationHandler {
     }
 
     /**
-     * Narrates a player exiting a room.
+     * Narrates one or more players exiting a room.
      * @param action - The action that initiated this narration.
-     * @param player - The player performing the move action.
-     * @param currentRoom - The room the player is currently in.
-     * @param exit - The exit the player will leave their current room through.
-     * @param isMovingFreely - Whether or not the player is performing free movement.
+     * @param player - The player performing the exit action.
+     * @param exitingPlayers - The set of all players who exited together.
+     * @param currentRoom - The room the players are currently in.
+     * @param exit - The exit the players will leave their current room through.
+     * @param movingFreely - Whether or not the players are performing free movement.
      */
-    narrateExit(action: Action, player: Player, currentRoom: Room, exit: Exit, isMovingFreely: boolean) {
+    narrateExit(action: Action, player: Player, exitingPlayers: Set<Player>, currentRoom: Room, exit: Exit, movingFreely: boolean) {
         const messageType = MessageDisplayType.STANDARD;
         const exitPhrase = exit?.getNamePhrase();
-        const appendString = player.createMoveAppendString();
-        const notification = isMovingFreely ? this.#game.notificationGenerator.generateSuddenExitNotification(player, true, currentRoom.displayName, appendString)
-            : this.#game.notificationGenerator.generateExitNotification(player, true, exitPhrase, appendString);
-        const narration = isMovingFreely ? this.#game.notificationGenerator.generateSuddenExitNotification(player, false, currentRoom.displayName, appendString)
-            : this.#game.notificationGenerator.generateExitNotification(player, false, exitPhrase, appendString);
-        this.sendNotification(player, action, notification, MessageDisplayType.MINOR);
+        const [subject, otherPlayerList, carryString] = this.#game.notificationGenerator.generateCollectiveMovePlayerStrings(player, false, exitingPlayers);
+        const narration = movingFreely
+            ? this.#game.notificationGenerator.generateSuddenExitNotification(false, subject, currentRoom.displayName, otherPlayerList, carryString)
+            : this.#game.notificationGenerator.generateExitNotification(false, subject, exitPhrase, otherPlayerList, carryString);
+        for (const exitingPlayer of exitingPlayers) {
+            const [subject, otherPlayerList, carryString] = this.#game.notificationGenerator.generateCollectiveMovePlayerStrings(exitingPlayer, true, exitingPlayers);
+            const notification = movingFreely
+                ? this.#game.notificationGenerator.generateSuddenExitNotification(true, subject, currentRoom.displayName, otherPlayerList, carryString)
+                : this.#game.notificationGenerator.generateExitNotification(true, subject, exitPhrase, otherPlayerList, carryString);
+            this.sendNotification(exitingPlayer, action, notification, MessageDisplayType.MINOR);
+        }
         this.#sendNarration(messageType, action, player, narration, currentRoom);
     }
 
     /**
-     * Narrates a player entering a room.
+     * Narrates one or more players entering a room.
      * @param action - The action that initiated this narration.
-     * @param player - The player performing the move action.
-     * @param destinationRoom  The room the player is moving to.
-     * @param entrance - The exit the player will enter the destination room from.
-     * @param isMovingFreely - Whether or not the player is performing free movement.
+     * @param player - The player performing the enter action.
+     * @param enteringPlayers - The set of all players who entered together.
+     * @param destinationRoom  The room the players are moving to.
+     * @param entrance - The exit the players will enter the destination room from.
+     * @param movingFreely - Whether or not the players are performing free movement.
      */
-    narrateEnter(action: Action, player: Player, destinationRoom: Room, entrance: Exit, isMovingFreely: boolean) {
+    narrateEnter(action: Action, player: Player, enteringPlayers: Set<Player>, destinationRoom: Room, entrance: Exit, movingFreely: boolean) {
         const messageType = MessageDisplayType.STANDARD;
         const entrancePhrase = entrance?.getNamePhrase();
-        const appendString = player.createMoveAppendString();
-        const narration = isMovingFreely ? this.#game.notificationGenerator.generateSuddenEnterNotification(player, false, destinationRoom.displayName, appendString)
-            : this.#game.notificationGenerator.generateEnterNotification(player, false, entrancePhrase, appendString);
+        const [subject, otherPlayerList, carryString] = this.#game.notificationGenerator.generateCollectiveMovePlayerStrings(player, false, enteringPlayers);
+        const narration = movingFreely
+            ? this.#game.notificationGenerator.generateSuddenEnterNotification(false, subject, destinationRoom.displayName, otherPlayerList, carryString)
+            : this.#game.notificationGenerator.generateEnterNotification(false, subject, entrancePhrase, otherPlayerList, carryString);
         this.#sendNarration(messageType, action, player, narration, destinationRoom);
-        if (!player.canSee()) {
-            const notification = this.#game.notificationGenerator.generateNoSightEnterNotification();
-            this.sendNotification(player, action, notification, messageType);
-        }
-        else {
-            const description = entrance ? entrance.description : destinationRoom.description;
-            description.parseAndSendTo(player, destinationRoom);
+        for (const enteringPlayer of enteringPlayers) {
+            if (!enteringPlayer.canSee()) {
+                const notification = this.#game.notificationGenerator.generateNoSightEnterNotification();
+                this.sendNotification(enteringPlayer, action, notification, messageType);
+            }
+            else {
+                const description = entrance ? entrance.description : destinationRoom.description;
+                description.parseAndSendTo(enteringPlayer, destinationRoom);
+            }
         }
     }
 

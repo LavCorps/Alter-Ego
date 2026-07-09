@@ -299,6 +299,8 @@ export default class GameMovementHandler {
                 const exit = destinationIsExit ? destination : undefined;
                 const destinationRoom = destinationIsExit ? destination.dest : undefined;
                 const entrance = destinationIsExit ? destination.dest.getExit(destination.link) : undefined;
+                const restrictedExitPuzzle = this.#game.entityFinder.getPuzzle(exit?.name, firstPlayer.location.id, "restricted exit", true);
+                const exitPuzzlePassable = restrictedExitPuzzle && players.values().every(player => restrictedExitPuzzle.solutions.includes(player.name));
                 for (const player of players) {
                     player.pos.x = destination.pos.x;
                     player.pos.y = destination.pos.y;
@@ -307,34 +309,23 @@ export default class GameMovementHandler {
                     player.isRunning = false;
                     player.currentMovingSpeed = 0;
                     player.remainingTime = 0;
-                    if (destinationIsExit) {
-                        // TODO: What happens if the restricted exit puzzle is passable to one player, but not to others?
-                        /**
-                         * ANSWER: Because the leader is the one moving the party, if they cannot proceed through the restricted exit,
-                         * no one should be able to. However, this raises an interesting question: what if the leader can pass through
-                         * the restricted exit, but one of the followers cannot? Perhaps we can split the party, but that could be
-                         * problematic if the party is traveling together in, say, a vehicle. Perhaps the best solution is to treat the
-                         * restricted exit as impassable if even a single player in the party is unable to pass through it.
-                         * If multiple members of the party can pass through it and they are listed as solutions, then how many times
-                         * should the puzzle be solved? Much to think about.
-                         */
-                        const restrictedExitPuzzle = this.#game.entityFinder.getPuzzle(exit.name, player.location.id, "restricted exit", true);
-                        const exitPuzzlePassable = restrictedExitPuzzle && restrictedExitPuzzle.solutions.includes(player.name);
-                        if (destination.unlocked || exitPuzzlePassable) {
-                            const moveAction = new MoveAction(this.#game, undefined, player, player.location, action.forced);
-                            await moveAction.performMove(running, currentRoom, destinationRoom, exit, entrance);
-                        }
-                        else {
-                            // The exit is locked.
+                    if (!destinationIsExit && time > 1000) {
+                        const dummyAction = new MoveAction(this.#game, undefined, player, player.location, action.forced);
+                        this.#game.narrationHandler.narrateFinishApproaching(dummyAction, player, destination);
+                    }
+                }
+                if (destinationIsExit) {
+                    if (destination.unlocked || exitPuzzlePassable) {
+                        const moveAction = new MoveAction(this.#game, undefined, action.player, action.player.location, action.forced);
+                        await moveAction.performMove(running, currentRoom, destinationRoom, exit, entrance, false, players);
+                    }
+                    else {
+                        // The exit is locked.
+                        // TODO: Refactor performStop and related methods to allow multiple players to stop at once.
+                        for (const player of players) {
                             const stopAction = new StopAction(this.#game, undefined, player, player.location, action.forced);
                             stopAction.performStop(true, exit, !player.followedPlayerIsInRoom());
                             player.moveQueue.length = 0;
-                        }
-                    }
-                    else {
-                        if (time > 1000) {
-                            const dummyAction = new MoveAction(this.#game, undefined, player, player.location, action.forced);
-                            this.#game.narrationHandler.narrateFinishApproaching(dummyAction, player, destination);
                         }
                     }
                 }

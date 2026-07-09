@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { capitalizeFirstLetter, endsWithPunctuation, generatePlayerListString } from "../Modules/helpers.ts";
+import { capitalizeFirstLetter, endsWithPunctuation, generateListString, generatePlayerListString } from "../Modules/helpers.ts";
 import type Dialog from "../Data/Dialog.ts";
 import type Fixture from "../Data/Fixture.ts";
 import type Game from "../Data/Game.ts";
@@ -225,7 +225,7 @@ export default class GameNotificationGenerator {
     generateStartMoveNotification(player: Player, secondPerson: boolean, isRunning: boolean, exitPhrase: string) {
         const party = player.party;
         const isFollower = !!player.followedPlayer;
-        const prefix = isFollower && secondPerson ? `following ${player.followedPlayerDisplayName}, ` : ``;
+        const prefix = isFollower ? `following ${player.followedPlayerDisplayName}, ` : ``;
         const subject = secondPerson ? `you` : player.displayName;
         const verb = secondPerson ? `start` : `starts`;
         const action = isRunning ? `running` : `walking`;
@@ -237,21 +237,23 @@ export default class GameNotificationGenerator {
         else if (party)
             followersString = ` with ${party.generatePlayerListString(party.followers)}`;
         let carryString = ``;
-        if (!secondPerson) {
-            if (followersString) {
-                const members = player.party ? player.party.members.values().toArray() : [];
-                const memberCarryStrings: string[] = [];
-                members.forEach(member => {
-                    const memberAppendString = member.createMoveAppendString("carries");
-                    if (memberAppendString) {
-                        const memberDisplayName = player.party?.getMemberDisplayName(member) ?? member.displayName;
-                        memberCarryStrings.push(`${memberDisplayName}${memberAppendString}`);
-                    }
-                });
-                if (memberCarryStrings) carryString = `. ${capitalizeFirstLetter(memberCarryStrings.join("; "))}`;
-            }
-            else carryString = player.createMoveAppendString("carrying");
+        if (followersString && !secondPerson) {
+            const members = player.party ? player.party.members.values().toArray() : [];
+            const memberCarryStrings: string[] = [];
+            members.forEach(member => {
+                const memberCarryString = member.createMoveAppendString("carries");
+                if (memberCarryString) {
+                    const memberDisplayName = player.party?.getMemberDisplayName(member) ?? member.displayName;
+                    memberCarryStrings.push(`${memberDisplayName}${memberCarryString}`);
+                }
+            });
+            if (memberCarryStrings.length > 0) carryString = `. ${capitalizeFirstLetter(memberCarryStrings.join("; "))}`;
         }
+        else if (followersString) {
+            const memberCarryString = player.createMoveAppendString();
+            if (memberCarryString) carryString = ` while${memberCarryString}`;
+        }
+        else carryString = player.createMoveAppendString();
         return `${capitalizeFirstLetter(`${prefix}${subject}`)} ${verb} ${action} toward ${exitPhrase}${followersString}${carryString}.`;
     }
 
@@ -475,59 +477,108 @@ export default class GameNotificationGenerator {
     }
 
     /**
-     * Generates a notification indicating the player exited a room.
+     * Generates an array of three strings to use in movement-related notifications.
      * @param player - The player referred to in this notification.
      * @param secondPerson - Whether or not the player should be referred to in second person.
+     * @param allPlayers - All players moving with the player being addressed, including the player being addressed.
+     * @returns [subject, otherPlayerList (may be blank), carryString (may be blank)]
+     */
+    generateCollectiveMovePlayerStrings(player: Player, secondPerson: boolean, allPlayers: Set<Player>): [string, string, string] {
+        let subject = ``;
+        let otherPlayerList = ``;
+        let carryString = ``;
+        const party = player.party;
+        const playerDisplayName = party?.getMemberDisplayName(player) ?? player.displayName;
+        const playerDisplayNames: Map<Player, string> = new Map();
+        allPlayers.forEach(player => playerDisplayNames.set(player, party?.getMemberDisplayName(player) ?? player.displayName));
+        if (secondPerson) {
+            subject = `you`;
+            playerDisplayNames.delete(player);
+            otherPlayerList = generateListString(playerDisplayNames.values().toArray().filter(name => !!name));
+            if (otherPlayerList) {
+                const appendString = player.createMoveAppendString();
+                if (appendString) carryString = ` while${appendString}`;
+            }
+            else carryString = player.createMoveAppendString();
+        }
+        else {
+            const otherPlayerDisplayNames: string[] = [];
+            for (const [otherPlayer, displayName] of playerDisplayNames) {
+                if (otherPlayer.name !== player.name) otherPlayerDisplayNames.push(displayName);
+            }
+            const listedPlayers = [playerDisplayName].concat(otherPlayerDisplayNames).filter(name => !!name);
+            subject = generateListString(listedPlayers);
+            const playerCarryStrings: string[] = [];
+            if (listedPlayers.length > 1) {
+                for (const [player, displayName] of playerDisplayNames) {
+                    const playerCarryString = player.createMoveAppendString("carries");
+                    if (playerCarryString) playerCarryStrings.push(`${displayName}${playerCarryString}`);
+                }
+            }
+            if (playerCarryStrings.length > 0) carryString = `. ${capitalizeFirstLetter(playerCarryStrings.join("; "))}`;
+            else carryString = player.createMoveAppendString();
+        }
+        return [subject, otherPlayerList, carryString];
+    }
+
+    /**
+     * Generates a notification indicating the players exited a room.
+     * @param secondPerson - Whether or not the player being addressed should be referred to in second person.
+     * @param subject - The subject of the notification. This should be obtained from {@link generateCollectiveMovePlayerStrings}.
      * @param exitPhrase - The phrase of the exit the player exited through.
-     * @param appendString - A string describing any non-discreet inventory items the player is carrying.
+     * @param otherPlayerList - A list of other players exiting with the player being addressed. This should be obtained from {@link generateCollectiveMovePlayerStrings}.
+     * @param carryString - A string describing any non-discreet inventory items the player is carrying. This should be obtained from {@link generateCollectiveMovePlayerStrings}.
      */
-    generateExitNotification(player: Player, secondPerson: boolean, exitPhrase: string, appendString: string) {
-        const subject = secondPerson ? `You` : capitalizeFirstLetter(player.displayName);
-        const verb = secondPerson ? `exit` : `exits`;
+    generateExitNotification(secondPerson: boolean, subject: string, exitPhrase: string, otherPlayerList: string, carryString: string) {
+        const verb = secondPerson || subject.includes(" and ") ? `exit` : `exits`;
         const destinationPhrase = exitPhrase ? ` into ${exitPhrase}` : ``;
-        return `${subject} ${verb}${destinationPhrase}${appendString}.`;
+        const otherPlayersPhrase = otherPlayerList ? ` with ${otherPlayerList}` : ``;
+        return `${capitalizeFirstLetter(subject)} ${verb}${destinationPhrase}${otherPlayersPhrase}${carryString}.`;
     }
 
     /**
-     * Generates a notification indicating the player with the free movement role exited a room.
-     * @param player - The player referred to in this notification.
-     * @param secondPerson - Whether or not the player should be referred to in second person.
-     * @param roomName - The display name of the room the player exited.
-     * @param appendString - A string describing any non-discreet inventory items the player is carrying.
+     * Generates a notification indicating players with the free movement role exited a room.
+     * @param secondPerson - Whether or not the player being addressed should be referred to in second person.
+     * @param subject - The subject of the notification. This should be obtained from {@link generateCollectiveMovePlayerStrings}.
+     * @param roomName - The display name of the room the players exited.
+     * @param otherPlayerList - A list of other players exiting with the player being addressed. This should be obtained from {@link generateCollectiveMovePlayerStrings}.
+     * @param carryString - A string describing any non-discreet inventory items the player is carrying. This should be obtained from {@link generateCollectiveMovePlayerStrings}.
      */
-    generateSuddenExitNotification(player: Player, secondPerson: boolean, roomName: string, appendString: string) {
-        const subject = secondPerson ? `You` : capitalizeFirstLetter(player.displayName);
-        const verb = secondPerson ? `exit ${roomName}` : `suddenly disappears`;
+    generateSuddenExitNotification(secondPerson: boolean, subject: string, roomName: string, otherPlayerList: string, carryString: string) {
+        const verb = secondPerson ? `exit ${roomName}` : subject.includes(" and ") ? `suddenly disappear` : `suddenly disappears`;
+        const otherPlayersPhrase = otherPlayerList ? ` with ${otherPlayerList}` : ``;
         const punctuation = secondPerson ? `.` : `!`;
-        return `${subject} ${verb}${appendString}${punctuation}`;
+        return `${capitalizeFirstLetter(subject)} ${verb}${otherPlayersPhrase}${carryString}${punctuation}`;
     }
 
     /**
-     * Generates a notification indicating the player entered a room.
-     * @param player - The player referred to in this notification.
-     * @param secondPerson - Whether or not the player should be referred to in second person.
-     * @param entranceName - The name of the exit the player entered through.
-     * @param appendString - A string describing any non-discreet inventory items the player is carrying.
+     * Generates a notification indicating the players entered a room.
+     * @param secondPerson - Whether or not the player being addressed should be referred to in second person.
+     * @param subject - The subject of the notification. This should be obtained from {@link generateCollectiveMovePlayerStrings}.
+     * @param entrancePhrase - The phrase of the exit the player entered through.
+     * @param otherPlayerList - A list of other players entering with the player being addressed. This should be obtained from {@link generateCollectiveMovePlayerStrings}.
+     * @param carryString - A string describing any non-discreet inventory items the player is carrying. This should be obtained from {@link generateCollectiveMovePlayerStrings}.
      */
-    generateEnterNotification(player: Player, secondPerson: boolean, entranceName: string, appendString: string) {
-        const subject = secondPerson ? `You` : capitalizeFirstLetter(player.displayName);
-        const verb = secondPerson ? `enter` : `enters`;
-        const exitPhrase = entranceName ? ` from ${entranceName}` : ``;
-        return `${subject} ${verb}${exitPhrase}${appendString}.`;
+    generateEnterNotification(secondPerson: boolean, subject: string, entrancePhrase: string, otherPlayerList: string, carryString: string) {
+        const verb = secondPerson || subject.includes(" and ") ? `enter` : `enters`;
+        const exitPhrase = entrancePhrase ? ` from ${entrancePhrase}` : ``;
+        const otherPlayersPhrase = otherPlayerList ? ` with ${otherPlayerList}` : ``;
+        return `${capitalizeFirstLetter(subject)} ${verb}${exitPhrase}${otherPlayersPhrase}${carryString}.`;
     }
 
     /**
-     * Generates a notification indicating the player with the free movement role entered a room.
-     * @param player - The player referred to in this notification.
-     * @param secondPerson - Whether or not the player should be referred to in second person.
-     * @param roomName - The display name of the room the player entered.
-     * @param appendString - A string describing any non-discreet inventory items the player is carrying.
+     * Generates a notification indicating players with the free movement role entered a room.
+     * @param secondPerson - Whether or not the player being addressed should be referred to in second person.
+     * @param subject - The subject of the notification. This should be obtained from {@link generateCollectiveMovePlayerStrings}.
+     * @param roomName - The display name of the room the players exited.
+     * @param otherPlayerList - A list of other players exiting with the player being addressed. This should be obtained from {@link generateCollectiveMovePlayerStrings}.
+     * @param carryString - A string describing any non-discreet inventory items the player is carrying. This should be obtained from {@link generateCollectiveMovePlayerStrings}.
      */
-    generateSuddenEnterNotification(player: Player, secondPerson: boolean, roomName: string, appendString: string) {
-        const subject = secondPerson ? `You` : capitalizeFirstLetter(player.displayName);
-        const verb = secondPerson ? `enter ${roomName}` : `suddenly appears`;
+    generateSuddenEnterNotification(secondPerson: boolean, subject: string, roomName: string, otherPlayerList: string, carryString: string) {
+        const verb = secondPerson ? `enter ${roomName}` : subject.includes(" and ") ? `suddenly appear` : `suddenly appears`;
+        const otherPlayersPhrase = otherPlayerList ? ` with ${otherPlayerList}` : ``;
         const punctuation = secondPerson ? `.` : `!`;
-        return `${subject} ${verb}${appendString}${punctuation}`;
+        return `${capitalizeFirstLetter(subject)} ${verb}${otherPlayersPhrase}${carryString}${punctuation}`;
     }
 
     /**
