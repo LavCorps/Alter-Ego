@@ -4,11 +4,20 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { InvalidInvocation, MatchedInvocation, type MatchResult } from "./Invocation.ts";
-import { ConstantToken, EntityToken, ItemContainerToken, PocketToken, PrepositionToken, SentinelToken, type Token } from "./Token.ts";
+import {
+    ConstantToken,
+    EntityToken,
+    ItemContainerToken,
+    PocketToken,
+    PrepositionToken,
+    SentinelToken,
+    type Token,
+} from "./Token.ts";
 import type GameEntity from "../../Data/GameEntity.ts";
 import { Collection } from "discord.js";
 import ItemInstance from "../../Data/ItemInstance.ts";
 import type InventorySlot from "../../Data/InventorySlot.ts";
+import DefaultMap from "../DefaultMap.ts";
 
 /**
  * Base interface representing a pattern element.
@@ -39,6 +48,33 @@ export class Constant implements PatternElement {
      */
     satisfiedBy(token: ConstantToken): boolean {
         return token.value === this.value;
+    }
+}
+
+/**
+ * Special sentinel class representing a Multiconstant in a Pattern.
+ *
+ * This class represents one of many constant values that must always be present in a Pattern for it to be considered valid.
+ */
+export class Multiconstant implements PatternElement {
+    /**
+     * The data of the Multiconstant sentinel.
+     */
+    readonly values: Set<string>;
+
+    /**
+     * @param values - The data of the Multiconstant sentinel.
+     */
+    constructor(values: string[]) {
+        this.values = new Set(values);
+    }
+
+    /**
+     * Returns whether this Constant is satisfied by the given token.
+     * @param token - The token to check against this Constant.
+     */
+    satisfiedBy(token: ConstantToken): boolean {
+        return this.values.has(token.value);
     }
 }
 
@@ -99,18 +135,18 @@ export class Multislot implements PatternElement {
         this.name = name;
         this.#types = new Set();
         for (const slot of slots) {
-            this.types.add(slot.type)
+            this.types.add(slot.type);
         }
     }
 
     /**
      * The types of Game Entities contained within a multislot.
      */
-    get types(): Set<{ new(...args: any[]): GameEntity }> {
+    get types(): Set<Constructor<GameEntity>> {
         return this.#types;
     }
 
-    protected set types(types: Set<{ new(...args: any[]): GameEntity }>) {
+    protected set types(types: Set<Constructor<GameEntity>>) {
         this.#types = types;
     }
 
@@ -162,6 +198,25 @@ export class Pocket implements PatternElement {
      */
     constructor(id: string, name: string) {
         this.id = id;
+        this.name = name;
+    }
+}
+
+/**
+ * Option class representing a piece of a grammar pattern that represents a multiple-choice option in a pattern.
+ */
+export class Option extends Multiconstant {
+    /**
+     * The name to refer to the Option with. Inherited by any Tokens that fit the Option.
+     */
+    readonly name: string;
+
+    /**
+     * @param name - The name to refer to the Option with.
+     * @param values - The values possible in the Option element.
+     */
+    constructor(name: string, values: string[]) {
+        super(values);
         this.name = name;
     }
 }
@@ -303,7 +358,7 @@ export class Pattern implements PatternElement {
     /**
      * The types of Game Entities contained within a pattern. Informs Contexts what must be gathered, to prevent gathering unnecessary context.
      */
-    #types: Set<{ new (...args: any[]): GameEntity }>;
+    #types: Set<Constructor<GameEntity>>;
 
     /**
      * The constants contained within a pattern. Informs Contexts what constants exist for the given pattern.
@@ -328,6 +383,8 @@ export class Pattern implements PatternElement {
                 this.types = this.types.union(element.types);
             else if (element instanceof Constant)
                 this.constants.add(new ConstantToken(element.value));
+            else if (element instanceof Multiconstant)
+                for (const choice of element.values) this.constants.add(new ConstantToken(choice));
             else if (element instanceof Pattern) {
                 this.constants = this.constants.union(element.constants);
                 this.types = this.types.union(element.types);
@@ -340,11 +397,11 @@ export class Pattern implements PatternElement {
     /**
      * The types of Game Entities contained within a pattern. Informs Contexts what must be gathered, to prevent gathering unnecessary context.
      */
-    get types(): Set<{ new(...args: any[]): GameEntity }> {
+    get types(): Set<Constructor<GameEntity>> {
         return this.#types;
     }
 
-    protected set types(types: Set<{ new(...args: any[]): GameEntity }>) {
+    protected set types(types: Set<Constructor<GameEntity>>) {
         this.#types = types;
     }
 
@@ -372,18 +429,27 @@ export class Pattern implements PatternElement {
             const slotType: string = element.type.name.replace(/([A-Z])/g, (match) => " " + match.toLowerCase()).trim();
 
             data.errors.push(`Couldn't find ${slotType} "${nearMatch}" in your input.`);
-        } else if (element instanceof Multislot) {
+        }
+        else if (element instanceof Multislot) {
             const slotTypes: string[] = [];
             for (const slot of element.slots) {
                 slotTypes.push(slot.type.name.replace(/([A-Z])/g, (match) => " " + match.toLowerCase()).trim());
             }
 
             data.errors.push(`Couldn't find any ${slotTypes.join("/")} "${nearMatch}" in your input.`);
-        } else if (element instanceof Preposition) {
+        }
+        else if (element instanceof Preposition) {
             data.errors.push(`Couldn't find a valid preposition in your input, instead found ${nearMatch}.`);
-        } else if (element instanceof Constant) {
+        }
+        else if (element instanceof Constant) {
             data.errors.push(`Couldn't find a required "${element.value}" in your input, instead found ${nearMatch}.`);
         }
+        else if (element instanceof Multiconstant) {
+            const values: string[] = [];
+            element.values.forEach(v => values.push(v));
+            data.errors.push(`Couldn't find a required "${values.join("/")}" in your input, instead found ${nearMatch}.`);
+        }
+        else data.errors.push("An unexpected error occurred when parsing your input.");
 
         return data;
     }
@@ -414,7 +480,7 @@ export class Pattern implements PatternElement {
         while (!finished) {
             element = this.grammar[grammarIndex];
 
-            if (element instanceof Constant) {
+            if (element instanceof Constant || element instanceof Multiconstant) {
                 for (const token of data.stream) {
                     if (token instanceof ConstantToken && element.satisfiedBy(token)) {
                         data.matches.set(element, [token]);
@@ -484,7 +550,6 @@ export class Pattern implements PatternElement {
                 // for this task, we will find the distance to the closest preposition or constant, and consider everything between here and there "unrecoverable".
                 // no matter what, this now concludes with errors. the purpose of this is to minimize those errors.
                 let searchingPattern = true;
-                let searchingStream = true;
                 let preposition = false;
                 let constant = false;
                 let patternSearchIndex = grammarIndex + 1;
@@ -494,16 +559,18 @@ export class Pattern implements PatternElement {
 
                 while (searchingPattern) {
                     if (patternSearchIndex >= this.grammar.length) searchingPattern = false;
-                    else if (this.grammar[patternSearchIndex] instanceof Constant) {
+                    else if (this.grammar[patternSearchIndex] instanceof Constant || this.grammar[patternSearchIndex] instanceof Multiconstant || this.grammar[patternSearchIndex] instanceof Option) {
                         patternAnchorIndex = patternSearchIndex;
                         constant = true;
                         searchingPattern = false;
                     } else if (this.grammar[patternSearchIndex] instanceof Preposition) {
                         patternAnchorIndex = patternSearchIndex;
-                        constant = true;
+                        preposition = true;
                         searchingPattern = false;
                     } else patternSearchIndex++;
                 }
+
+                let searchingStream = constant || preposition;
                 while (searchingStream) {
                     if (streamSearchIndex >= data.streams.length) searchingStream = false;
                     else if (
@@ -560,15 +627,19 @@ export class Pattern implements PatternElement {
         for (const index of unmatchedIndices) {
             if (matchedIndices.has(index) || nearMatchIndices.has(index)) continue;
             element = this.grammar[index];
-            if (element instanceof Constant) {
-                data.errors.push(`Couldn't find a required "${element.value}" in your input.`)
-            } else if (element instanceof Slot || element instanceof Multislot) {
-                data.errors.push(`Couldn't find anything for ${element.name} in your input.`)
-            } else if (element instanceof Preposition) {
-                data.errors.push(`Couldn't find any preposition for ${element.name} in your input.`)
-            } else if (element instanceof Pocket) {
-                data.errors.push(`Couldn't find any inventory slot for ${element.id} in your input.`)
+            if (element instanceof Constant)
+                data.errors.push(`Couldn't find a required "${element.value}" in your input.`);
+            else if (element instanceof Multiconstant || element instanceof Option) {
+                const values: string[] = [];
+                element.values.forEach(v => values.push(v));
+                data.errors.push(`Couldn't find a required "${values.join("/")}" in your input.`);
             }
+            else if (element instanceof Slot || element instanceof Multislot)
+                data.errors.push(`Couldn't find anything for ${element.name} in your input.`);
+            else if (element instanceof Preposition)
+                data.errors.push(`Couldn't find any preposition for ${element.name} in your input.`);
+            else if (element instanceof Pocket)
+                data.errors.push(`Couldn't find any inventory slot for ${element.id} in your input.`);
         }
 
         // restrict preposition and pocket matching to only work on the root pattern
@@ -622,17 +693,21 @@ export class Pattern implements PatternElement {
             slotPrepositions.add("in");
 
             // find which prepositions that got matched that are also valid for this slot
-            const matches = new Set(prepositionTokens.map(token => token.value).filter(value => slotPrepositions.has(value)));
+            const matches = new Set(
+                prepositionTokens.map(token => token.value).filter(value => slotPrepositions.has(value)),
+            );
 
             // narrow prepositions against the matched preposition set
             const narrowedPreps = prepositionTokens.filter(token => matches.has(token.value));
 
             // narrow slots against the matched preposition set UNLESS we matched "in"
-            const narrowedSlots = matches.has("in") ? slotTokens : slotTokens.filter(token => matches.has(token.preposition));
+            const narrowedSlots = matches.has("in")
+                ? slotTokens
+                : slotTokens.filter((token) => matches.has(token.preposition));
 
             // if either slots or prepositions were narrowed to a length of 0, then the slot has no valid preposition
             if (narrowedPreps.length === 0 || narrowedSlots.length === 0)
-                data.errors.push(`Couldn't find a preposition for ${name}.`)
+                data.errors.push(`Couldn't find a preposition for ${name}.`);
 
             // write back narrowed prepositions and slots...
             prepositions.set(name, [prepositionElement, narrowedPreps]);
@@ -666,7 +741,12 @@ export class Pattern implements PatternElement {
             if (element instanceof Pocket)
                 pockets.set(element.id, [element, tokens.filter(token => token instanceof PocketToken)]);
             else if (element instanceof Slot || element instanceof Multislot)
-                slots.set(element.name, [element, tokens.filter(token => token instanceof ItemContainerToken && token.reference instanceof ItemInstance) as ItemContainerToken<ItemInstance>[]]);
+                slots.set(element.name, [
+                    element,
+                    tokens.filter(
+                        token => token instanceof ItemContainerToken && token.reference instanceof ItemInstance,
+                    ) as ItemContainerToken<ItemInstance>[],
+                ]);
         });
 
         // if there are no pockets or slots, this function is unnecessary, and we can return the unmodified base MatchData
@@ -691,7 +771,9 @@ export class Pattern implements PatternElement {
                     slotPockets.add(pocket);
 
             // find which pockets that got matched that are also valid for this slot
-            const matches = new Set(pocketTokens.map(token => token.reference).filter(value => slotPockets.has(value)));
+            const matches = new Set(
+                pocketTokens.map(token => token.reference).filter(value => slotPockets.has(value)),
+            );
 
             // narrow pockets against the matched pocket set
             const narrowedPockets = pocketTokens.filter(token => matches.has(token.reference));
@@ -705,7 +787,7 @@ export class Pattern implements PatternElement {
 
             // if either slots or pockets were narrowed to a length of 0, then the slot has no valid pocket
             if (narrowedPockets.length === 0 || narrowedSlots.length === 0)
-                data.errors.push(`Couldn't find a pocket for ${name}.`)
+                data.errors.push(`Couldn't find a pocket for ${name}.`);
 
             // write back narrowed pockets and slots...
             pockets.set(name, [pocketElement, narrowedPockets]);
@@ -732,14 +814,23 @@ export class Pattern implements PatternElement {
         if (data.errors.length > 0) return new InvalidInvocation(data.errors);
         else {
             const args: Collection<string, GameEntity[]> = new Collection();
+            const opts: DefaultMap<string, DefaultMap<string, boolean>> = new DefaultMap(
+                () => new DefaultMap(
+                    () => false
+                ),
+            );
             data.matches.forEach((val, key) => {
                 if (key instanceof Slot || key instanceof Multislot || key instanceof Pocket)
                     args.set(
                         key.name,
-                        val.map((token: EntityToken<GameEntity>) => token.reference),
+                        val.map(
+                            (token: EntityToken<GameEntity>) => token.reference
+                        ),
                     );
+                else if (key instanceof Option)
+                    opts.get(key.name).set(val.find((token) => token instanceof ConstantToken).value, true);
             });
-            return new MatchedInvocation(args, data.glob);
+            return new MatchedInvocation({ args: args, glob: data.glob, opts: opts });
         }
     }
 }

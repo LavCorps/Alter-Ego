@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { InvalidInvocation, MatchedInvocation } from "../../../Classes/Command/Invocation.ts";
-import { Constant, Glob, Pattern, Pocket, Preposition, Slot } from "../../../Classes/Command/Pattern.ts";
+import { Constant, Glob, Multiconstant, Option, Pattern, Pocket, Preposition, Slot } from "../../../Classes/Command/Pattern.ts";
 import { ConstantToken, EntityToken, ItemContainerToken, PocketToken, PrepositionToken } from "../../../Classes/Command/Token.ts";
 import Trie from "../../../Classes/Command/Trie.ts";
 import EquipmentSlot from "../../../Data/EquipmentSlot.ts";
@@ -293,6 +293,18 @@ describe("Pattern file from NG Commands", () => {
         });
     });
 
+    describe("Option class from NG Commands", () => {
+        test("Option.satisfiedBy(1)", async () => {
+            const option = new Option("test", ["one", "two", "three", "four"])
+            expect(option.satisfiedBy(new ConstantToken("zero"))).toBeFalsy();
+            expect(option.satisfiedBy(new ConstantToken("one"))).toBeTruthy();
+            expect(option.satisfiedBy(new ConstantToken("two"))).toBeTruthy();
+            expect(option.satisfiedBy(new ConstantToken("three"))).toBeTruthy();
+            expect(option.satisfiedBy(new ConstantToken("four"))).toBeTruthy();
+            expect(option.satisfiedBy(new ConstantToken("five"))).toBeFalsy();
+        });
+    });
+
     describe("Pattern class from NG Commands", () => {
         beforeEach(async () => {
             const prepositions: Set<string> = new Set();
@@ -368,12 +380,13 @@ describe("Pattern file from NG Commands", () => {
         let trie: Trie;
 
         test("Pattern.match(1)", async () => {
-            trie.insert("and", new ConstantToken("and"));
             const pattern = new Pattern([
                 new Slot(InventoryItem, "item1"),
                 new Constant("and"),
                 new Slot(InventoryItem, "item2"),
             ]);
+            for (const constant of pattern.constants)
+                trie.insert(constant.value, constant);
             const invocation = pattern.match(trie.tokenize(["MUG", "OF", "COFFEE", "and", "PACK", "OF", "TOILET", "PAPER", "2"])) as MatchedInvocation;
             expect(invocation).toBeInstanceOf(MatchedInvocation);
             expect(invocation.args.size).toBe(2);
@@ -393,12 +406,13 @@ describe("Pattern file from NG Commands", () => {
         });
 
         test("Pattern.match(2)", async () => {
-            trie.insert("and", new ConstantToken("and"));
             const pattern = new Pattern([
                 new Slot(InventoryItem, "item1"),
                 new Constant("and"),
                 new Slot(InventoryItem, "item2"),
             ]);
+            for (const constant of pattern.constants)
+                trie.insert(constant.value, constant);
             const invocation = pattern.match(trie.tokenize(["MG", "F", "CFF", "and", "PACK", "OF", "TOILET", "PAPER", "2"])) as InvalidInvocation;
             expect(invocation).toBeInstanceOf(InvalidInvocation);
             expect(invocation.errors).toBeLength(1);
@@ -466,8 +480,6 @@ describe("Pattern file from NG Commands", () => {
         });
 
         test("Pattern.match(6)", async () => {
-            trie.insert("in", new ConstantToken("in"));
-            trie.insert("of", new ConstantToken("of"));
             const pattern = new Pattern([
                 new Slot(InventoryItem, "target"),
                 new Constant("in"),
@@ -475,6 +487,8 @@ describe("Pattern file from NG Commands", () => {
                 new Constant("of"),
                 new Slot(InventoryItem, "destination"),
             ]);
+            for (const constant of pattern.constants)
+                trie.insert(constant.value, constant);
             const invocation = pattern.match(trie.tokenize(["MUG", "OF", "COFFEE", "in", "RIGHT", "POCKET", "of", "KYRAS", "LAB", "COAT", "1"])) as MatchedInvocation;
             expect(invocation).toBeInstanceOf(MatchedInvocation);
             expect(invocation.args.size).toBe(3);
@@ -500,12 +514,13 @@ describe("Pattern file from NG Commands", () => {
         });
 
         test("Pattern.match(7)", async () => {
-            trie.insert("with", new ConstantToken("with"));
             const pattern = new Pattern([
                 new Slot(InventoryItem, "target"),
                 new Constant("with"),
                 new Slot(Fixture, "destination"),
             ]);
+            for (const constant of pattern.constants)
+                trie.insert(constant.value, constant);
             const invocation = pattern.match(trie.tokenize(["MUG", "OF", "COFFEE", "with"])) as InvalidInvocation;
             expect(invocation).toBeInstanceOf(InvalidInvocation);
             expect(invocation.errors).toBeLength(1);
@@ -513,7 +528,6 @@ describe("Pattern file from NG Commands", () => {
         });
 
         test("Pattern.match(8)", async () => {
-            trie.insert("of", new ConstantToken("of"));
             const pattern = new Pattern([
                 new Slot(InventoryItem, "target"),
                 new Preposition("destination"),
@@ -523,6 +537,8 @@ describe("Pattern file from NG Commands", () => {
                 ], true, true),
                 new Slot(InventoryItem, "destination"),
             ]);
+            for (const constant of pattern.constants)
+                trie.insert(constant.value, constant);
             const invocation = pattern.match(trie.tokenize(["MUG", "OF", "COFFEE", "in", "RIGHT", "POCKET", "of", "KYRAS", "LAB", "COAT", "1"])) as MatchedInvocation;
             expect(invocation).toBeInstanceOf(MatchedInvocation);
             expect(invocation.args.size).toBe(3);
@@ -548,7 +564,6 @@ describe("Pattern file from NG Commands", () => {
         });
 
         test("Pattern.match(9)", async () => {
-            trie.insert("of", new ConstantToken("of"));
             const pattern = new Pattern([
                 new Slot(InventoryItem, "target"),
                 new Preposition("destination"),
@@ -558,6 +573,8 @@ describe("Pattern file from NG Commands", () => {
                 ], true, true),
                 new Slot(InventoryItem, "destination"),
             ]);
+            for (const constant of pattern.constants)
+                trie.insert(constant.value, constant);
             const invocation = pattern.match(trie.tokenize(["MUG", "OF", "COFFEE", "in", "KYRAS", "LAB", "COAT", "1"])) as MatchedInvocation;
             expect(invocation).toBeInstanceOf(MatchedInvocation);
             expect(invocation.args.size).toBe(2);
@@ -611,7 +628,6 @@ describe("Pattern file from NG Commands", () => {
         });
 
         test("Pattern.match(12)", async () => {
-            trie.insert("of", new ConstantToken("of"));
             const pattern = new Pattern([
                 new Slot(InventoryItem, "target"),
                 new Preposition("destination"),
@@ -621,6 +637,8 @@ describe("Pattern file from NG Commands", () => {
                 ], true, true),
                 new Slot(InventoryItem, "destination"),
             ]);
+            for (const constant of pattern.constants)
+                trie.insert(constant.value, constant);
             const invocation = pattern.match(trie.tokenize(["MUG", "OF", "COFFEE", "in", "RIGHT", "POCKET", "KYRAS", "LAB", "COAT", "1"])) as InvalidInvocation;
             expect(invocation).toBeInstanceOf(InvalidInvocation);
             expect(invocation.errors).toBeLength(4);
@@ -641,7 +659,6 @@ describe("Pattern file from NG Commands", () => {
         });
 
         test("Pattern.match(14)", async () => {
-            trie.insert("of", new ConstantToken("of"));
             const pattern = new Pattern([
                 new Slot(InventoryItem, "target"),
                 new Preposition("destination"),
@@ -651,6 +668,8 @@ describe("Pattern file from NG Commands", () => {
                 ], true, true),
                 new Slot(InventoryItem, "destination"),
             ]);
+            for (const constant of pattern.constants)
+                trie.insert(constant.value, constant);
             const invocation = pattern.match(trie.tokenize(["MUG", "OF", "COFFEE", "IN", "RIGHT", "POCKET", "OF", "KYRAS", "LAB", "COAT", "1"])) as MatchedInvocation;
             expect(invocation).toBeInstanceOf(MatchedInvocation);
             expect(invocation.args.size).toBe(3);
@@ -703,6 +722,110 @@ describe("Pattern file from NG Commands", () => {
             expect(invocation).toBeInstanceOf(MatchedInvocation);
             expect(invocation.args.size).toBe(0);
             expect(invocation.glob).toStrictEqual(["Hello?"]);
+        });
+
+        test("Pattern.match(18)", async () => {
+            const pattern = new Pattern([
+                new Slot(InventoryItem, "item 1"),
+                new Multiconstant(["and", "with"]),
+                new Slot(InventoryItem, "item 2"),
+            ]);
+            const invocation = pattern.match(trie.tokenize(["MUG", "OF", "COFFEE", "attacks", "KYRAS", "LAB", "COAT", "1"])) as InvalidInvocation;
+            expect(invocation).toBeInstanceOf(InvalidInvocation);
+            expect(invocation.errors.length).toBe(1);
+            expect(invocation.errors[0]).toBe("Couldn't find a required \"and/with\" in your input, instead found attacks KYRAS LAB COAT 1.")
+        });
+
+        test("Pattern.match(19)", async () => {
+            const pattern = new Pattern([
+                new Slot(InventoryItem, "item 1"),
+                new Multiconstant(["and", "with"]),
+                new Slot(InventoryItem, "item 2"),
+            ]);
+            for (const constant of pattern.constants)
+                trie.insert(constant.value, constant);
+            let invocation = pattern.match(trie.tokenize(["MUG", "OF", "COFFEE", "with", "KYRAS", "LAB", "COAT", "1"])) as MatchedInvocation;
+            expect(invocation).toBeInstanceOf(MatchedInvocation);
+            expect(invocation.args.size).toBe(2);
+            expect(invocation.args.get("item 1")).not.toBeUndefined();
+            expect(invocation.args.get("item 1").length).toBe(1);
+            invocation.args.get("item 1").forEach((item: InventoryItem) => {
+                expect(item).toBeInstanceOf(InventoryItem);
+                expect(item.prefabId).toBe("MUG OF COFFEE");
+            });
+            expect(invocation.args.get("item 2")).not.toBeUndefined();
+            expect(invocation.args.get("item 2").length).toBe(1);
+            invocation.args.get("item 2").forEach((item: InventoryItem) => { 
+                expect(item).toBeInstanceOf(InventoryItem);
+                expect(item.prefabId).toBe("KYRAS LAB COAT");
+                expect(item.getIdentifier()).toBe("KYRAS LAB COAT 1");
+            });
+            invocation = pattern.match(trie.tokenize(["MUG", "OF", "COFFEE", "and", "KYRAS", "LAB", "COAT", "1"])) as MatchedInvocation;
+            expect(invocation).toBeInstanceOf(MatchedInvocation);
+            expect(invocation.args.size).toBe(2);
+            expect(invocation.args.get("item 1")).not.toBeUndefined();
+            expect(invocation.args.get("item 1").length).toBe(1);
+            invocation.args.get("item 1").forEach((item: InventoryItem) => {
+                expect(item).toBeInstanceOf(InventoryItem);
+                expect(item.prefabId).toBe("MUG OF COFFEE");
+            });
+            expect(invocation.args.get("item 2")).not.toBeUndefined();
+            expect(invocation.args.get("item 2").length).toBe(1);
+            invocation.args.get("item 2").forEach((item: InventoryItem) => { 
+                expect(item).toBeInstanceOf(InventoryItem);
+                expect(item.prefabId).toBe("KYRAS LAB COAT");
+                expect(item.getIdentifier()).toBe("KYRAS LAB COAT 1");
+            });
+        });
+
+        test("Pattern.match(20)", async () => {
+            const pattern = new Pattern([
+                new Slot(InventoryItem, "item 1"),
+                new Option("article", ["and", "with"]),
+                new Slot(InventoryItem, "item 2"),
+            ]);
+            for (const constant of pattern.constants)
+                trie.insert(constant.value, constant);
+            let invocation = pattern.match(trie.tokenize(["MUG", "OF", "COFFEE", "with", "KYRAS", "LAB", "COAT", "1"])) as MatchedInvocation;
+            expect(invocation).toBeInstanceOf(MatchedInvocation);
+            expect(invocation.args.size).toBe(2);
+            expect(invocation.args.get("item 1")).not.toBeUndefined();
+            expect(invocation.args.get("item 1").length).toBe(1);
+            invocation.args.get("item 1").forEach((item: InventoryItem) => {
+                expect(item).toBeInstanceOf(InventoryItem);
+                expect(item.prefabId).toBe("MUG OF COFFEE");
+            });
+            expect(invocation.args.get("item 2")).not.toBeUndefined();
+            expect(invocation.args.get("item 2").length).toBe(1);
+            invocation.args.get("item 2").forEach((item: InventoryItem) => { 
+                expect(item).toBeInstanceOf(InventoryItem);
+                expect(item.prefabId).toBe("KYRAS LAB COAT");
+                expect(item.getIdentifier()).toBe("KYRAS LAB COAT 1");
+            });
+            expect(invocation.opts.size).toBe(1);
+            expect(invocation.opts.get("article").size).toBe(1);
+            expect(invocation.getOpt("article", "with")).toBeTruthy();
+            expect(invocation.getOpt("article", "and")).toBeFalsy();
+            invocation = pattern.match(trie.tokenize(["MUG", "OF", "COFFEE", "and", "KYRAS", "LAB", "COAT", "1"])) as MatchedInvocation;
+            expect(invocation).toBeInstanceOf(MatchedInvocation);
+            expect(invocation.args.size).toBe(2);
+            expect(invocation.args.get("item 1")).not.toBeUndefined();
+            expect(invocation.args.get("item 1").length).toBe(1);
+            invocation.args.get("item 1").forEach((item: InventoryItem) => {
+                expect(item).toBeInstanceOf(InventoryItem);
+                expect(item.prefabId).toBe("MUG OF COFFEE");
+            });
+            expect(invocation.args.get("item 2")).not.toBeUndefined();
+            expect(invocation.args.get("item 2").length).toBe(1);
+            invocation.args.get("item 2").forEach((item: InventoryItem) => { 
+                expect(item).toBeInstanceOf(InventoryItem);
+                expect(item.prefabId).toBe("KYRAS LAB COAT");
+                expect(item.getIdentifier()).toBe("KYRAS LAB COAT 1");
+            });
+            expect(invocation.opts.size).toBe(1);
+            expect(invocation.opts.get("article").size).toBe(1);
+            expect(invocation.getOpt("article", "with")).toBeFalsy();
+            expect(invocation.getOpt("article", "and")).toBeTruthy();
         });
     });
 });

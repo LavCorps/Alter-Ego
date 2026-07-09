@@ -20,6 +20,31 @@ import type InventoryItem from "../../Data/InventoryItem.ts";
 import type EquipmentSlot from "../../Data/EquipmentSlot.ts";
 import type Gesture from "../../Data/Gesture.ts";
 import type Flag from "../../Data/Flag.ts";
+import DefaultMap from "../DefaultMap.ts";
+
+/** Interface for ValidatedInvocation constructor args. */
+interface ValidatedInvocationArgs {
+    /** The key-value pairs of slot names to Game Entities. One Game Entity per key. */
+    args?: Collection<string, GameEntity>;
+
+    /** The key-value pairs of options to option maps. Each key on the map corresponds to another map, which is keyed for option names to booleans that are true if the option was specified, and false otherwise. */
+    opts?: DefaultMap<string, DefaultMap<string, boolean>>;
+
+    /** Any globbed data caught by the pattern matching. */
+    glob?: string[];
+}
+
+/** Interface for MatchedInvocation constructor args. */
+interface MatchedInvocationArgs {
+    /** The key-value pairs of slot names to Game Entities. Multiple Game Entities allowed per key. */
+    args?: Collection<string, GameEntity[]>;
+
+    /** The key-value pairs of options to option maps. Each key on the map corresponds to another map, which is keyed for option names to booleans that are true if the option was specified, and false otherwise. */
+    opts?: DefaultMap<string, DefaultMap<string, boolean>>;
+
+    /** Any globbed data caught by the pattern matching. */
+    glob?: string[];
+}
 
 /** Abstract class representing all Invocations. */
 abstract class BaseInvocation<M extends boolean, V extends boolean> {
@@ -52,17 +77,24 @@ export class ValidatedInvocation extends BaseInvocation<true, true> {
     /** The key-value pairs of slot names to Game Entities. One Game Entity per key. */
     args: Collection<string, GameEntity>;
 
+    /** The key-value pairs of options to option maps. Each key on the map corresponds to another map, which is keyed for option names to booleans that are true if the option was specified, and false otherwise. */
+    opts: DefaultMap<string, DefaultMap<string, boolean>>;
+
     /** Any globbed data caught by the pattern matching. */
     glob: string[];
 
     /**
-     * @param args - The key-value pairs of slot names to Game Entities. One Game Entity per key. Defaults to an empty collection.
-     * @param glob - Any globbed data caught by the pattern matching. Defaults to an empty array.
+     * @param args - The arguments object for the ValidatedInvocation constructor.
      */
-    constructor(args: Collection<string, GameEntity> = new Collection(), glob: string[] = []) {
+    constructor(args: ValidatedInvocationArgs) {
         super(true, true);
-        this.args = args;
-        this.glob = glob;
+        this.args = args.args ?? new Collection();
+        this.opts = args.opts ?? new DefaultMap(() => new DefaultMap(() => false));
+        this.glob = args.glob ?? [];
+    }
+
+    getOpt(slot: string, option: string): boolean {
+        return this.opts.get(slot).get(option);
     }
 
     getRoom(patternSlot: string): Room {
@@ -131,17 +163,24 @@ export class MatchedInvocation extends BaseInvocation<true, false> {
     /** The key-value pairs of slot names to Game Entities. Multiple Game Entities allowed per key. */
     args: Collection<string, GameEntity[]>;
 
+    /** The key-value pairs of options to option maps. Each key on the map corresponds to another map, which is keyed for option names to booleans that are true if the option was specified, and false otherwise. */
+    opts: DefaultMap<string, DefaultMap<string, boolean>>;
+
     /** Any globbed data caught by the pattern matching. */
     glob: string[];
 
     /**
-     * @param args - The key-value pairs of slot names to Game Entities. Multiple Game Entities allowed per key. Defaults to an empty collection.
-     * @param glob - Any globbed data caught by the pattern matching. Defaults to an empty array.
+     * @param args - The arguments object for the MatchedInvocation constructor.
      */
-    constructor(args: Collection<string, GameEntity[]> = new Collection(), glob: string[] = []) {
+    constructor(args: MatchedInvocationArgs) {
         super(true, false);
-        this.args = args;
-        this.glob = glob;
+        this.args = args.args ?? new Collection();
+        this.opts = args.opts ?? new DefaultMap(() => new DefaultMap(() => false));
+        this.glob = args.glob ?? [];
+    }
+
+    getOpt(slot: string, option: string): boolean {
+        return this.opts.get(slot).get(option);
     }
 
     getRooms(patternSlot: string): Room[] {

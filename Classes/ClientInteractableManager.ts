@@ -192,7 +192,7 @@ export default class ClientInteractableManager {
      * @param player - The player this action directive is being created for.
      * @param user - The user this action directive is being created for. This is used to generate a unique custom ID for the directive, preventing conflicts with directives created for other users with the same action and arguments.
      */
-    #createActionDirective<T extends Action>(actionClass: { new(...args: any[]): T }, args: any[], player: Player, user: User): ActionDirective<T> {
+    #createActionDirective<T extends Action>(actionClass: Constructor<T>, args: any[], player: Player, user: User): ActionDirective<T> {
         return new ActionDirective(actionClass.prototype, player, args, user);
     }
 

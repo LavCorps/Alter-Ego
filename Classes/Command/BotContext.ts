@@ -57,7 +57,7 @@ export default class BotContext extends Context {
     getLexicon(patterns: Pattern[]): Token[] {
         const prepositions: Set<string> = new Set();
         const tokens = [];
-        const types = patterns.reduce((acc, pattern) => acc.union(pattern.types), new Set<{ new(...args: any[]): GameEntity }>());
+        const types = patterns.reduce((acc, pattern) => acc.union(pattern.types), new Set<Constructor<GameEntity>>());
 
         if (types.has(Player) || types.has(EquipmentSlot)) {
             for (const player of this.game.players.values()) {

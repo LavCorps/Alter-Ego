@@ -336,7 +336,7 @@ export default class PlayerContext extends Context {
     getLexicon(patterns: Pattern[]): Token[] {
         const prepositions: Set<string> = new Set();
         const tokens: Token[] = [];
-        const types = patterns.reduce((acc, pattern) => acc.union(pattern.types), new Set<{ new(...args: any[]): GameEntity }>());
+        const types = patterns.reduce((acc, pattern) => acc.union(pattern.types), new Set<Constructor<GameEntity>>());
 
         if (types.has(Player)) {
             for (const player of this.game.players.values()) {

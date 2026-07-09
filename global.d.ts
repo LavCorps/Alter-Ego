@@ -261,4 +261,7 @@ declare global {
 		getOwnPropertyDescriptor: (targetObject: Node, propKey: string | symbol) => TypedPropertyDescriptor<any>;
 		getPrototypeOf: (targetObject: Node) => object;
 	};
+
+	/** Convenience alias for the constructor of T. */
+    type Constructor<T extends any> = { new(...args: any[]): T }
 }
