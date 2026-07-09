@@ -2,29 +2,57 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import type { Collection } from "discord.js";
+
 const truncateProperties = new Set(["game", "guild", "member", "channel", "spectateChannel", "timer"]);
 
-function isBasic(value: unknown): boolean {
+type Constructable<T extends any> = new (...args: any[]) => any;
+
+function isBasic(value: unknown): value is null | undefined | string | number | boolean | symbol | bigint | Function {
     return (
         value === null ||
-        typeof value === "string" ||
-        typeof value === "number" ||
-        typeof value === "boolean" ||
-        typeof value === "undefined" ||
-        typeof value === "symbol" ||
-        typeof value === "bigint"
+        typeof value !== "object"
     );
 }
 
-function prettyObject(object: any, level: number = 0) {
+function isCollection(value: unknown): value is Collection<any, any> {
+    return !isBasic(value) && value.constructor.name === "Collection";
+}
+
+function prettyObject<T extends any>(object: T, level: number = 0): T | string {
     if (level >= 2) return `<Truncated [Depth]>`;
     else if (isBasic(object)) return object;
-    const clone = Object.create(Object.getPrototypeOf(object));
-    if (Array.isArray(object)) {
-        for (const item of object) {
+    else if (Array.isArray(object)) {
+        const ctor = object.constructor as Constructable<T>;
+        const clone = new ctor();
+        for (const item of object)
             clone.push(prettyObject(item, level + 1));
-        }
-    } else
+        return clone;
+    } else if (object instanceof Set) {
+        const ctor = object.constructor as Constructable<T>;
+        const clone = new ctor();
+        for (const value of object)
+            clone.add(prettyObject(value, level + 1));
+        return clone;
+    } else if (isCollection(object)) {
+        /**
+        * @privateRemarks
+        * we cannot import the discord.js Collection class here without causing very annoying problems for the configuration
+        * of the test suites... simply reuse the constructor of anything whose constructor is named "Collection"
+        */
+        const ctor = object.constructor as Constructable<T>;
+        const clone = new ctor();
+        for (const [key, value] of object)
+            clone.set(key, prettyObject(value, level + 1));
+        return clone;
+    } else if (object instanceof Map) {
+        const ctor = object.constructor as Constructable<T>;
+        const clone = new ctor();
+        for (const [key, value] of object)
+            clone.set(key, prettyObject(value, level + 1));
+        return clone;
+    } else {
+        const clone: T = Object.create(Object.getPrototypeOf(object));
         for (const key of Object.keys(object)) {
             if (truncateProperties.has(key)) {
                 clone[key] = `<Truncated [Filtered]>`;
@@ -32,16 +60,27 @@ function prettyObject(object: any, level: number = 0) {
                 if (object[key] && typeof object[key] === "object") {
                     if (object[key] instanceof Array) {
                         clone[key] = object[key].map((value) => prettyObject(value, level + 1));
+                    } else if (object[key] instanceof Set) {
+                        clone[key] = new Set();
+                        object[key].forEach(val => clone[key].add(prettyObject(val, level + 1)));
+                    } else if (isCollection(object[key])) {
+                        /**
+                         * @privateRemarks
+                         * same as above... reuse the constructor
+                         */
+                        clone[key] = new object[key].constructor();
+                        for (const [k, v] of object[key])
+                            clone[key].set(k, prettyObject(v, level + 1));
                     } else if (object[key] instanceof Map) {
                         clone[key] = new Map();
-                        for (const [k, v] of object[key]) {
+                        for (const [k, v] of object[key])
                             clone[key].set(k, prettyObject(v, level + 1));
-                        }
                     } else clone[key] = prettyObject(object[key], level + 1);
-                } else clone[key] = object[key];
+                } else clone[key] = prettyObject(object[key], level + 1);
             }
         }
-    return clone;
+        return clone;
+    }
 }
 
 function isMock(obj: unknown): obj is import("vitest").Mock {
