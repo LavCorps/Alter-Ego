@@ -41,6 +41,18 @@ export default class EligibleContext extends Context {
     }
 
     getLexicon(patterns: Pattern[]): Token[] {
-        return [];
+        const constants: Set<string> = new Set();
+        const tokens: Token[] = [];
+
+        for (const pattern of patterns) {
+            for (const constant of pattern.constants) {
+                if (!constants.has(constant.value)) {
+                    tokens.push(constant);
+                    constants.add(constant.value);
+                }
+            }
+        }
+
+        return tokens;
     }
 }
