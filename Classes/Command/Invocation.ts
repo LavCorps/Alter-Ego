@@ -97,6 +97,12 @@ export class ValidatedInvocation extends BaseInvocation<true, true> {
         return this.opts.get(slot).get(option);
     }
 
+    getOpts(slot: string, option: string[]): boolean {
+        for (const opt of option)
+            if (this.opts.get(slot).get(opt)) return true;
+        return false;
+    }
+
     getRoom(patternSlot: string): Room {
         return this.args.get(patternSlot) as Room;
     }
@@ -181,6 +187,12 @@ export class MatchedInvocation extends BaseInvocation<true, false> {
 
     getOpt(slot: string, option: string): boolean {
         return this.opts.get(slot).get(option);
+    }
+
+    getOpts(slot: string, option: string[]): boolean {
+        for (const opt of option)
+            if (this.opts.get(slot).get(opt)) return true;
+        return false;
     }
 
     getRooms(patternSlot: string): Room[] {
