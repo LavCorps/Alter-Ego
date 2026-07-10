@@ -472,7 +472,7 @@ export class Pattern implements PatternElement {
             unmatchedIndices.add(index);
         });
 
-        let finished = false;
+        let finished = data.exhausted;
 
         let grammarIndex = 0;
         let element: PatternElement;

@@ -827,5 +827,14 @@ describe("Pattern file from NG Commands", () => {
             expect(invocation.getOpt("article", "with")).toBeFalsy();
             expect(invocation.getOpt("article", "and")).toBeTruthy();
         });
+
+        test("Pattern.match(21)", async () => {
+            const pattern = new Pattern([]);
+            let invocation = pattern.match(trie.tokenize([])) as MatchedInvocation;
+            expect(invocation).toBeInstanceOf(MatchedInvocation);
+            expect(invocation.args.size).toBe(0);
+            expect(invocation.opts.size).toBe(0);
+            expect(invocation.glob.length).toBe(0);
+        });
     });
 });
