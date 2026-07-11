@@ -143,6 +143,7 @@ describe('StartMoveAction test', () => {
     const clearMessages = () => {
         lobby.channel.messages.cache.clear();
         hall3.dest.channel.messages.cache.clear();
+        game.entityFinder.getRoom('locker-room').channel.messages.cache.clear();
         hall5.dest.channel.messages.cache.clear();
         meatballRoom.channel.messages.cache.clear();
         cave9.channel.messages.cache.clear();
