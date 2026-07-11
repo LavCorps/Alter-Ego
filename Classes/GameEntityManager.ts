@@ -295,6 +295,39 @@ export default abstract class GameEntityManager {
     }
 
     /**
+     * Updates references to a given player throughout the game.
+     * @param player
+     */
+    protected updatePlayerReferences(player: Player): void {
+        this.game.rooms.forEach(room => {
+            room.occupants.forEach((occupant, i) => {
+                if (occupant?.name === player.name)
+                    room.occupants[i] = player;
+            });
+        });
+        this.game.fixtures.forEach(fixture => {
+            if (fixture.hidingSpot) {
+                fixture.hidingSpot.occupants.forEach((occupant, i) => {
+                    if (occupant?.name === player.name)
+                        fixture.hidingSpot.occupants[i] = player;
+                });
+            }
+        });
+        this.game.whispers.forEach(whisper => {
+            if (whisper.players.has(player.name))
+                whisper.players.set(player.name, player);
+        });
+        this.game.parties.forEach(party => {
+            if (party.leader?.name === player.name)
+                party.leader = player;
+            if (party.followers.has(player.name))
+                party.followers.set(player.name, player);
+            if (party.members.has(player.name))
+                party.members.set(player.name, player);
+        });
+    }
+
+    /**
      * Updates references to a given flag throughout the game.
      * @param flag
      */

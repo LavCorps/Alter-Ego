@@ -85,6 +85,23 @@ export default class Party extends GameConstruct {
     }
 
     /**
+     * Forcibly reassigns the party to all of its members.
+     * This should only be called after reloading player data.
+     * This makes all followers start following the leader, and makes the leader lead all of the party's followers.
+     * It also sets the positions of all followers to that of the leader, and marks the party as having synchronized positions.
+     */
+    forciblyAssignToMembers(): void {
+        for (const member of this.members.values())
+            member.joinParty(this);
+        for (const follower of this.followers.values()) {
+            follower.startFollowing(this.leader);
+            this.leader.startLeading(follower);
+            follower.setPos(this.leader.pos);
+        }
+        this.positionsSynchronized = true;
+    }
+
+    /**
      * Returns true if the party has the given player as a member.
      * @param player - The player to check for membership in the party.
      */

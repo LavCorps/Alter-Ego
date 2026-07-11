@@ -18,15 +18,15 @@ export default class Moderator extends GameConstruct implements User {
      */
     readonly member: GuildMember;
     /**
-     * The NPC the moderator is currently latched onto. If none is set, this is `null`.
+     * The name of the NPC the moderator is currently latched onto. If none is set, this is `null`.
      */
-    #latchedNPC: Player | null;
+    #latchedNPCName: string | null;
 
     constructor(id: string, member: GuildMember, game: Game) {
         super(game);
         this.id = id;
         this.member = member;
-        this.#latchedNPC = null;
+        this.#latchedNPCName = null;
     }
 
     /**
@@ -47,7 +47,7 @@ export default class Moderator extends GameConstruct implements User {
      * Gets the NPC this moderator is currently latched to.
      */
     public getLatch(): Player {
-        return this.#latchedNPC;
+        return this.getGame().entityFinder.getPlayer(this.#latchedNPCName) ?? null;
     }
 
     /**
@@ -55,14 +55,14 @@ export default class Moderator extends GameConstruct implements User {
      * @param npc - The NPC to latch onto.
      */
     public setLatch(npc: Player): void {
-        this.#latchedNPC = npc;
+        this.#latchedNPCName = npc?.name ?? null;
     }
 
     /**
      * Clears the moderator's latch.
      */
     public clearLatch(): void {
-        this.#latchedNPC = null;
+        this.#latchedNPCName = null;
     }
 
     /**

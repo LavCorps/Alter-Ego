@@ -1894,6 +1894,7 @@ export default class GameEntityLoader extends GameEntityManager {
                 }
                 else
                     this.game.deadPlayers.set(Game.generateValidEntityName(player.name), player);
+                this.updatePlayerReferences(player);
             }
 
             // Now load player inventories.
@@ -1921,6 +1922,9 @@ export default class GameEntityLoader extends GameEntityManager {
                 reject(errors);
             }
             this.game.loadedEntitiesWithErrors.delete("Players");
+            // Ensure parties are reassigned properly after loading players.
+            for (const party of this.game.parties.values())
+                party.forciblyAssignToMembers();
             resolve(this.game);
         });
     }
