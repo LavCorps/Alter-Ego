@@ -307,7 +307,7 @@ export default class PlayerContext extends Context {
             if (this.hidingSpot)
                 this.#fixtures.add(this.hidingSpot.getFixture());
             else
-                game.entityFinder.getFixtures(undefined, this.room.id, true).forEach(fixture => this.#fixtures.add(fixture));
+                this.game.entityFinder.getFixtures(undefined, this.room.id, true).forEach(fixture => this.#fixtures.add(fixture));
         }
         return this.#fixtures;
     }
