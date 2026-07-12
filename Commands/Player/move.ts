@@ -46,27 +46,27 @@ const command = new PlayerCommand({
 
     validate: async (ctx: PlayerContext, inv: MatchedInvocation) => {
         if (inv.glob.length === 0)
-            return new InvalidInvocation([game.errorMessageGenerator.generateSpecifyErrorWithUsage("a room or exit", command.usage)]);
+            return new InvalidInvocation([ctx.game.errorMessageGenerator.generateSpecifyErrorWithUsage("a room or exit", command.usage)]);
 
         const status = ctx.player.getBehaviorAttributeStatusEffects("disable move");
         if (status.length > 0)
-            return new InvalidInvocation([game.errorMessageGenerator.generateCommandDisabledError(status[0])]);
+            return new InvalidInvocation([ctx.game.errorMessageGenerator.generateCommandDisabledError(status[0])]);
         if (ctx.player.speed <= 0)
-            return new InvalidInvocation([game.errorMessageGenerator.generateCannotMoveWithNoSpeedError(ctx.player, "Player")]);
+            return new InvalidInvocation([ctx.game.errorMessageGenerator.generateCannotMoveWithNoSpeedError(ctx.player, "Player")]);
         if (ctx.player.party && !ctx.player.party.canMove(false))
-            return new InvalidInvocation([game.errorMessageGenerator.generatePartyCannotMoveError(ctx.player, false, "Player")]);
+            return new InvalidInvocation([ctx.game.errorMessageGenerator.generatePartyCannotMoveError(ctx.player, false, "Player")]);
 
         if (ctx.player.isMoving)
-            return new InvalidInvocation([game.errorMessageGenerator.generateAlreadyMovingError()]);
+            return new InvalidInvocation([ctx.game.errorMessageGenerator.generateAlreadyMovingError()]);
         if (ctx.player.followedPlayer)
-            return new InvalidInvocation([game.errorMessageGenerator.generateCannotMoveAlreadyFollowingPlayerError(ctx.player)]);
+            return new InvalidInvocation([ctx.game.errorMessageGenerator.generateCannotMoveAlreadyFollowingPlayerError(ctx.player)]);
 
         return new ValidatedInvocation({ glob: inv.glob });
     },
 
     execute: async (ctx: PlayerContext, inv: ValidatedInvocation) => {
         ctx.player.moveQueue = inv.glob.join(" ").split(">");
-        const action = new QueueMoveAction(game, ctx.message, ctx.player, ctx.player.location, false);
+        const action = new QueueMoveAction(ctx.game, ctx.message, ctx.player, ctx.player.location, false);
         await action.performQueueMove(false, ctx.player.moveQueue[0]);
     }
 });

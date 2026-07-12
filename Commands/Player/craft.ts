@@ -66,7 +66,7 @@ const command = new PlayerCommand({
         const items = [item1, item2];
         items.sort((a, b) => a.prefab.id.localeCompare(b.prefab.id));
 
-        const recipes = game.entityFinder.getRecipes("crafting");
+        const recipes = ctx.game.entityFinder.getRecipes("crafting");
         let recipe: Recipe | null = null;
         for (let i = 0; i < recipes.length; i++) {
             if (ctx.player.canCraft(recipes[i], [items[0], items[1]])) {
@@ -85,7 +85,7 @@ const command = new PlayerCommand({
     },
 
     execute: async (ctx: PlayerContext, inv: ValidatedInvocation) => {
-        const action = new CraftAction(game, ctx.message, ctx.player, ctx.player.location, false);
+        const action = new CraftAction(ctx.game, ctx.message, ctx.player, ctx.player.location, false);
         action.performCraft(inv.getInventoryItem("item 1"), inv.getInventoryItem("item 2"), inv.getRecipe("recipe"));
     }
 });
