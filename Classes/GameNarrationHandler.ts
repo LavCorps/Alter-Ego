@@ -244,23 +244,26 @@ export default class GameNarrationHandler {
      * Narrates a stop action.
      * @param action - The action that initiated this narration.
      * @param player - The player performing the stop action.
+     * @param stoppingPlayers - The set of all players who stopped together.
      * @param exitLocked - Whether or not the action was initiated because the destination exit was locked.
      * @param exit - The exit the player tried to move to, if applicable.
      * @param stopFollowing - Whether or not the player stopped following someone. Defaults to false.
      * @param interactables - An array of interactables to send to the player alongside their notification. Optional.
      */
-    narrateStop(action: Action, player: Player, exitLocked: boolean, exit?: Exit, stopFollowing = false, interactables: Interactable[] = []) {
+    narrateStop(action: Action, player: Player, stoppingPlayers: Set<Player>, exitLocked: boolean, exit?: Exit, stopFollowing = false, interactables: Interactable[] = []) {
         const messageType = MessageDisplayType.MINOR;
-        const notification = exitLocked ? this.#game.notificationGenerator.generateExitLockedNotification(player, true, exit.getDoorPhrase())
-            : player.followedPlayer && stopFollowing ? this.#game.notificationGenerator.generateStopFollowingNotification(player, true, player.followedPlayerDisplayName)
-                : this.#game.notificationGenerator.generateStopNotification(player, true);
         const narration = exitLocked ? this.#game.notificationGenerator.generateExitLockedNotification(player, false, exit.getDoorPhrase())
-            : player.followedPlayer && stopFollowing ? this.#game.notificationGenerator.generateStopFollowingNotification(player, false, player.followedPlayerDisplayName)
-                : this.#game.notificationGenerator.generateStopNotification(player, false);
-        this.sendNotification(player, action, notification, exitLocked ? MessageDisplayType.WARNING : messageType, undefined, undefined, interactables);
-        if (player.followedPlayer && stopFollowing) {
-            const followedPlayerNotification = this.#game.notificationGenerator.generateStopFollowingNotification(player, false, "you");
-            this.sendNotification(player.followedPlayer, action, followedPlayerNotification, MessageDisplayType.STANDARD);
+            : player.followedPlayer && stopFollowing ? this.#game.notificationGenerator.generateStopFollowingNotification(player, false, stoppingPlayers, player.followedPlayerDisplayName)
+                : this.#game.notificationGenerator.generateStopNotification(player, false, stoppingPlayers);
+        for (const stoppingPlayer of stoppingPlayers) {
+            const notification = exitLocked ? this.#game.notificationGenerator.generateExitLockedNotification(stoppingPlayer, true, exit.getDoorPhrase())
+                : stoppingPlayer.followedPlayer && stopFollowing ? this.#game.notificationGenerator.generateStopFollowingNotification(stoppingPlayer, true, stoppingPlayers, stoppingPlayer.followedPlayerDisplayName)
+                    : this.#game.notificationGenerator.generateStopNotification(stoppingPlayer, true, stoppingPlayers);
+            this.sendNotification(stoppingPlayer, action, notification, exitLocked ? MessageDisplayType.WARNING : messageType, undefined, undefined, interactables);
+            if (stoppingPlayer.followedPlayer && stopFollowing && !stoppingPlayers.has(stoppingPlayer.followedPlayer)) {
+                const followedPlayerNotification = this.#game.notificationGenerator.generateStopFollowingNotification(stoppingPlayer, false, stoppingPlayers, "you");
+                this.sendNotification(stoppingPlayer.followedPlayer, action, followedPlayerNotification, MessageDisplayType.STANDARD);
+            }
         }
         this.#sendNarration(messageType, action, player, narration);
     }

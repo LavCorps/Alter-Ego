@@ -118,10 +118,8 @@ describe('DisbandPartyAction test', () => {
         });
 
         afterEach(async () => {
-            for (const player of [astrid, asuka, nero]) {
-                const stopFollowingAction = new StopFollowingAction(game, undefined, player, player.location, false);
-                await stopFollowingAction.performStopFollowing(false);
-            }
+            const stopFollowingAction = new StopFollowingAction(game, undefined, astrid, astrid.location, false);
+            await stopFollowingAction.performStopFollowing(false, new Set([astrid, asuka, nero]));
             await sendMessages();
             clearMessages();
             vi.restoreAllMocks();

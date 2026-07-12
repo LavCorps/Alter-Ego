@@ -167,7 +167,7 @@ export default class ClientInteractionHandler {
         }
         if (action instanceof StopAction) {
             if (player && player.isMoving) {
-                action.performStop();
+                await action.performStop();
                 this.#replyOrDeleteActionResponse(action, interaction, reply);
                 this.#logInteraction("StopAction", author, timestamp, []);
                 return true;
