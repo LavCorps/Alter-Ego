@@ -91,6 +91,60 @@ export default class GameLogHandler {
     }
 
     /**
+     * Logs a follow action.
+     * @param player - The player who performed the action.
+     * @param followedPlayer - The player they followed.
+     * @param forced - Whether or not the player was forced to perform the action.
+     */
+    logFollow(player: Player, followedPlayer: Player, forced: boolean) {
+        this.#sendLogMessage(`${this.#getTime()} - ${player.name} ${this.#getForcedString(forced)}began following ${followedPlayer.name} in ${player.location.channel}`);
+    }
+
+    /**
+     * Logs a stop following action.
+     * @param player - The player who performed the action.
+     * @param playerList - A list of players who performed the action, including the player the action was created with.
+     * @param forced - Whether or not the player was forced to perform the action.
+     * @param followedPlayerName - The name of the player the given players were following. Optional.
+     */
+    logStopFollowing(player: Player, playerList: string, forced: boolean, followedPlayerName?: string) {
+        this.#sendLogMessage(`${this.#getTime()} - ${playerList} ${this.#getForcedString(forced)}stopped following${followedPlayerName} in ${player.location.channel}`);
+    }
+
+    /**
+     * Logs a lead action.
+     * @param player - The player who performed the action.
+     * @param followerList - A list of players who they started leading.
+     * @param forced - Whether or not the player was forced to perform the action.
+     */
+    logLead(player: Player, followerList: string, forced: boolean) {
+        this.#sendLogMessage(`${this.#getTime()} - ${player.name} ${this.#getForcedString(forced)}began leading ${followerList} in ${player.location.channel}`);
+    }
+
+    /**
+     * Logs a disband party action.
+     * @param player - The player who performed the action.
+     * @param stoppedFollowerList - A list of players who are no longer following them.
+     * @param forced - Whether or not the player was forced to perform the action.
+     */
+    logDisband(player: Player, stoppedFollowerList: string, forced: boolean) {
+        const predicate = `disbanded ${player.originalPronouns.dpos} party`;
+        const appendString = stoppedFollowerList ? ` and made ${stoppedFollowerList} stop following ${player.originalPronouns.obj}` : ``;
+        this.#sendLogMessage(`${this.#getTime()} - ${player.name} ${this.#getForcedString(forced)}${predicate}${appendString} in ${player.location.channel}`);
+    }
+
+    /**
+     * Logs a dismiss action.
+     * @param player - The player who performed the action.
+     * @param dismissedFollowerList - A list of players who were dismissed.
+     * @param forced - Whether or not the player was forced to perform the action.
+     */
+    logDismiss(player: Player, dismissedFollowerList: string, forced: boolean) {
+        const predicate = `dismissed ${dismissedFollowerList} from ${player.originalPronouns.dpos} party`;
+        this.#sendLogMessage(`${this.#getTime()} - ${player.name} ${this.#getForcedString(forced)}${predicate} in ${player.location.channel}`);
+    }
+
+    /**
      * Logs an inspect action.
      * @param target - The target of the inspect action.
      * @param player - The player who performed the action.

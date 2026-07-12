@@ -2,17 +2,18 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import { generateListString } from "../../Modules/helpers.ts";
 import Action from "../Action.ts";
 
 /**
  * Represents a disband party action.
- * 
+ *
  * @see https://msvblank.github.io/Alter-Ego/reference/data_structures/action.html#disband-party-action
  */
 export default class DisbandPartyAction extends Action {
     /**
      * Performs a disband party action.
-     * 
+     *
      * @param stopFollowing - Whether or not all followers should stop following the leader. Defaults to false.
      * @param customNarration - A custom narration to send instead of the default narration. Optional.
      * @param customLeaderNotification - A custom notification to send to the leader instead of the default notification. Optional.
@@ -29,6 +30,9 @@ export default class DisbandPartyAction extends Action {
             if (stopFollowing) follower.stopFollowing();
         }
         if (party) await party.disband();
-        this.successMessage = `Successfully disbanded ${this.player.name}'s party.`;
+        const stoppedFollowerList = generateListString(followers.map(follower => follower.name));
+        this.getGame().logHandler.logDisband(this.player, stopFollowing ? stoppedFollowerList : ``, this.forced);
+        const appendString = stopFollowing && stoppedFollowerList ? ` and made ${stoppedFollowerList} stop following ${this.player.originalPronouns.obj}` : ``;
+        this.successMessage = `Successfully disbanded ${this.player.name}'s party${appendString}.`;
     }
 }

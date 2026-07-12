@@ -90,7 +90,9 @@ export default class LeadAction extends Action {
             });
         }
         this.getGame().narrationHandler.narrateLead(this, this.player, newFollowers, considerPartySynchronized);
+        const followerList = generateListString(followers.map(player => player.name));
+        this.getGame().logHandler.logLead(this.player, followerList, this.forced);
 
-        this.successMessage = `Successfully made ${this.player.name} begin leading ${generateListString(followers.map(player => player.name))}.`;
+        this.successMessage = `Successfully made ${this.player.name} begin leading ${followerList}.`;
     }
 }

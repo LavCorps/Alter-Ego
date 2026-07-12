@@ -21,6 +21,7 @@ export default class FollowAction extends Action {
         if (this.performed) return;
         super.perform();
         this.getGame().narrationHandler.narrateFollow(this, this.player, player);
+        this.getGame().logHandler.logFollow(this.player, player, this.forced);
         this.player.stopMoving();
         this.player.stopFollowing();
         this.player.startFollowing(player);
