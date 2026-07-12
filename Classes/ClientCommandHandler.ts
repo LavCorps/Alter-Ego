@@ -9,7 +9,7 @@ import type Game from '../Data/Game.ts';
 import Flag from '../Data/Flag.ts';
 import type Player from '../Data/Player.ts';
 import Puzzle from '../Data/Puzzle.ts';
-import type Command from '../Classes/Command/Command.ts';
+import { type default as Command, type CommandType } from '../Classes/Command/Command.ts';
 import BotCommand from '../Classes/Command/BotCommand.ts';
 import ModeratorCommand from '../Classes/Command/ModeratorCommand.ts';
 import PlayerCommand from '../Classes/Command/PlayerCommand.ts';
@@ -24,7 +24,6 @@ import type { Pattern } from '../Classes/Command/Pattern.ts';
 import type { Token } from '../Classes/Command/Token.ts';
 import Trie from '../Classes/Command/Trie.ts';
 
-export type CommandType = "Bot" | "Moderator" | "Player" | "Eligible";
 export type CommandOf<T extends CommandType> =
     T extends "Bot" ? BotCommand
         : T extends "Moderator" ? ModeratorCommand

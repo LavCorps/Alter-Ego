@@ -27,7 +27,7 @@ const command = new PlayerCommand({
             + `start moving to the next one. To do this, separate each destination with \`>\`.\n\n`
             + `Note that if you are carrying any large items in your hands (for example, a sword), they will be mentioned when you exit or enter a room.`,
         usableBy: "Player",
-        aliases: ["move", "go", "exit", "enter", "walk", "m"],
+        aliases: new Set(["move", "go", "exit", "enter", "walk", "m"]),
         requiresGame: true
     },
 

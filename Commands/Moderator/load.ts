@@ -63,7 +63,7 @@ const command = new ModeratorCommand({
             `do this if the \`AUTO_LOAD\` setting in your \`.env\` file is set to \`true\`.\n\n` +
             `If you are loading data while a game is in progress, you should use the \`editmode\` command first.`,
         usableBy: "Moderator",
-        aliases: ["load", "reload", "las", "lar"],
+        aliases: new Set(["load", "reload", "las", "lar"]),
         requiresGame: false,
     },
 

@@ -8,9 +8,30 @@ import type Context from "./Context.ts";
 import type { MatchedInvocation, ValidatedInvocation, ValidationResult } from "./Invocation.ts";
 import type { Pattern } from "./Pattern.ts";
 
+export type CommandType = "Bot" | "Moderator" | "Player" | "Eligible";
 type CommandUsage = (settings: GameSettings) => string;
 type CommandValidate<T extends Context> = (context: T, invocation: MatchedInvocation) => Promise<ValidationResult>;
 type CommandExecute<T extends Context> = (context: T, invocation: ValidatedInvocation) => Promise<void>;
+
+/**
+ * The configuration for a command.
+ */
+export interface CommandConfig {
+    /** The name of the command. */
+    name: string;
+    /** A brief description of what the command does. */
+    description: string;
+    /** Detailed information about the command. */
+    details: string;
+    /** The role that can use the command. */
+    usableBy: CommandType;
+    /** Alternative names for the command. */
+    aliases: Set<string>;
+    /** Indicates whether the command requires an ongoing game to be executed. */
+    requiresGame: boolean;
+    /** Whether or not the command is sensitive to whitespace, and should not have argument whitespace altered. */
+    whitespaceSensitive?: boolean;
+}
 
 interface CommandConstructorArgs<T extends Context> {
     /**

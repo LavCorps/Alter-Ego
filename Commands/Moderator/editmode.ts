@@ -21,7 +21,7 @@ const command = new ModeratorCommand({
             + "has been sent before making any edits, or your edits will be overwritten. When you are finished making "
             + "edits, be sure to load the updated spreadsheet data before disabling edit mode.",
         usableBy: "Moderator",
-        aliases: ["editmode", "em"],
+        aliases: new Set(["editmode", "em"]),
         requiresGame: true
     },
 

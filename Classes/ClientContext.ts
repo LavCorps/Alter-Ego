@@ -10,11 +10,11 @@ import { fileURLToPath } from "node:url";
 import ClientEventHandler from "./ClientEventHandler.ts";
 import ClientEvent from "./ClientEvent.ts";
 import PrettyPrinter from "./PrettyPrinter.ts";
-import ClientCommandHandler, { type CommandType, type CommandOf } from "./ClientCommandHandler.ts";
+import ClientCommandHandler, { type CommandOf } from "./ClientCommandHandler.ts";
 import ClientInteractableManager from "./ClientInteractableManager.ts";
 import ClientInteractionHandler from "./ClientInteractionHandler.ts";
 import type Game from "../Data/Game.ts";
-import type Command from "./Command/Command.ts";
+import { type default as Command, type CommandConfig, type CommandType } from "./Command/Command.ts";
 import type Context from "./Command/Context.ts";
 import BotCommand from "./Command/BotCommand.ts";
 import ModeratorCommand from "./Command/ModeratorCommand.ts";
@@ -296,6 +296,14 @@ export default class ClientContext {
                 await import(path.join(commandsDir, file)).then(module => {
                     const command = module.default as Command<Context>;
                     const config = command.config as CommandConfig;
+                    const filepath = path.join(commandsDir, file);
+                    for (const alias of config.aliases) {
+                        const commandWithAlias = this.getCommand(config.usableBy, alias);
+                        if (commandWithAlias) {
+                            console.log(`Error: Invalid command at ${filepath}. The alias "${alias}" is already used by command ${commandWithAlias.config.name}.`);
+                            return process.exit(1);
+                        }
+                    }
                     if (config.usableBy === "Bot")
                         ClientContext.#botCommands.set(config.name, command);
                     else if (config.usableBy === "Moderator")
@@ -348,10 +356,10 @@ export default class ClientContext {
      * @param alias - The alias to look up.
      */
     getCommand<T extends CommandType>(type: T, alias: string): CommandOf<T> {
-        if (type === "Bot") return ClientContext.#botCommands.find(command => command.config.aliases.includes(alias)) as CommandOf<T>;
-        if (type === "Moderator") return ClientContext.#moderatorCommands.find(command => command.config.aliases.includes(alias)) as CommandOf<T>;
-        if (type === "Player") return ClientContext.#playerCommands.find(command => command.config.aliases.includes(alias)) as CommandOf<T>;
-        if (type === "Eligible") return ClientContext.#eligibleCommands.find(command => command.config.aliases.includes(alias)) as CommandOf<T>;
+        if (type === "Bot") return ClientContext.#botCommands.find(command => command.config.aliases.has(alias)) as CommandOf<T>;
+        if (type === "Moderator") return ClientContext.#moderatorCommands.find(command => command.config.aliases.has(alias)) as CommandOf<T>;
+        if (type === "Player") return ClientContext.#playerCommands.find(command => command.config.aliases.has(alias)) as CommandOf<T>;
+        if (type === "Eligible") return ClientContext.#eligibleCommands.find(command => command.config.aliases.has(alias)) as CommandOf<T>;
         return undefined;
     }
 
