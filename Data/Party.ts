@@ -240,14 +240,16 @@ export default class Party extends GameConstruct {
     }
 
     /**
-     * Gets all of the members of the party as a set. The leader will always be the first player in the set.
+     * Gets all of the members of the party as a set. The leader will always be the first player in the set, unless they are excluded.
+     * @param excludedPlayer - A player to exclude from the set.
      */
-    getMemberSet(): Set<Player> {
+    getMemberSet(excludedPlayer?: Player): Set<Player> {
         const set: Set<Player> = new Set();
         set.add(this.leader);
         const sortedFollowers = this.followers.sorted((a, b) => this.getMemberDisplayName(a).localeCompare(this.getMemberDisplayName(b)));
         for (const follower of sortedFollowers.values())
             set.add(follower);
+        if (excludedPlayer && set.has(excludedPlayer)) set.delete(excludedPlayer);
         return set;
     }
 

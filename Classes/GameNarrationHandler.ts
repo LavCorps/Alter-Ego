@@ -252,11 +252,11 @@ export default class GameNarrationHandler {
      */
     narrateStop(action: Action, player: Player, stoppingPlayers: Set<Player>, exitLocked: boolean, exit?: Exit, stopFollowing = false, interactables: Interactable[] = []) {
         const messageType = MessageDisplayType.MINOR;
-        const narration = exitLocked ? this.#game.notificationGenerator.generateExitLockedNotification(player, false, exit.getDoorPhrase())
+        const narration = exitLocked ? this.#game.notificationGenerator.generateExitLockedNotification(player, false, stoppingPlayers, exit.getDoorPhrase())
             : player.followedPlayer && stopFollowing ? this.#game.notificationGenerator.generateStopFollowingNotification(player, false, stoppingPlayers, player.followedPlayerDisplayName)
                 : this.#game.notificationGenerator.generateStopNotification(player, false, stoppingPlayers);
         for (const stoppingPlayer of stoppingPlayers) {
-            const notification = exitLocked ? this.#game.notificationGenerator.generateExitLockedNotification(stoppingPlayer, true, exit.getDoorPhrase())
+            const notification = exitLocked ? this.#game.notificationGenerator.generateExitLockedNotification(stoppingPlayer, true, stoppingPlayers, exit.getDoorPhrase())
                 : stoppingPlayer.followedPlayer && stopFollowing ? this.#game.notificationGenerator.generateStopFollowingNotification(stoppingPlayer, true, stoppingPlayers, stoppingPlayer.followedPlayerDisplayName)
                     : this.#game.notificationGenerator.generateStopNotification(stoppingPlayer, true, stoppingPlayers);
             this.sendNotification(stoppingPlayer, action, notification, exitLocked ? MessageDisplayType.WARNING : messageType, undefined, undefined, interactables);

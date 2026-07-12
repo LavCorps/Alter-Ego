@@ -297,7 +297,7 @@ export default class GameNotificationGenerator {
         }
         else {
             playerDisplayNames = [playerDisplayName].concat(otherDisplayNames);
-            playerDisplayNames.sort();
+            playerDisplayNames.sort((a, b) => a.localeCompare(b));
         }
         const subject = generateListString(playerDisplayNames);
         const verb = secondPerson || otherDisplayNames.length > 0 ? `stop` : `stops`;
@@ -486,12 +486,37 @@ export default class GameNotificationGenerator {
      * Generates a notification indicating the player cannot move to an exit because it is locked.
      * @param player - The player referred to in this notification.
      * @param secondPerson - Whether or not the player should be referred to in second person.
+     * @param allPlayers - All players stopping with the player being addressed, including the player being addressed.
      * @param doorPhrase - The door phrase of the locked exit.
      */
-    generateExitLockedNotification(player: Player, secondPerson: boolean, doorPhrase: string) {
-        const subject = secondPerson ? `You` : capitalizeFirstLetter(player.displayName);
-        const verb = secondPerson ? `try` : `tries`;
-        return `${subject} ${verb} to open ${doorPhrase}, but it seems to be locked.`;
+    generateExitLockedNotification(player: Player, secondPerson: boolean, allPlayers: Set<Player>, doorPhrase: string) {
+        const actingPlayer = !player.party || player.party.hasLeader(player) ? player : player.party.leader;
+        const addressPlayerInSecondPerson = secondPerson && actingPlayer.name === player.name;
+        const subject = addressPlayerInSecondPerson ? `you` : player.party?.getMemberDisplayName(actingPlayer) ?? actingPlayer.displayName;
+        const verb = addressPlayerInSecondPerson ? `try` : `tries`;
+        let [_, playerDisplayNames, otherDisplayNames] = this.getPlayerDisplayNames(actingPlayer, allPlayers);
+        let listedDisplayNames: string[] = [];
+        if (allPlayers.size > 1 && secondPerson) {
+            if (!addressPlayerInSecondPerson) listedDisplayNames.push(`you`);
+            if (allPlayers.values().every(otherPlayer => otherPlayer.party?.hasMember(player) && otherPlayer.party?.positionsSynchronized)) {
+                otherDisplayNames = [...playerDisplayNames]
+                    .filter(([other]) => other.name !== player.name && other.name !== actingPlayer.name)
+                    .map(([_, displayName]) => displayName);
+                listedDisplayNames = listedDisplayNames.concat(otherDisplayNames);
+            }
+        }
+        else if (allPlayers.size > 1) {
+            listedDisplayNames = otherDisplayNames;
+            listedDisplayNames.sort((a, b) => a.localeCompare(b));
+        }
+        let appendString = ``;
+        if (listedDisplayNames.length > 0) {
+            const subject = generateListString(listedDisplayNames);
+            const verb = subject === `you` || listedDisplayNames.length > 1 ? `stop` : `stops`;
+            const obj = addressPlayerInSecondPerson ? `you` : actingPlayer.pronouns.obj;
+            appendString = ` ${capitalizeFirstLetter(subject)} ${verb} behind ${obj}.`;
+        }
+        return `${capitalizeFirstLetter(subject)} ${verb} to open ${doorPhrase}, but it seems to be locked.${appendString}`;
     }
 
     /**
