@@ -22,21 +22,21 @@ type MockItem = {
 
 describe('TakeAction test', () => {
     beforeAll(async () => {
-        if (!game.inProgress) await game.entityLoader.loadAll();
+        if (!testGame.inProgress) await testGame.entityLoader.loadAll();
     });
 
     afterAll(async () => {
-        clearQueue(game);
+        clearQueue(testGame);
         vi.resetAllMocks();
-        await game.entityLoader.loadInventoryItems(false);
-        await game.entityLoader.loadRoomItems(false);
+        await testGame.entityLoader.loadInventoryItems(false);
+        await testGame.entityLoader.loadRoomItems(false);
     });
 
     test('ported legacy test', () => {
         // grab common references
-        const kyra = game.entityFinder.getPlayer("Kyra");
-        const hand = game.entityFinder.getPlayerHandHoldingItem(kyra, "MUG OF COFFEE");
-        const floor = game.entityFinder.getFixture("FLOOR", kyra.location.id);
+        const kyra = testGame.entityFinder.getPlayer("Kyra");
+        const hand = testGame.entityFinder.getPlayerHandHoldingItem(kyra, "MUG OF COFFEE");
+        const floor = testGame.entityFinder.getFixture("FLOOR", kyra.location.id);
 
         // initialize repeat data
         let coffeeData: MockItem = {};
@@ -82,13 +82,13 @@ describe('TakeAction test', () => {
         // step 1: drop item on fixture
         {
             const coffee = hand.equippedItem;
-            const dropAction = new DropAction(game, createMockMessage(), kyra, kyra.location, false);
+            const dropAction = new DropAction(testGame, createMockMessage(), kyra, kyra.location, false);
             dropAction.performDrop(coffee, hand, floor, null);
         }
 
         // step 1 validation
         {
-            const coffee = game.entityFinder.getRoomItem("MUG OF COFFEE", kyra.location.id);
+            const coffee = testGame.entityFinder.getRoomItem("MUG OF COFFEE", kyra.location.id);
             expect(coffee).not.toBeUndefined();
             expect(coffee.name).toStrictEqual(coffeeData.name);
             expect(coffee.pluralName).toStrictEqual(coffeeData.pluralName);
@@ -102,17 +102,17 @@ describe('TakeAction test', () => {
 
         // step 2: drop container item on fixture
         {
-            let jacket = game.entityFinder.getInventoryItem("KYRAS LAB COAT", kyra.name);
-            const unequipAction = new UnequipAction(game, createMockMessage(), kyra, kyra.location, false);
-            unequipAction.performUnequip(jacket,game.entityFinder.getPlayerEquipmentSlotWithEquippedItem(kyra, jacket.getIdentifier()),hand);
-            jacket = game.entityFinder.getInventoryItem("KYRAS LAB COAT", kyra.name);
-            const dropAction = new DropAction(game, createMockMessage(), kyra, kyra.location, false);
+            let jacket = testGame.entityFinder.getInventoryItem("KYRAS LAB COAT", kyra.name);
+            const unequipAction = new UnequipAction(testGame, createMockMessage(), kyra, kyra.location, false);
+            unequipAction.performUnequip(jacket,testGame.entityFinder.getPlayerEquipmentSlotWithEquippedItem(kyra, jacket.getIdentifier()),hand);
+            jacket = testGame.entityFinder.getInventoryItem("KYRAS LAB COAT", kyra.name);
+            const dropAction = new DropAction(testGame, createMockMessage(), kyra, kyra.location, false);
             dropAction.performDrop(jacket, hand, floor, null);
         }
 
         // step 2 validation
         {
-            const jacket = game.entityFinder.getRoomItem("KYRAS LAB COAT", kyra.location.id);
+            const jacket = testGame.entityFinder.getRoomItem("KYRAS LAB COAT", kyra.location.id);
             expect(jacket).not.toBeUndefined();
             expect(jacket.name).toStrictEqual(jacketData.name);
             expect(jacket.pluralName).toStrictEqual(jacketData.pluralName);
@@ -126,8 +126,8 @@ describe('TakeAction test', () => {
 
         // step 3: take item from fixture
         {
-            const coffee = game.entityFinder.getRoomItem("MUG OF COFFEE", kyra.location.id);
-            const takeAction = new TakeAction(game, createMockMessage(), kyra, kyra.location, false);
+            const coffee = testGame.entityFinder.getRoomItem("MUG OF COFFEE", kyra.location.id);
+            const takeAction = new TakeAction(testGame, createMockMessage(), kyra, kyra.location, false);
             takeAction.performTake(coffee, hand, floor, null);
         }
 
@@ -148,17 +148,17 @@ describe('TakeAction test', () => {
         // step 4: drop item on container item
         {
             const coffee = hand.equippedItem;
-            const jacket = game.entityFinder.getRoomItem("KYRAS LAB COAT", kyra.location.id);
+            const jacket = testGame.entityFinder.getRoomItem("KYRAS LAB COAT", kyra.location.id);
             const pocket = jacket.inventory.get("RIGHT POCKET")
-            const dropAction = new DropAction(game, createMockMessage(), kyra, kyra.location, false);
+            const dropAction = new DropAction(testGame, createMockMessage(), kyra, kyra.location, false);
             dropAction.performDrop(coffee, hand, jacket, pocket);
         }
 
         // step 4 validation
         {
-            const jacket = game.entityFinder.getRoomItem("KYRAS LAB COAT", kyra.location.id);
+            const jacket = testGame.entityFinder.getRoomItem("KYRAS LAB COAT", kyra.location.id);
             expect(jacket).not.toBeUndefined();
-            const coffee = game.entityFinder.getRoomItem("MUG OF COFFEE", kyra.location.id);
+            const coffee = testGame.entityFinder.getRoomItem("MUG OF COFFEE", kyra.location.id);
             expect(coffee).not.toBeUndefined();
             expect(jacket.name).toStrictEqual(jacketData.name);
             expect(jacket.pluralName).toStrictEqual(jacketData.pluralName);
@@ -181,8 +181,8 @@ describe('TakeAction test', () => {
 
         // step 5: take container item
         {
-            const jacket = game.entityFinder.getRoomItem("KYRAS LAB COAT", kyra.location.id);
-            const takeAction = new TakeAction(game, createMockMessage(), kyra, kyra.location, false);
+            const jacket = testGame.entityFinder.getRoomItem("KYRAS LAB COAT", kyra.location.id);
+            const takeAction = new TakeAction(testGame, createMockMessage(), kyra, kyra.location, false);
             takeAction.performTake(jacket, hand, floor, null);
         }
 
@@ -214,15 +214,15 @@ describe('TakeAction test', () => {
         // step 6: drop container item on bigger container item
         {
             const jacket = hand.equippedItem;
-            const drawer = game.entityFinder.getRoomItem("TOP DRAWER 9", kyra.location.id)
+            const drawer = testGame.entityFinder.getRoomItem("TOP DRAWER 9", kyra.location.id)
             const container = drawer.inventory.get("TOP DRAWER");
-            const dropAction = new DropAction(game, createMockMessage(), kyra, kyra.location, false);
+            const dropAction = new DropAction(testGame, createMockMessage(), kyra, kyra.location, false);
             dropAction.performDrop(jacket, hand, drawer, container);
         }
 
         // step 6 validation
         {
-            const drawer = game.entityFinder.getRoomItem("TOP DRAWER 9", kyra.location.id);
+            const drawer = testGame.entityFinder.getRoomItem("TOP DRAWER 9", kyra.location.id);
             expect(drawer).not.toBeUndefined();
             const jacket = drawer.inventory.get("TOP DRAWER").items[1];
             expect(jacket).not.toBeUndefined();
@@ -258,9 +258,9 @@ describe('TakeAction test', () => {
 
         // step 7: take bigger container item
         {
-            const drawer = game.entityFinder.getRoomItem("TOP DRAWER 9", kyra.location.id);
-            const nightstand = game.entityFinder.getFixture("NIGHTSTAND", "suite-9")
-            const takeAction = new TakeAction(game, createMockMessage(), kyra, kyra.location, false);
+            const drawer = testGame.entityFinder.getRoomItem("TOP DRAWER 9", kyra.location.id);
+            const nightstand = testGame.entityFinder.getFixture("NIGHTSTAND", "suite-9")
+            const takeAction = new TakeAction(testGame, createMockMessage(), kyra, kyra.location, false);
             takeAction.performTake(drawer, hand, nightstand, null);
         }
 
@@ -301,17 +301,17 @@ describe('TakeAction test', () => {
         }
 
         // Test that all of the item row numbers were updated properly.
-        for (let i = 0; i < game.roomItems.length; i++)
-            expect(game.roomItems[i].row).toStrictEqual(i + 2);
+        for (let i = 0; i < testGame.roomItems.length; i++)
+            expect(testGame.roomItems[i].row).toStrictEqual(i + 2);
 
         // Test that all of the inventoryItem row numbers were updated properly.
-        for (let i = 0; i < game.inventoryItems.length; i++)
-            expect(game.inventoryItems[i].row).toStrictEqual(i + 2);
+        for (let i = 0; i < testGame.inventoryItems.length; i++)
+            expect(testGame.inventoryItems[i].row).toStrictEqual(i + 2);
 
         // Test that all of the inventoryItems and Player inventory items have the same row numbers.
         for (const slot of kyra.inventory.values()) {
             for (const item of slot.items) {
-                const match = game.inventoryItems.find(item => item.player.id === kyra.id && (item.prefab === null && item.prefab === null || item.prefab !== null && item.prefab !== null && item.prefab.id === item.prefab.id) && item.equipmentSlot === item.equipmentSlot && item.containerName === item.containerName);
+                const match = testGame.inventoryItems.find(item => item.player.id === kyra.id && (item.prefab === null && item.prefab === null || item.prefab !== null && item.prefab !== null && item.prefab.id === item.prefab.id) && item.equipmentSlot === item.equipmentSlot && item.containerName === item.containerName);
                 expect(match !== null && match !== undefined).toBeTruthy();
                 expect(item.row === match.row);
             }

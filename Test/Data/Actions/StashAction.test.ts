@@ -10,35 +10,35 @@ import { createMockMessage } from '../../__mocks__/libs/discord.js';
 
 describe('StashAction test', () => {
     beforeAll(async () => {
-        if (!game.inProgress) await game.entityLoader.loadAll();
+        if (!testGame.inProgress) await testGame.entityLoader.loadAll();
     });
 
     afterAll(async () => {
-        clearQueue(game);
+        clearQueue(testGame);
         vi.resetAllMocks();
-        await game.entityLoader.loadInventoryItems(false);
-        await game.entityLoader.loadRoomItems(false);
+        await testGame.entityLoader.loadInventoryItems(false);
+        await testGame.entityLoader.loadRoomItems(false);
     });
 
     test('ported legacy test', () => {
-        const kyra = game.entityFinder.getLivingPlayer("Kyra");
-        const hand = game.entityFinder.getPlayerFreeHand(kyra);
-        const labCoat = game.entityFinder.getPlayerEquipmentSlotWithEquippedItem(kyra, "KYRAS LAB COAT").equippedItem;
+        const kyra = testGame.entityFinder.getLivingPlayer("Kyra");
+        const hand = testGame.entityFinder.getPlayerFreeHand(kyra);
+        const labCoat = testGame.entityFinder.getPlayerEquipmentSlotWithEquippedItem(kyra, "KYRAS LAB COAT").equippedItem;
         const rightPocket = labCoat.inventory.get("RIGHT POCKET");
         const leftPocket = labCoat.inventory.get("LEFT POCKET");
 
-        let roomItem = game.entityFinder.getRoomItem("LAMBS FROM HELL PAGE NINE", "suite-9");
-        let takeAction = new TakeAction(game, createMockMessage(), kyra, kyra.location, false);
+        let roomItem = testGame.entityFinder.getRoomItem("LAMBS FROM HELL PAGE NINE", "suite-9");
+        let takeAction = new TakeAction(testGame, createMockMessage(), kyra, kyra.location, false);
         takeAction.performTake(roomItem, hand, roomItem.container, roomItem.container instanceof RoomItem ? roomItem.container.inventory.get(roomItem.slot) : null);
         let handItem = hand.equippedItem;
-        let stashAction = new StashAction(game, createMockMessage(), kyra, kyra.location, false);
+        let stashAction = new StashAction(testGame, createMockMessage(), kyra, kyra.location, false);
         stashAction.performStash(handItem, hand, labCoat, rightPocket);
 
-        roomItem = game.entityFinder.getRoomItem("9 BALL", "suite-9");
-        takeAction = new TakeAction(game, createMockMessage(), kyra, kyra.location, false);
+        roomItem = testGame.entityFinder.getRoomItem("9 BALL", "suite-9");
+        takeAction = new TakeAction(testGame, createMockMessage(), kyra, kyra.location, false);
         takeAction.performTake(roomItem, hand, roomItem.container, null);
         handItem = hand.equippedItem;
-        stashAction = new StashAction(game, createMockMessage(), kyra, kyra.location, false);
+        stashAction = new StashAction(testGame, createMockMessage(), kyra, kyra.location, false);
         stashAction.performStash(handItem, hand, labCoat, leftPocket);
 
         // Test that all of the data was converted properly.
@@ -76,13 +76,13 @@ describe('StashAction test', () => {
         expect(leftPocket.items[0].row).toStrictEqual(18);
 
         // Test that all of the inventoryItem row numbers were updated properly.
-        for (let i = 0; i < game.inventoryItems.length; i++)
-            expect(game.inventoryItems[i].row).toStrictEqual(i + 2);
+        for (let i = 0; i < testGame.inventoryItems.length; i++)
+            expect(testGame.inventoryItems[i].row).toStrictEqual(i + 2);
 
         // Test that all of the inventoryItems and Player inventory items have the same row numbers.
         for (const slot of kyra.inventory.values()) {
             for (const item of slot.items) {
-                const match = game.inventoryItems.find(item => item.player.id === kyra.id && (item.prefab === null && item.prefab === null || item.prefab !== null && item.prefab !== null && item.prefab.id === item.prefab.id) && item.equipmentSlot === item.equipmentSlot && item.containerName === item.containerName);
+                const match = testGame.inventoryItems.find(item => item.player.id === kyra.id && (item.prefab === null && item.prefab === null || item.prefab !== null && item.prefab !== null && item.prefab.id === item.prefab.id) && item.equipmentSlot === item.equipmentSlot && item.containerName === item.containerName);
                 expect(match !== null && match !== undefined).toBeTruthy();
                 expect(item.row === match.row);
             }

@@ -45,7 +45,7 @@ describe('DieAction test', () => {
     };
 
     const sendMessages = async () => {
-        await sendQueuedMessages(game);
+        await sendQueuedMessages(testGame);
         narrationMessage = astrid.location.channel.messages.cache.last();
         hidingSpotNarrationMessage = hidingSpot.whisper.channel.messages.cache.last();
         astridNotificationMessage = astrid.notificationChannel.messages.cache.last();
@@ -54,27 +54,27 @@ describe('DieAction test', () => {
     }
 
     beforeEach(async () => {
-        await game.entityLoader.loadAll();
-        astrid = game.entityFinder.getLivingPlayer("Astrid");
-        asuka = game.entityFinder.getLivingPlayer("Asuka");
-        nero = game.entityFinder.getLivingPlayer("Nero");
-        luna = game.entityFinder.getLivingPlayer("Luna");
+        await testGame.entityLoader.loadAll();
+        astrid = testGame.entityFinder.getLivingPlayer("Astrid");
+        asuka = testGame.entityFinder.getLivingPlayer("Asuka");
+        nero = testGame.entityFinder.getLivingPlayer("Nero");
+        luna = testGame.entityFinder.getLivingPlayer("Luna");
         luna.location.removePlayer(luna);
         nero.location.addPlayer(luna);
-        hidingSpot = game.entityFinder.getFixture("RECEPTION DESK", asuka.location.id).hidingSpot;
-        const hideAction1 = new HideAction(game, undefined, asuka, asuka.location, true);
+        hidingSpot = testGame.entityFinder.getFixture("RECEPTION DESK", asuka.location.id).hidingSpot;
+        const hideAction1 = new HideAction(testGame, undefined, asuka, asuka.location, true);
         hideAction1.performHide(hidingSpot);
-        const hideAction2 = new HideAction(game, undefined, nero, nero.location, true);
+        const hideAction2 = new HideAction(testGame, undefined, nero, nero.location, true);
         hideAction2.performHide(hidingSpot);
-        const hideAction3 = new HideAction(game, undefined, luna, luna.location, true);
+        const hideAction3 = new HideAction(testGame, undefined, luna, luna.location, true);
         hideAction3.performHide(hidingSpot)
-        const followAction1 = new FollowAction(game, undefined, astrid, astrid.location, true);
+        const followAction1 = new FollowAction(testGame, undefined, astrid, astrid.location, true);
         await followAction1.performFollow(nero);
-        const followAction2 = new FollowAction(game, undefined, asuka, asuka.location, true);
+        const followAction2 = new FollowAction(testGame, undefined, asuka, asuka.location, true);
         await followAction2.performFollow(nero);
-        const followAction3 = new FollowAction(game, undefined, luna, luna.location, true);
+        const followAction3 = new FollowAction(testGame, undefined, luna, luna.location, true);
         await followAction3.performFollow(nero);
-        const leadAction = new LeadAction(game, undefined, nero, nero.location, true);
+        const leadAction = new LeadAction(testGame, undefined, nero, nero.location, true);
         await leadAction.performLead([asuka]);
         await sendMessages();
         clearMessages();
@@ -83,11 +83,11 @@ describe('DieAction test', () => {
     afterEach(async () => {
         await sendMessages();
         clearMessages();
-        game.entityLoader.clearAll();
+        testGame.entityLoader.clearAll();
     });
 
     test('DieAction.performDie', async () => {
-        const death = new DieAction(game, undefined, nero, nero.location, true);
+        const death = new DieAction(testGame, undefined, nero, nero.location, true);
         await death.performDie();
         expect(nero.alive).toBe(false);
         expect(astrid.location.occupants).not.toContain(nero);
@@ -98,8 +98,8 @@ describe('DieAction test', () => {
         expect(nero.isMoving).toBe(false);
         expect(nero.statusDisplays).toHaveLength(0);
         expect(nero.status).toHaveSize(0);
-        expect(game.livingPlayers.has("NERO")).toBe(false);
-        expect(game.deadPlayers.has("NERO")).toBe(true);
+        expect(testGame.livingPlayers.has("NERO")).toBe(false);
+        expect(testGame.deadPlayers.has("NERO")).toBe(true);
 
         // Verify party has been destroyed properly.
         expect(astrid.party).toBeNull();
@@ -126,6 +126,6 @@ describe('DieAction test', () => {
         expect(asuka.notificationChannel.messages.cache).toHaveSize(1);
         expect(asukaNotificationMessage.content).toBe(`Your party has been disbanded because Nero is dead. You are no longer following him.`);
         expect(nero.notificationChannel.messages.cache).toHaveSize(1);
-        expect(neroNotificationMessage.content).toBe(`You have died. When your body is discovered, you will be given the ${game.guildContext.deadRole.name} role. Until then, your death must remain a secret to the server and to other players.`);
+        expect(neroNotificationMessage.content).toBe(`You have died. When your body is discovered, you will be given the ${testGame.guildContext.deadRole.name} role. Until then, your death must remain a secret to the server and to other players.`);
     });
 });

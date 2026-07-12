@@ -6,7 +6,7 @@ import CollatedItem from '../../Data/CollatedItem.ts';
 
 describe('Fixture test', () => {
 	beforeAll(async () => {
-		if (!game.inProgress) await game.entityLoader.loadAll();
+		if (!testGame.inProgress) await testGame.entityLoader.loadAll();
 	});
 
 	describe('Processing tests', () => {
@@ -17,12 +17,12 @@ describe('Fixture test', () => {
 		afterEach(async () => {
 			vi.clearAllTimers();
 			vi.useRealTimers();
-			await game.entityLoader.loadFixtures(false);
-			await game.entityLoader.loadRoomItems(false);
+			await testGame.entityLoader.loadFixtures(false);
+			await testGame.entityLoader.loadRoomItems(false);
 		});
 
 		test('Fixture.destroyIngredients for CUTTING BOARD 1 of video-room', () => {
-			const fixture = game.entityFinder.getFixture('CUTTING BOARD 1', 'video-room');
+			const fixture = testGame.entityFinder.getFixture('CUTTING BOARD 1', 'video-room');
 			{
 				let items = fixture.getContainedItems();
 				expect(items.length).toBe(2);
@@ -61,7 +61,7 @@ describe('Fixture test', () => {
 		});
 
 		test('Fixture.instantiateProducts for CUTTING BOARD 1 of video-room', () => {
-			const fixture = game.entityFinder.getFixture('CUTTING BOARD 1', 'video-room');
+			const fixture = testGame.entityFinder.getFixture('CUTTING BOARD 1', 'video-room');
 			{
 				let items = fixture.getContainedItems();
 				expect(items.length).toBe(2);
@@ -106,7 +106,7 @@ describe('Fixture test', () => {
 		});
 
 		test('Fixture process flow for CUTTING BOARD 1 of video-room', () => {
-			const fixture = game.entityFinder.getFixture('CUTTING BOARD 1', 'video-room');
+			const fixture = testGame.entityFinder.getFixture('CUTTING BOARD 1', 'video-room');
 			{
 				let items = fixture.getContainedItems();
 				expect(items.length).toBe(2);
@@ -155,7 +155,7 @@ describe('Fixture test', () => {
 		});
 
 		test('Fixture process flow for BLENDER 2 of video-room', () => {
-			const fixture = game.entityFinder.getFixture('BLENDER 2', 'video-room');
+			const fixture = testGame.entityFinder.getFixture('BLENDER 2', 'video-room');
 			{
 				let items = fixture.getContainedItems();
 				expect(items.length).toBe(1);
@@ -182,7 +182,7 @@ describe('Fixture test', () => {
 		});
 
 		test('Fixture process flow for BLENDER 3 of video-room', () => {
-			const fixture = game.entityFinder.getFixture('BLENDER 3', 'video-room');
+			const fixture = testGame.entityFinder.getFixture('BLENDER 3', 'video-room');
 			{
 				let items = fixture.getContainedItems();
 				expect(items.length).toBe(2);
@@ -209,7 +209,7 @@ describe('Fixture test', () => {
 		});
 
 		test('Fixture process flow for BLENDER 4 of video-room', () => {
-			const fixture = game.entityFinder.getFixture('BLENDER 4', 'video-room');
+			const fixture = testGame.entityFinder.getFixture('BLENDER 4', 'video-room');
 			{
 				let items = fixture.getContainedItems();
 				expect(items.length).toBe(2);
@@ -236,7 +236,7 @@ describe('Fixture test', () => {
 		});
 
 		test('Fixture process flow for BLENDER 7 of video-room', () => {
-			const fixture = game.entityFinder.getFixture('BLENDER 7', 'video-room');
+			const fixture = testGame.entityFinder.getFixture('BLENDER 7', 'video-room');
 			{
 				let items = fixture.getContainedItems();
 				expect(items.length).toBe(1);
@@ -270,12 +270,12 @@ describe('Fixture test', () => {
         afterEach(async () => {
             vi.clearAllTimers();
             vi.useRealTimers();
-            await game.entityLoader.loadFixtures(false);
-            await game.entityLoader.loadRoomItems(false);
+            await testGame.entityLoader.loadFixtures(false);
+            await testGame.entityLoader.loadRoomItems(false);
         });
 
         test('Full flow for CUTTING BOARD 1 of video-room', () => {
-            const fixture = game.entityFinder.getFixture('CUTTING BOARD 1', 'video-room');
+            const fixture = testGame.entityFinder.getFixture('CUTTING BOARD 1', 'video-room');
             fixture.activate();
             vi.advanceTimersByTime(1000);
             {
@@ -293,7 +293,7 @@ describe('Fixture test', () => {
         });
 
         test('Full flow for CUTTING BOARD 3 of video-room', () => {
-            const fixture = game.entityFinder.getFixture('CUTTING BOARD 3', 'video-room');
+            const fixture = testGame.entityFinder.getFixture('CUTTING BOARD 3', 'video-room');
             fixture.activate();
             vi.advanceTimersByTime(1000);
             {
@@ -315,7 +315,7 @@ describe('Fixture test', () => {
         });
 
         test('Full flow for BURNER 3 of video-room', () => {
-            const fixture = game.entityFinder.getFixture('BURNER 3', 'video-room');
+            const fixture = testGame.entityFinder.getFixture('BURNER 3', 'video-room');
             fixture.activate();
             vi.advanceTimersByTime(1000);
             {
@@ -360,7 +360,7 @@ describe('Fixture test', () => {
         });
 
         test('Full flow for BURNER 4 of video-room', () => {
-            const fixture = game.entityFinder.getFixture('BURNER 4', 'video-room');
+            const fixture = testGame.entityFinder.getFixture('BURNER 4', 'video-room');
             fixture.activate();
             // Something, whether it be Vitest or a flaw in my programming, is causing quite the torment.
             // This test relies on the fixture's recipe interval to be CORRECTLY started.
@@ -390,7 +390,7 @@ describe('Fixture test', () => {
         });
 
         test('Full flow for BURNER 5 of video-room', () => {
-            const fixture = game.entityFinder.getFixture('BURNER 5', 'video-room');
+            const fixture = testGame.entityFinder.getFixture('BURNER 5', 'video-room');
             fixture.activate();
             vi.advanceTimersByTime(1000);
             {
@@ -435,7 +435,7 @@ describe('Fixture test', () => {
         });
 
         test('Full flow for BURNER 6 of video-room', () => {
-            const fixture = game.entityFinder.getFixture('BURNER 6', 'video-room');
+            const fixture = testGame.entityFinder.getFixture('BURNER 6', 'video-room');
             fixture.activate();
             vi.advanceTimersByTime(1000);
             {
@@ -480,7 +480,7 @@ describe('Fixture test', () => {
         });
 
         test('Full flow for BURNER 7 of video-room', () => {
-            const fixture = game.entityFinder.getFixture('BURNER 7', 'video-room');
+            const fixture = testGame.entityFinder.getFixture('BURNER 7', 'video-room');
             fixture.activate();
             {
                 let items = fixture.getContainedItems();
@@ -508,7 +508,7 @@ describe('Fixture test', () => {
         });
 
         test('Full flow for KILN 1 of video-room', () => {
-            const fixture = game.entityFinder.getFixture('KILN 1', 'video-room');
+            const fixture = testGame.entityFinder.getFixture('KILN 1', 'video-room');
             fixture.activate();
             vi.advanceTimersByTime(1000);
             {
@@ -530,7 +530,7 @@ describe('Fixture test', () => {
         });
 
         test('Full flow for KILN 2 of video-room', () => {
-            const fixture = game.entityFinder.getFixture('KILN 2', 'video-room');
+            const fixture = testGame.entityFinder.getFixture('KILN 2', 'video-room');
             fixture.activate();
             vi.advanceTimersByTime(1000);
             {
@@ -556,7 +556,7 @@ describe('Fixture test', () => {
         });
 
         test('Full flow for KILN 3 of video-room', () => {
-            const fixture = game.entityFinder.getFixture('KILN 3', 'video-room');
+            const fixture = testGame.entityFinder.getFixture('KILN 3', 'video-room');
             fixture.activate();
             vi.advanceTimersByTime(1000);
             {

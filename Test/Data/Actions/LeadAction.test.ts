@@ -94,7 +94,7 @@ describe('LeadAction test', () => {
     };
 
     const sendMessages = async () => {
-        await sendQueuedMessages(game);
+        await sendQueuedMessages(testGame);
         lobbyFirstNarrationMessage = lobby.channel.messages.cache.first();
         lobbyLastNarrationMessage = lobby.channel.messages.cache.last();
         astridFirstNotificationMessage = astrid.notificationChannel.messages.cache.first();
@@ -106,17 +106,17 @@ describe('LeadAction test', () => {
     }
 
     beforeAll(async () => {
-        if (!game.inProgress) await game.entityLoader.loadAll();
-        astrid = game.entityFinder.getLivingPlayer("Astrid");
-        asuka = game.entityFinder.getLivingPlayer("Asuka");
-        nero = game.entityFinder.getLivingPlayer("Nero");
-        fast = game.entityFinder.getStatusEffect("fast");
-        concealed = game.entityFinder.getStatusEffect("concealed");
-        cheerful = game.entityFinder.getStatusEffect("cheerful");
-        crutches = game.entityFinder.getStatusEffect("crutches");
-        lobby = game.entityFinder.getRoom("lobby");
-        mainEntrance = game.entityFinder.getExit(lobby, "MAIN ENTRANCE");
-        hall3 = game.entityFinder.getExit(lobby, "HALL 3");
+        if (!testGame.inProgress) await testGame.entityLoader.loadAll();
+        astrid = testGame.entityFinder.getLivingPlayer("Astrid");
+        asuka = testGame.entityFinder.getLivingPlayer("Asuka");
+        nero = testGame.entityFinder.getLivingPlayer("Nero");
+        fast = testGame.entityFinder.getStatusEffect("fast");
+        concealed = testGame.entityFinder.getStatusEffect("concealed");
+        cheerful = testGame.entityFinder.getStatusEffect("cheerful");
+        crutches = testGame.entityFinder.getStatusEffect("crutches");
+        lobby = testGame.entityFinder.getRoom("lobby");
+        mainEntrance = testGame.entityFinder.getExit(lobby, "MAIN ENTRANCE");
+        hall3 = testGame.entityFinder.getExit(lobby, "HALL 3");
         astrid.inflict(fast);
         astrid.inflict(concealed);
         concealedDisplayName = "an individual wearing a MASK";
@@ -188,9 +188,9 @@ describe('LeadAction test', () => {
 
         describe('party is retained between tests', () => {
             beforeAll(async () => {
-                const followAction1 = new FollowAction(game, undefined, asuka, asuka.location, false);
+                const followAction1 = new FollowAction(testGame, undefined, asuka, asuka.location, false);
                 await followAction1.performFollow(astrid);
-                const followAction2 = new FollowAction(game, undefined, nero, nero.location, false);
+                const followAction2 = new FollowAction(testGame, undefined, nero, nero.location, false);
                 await followAction2.performFollow(astrid);
             });
 
@@ -205,14 +205,14 @@ describe('LeadAction test', () => {
             });
 
             afterAll(async () => {
-                const disbandPartyAction = new DisbandPartyAction(game, undefined, astrid, astrid.location, false);
+                const disbandPartyAction = new DisbandPartyAction(testGame, undefined, astrid, astrid.location, false);
                 await disbandPartyAction.performDisbandParty(true);
-                const stopAction = new StopAction(game, undefined, astrid, astrid.location, false);
+                const stopAction = new StopAction(testGame, undefined, astrid, astrid.location, false);
                 await stopAction.performStop(false, undefined, true, new Set([astrid, asuka, nero]));
             });
 
             test('stationary player leads stationary player', async () => {
-                const action = new LeadAction(game, undefined, astrid, astrid.location, false);
+                const action = new LeadAction(testGame, undefined, astrid, astrid.location, false);
                 await action.performLead([asuka]);
                 expect(astrid.ledPlayers).toHaveLength(1);
                 expect(astrid.ledPlayers[0]).toStrictEqual(asuka);
@@ -292,7 +292,7 @@ describe('LeadAction test', () => {
             });
 
             test('stationary player leads stationary player she was already leading', async () => {
-                const action = new LeadAction(game, undefined, astrid, astrid.location, false);
+                const action = new LeadAction(testGame, undefined, astrid, astrid.location, false);
                 await action.performLead([asuka]);
                 expect(astrid.ledPlayers).toHaveLength(1);
                 expect(astrid.ledPlayers[0]).toStrictEqual(asuka);
@@ -350,7 +350,7 @@ describe('LeadAction test', () => {
             });
 
             test('stationary player leads another stationary player while already in a party', async () => {
-                const action = new LeadAction(game, undefined, astrid, astrid.location, false);
+                const action = new LeadAction(testGame, undefined, astrid, astrid.location, false);
                 await action.performLead([nero]);
                 expect(astrid.ledPlayers).toHaveLength(2);
                 expect(astrid.ledPlayers[0]).toStrictEqual(asuka);
@@ -424,11 +424,11 @@ describe('LeadAction test', () => {
             beforeEach(async () => {
                 asuka.setPos(hall3.pos);
                 nero.setPos(mainEntrance.pos);
-                const followAction1 = new FollowAction(game, undefined, asuka, asuka.location, false);
+                const followAction1 = new FollowAction(testGame, undefined, asuka, asuka.location, false);
                 await followAction1.performFollow(astrid);
-                const followAction2 = new FollowAction(game, undefined, nero, nero.location, false);
+                const followAction2 = new FollowAction(testGame, undefined, nero, nero.location, false);
                 await followAction2.performFollow(astrid);
-                const queueMoveAction = new QueueMoveAction(game, undefined, astrid, astrid.location, false);
+                const queueMoveAction = new QueueMoveAction(testGame, undefined, astrid, astrid.location, false);
                 const destination = "HALL 5";
                 astrid.moveQueue = [destination];
                 await queueMoveAction.performQueueMove(false, destination);
@@ -443,7 +443,7 @@ describe('LeadAction test', () => {
                     lobby.addPlayer(player);
                     player.restoreStamina();
                 }
-                const disbandPartyAction = new DisbandPartyAction(game, undefined, astrid, astrid.location, false);
+                const disbandPartyAction = new DisbandPartyAction(testGame, undefined, astrid, astrid.location, false);
                 await disbandPartyAction.performDisbandParty(true);
                 await sendMessages();
                 clearMessages();
@@ -451,7 +451,7 @@ describe('LeadAction test', () => {
 
             afterAll(() => {
                 for (const player of [astrid, asuka, nero]) {
-                    const stopAction = new StopAction(game, undefined, player, player.location, false);
+                    const stopAction = new StopAction(testGame, undefined, player, player.location, false);
                     stopAction.performStop(false, undefined, true);
                 }
             });
@@ -479,7 +479,7 @@ describe('LeadAction test', () => {
                 expect(nero.isMoving).toBe(true);
                 await sendMessages();
 
-                const action = new LeadAction(game, undefined, astrid, astrid.location, false);
+                const action = new LeadAction(testGame, undefined, astrid, astrid.location, false);
                 await action.performLead([asuka]);
                 expect(astrid.ledPlayers).toHaveLength(1);
                 expect(astrid.ledPlayers[0]).toStrictEqual(asuka);
@@ -554,7 +554,7 @@ describe('LeadAction test', () => {
                 expect(nero.isMoving).toBe(true);
                 await sendMessages();
 
-                const action = new LeadAction(game, undefined, astrid, astrid.location, false);
+                const action = new LeadAction(testGame, undefined, astrid, astrid.location, false);
                 await action.performLead([asuka, nero]);
                 expect(astrid.ledPlayers).toHaveLength(2);
                 expect(astrid.ledPlayers[0]).toStrictEqual(asuka);
@@ -636,7 +636,7 @@ describe('LeadAction test', () => {
                 expect(nero.isMoving).toBe(true);
                 await sendMessages();
 
-                const action = new LeadAction(game, undefined, astrid, astrid.location, false);
+                const action = new LeadAction(testGame, undefined, astrid, astrid.location, false);
                 await action.performLead([asuka, nero]);
                 expect(astrid.ledPlayers).toHaveLength(2);
                 expect(astrid.ledPlayers[0]).toStrictEqual(asuka);
@@ -729,7 +729,7 @@ describe('LeadAction test', () => {
                 await sendMessages();
 
                 calculateMoveTimeSpy.mockReturnValueOnce(100);
-                const action = new LeadAction(game, undefined, astrid, astrid.location, false);
+                const action = new LeadAction(testGame, undefined, astrid, astrid.location, false);
                 await action.performLead([nero]);
                 expect(astrid.ledPlayers).toHaveLength(1);
                 expect(astrid.ledPlayers[0]).toStrictEqual(nero);

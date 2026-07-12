@@ -8,7 +8,7 @@ import { clearQueue } from '../../Modules/messageHandler.ts';
 
 describe('uncraft_player command', () => {
     afterEach(async () => {
-        clearQueue(game);
+        clearQueue(testGame);
         vi.resetAllMocks();
     });
 
