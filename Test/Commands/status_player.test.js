@@ -15,7 +15,7 @@ let spy;
 
 describe("status_player command", () => {
     beforeAll(async () => {
-        if (!game.inProgress) await game.entityLoader.loadAll();
+        if (!testGame.inProgress) await testGame.entityLoader.loadAll();
     });
 
     beforeEach(() => {
@@ -23,29 +23,29 @@ describe("status_player command", () => {
     })
 
     afterEach(async () => {
-        clearQueue(game);
+        clearQueue(testGame);
         vi.resetAllMocks();
     });
 
     const status_player = new PlayerCommand(config, usage, execute);
 
     test("player with status effects", async () => {
-        const player = game.entityFinder.getPlayer("Kyra");
-        await status_player.execute(game, createMockMessage(), "", [], player);
+        const player = testGame.entityFinder.getPlayer("Kyra");
+        await status_player.execute(testGame, createMockMessage(), "", [], player);
         expect(spy).toHaveBeenCalledWith(player, "You are currently:\nsatisfied, well rested, clean", false);
     });
     test("player without status effects", async () => {
-        const player = game.entityFinder.getPlayer("Astrid");
-        await status_player.execute(game, createMockMessage(), "", [], player);
+        const player = testGame.entityFinder.getPlayer("Astrid");
+        await status_player.execute(testGame, createMockMessage(), "", [], player);
         expect(spy).toHaveBeenCalledWith(player, "You are currently:\n", false);
     });
     test("player with command disabled", async () => {
-        const player = game.entityFinder.getPlayer("Astrid");
+        const player = testGame.entityFinder.getPlayer("Astrid");
         let getBehavior = vi.spyOn(player, "getBehaviorAttributeStatusEffects");
         getBehavior.mockReturnValue([createDisableStatus(player, "status")]);
-        let replySpy = vi.spyOn(game.communicationHandler, "reply");
+        let replySpy = vi.spyOn(testGame.communicationHandler, "reply");
         let message = createMockMessage();
-        await status_player.execute(game, message, "", [], player);
+        await status_player.execute(testGame, message, "", [], player);
         expect(replySpy).toHaveBeenCalledWith(message, "You cannot do that because you are **MOCK_DISABLED_STATUS**.");
     });
 });

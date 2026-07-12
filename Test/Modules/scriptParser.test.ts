@@ -12,9 +12,9 @@ describe('test scriptParser', () => {
     let container: Fixture;
 
     beforeAll(async () => {
-        if (!game.inProgress) await game.entityLoader.loadAll();
-        qm = game.entityFinder.getLivingPlayer("???");
-        container = game.entityFinder.getFixture('FLOOR');
+        if (!testGame.inProgress) await testGame.entityLoader.loadAll();
+        qm = testGame.entityFinder.getLivingPlayer("???");
+        container = testGame.entityFinder.getFixture('FLOOR');
     });
 
     describe('test finder functions and data accessors', () => {
@@ -84,7 +84,7 @@ describe('test scriptParser', () => {
                 test('findRoom().tags.add() fails', () => {
                     const script = "findRoom('general-managers-office').tags.add('general-managers-office')";
                     expect(() => evaluate(script, container, null)).toThrow(/Mutation prohibited/);
-                    expect(game.entityFinder.getRoom('general-managers-office').tags.has('general-managers-office')).toBe(false);
+                    expect(testGame.entityFinder.getRoom('general-managers-office').tags.has('general-managers-office')).toBe(false);
                 });
 
                 test('findRoom().occupants.push() fails', () => {

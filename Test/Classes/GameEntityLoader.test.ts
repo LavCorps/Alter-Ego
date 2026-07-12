@@ -29,7 +29,7 @@ describe('GameEntityLoader test', () => {
     });
 
     afterAll(() => {
-        game.entityLoader.clearAll();
+        testGame.entityLoader.clearAll();
     });
 
     describe('loadAll test', () => {
@@ -40,7 +40,7 @@ describe('GameEntityLoader test', () => {
             let playerSendDescriptionSpy: Mock<(player: Player, container?: GameEntity) => void>;
 
             beforeEach(() => {
-                updatePresenceSpy = vi.spyOn(game.clientContext, 'updatePresence').mockImplementation(() => {});
+                updatePresenceSpy = vi.spyOn(testGame.clientContext, 'updatePresence').mockImplementation(() => {});
                 eventStartTimerSpy = vi.spyOn(Event.prototype, 'startTimer').mockImplementation(async () => {});
                 eventStartEffectsTimerSpy = vi.spyOn(Event.prototype, 'startEffectsTimer').mockImplementation(() => {});
                 playerSendDescriptionSpy = vi.spyOn(Description.prototype, 'parseAndSendTo').mockImplementation(() => {});
@@ -54,11 +54,11 @@ describe('GameEntityLoader test', () => {
             });
 
             test('startGame false', async () => {
-                const message = await game.entityLoader.loadAll();
+                const message = await testGame.entityLoader.loadAll();
                 expect(message).not.toContain('Error');
                 expect(message).toContain('retrieved.');
-                expect(game.inProgress).toBe(false);
-                expect(game.canJoin).toBe(false);
+                expect(testGame.inProgress).toBe(false);
+                expect(testGame.canJoin).toBe(false);
                 expect(updatePresenceSpy).not.toHaveBeenCalled();
                 expect(eventStartTimerSpy).toHaveBeenCalled();
                 expect(eventStartEffectsTimerSpy).toHaveBeenCalled();
@@ -66,11 +66,11 @@ describe('GameEntityLoader test', () => {
             });
 
             test('startGame true', async () => {
-                const message = await game.entityLoader.loadAll(true);
+                const message = await testGame.entityLoader.loadAll(true);
                 expect(message).not.toContain('Error');
                 expect(message).toContain('The game has started.');
-                expect(game.inProgress).toBe(true);
-                expect(game.canJoin).toBe(false);
+                expect(testGame.inProgress).toBe(true);
+                expect(testGame.canJoin).toBe(false);
                 expect(updatePresenceSpy).toHaveBeenCalled();
                 expect(eventStartTimerSpy).toHaveBeenCalled();
                 expect(eventStartEffectsTimerSpy).toHaveBeenCalled();
@@ -78,11 +78,11 @@ describe('GameEntityLoader test', () => {
             });
 
             test('sendPlayerRoomDescriptions true', async () => {
-                const message = await game.entityLoader.loadAll(true, true);
+                const message = await testGame.entityLoader.loadAll(true, true);
                 expect(message).not.toContain('Error');
                 expect(message).toContain('The game has started.');
-                expect(game.inProgress).toBe(true);
-                expect(game.canJoin).toBe(false);
+                expect(testGame.inProgress).toBe(true);
+                expect(testGame.canJoin).toBe(false);
                 expect(updatePresenceSpy).toHaveBeenCalled();
                 expect(eventStartTimerSpy).toHaveBeenCalled();
                 expect(eventStartEffectsTimerSpy).toHaveBeenCalled();
@@ -94,14 +94,14 @@ describe('GameEntityLoader test', () => {
     describe('loadRooms test', () => {
         describe('erroneous room response', () => {
             test('no response returned', async () => {
-                sheets.__setMock(game.constants.roomSheetDataCells, undefined);
-                const roomCount = await game.entityLoader.loadRooms(true, errors);
+                sheets.__setMock(testGame.constants.roomSheetDataCells, undefined);
+                const roomCount = await testGame.entityLoader.loadRooms(true, errors);
                 expect(errors).toEqual([]);
                 expect(roomCount).toBe(0);
             });
 
             test('incomplete rooms', async () => {
-                sheets.__setMock(game.constants.roomSheetDataCells, [
+                sheets.__setMock(testGame.constants.roomSheetDataCells, [
                     ["aaa"],
                     [],
                     ["aaa", "aaa"],
@@ -115,28 +115,28 @@ describe('GameEntityLoader test', () => {
                     ["aaa", "", "", "", "", "", "", "", "", "aaa"],
                     ["aaa", "", "", "", "", "", "", "", "", "", "aaa"],
                 ]);
-                const roomCount = await game.entityLoader.loadRooms(true, errors);
+                const roomCount = await testGame.entityLoader.loadRooms(true, errors);
                 expect(errors).not.toEqual([]);
                 expect(roomCount).toBe(0);
             });
 
             test('no room ID', async () => {
-                sheets.__setMock(game.constants.roomSheetDataCells, [
+                sheets.__setMock(testGame.constants.roomSheetDataCells, [
                     ["'"]
                 ]);
-                const roomCount = await game.entityLoader.loadRooms(true, errors);
+                const roomCount = await testGame.entityLoader.loadRooms(true, errors);
                 expect(roomCount).toBe(0);
                 expect(errors).toEqual([Error("Couldn't load room on row 2. The room display name resolved to a unique ID with an empty value.")]);
             });
 
             test('room error messages', async () => {
-                sheets.__setMock(game.constants.roomSheetDataCells, [
+                sheets.__setMock(testGame.constants.roomSheetDataCells, [
                     [""],
                     ["aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"],
                     ["aaa", "", "aaaaaaaaa"],
                     ["aaa"]
                 ]);
-                const roomCount = await game.entityLoader.loadRooms(true, errors);
+                const roomCount = await testGame.entityLoader.loadRooms(true, errors);
                 const errorStrings = errors.join('\n').split('\n');
                 const expectedErrorStrings = [
                     "Error: Couldn't load room on row 2. No room display name was given.",
@@ -152,7 +152,7 @@ describe('GameEntityLoader test', () => {
             });
 
             test('exit error messages', async () => {
-                sheets.__setMock(game.constants.roomSheetDataCells, [
+                sheets.__setMock(testGame.constants.roomSheetDataCells, [
                     ["Room 1", "", ""],
                     ["Room 2", "", "", "DOOR A", "", "", "X"],
                     ["Room 3", "", "", "DOOR B", "", "", "0", "Y"],
@@ -164,7 +164,7 @@ describe('GameEntityLoader test', () => {
                     ["Room 9", "", "", "DOOR Z","", "",  "0", "0", "0", "TRUE", "Room 8", "DOOR G"],
                     ["", "", "", "DOOR Z", "", "", "0", "0", "0", "TRUE", "Room 8", "DOOR G"],
                 ]);
-                const roomCount = await game.entityLoader.loadRooms(true, errors);
+                const roomCount = await testGame.entityLoader.loadRooms(true, errors);
                 const errorStrings = errors.join('\n').split('\n');
                 const expectedErrorStrings = [
                     "Error: Couldn't load exit on row 2. No exit name was given.",
@@ -188,10 +188,10 @@ describe('GameEntityLoader test', () => {
         describe('standard room response', () => {
             test('errorChecking true', async () => {
                 let errors: Error[] = [];
-                const roomCount = await game.entityLoader.loadRooms(true, errors);
+                const roomCount = await testGame.entityLoader.loadRooms(true, errors);
                 expect(errors).toEqual([]);
                 expect(roomCount).toBe(198);
-                for (const room of game.rooms.values()) {
+                for (const room of testGame.rooms.values()) {
                     const roomDescriptionText = room.description.toString();
                     expect(roomDescriptionText).not.toContain("<item>");
                     expect(roomDescriptionText).not.toContain("</item>");
@@ -207,19 +207,19 @@ describe('GameEntityLoader test', () => {
 
     describe('loadFixtures test', () => {
         beforeAll(async () => {
-            await game.entityLoader.loadRooms(false);
+            await testGame.entityLoader.loadRooms(false);
         });
 
         describe('erroneous fixture response', () => {
             test('no response returned', async () => {
-                sheets.__setMock(game.constants.fixtureSheetDataCells, undefined);
-                const fixtureCount = await game.entityLoader.loadFixtures(true, errors);
+                sheets.__setMock(testGame.constants.fixtureSheetDataCells, undefined);
+                const fixtureCount = await testGame.entityLoader.loadFixtures(true, errors);
                 expect(errors).toEqual([]);
                 expect(fixtureCount).toBe(0);
             });
 
             test('incomplete fixtures', async () => {
-                sheets.__setMock(game.constants.fixtureSheetDataCells, [
+                sheets.__setMock(testGame.constants.fixtureSheetDataCells, [
                     ["aaa"],
                     [],
                     ["aaa", "aaa"],
@@ -233,13 +233,13 @@ describe('GameEntityLoader test', () => {
                     ["aaa", "", "", "", "", "", "", "", "", "aaa"],
                     ["aaa", "", "", "", "", "", "", "", "", "", "aaa"],
                 ]);
-                const fixtureCount = await game.entityLoader.loadFixtures(true, errors);
+                const fixtureCount = await testGame.entityLoader.loadFixtures(true, errors);
                 expect(errors).not.toEqual([]);
                 expect(fixtureCount).toBe(0);
             });
 
             test('fixture error messages', async () => {
-                sheets.__setMock(game.constants.fixtureSheetDataCells, [
+                sheets.__setMock(testGame.constants.fixtureSheetDataCells, [
                     [""],
                     ["FLOOR", "saloon"],
                     ["FLOOR", "lobby"],
@@ -248,9 +248,9 @@ describe('GameEntityLoader test', () => {
                     ["EVAPORATOR", "Cooler", "TRUE", "BAR LOCK"],
                     ["TORTURE LABYRINTH", "Circus Tent", "TRUE", "", "", "FALSE", "FALSE", "FALSE", "A Lillian"],
                 ]);
-                await game.entityLoader.loadFixtures(false);
-                await game.entityLoader.loadPuzzles(false);
-                const fixtureCount = await game.entityLoader.loadFixtures(true, errors);
+                await testGame.entityLoader.loadFixtures(false);
+                await testGame.entityLoader.loadPuzzles(false);
+                const fixtureCount = await testGame.entityLoader.loadFixtures(true, errors);
                 const errorStrings = errors.join('\n').split('\n');
                 const expectedErrorStrings = [
                     "Error: Couldn't load fixture on row 2. No fixture name was given.",
@@ -270,12 +270,12 @@ describe('GameEntityLoader test', () => {
 
         describe('standard fixture response', () => {
             test('errorChecking true', async () => {
-                await game.entityLoader.loadFixtures(false);
-                await game.entityLoader.loadPuzzles(false);
-                const fixtureCount = await game.entityLoader.loadFixtures(true, errors);
+                await testGame.entityLoader.loadFixtures(false);
+                await testGame.entityLoader.loadPuzzles(false);
+                const fixtureCount = await testGame.entityLoader.loadFixtures(true, errors);
                 expect(errors).toEqual([]);
                 expect(fixtureCount).toBe(1576);
-                for (const fixture of game.fixtures) {
+                for (const fixture of testGame.fixtures) {
                     const descriptionText = fixture.description.toString();
                     expect(descriptionText).not.toContain("<item>");
                     expect(descriptionText).not.toContain("</item>");
@@ -287,7 +287,7 @@ describe('GameEntityLoader test', () => {
     describe('loadPrefabs test', () => {
         describe('erroneous prefab response', () => {
             test('incomplete prefabs', async () => {
-                sheets.__setMock(game.constants.prefabSheetDataCells, [
+                sheets.__setMock(testGame.constants.prefabSheetDataCells, [
                     [""],
                     ["aaa", ""],
                     ["aaa", ""],
@@ -295,7 +295,7 @@ describe('GameEntityLoader test', () => {
                     ["ccc", "aaa", "aaa", "", "aaa", "456"],
                     ["ddd", "aaa", "aaa", "", "123", "aaa"],
                 ]);
-                const prefabCount = await game.entityLoader.loadPrefabs(true, errors);
+                const prefabCount = await testGame.entityLoader.loadPrefabs(true, errors);
                 const errorStrings = errors.join('\n').split('\n');
                 const expectedErrorStrings = [
                     "Error: Couldn't load prefab on row 2. No prefab ID was given.",
@@ -314,7 +314,7 @@ describe('GameEntityLoader test', () => {
             });
 
             test('invalid prefabs', async () => {
-                sheets.__setMock(game.constants.prefabSheetDataCells, [
+                sheets.__setMock(testGame.constants.prefabSheetDataCells, [
                     ["aaa", "aaa", "aaa", "FALSE", "123", "456", "FALSE", "", "", "", "", "", "FALSE", "", "", "", "DUMMY SLOT: 10", "", ""],
                     ["bbb", "aaa", "aaa", "FALSE", "123", "456", "FALSE", "", "", "", "", "000", "FALSE", "", "", "", "", "", ""],
                     ["ccc", "aaa", "aaa", "FALSE", "123", "456", "FALSE", "", "", "", "", "", "FALSE", "", "", "", ": 10", "", ""],
@@ -323,7 +323,7 @@ describe('GameEntityLoader test', () => {
                     ["fff", "aaa", "aaa", "FALSE", "123", "456", "FALSE", "", "", "", "INVALID", "", "FALSE", "", "", "", "", "", ""],
                     ["ggg", "aaa", "aaa", "FALSE", "123", "456", "FALSE", "", "", "", "", "", "FALSE", "", "", "", "DUMMY SLOT: 10, DUMMY SLOT: 10", "in", ""],
                 ]);
-                const prefabCount = await game.entityLoader.loadPrefabs(true, errors);
+                const prefabCount = await testGame.entityLoader.loadPrefabs(true, errors);
                 const errorStrings = errors.join('\n').split('\n');
                 const expectedErrorStrings = [
                     "Error: Couldn't load prefab on row 2. AAA has inventory slots, but no preposition was given.",
@@ -343,7 +343,7 @@ describe('GameEntityLoader test', () => {
             });
 
             test('invalid procedural prefabs', async () => {
-                sheets.__setMock(game.constants.prefabSheetDataCells, [
+                sheets.__setMock(testGame.constants.prefabSheetDataCells, [
                     ["aaa", "[vibe:evil:SCARY], [vibe=evil: SCARY]", "aaa", "FALSE", "123", "456", "FALSE", "", "", "", "", "", "FALSE", "", "", "", "", "", "<desc><s>This is a <procedural name=\"vibe\"><poss name=\"evil\" chance=\"50\">scary</poss><poss name=\"good\" chance=\"50\">not scary</poss></procedural> test.</s></desc>"],
                     ["bbb", "[vibe:evil: SCARY], [vibe=evil: SCARY]", "aaa", "FALSE", "123", "456", "FALSE", "", "", "", "", "", "FALSE", "", "", "", "", "", "<desc><s>This is a <procedural name=\"vibe\"><poss name=\"evil\" chance=\"50\">scary</poss><poss name=\"good\" chance=\"50\">not scary</poss></procedural> test.</s></desc>"],
                     ["ccc", "[vibe=mystery: MYSTERIOUS], [vibe=evil: SCARY]", "aaa", "FALSE", "123", "456", "FALSE", "", "", "", "", "", "FALSE", "", "", "", "", "", "<desc><s>This is a <procedural name=\"vibe\"><poss name=\"evil\" chance=\"50\">scary</poss><poss name=\"good\" chance=\"50\">not scary</poss></procedural> test.</s></desc>"],
@@ -359,7 +359,7 @@ describe('GameEntityLoader test', () => {
                     ["nnn", "aaa", "[: a BROKEN PREFAB, BROKEN PREFABS], [vibe=evil: a SCARY, SCARIES]", "FALSE", "123", "456", "FALSE", "", "", "", "", "", "FALSE", "", "", "", "", "", "<desc><s>This is a <procedural name=\"vibe\"><poss name=\"evil\" chance=\"50\">scary</poss><poss name=\"good\" chance=\"50\">not scary</poss></procedural> test.</s></desc>"],
                     ["ooo", "aaa", "[vibe=evil:], [vibe=evil: a SCARY, SCARIES]", "FALSE", "123", "456", "FALSE", "", "", "", "", "", "FALSE", "", "", "", "", "", "<desc><s>This is a <procedural name=\"vibe\"><poss name=\"evil\" chance=\"50\">scary</poss><poss name=\"good\" chance=\"50\">not scary</poss></procedural> test.</s></desc>"],
                 ]);
-                const prefabCount = await game.entityLoader.loadPrefabs(true, errors);
+                const prefabCount = await testGame.entityLoader.loadPrefabs(true, errors);
                 const errorStrings = errors.join('\n').split('\n');
                 const expectedErrorStrings = [
                     "Error: Couldn't load prefab on row 2. No procedural with name \"vibe:evil\" exists in its description.",
@@ -388,11 +388,11 @@ describe('GameEntityLoader test', () => {
 
         describe('standard prefab response', () => {
             test('errorChecking true', async () => {
-                if (game.statusEffects.size === 0) await game.entityLoader.loadStatusEffects(false);
-                const prefabCount = await game.entityLoader.loadPrefabs(true, errors);
+                if (testGame.statusEffects.size === 0) await testGame.entityLoader.loadStatusEffects(false);
+                const prefabCount = await testGame.entityLoader.loadPrefabs(true, errors);
                 expect(errors).toEqual([]);
                 expect(prefabCount).toBe(1512);
-                for (const prefab of game.prefabs.values()) {
+                for (const prefab of testGame.prefabs.values()) {
                     const descriptionText = prefab.description.toString();
                     expect(descriptionText).not.toContain("<item>");
                     expect(descriptionText).not.toContain("</item>");
@@ -404,15 +404,15 @@ describe('GameEntityLoader test', () => {
     describe('loadRecipes test', () => {
         describe('erroneous recipe response', () => {
             beforeEach(async () => {
-                if (game.statusEffects.size === 0) await game.entityLoader.loadStatusEffects(false);
-                if (game.prefabs.size === 0) await game.entityLoader.loadPrefabs(false);
+                if (testGame.statusEffects.size === 0) await testGame.entityLoader.loadStatusEffects(false);
+                if (testGame.prefabs.size === 0) await testGame.entityLoader.loadPrefabs(false);
             });
 
             test('incomplete recipes', async () => {
-                sheets.__setMock(game.constants.recipeSheetDataCells, [
+                sheets.__setMock(testGame.constants.recipeSheetDataCells, [
                     [""],
                 ]);
-                const recipeCount = await game.entityLoader.loadRecipes(true, errors);
+                const recipeCount = await testGame.entityLoader.loadRecipes(true, errors);
                 const errorStrings = errors.join('\n').split('\n');
                 const expectedErrorStrings = ["Error: Couldn't load recipe on row 2. No ingredients were given."];
                 expect(errors).not.toEqual([]);
@@ -424,7 +424,7 @@ describe('GameEntityLoader test', () => {
             });
 
             test('invalid recipes', async () => {
-                sheets.__setMock(game.constants.recipeSheetDataCells, [
+                sheets.__setMock(testGame.constants.recipeSheetDataCells, [
                     ["INVALID", "", "", "", "", "", "", ""],
                     ["ORANGE, PINEAPPLE, POT", "", "", "", "", "", "", ""],
                     ["ORANGE, PINEAPPLE", "", "", "", "ORANGE, PINEAPPLE, POT", "", "", ""],
@@ -434,7 +434,7 @@ describe('GameEntityLoader test', () => {
                     ["ORANGE", "TRUE", "dummy", "", "ORANGE", "", "", ""],
                     ["ORANGE, PINEAPPLE", "TRUE", "", "", "ORANGE, PINEAPPLE", "", "", ""],
                 ]);
-                const recipeCount = await game.entityLoader.loadRecipes(true, errors);
+                const recipeCount = await testGame.entityLoader.loadRecipes(true, errors);
                 const errorStrings = errors.join('\n').split('\n');
                 const expectedErrorStrings = [
                     "Error: Couldn't load recipe on row 2. \"INVALID\" in ingredients is not a prefab.",
@@ -457,9 +457,9 @@ describe('GameEntityLoader test', () => {
 
         describe('standard recipe response', () => {
             test('errorChecking true', async () => {
-                if (game.statusEffects.size === 0) await game.entityLoader.loadStatusEffects(false);
-                if (game.prefabs.size === 0) await game.entityLoader.loadPrefabs(false);
-                const recipeCount = await game.entityLoader.loadRecipes(true, errors);
+                if (testGame.statusEffects.size === 0) await testGame.entityLoader.loadStatusEffects(false);
+                if (testGame.prefabs.size === 0) await testGame.entityLoader.loadPrefabs(false);
+                const recipeCount = await testGame.entityLoader.loadRecipes(true, errors);
                 expect(errors).toEqual([]);
                 expect(recipeCount).toBe(505);
             });
@@ -469,21 +469,21 @@ describe('GameEntityLoader test', () => {
     describe('loadRoomItems test', () => {
         describe('erroneous room item response', () => {
             beforeEach(async () => {
-                if (game.rooms.size === 0) await game.entityLoader.loadRooms(false);
-                if (game.fixtures.length === 0) await game.entityLoader.loadFixtures(false);
-                if (game.puzzles.length === 0) await game.entityLoader.loadPuzzles(false);
-                if (game.statusEffects.size === 0) await game.entityLoader.loadStatusEffects(false);
-                if (game.prefabs.size === 0) await game.entityLoader.loadPrefabs(false);
-                if (game.inventoryItems.length === 0) await game.entityLoader.loadInventoryItems(false);
+                if (testGame.rooms.size === 0) await testGame.entityLoader.loadRooms(false);
+                if (testGame.fixtures.length === 0) await testGame.entityLoader.loadFixtures(false);
+                if (testGame.puzzles.length === 0) await testGame.entityLoader.loadPuzzles(false);
+                if (testGame.statusEffects.size === 0) await testGame.entityLoader.loadStatusEffects(false);
+                if (testGame.prefabs.size === 0) await testGame.entityLoader.loadPrefabs(false);
+                if (testGame.inventoryItems.length === 0) await testGame.entityLoader.loadInventoryItems(false);
             });
 
             test('incomplete room items', async () => {
-                sheets.__setMock(game.constants.roomItemSheetDataCells, [
+                sheets.__setMock(testGame.constants.roomItemSheetDataCells, [
                     [""],
                     ["ORANGE"],
                     ["ORANGE","","lobby"],
                 ]);
-                const roomItemCount = await game.entityLoader.loadRoomItems(true, errors);
+                const roomItemCount = await testGame.entityLoader.loadRoomItems(true, errors);
                 const errorStrings = errors.join('\n').split('\n');
                 const expectedErrorStrings = [
                     "Error: Couldn't load room item on row 2. \"\" is not a prefab.",
@@ -499,7 +499,7 @@ describe('GameEntityLoader test', () => {
             });
 
             test('invalid room items', async () => {
-                sheets.__setMock(game.constants.roomItemSheetDataCells, [
+                sheets.__setMock(testGame.constants.roomItemSheetDataCells, [
                     ["VINYL GLOVE BOX","","lobby","","Fixture: COFFEE TABLE"],
                     ["VINYL GLOVE BOX","VINYL GLOVE BOX 1","lobby","","Fixture: COFFEE TABLE"],
                     ["VINYL GLOVE BOX","VINYL GLOVE BOX 1","lobby","","Fixture: COFFEE TABLE"],
@@ -517,7 +517,7 @@ describe('GameEntityLoader test', () => {
                     ["POT","POT 1","lobby","","Item: POT 2/POT","1"],
                     ["POT","POT 2","lobby","","Item: POT 1/POT","1"],
                 ]);
-                const roomItemCount = await game.entityLoader.loadRoomItems(true, errors);
+                const roomItemCount = await testGame.entityLoader.loadRoomItems(true, errors);
                 const errorStrings = errors.join('\n').split('\n');
                 const expectedErrorStrings = [
                     "Error: Couldn't load room item on row 2. This item is capable of containing items, but no container identifier was given.",
@@ -547,15 +547,15 @@ describe('GameEntityLoader test', () => {
 
         describe('standard room item response', () => {
             test('errorChecking true', async () => {
-                if (game.rooms.size === 0) await game.entityLoader.loadRooms(false);
-                if (game.fixtures.length === 0) await game.entityLoader.loadFixtures(false);
-                if (game.puzzles.length === 0) await game.entityLoader.loadPuzzles(false);
-                if (game.statusEffects.size === 0) await game.entityLoader.loadStatusEffects(false);
-                if (game.prefabs.size === 0) await game.entityLoader.loadPrefabs(false);
-                const roomItemCount = await game.entityLoader.loadRoomItems(true, errors);
+                if (testGame.rooms.size === 0) await testGame.entityLoader.loadRooms(false);
+                if (testGame.fixtures.length === 0) await testGame.entityLoader.loadFixtures(false);
+                if (testGame.puzzles.length === 0) await testGame.entityLoader.loadPuzzles(false);
+                if (testGame.statusEffects.size === 0) await testGame.entityLoader.loadStatusEffects(false);
+                if (testGame.prefabs.size === 0) await testGame.entityLoader.loadPrefabs(false);
+                const roomItemCount = await testGame.entityLoader.loadRoomItems(true, errors);
                 expect(errors).toEqual([]);
                 expect(roomItemCount).toBe(1866);
-                for (const roomItem of game.roomItems) {
+                for (const roomItem of testGame.roomItems) {
                     expect(roomItem.prefab).toBeInstanceOf(Prefab);
                     expect(roomItem.prefab.id).toEqual(Game.generateValidEntityName(roomItem.prefabId));
                     expect(roomItem.location).toBeInstanceOf(Room);
@@ -578,7 +578,7 @@ describe('GameEntityLoader test', () => {
                     expect(descriptionText).not.toContain("<item>");
                     expect(descriptionText).not.toContain("</item>");
                 }
-                const cornDogBoxes = game.entityFinder.getRoomItems("BOX OF CORN DOGS", "freezer", undefined, "Fixture", "SHELF 1");
+                const cornDogBoxes = testGame.entityFinder.getRoomItems("BOX OF CORN DOGS", "freezer", undefined, "Fixture", "SHELF 1");
                 for (const cornDogBox of cornDogBoxes) {
                     expect(cornDogBox.weight).toBe(22);
                 }
@@ -589,17 +589,17 @@ describe('GameEntityLoader test', () => {
     describe('loadPuzzles test', () => {
         describe('erroneous puzzle response', () => {
             beforeEach(async() => {
-                if (game.rooms.size === 0) await game.entityLoader.loadRooms(false);
-                if (game.fixtures.length === 0) await game.entityLoader.loadFixtures(false);
-                if (game.statusEffects.size === 0) await game.entityLoader.loadStatusEffects(false);
-                if (game.prefabs.size === 0) await game.entityLoader.loadPrefabs(false);
+                if (testGame.rooms.size === 0) await testGame.entityLoader.loadRooms(false);
+                if (testGame.fixtures.length === 0) await testGame.entityLoader.loadFixtures(false);
+                if (testGame.statusEffects.size === 0) await testGame.entityLoader.loadStatusEffects(false);
+                if (testGame.prefabs.size === 0) await testGame.entityLoader.loadPrefabs(false);
             });
 
             test('incomplete puzzles', async () => {
-                sheets.__setMock(game.constants.puzzleSheetDataCells, [
+                sheets.__setMock(testGame.constants.puzzleSheetDataCells, [
                     [""]
                 ]);
-                const puzzleCount = await game.entityLoader.loadPuzzles(true, errors);
+                const puzzleCount = await testGame.entityLoader.loadPuzzles(true, errors);
                 const errorStrings = errors.join('\n').split('\n');
                 const expectedErrorStrings = [
                     "Error: Couldn't load puzzle on row 2. No puzzle name was given."
@@ -613,7 +613,7 @@ describe('GameEntityLoader test', () => {
             });
 
             test('invalid puzzles part 1', async () => {
-                sheets.__setMock(game.constants.puzzleSheetDataCells, [
+                sheets.__setMock(testGame.constants.puzzleSheetDataCells, [
                     ["aaa","","","","INVALID"],
                     ["bbb","","","","lobby","INVALID"],
                     ["ccc","","","","lobby","FLOOR"],
@@ -631,7 +631,7 @@ describe('GameEntityLoader test', () => {
                     ["ppp","TRUE","Invalid: LARGE MONKEY","","lobby","","media","","","Prefab: STEAK KNIFE"],
                     ["qqq","TRUE","Item: BLUE DANUBE CD","","lobby","","media","","","Item: BLUE DANUBE CD","","[Item: BLUE DANUBE CD: destroy player BLUE DANUBE CD, trigger BLUE DANUBE WALTZ / end BLUE DANUBE WALTZ, instantiate BLUE DANUBE CD on FLOOR at ballroom], [Item: EINE KLEINE NACHTMUSIK CD: destroy player EINE KLEINE NACHTMUSIK CD, trigger EINE KLEINE NACHTMUSIK WALTZ / end EINE KLEINE NACHTMUSIK WALTZ, instantiate EINE KLEINE NACHTMUSIK CD on FLOOR at ballroom]"],
                 ]);
-                const puzzleCount = await game.entityLoader.loadPuzzles(true, errors);
+                const puzzleCount = await testGame.entityLoader.loadPuzzles(true, errors);
                 const errorStrings = errors.join('\n').split('\n');
                 const expectedErrorStrings = [
                     "Error: Couldn't load puzzle on row 2. \"INVALID\" is not a room.",
@@ -660,14 +660,14 @@ describe('GameEntityLoader test', () => {
             });
 
             test('invalid puzzles part 2', async () => {
-                sheets.__setMock(game.constants.puzzleSheetDataCells, [
+                sheets.__setMock(testGame.constants.puzzleSheetDataCells, [
                     ["rrr","FALSE","","","lobby","","toggle","","Prefab: INVALID","Item: MASTER KEY"],
                     ["ttt","FALSE","","","lobby","","toggle","","Event: INVALID","Item: MASTER KEY"],
                     ["uuu","FALSE","","","lobby","","toggle","","Flag: INVALID","Item: MASTER KEY"],
                     ["vvv","FALSE","","","lobby","","toggle","","Puzzle: INVALID","Item: MASTER KEY"],
                     ["www","FALSE","","","lobby","","toggle","","Invalid: INVALID","Item: MASTER KEY"],
                 ]);
-                const puzzleCount = await game.entityLoader.loadPuzzles(true, errors);
+                const puzzleCount = await testGame.entityLoader.loadPuzzles(true, errors);
                 const errorStrings = errors.join('\n').split('\n');
                 const expectedErrorStrings = [
                     "Error: Couldn't load puzzle on row 2. \"INVALID\" in requires is not a prefab.",
@@ -687,14 +687,14 @@ describe('GameEntityLoader test', () => {
 
         describe('standard puzzle response', () => {
             test('errorChecking true', async () => {
-                if (game.rooms.size === 0) await game.entityLoader.loadRooms(false);
-                if (game.fixtures.length === 0) await game.entityLoader.loadFixtures(false);
-                if (game.statusEffects.size === 0) await game.entityLoader.loadStatusEffects(false);
-                if (game.prefabs.size === 0) await game.entityLoader.loadPrefabs(false);
-                const puzzleCount = await game.entityLoader.loadPuzzles(true, errors);
+                if (testGame.rooms.size === 0) await testGame.entityLoader.loadRooms(false);
+                if (testGame.fixtures.length === 0) await testGame.entityLoader.loadFixtures(false);
+                if (testGame.statusEffects.size === 0) await testGame.entityLoader.loadStatusEffects(false);
+                if (testGame.prefabs.size === 0) await testGame.entityLoader.loadPrefabs(false);
+                const puzzleCount = await testGame.entityLoader.loadPuzzles(true, errors);
                 expect(errors).toEqual([]);
                 expect(puzzleCount).toBe(398);
-                for (const puzzle of game.puzzles) {
+                for (const puzzle of testGame.puzzles) {
                     const descriptionText = puzzle.alreadySolvedDescription.toString();
                     expect(descriptionText).not.toContain("<item>");
                     expect(descriptionText).not.toContain("</item>");
@@ -706,10 +706,10 @@ describe('GameEntityLoader test', () => {
     describe('loadEvents test', () => {
         describe('erroneous event response', () => {
             test('incomplete events', async () => {
-                sheets.__setMock(game.constants.eventSheetDataCells, [
+                sheets.__setMock(testGame.constants.eventSheetDataCells, [
                     [""]
                 ]);
-                const eventCount = await game.entityLoader.loadEvents(true, errors);
+                const eventCount = await testGame.entityLoader.loadEvents(true, errors);
                 const errorStrings = errors.join('\n').split('\n');
                 const expectedErrorStrings = [
                     "Error: Couldn't load event on row 2. No event ID was given."
@@ -723,7 +723,7 @@ describe('GameEntityLoader test', () => {
             });
 
             test('invalid events', async () => {
-                sheets.__setMock(game.constants.eventSheetDataCells, [
+                sheets.__setMock(testGame.constants.eventSheetDataCells, [
                     ["aaa","","90x"],
                     ["bbb","TRUE","90s","90y"],
                     ["ccc","FALSE","90s","00:01:30"],
@@ -732,7 +732,7 @@ describe('GameEntityLoader test', () => {
                     ["fff","FALSE","90s","","","","","invalid"],
                     ["ggg","FALSE","90s","","","","","","invalid"],
                 ]);
-                const eventCount = await game.entityLoader.loadEvents(true, errors);
+                const eventCount = await testGame.entityLoader.loadEvents(true, errors);
                 const errorStrings = errors.join('\n').split('\n');
                 const expectedErrorStrings = [
                     "Error: Couldn't load event on row 2. \"90x\" is not a valid duration.",
@@ -754,8 +754,8 @@ describe('GameEntityLoader test', () => {
 
         describe('standard event response', () => {
             test('errorChecking true', async () => {
-                if (game.statusEffects.size === 0) await game.entityLoader.loadStatusEffects(false);
-                const eventCount = await game.entityLoader.loadEvents(true, errors);
+                if (testGame.statusEffects.size === 0) await testGame.entityLoader.loadStatusEffects(false);
+                const eventCount = await testGame.entityLoader.loadEvents(true, errors);
                 expect(errors).toEqual([]);
                 expect(eventCount).toBe(125);
             });
@@ -765,10 +765,10 @@ describe('GameEntityLoader test', () => {
     describe('loadStatusEffects test', () => {
         describe('erroneous status effect response', () => {
             test('incomplete status effects', async () => {
-                sheets.__setMock(game.constants.statusSheetDataCells, [
+                sheets.__setMock(testGame.constants.statusSheetDataCells, [
                     [""]
                 ]);
-                const statusEffectCount = await game.entityLoader.loadStatusEffects(true, errors);
+                const statusEffectCount = await testGame.entityLoader.loadStatusEffects(true, errors);
                 const errorStrings = errors.join('\n').split('\n');
                 const expectedErrorStrings = [
                     "Error: Couldn't load status effect on row 2. No status effect ID was given.",
@@ -787,7 +787,7 @@ describe('GameEntityLoader test', () => {
             });
 
             test('invalid status effects', async () => {
-                sheets.__setMock(game.constants.statusSheetDataCells, [
+                sheets.__setMock(testGame.constants.statusSheetDataCells, [
                     ["aaa","365xyz"],
                     ["bbb","","","","","","","","","1"],
                     ["ccc","","","","","","","","","inv+1"],
@@ -799,7 +799,7 @@ describe('GameEntityLoader test', () => {
                     ["iii","","","","","","","invalid","",""],
                     ["jjj","","","","","","","","invalid",""],
                 ]);
-                const statusEffectCount = await game.entityLoader.loadStatusEffects(true, errors);
+                const statusEffectCount = await testGame.entityLoader.loadStatusEffects(true, errors);
                 const errorStrings = errors.join('\n').split('\n');
                 const expectedErrorStrings = [
                     "Error: Couldn't load status effect on row 2. An invalid duration was given.",
@@ -829,7 +829,7 @@ describe('GameEntityLoader test', () => {
 
         describe('standard status effect response', () => {
             test('errorChecking true', async () => {
-                const statusEffectCount = await game.entityLoader.loadStatusEffects(true, errors);
+                const statusEffectCount = await testGame.entityLoader.loadStatusEffects(true, errors);
                 expect(errors).toEqual([]);
                 expect(statusEffectCount).toBe(152);
             });
@@ -839,13 +839,13 @@ describe('GameEntityLoader test', () => {
     describe('loadPlayers test', () => {
         describe('erroneous player response', () => {
             beforeEach(async () => {
-                if (game.rooms.size === 0) await game.entityLoader.loadRooms(false);
-                if (game.statusEffects.size === 0) await game.entityLoader.loadStatusEffects(false);
-                if (game.prefabs.size === 0) await game.entityLoader.loadPrefabs(false);
+                if (testGame.rooms.size === 0) await testGame.entityLoader.loadRooms(false);
+                if (testGame.statusEffects.size === 0) await testGame.entityLoader.loadStatusEffects(false);
+                if (testGame.prefabs.size === 0) await testGame.entityLoader.loadPrefabs(false);
             });
 
             test('incomplete players', async () => {
-                sheets.__setMock(game.constants.playerSheetDataCells, [
+                sheets.__setMock(testGame.constants.playerSheetDataCells, [
                     ["", "aaa"],
                     ["665168062697177107",""],
                     ["665168062697177107","bbb","","/////"],
@@ -856,7 +856,7 @@ describe('GameEntityLoader test', () => {
                     ["665168062697177107","ggg","","a/b/c/d/e/"],
                     ["665168062697177107","hhh","","neutral",""],
                 ]);
-                const playerCount = await game.entityLoader.loadPlayers(true, errors);
+                const playerCount = await testGame.entityLoader.loadPlayers(true, errors);
                 const errorStrings = errors.join('\n').split('\n');
                 const expectedErrorStrings = [
                     "Error: Couldn't load player on row 3. No Discord ID was given.",
@@ -878,7 +878,7 @@ describe('GameEntityLoader test', () => {
             });
 
             test('invalid players', async () => {
-                sheets.__setMock(game.constants.playerSheetDataCells, [
+                sheets.__setMock(testGame.constants.playerSheetDataCells, [
                     ["665168062697177107","aaa","","neutral","a generic voice","NaN"],
                     ["665168062697177107","bbb","","neutral","a generic voice","1","NaN"],
                     ["665168062697177107","ccc","","neutral","a generic voice","1","2","NaN"],
@@ -889,7 +889,7 @@ describe('GameEntityLoader test', () => {
                     ["665168062697177107","hhh","","neutral","a generic voice","1","2","3","4","5","TRUE","lobby","","feminizing (365)"],
                     ["665168062697177107","iii","NPC","neutral","a generic voice","1","2","3","4","5","TRUE","lobby","",""],
                 ]);
-                const playerCount = await game.entityLoader.loadPlayers(true, errors);
+                const playerCount = await testGame.entityLoader.loadPlayers(true, errors);
                 const errorStrings = errors.join('\n').split('\n');
                 const expectedErrorStrings = [
                     "Error: Couldn't load player on row 3. The strength stat given is not an integer.",
@@ -913,13 +913,13 @@ describe('GameEntityLoader test', () => {
 
         describe('standard player response', () => {
             test('errorChecking true', async () => {
-                if (game.rooms.size === 0) await game.entityLoader.loadRooms(false);
-                if (game.statusEffects.size === 0) await game.entityLoader.loadStatusEffects(false);
-                if (game.prefabs.size === 0) await game.entityLoader.loadPrefabs(false);
-                const playerCount = await game.entityLoader.loadPlayers(true, errors);
+                if (testGame.rooms.size === 0) await testGame.entityLoader.loadRooms(false);
+                if (testGame.statusEffects.size === 0) await testGame.entityLoader.loadStatusEffects(false);
+                if (testGame.prefabs.size === 0) await testGame.entityLoader.loadPrefabs(false);
+                const playerCount = await testGame.entityLoader.loadPlayers(true, errors);
                 expect(errors).toEqual([]);
                 expect(playerCount).toBe(11);
-                for (const player of game.players.values()) {
+                for (const player of testGame.players.values()) {
                     const descriptionText = player.description.toString();
                     expect(descriptionText).not.toContain("<item>");
                     expect(descriptionText).not.toContain("</item>");
@@ -931,13 +931,13 @@ describe('GameEntityLoader test', () => {
     describe('loadInventoryItems test', () => {
         describe('standard inventory item response', () => {
             test('errorChecking true', async () => {
-                if (game.statusEffects.size === 0) await game.entityLoader.loadStatusEffects(false);
-                if (game.prefabs.size === 0) await game.entityLoader.loadPrefabs(false);
-                if (game.players.size === 0) await game.entityLoader.loadPlayers(false);
-                const inventoryItemCount = await game.entityLoader.loadInventoryItems(true, errors);
+                if (testGame.statusEffects.size === 0) await testGame.entityLoader.loadStatusEffects(false);
+                if (testGame.prefabs.size === 0) await testGame.entityLoader.loadPrefabs(false);
+                if (testGame.players.size === 0) await testGame.entityLoader.loadPlayers(false);
+                const inventoryItemCount = await testGame.entityLoader.loadInventoryItems(true, errors);
                 expect(errors).toEqual([]);
                 expect(inventoryItemCount).toBe(130);
-                for (const inventoryItem of game.inventoryItems) {
+                for (const inventoryItem of testGame.inventoryItems) {
                     if (inventoryItem.prefabId !== "") {
                         expect(inventoryItem.prefab).toBeInstanceOf(Prefab);
                         expect(inventoryItem.prefab.id).toEqual(Game.generateValidEntityName(inventoryItem.prefabId));
@@ -957,7 +957,7 @@ describe('GameEntityLoader test', () => {
                     expect(descriptionText).not.toContain("</item>");
                 }
 
-                const kyra = game.entityFinder.getPlayer("Kyra");
+                const kyra = testGame.entityFinder.getPlayer("Kyra");
                 expect(kyra.carryWeight).toBe(5);
                 const kyraJacket = kyra.inventory.get("JACKET");
                 expect(kyraJacket.items).toHaveLength(1);
@@ -979,7 +979,7 @@ describe('GameEntityLoader test', () => {
                 expect(kyraPantsRightPocket.items).toHaveLength(1);
                 expect(kyraPantsRightPocket.items[0].prefab.id).toBe("MASTER KEY");
 
-                const vivian = game.entityFinder.getPlayer("Vivian");
+                const vivian = testGame.entityFinder.getPlayer("Vivian");
                 expect(vivian.carryWeight).toBe(22);
                 const vivianBag = vivian.inventory.get("BAG");
                 expect(vivianBag.items).toHaveLength(6);
@@ -1028,8 +1028,8 @@ describe('GameEntityLoader test', () => {
     describe('loadGestures test', () => {
         describe('standard gesture response', () => {
             test('errorChecking true', async () => {
-                if (game.statusEffects.size === 0) await game.entityLoader.loadStatusEffects(false);
-                const gestureCount = await game.entityLoader.loadGestures(true, errors);
+                if (testGame.statusEffects.size === 0) await testGame.entityLoader.loadStatusEffects(false);
+                const gestureCount = await testGame.entityLoader.loadGestures(true, errors);
                 expect(errors).toEqual([]);
                 expect(gestureCount).toBe(138);
             });
@@ -1039,7 +1039,7 @@ describe('GameEntityLoader test', () => {
     describe('loadFlags test', () => {
         describe('standard flag response', () => {
             test('errorChecking true', async () => {
-                const flagCount = await game.entityLoader.loadFlags(true, errors);
+                const flagCount = await testGame.entityLoader.loadFlags(true, errors);
                 expect(errors).toEqual([]);
                 expect(flagCount).toBe(16);
             });

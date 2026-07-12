@@ -52,14 +52,14 @@ describe('DismissAction test', () => {
     let crutches: Status;
 
     beforeAll(async () => {
-        if (!game.inProgress) await game.entityLoader.loadAll();
-        astrid = game.entityFinder.getLivingPlayer("Astrid");
-        asuka = game.entityFinder.getLivingPlayer("Asuka");
-        nero = game.entityFinder.getLivingPlayer("Nero");
-        fast = game.entityFinder.getStatusEffect("fast");
-        concealed = game.entityFinder.getStatusEffect("concealed");
-        cheerful = game.entityFinder.getStatusEffect("cheerful");
-        crutches = game.entityFinder.getStatusEffect("crutches");
+        if (!testGame.inProgress) await testGame.entityLoader.loadAll();
+        astrid = testGame.entityFinder.getLivingPlayer("Astrid");
+        asuka = testGame.entityFinder.getLivingPlayer("Asuka");
+        nero = testGame.entityFinder.getLivingPlayer("Nero");
+        fast = testGame.entityFinder.getStatusEffect("fast");
+        concealed = testGame.entityFinder.getStatusEffect("concealed");
+        cheerful = testGame.entityFinder.getStatusEffect("cheerful");
+        crutches = testGame.entityFinder.getStatusEffect("crutches");
         astrid.inflict(fast);
         astrid.inflict(concealed);
         concealedDisplayName = "an individual wearing a MASK";
@@ -102,7 +102,7 @@ describe('DismissAction test', () => {
         };
 
         const sendMessages = async () => {
-            await sendQueuedMessages(game);
+            await sendQueuedMessages(testGame);
             narrationMessage = astrid.location.channel.messages.cache.last();
             astridNotificationMessage = astrid.notificationChannel.messages.cache.last();
             asukaNotificationMessage = asuka.notificationChannel.messages.cache.last();
@@ -111,18 +111,18 @@ describe('DismissAction test', () => {
 
         beforeEach(async () => {
             deletePartySpy = vi.spyOn(GameEntityManager.prototype, 'deleteParty');
-            const followAction1 = new FollowAction(game, undefined, asuka, asuka.location, false);
+            const followAction1 = new FollowAction(testGame, undefined, asuka, asuka.location, false);
             await followAction1.performFollow(astrid);
-            const followAction2 = new FollowAction(game, undefined, nero, nero.location, false);
+            const followAction2 = new FollowAction(testGame, undefined, nero, nero.location, false);
             await followAction2.performFollow(astrid);
-            const leadAction = new LeadAction(game, undefined, astrid, astrid.location, false);
+            const leadAction = new LeadAction(testGame, undefined, astrid, astrid.location, false);
             await leadAction.performLead([asuka, nero]);
             await sendMessages();
             clearMessages();
         });
 
         afterEach(async () => {
-            const disbandAction = new DisbandPartyAction(game, undefined, astrid, astrid.location, false);
+            const disbandAction = new DisbandPartyAction(testGame, undefined, astrid, astrid.location, false);
             await disbandAction.performDisbandParty(true);
             await sendMessages();
             clearMessages();
@@ -135,12 +135,12 @@ describe('DismissAction test', () => {
             expect(astrid.party.hasLeader(astrid)).toBe(true);
             expect(astrid.party.hasFollower(asuka)).toBe(true);
             expect(astrid.party.hasFollower(nero)).toBe(true);
-            expect(game.parties.has(astrid.party.id)).toBe(true);
-            expect(game.whispers.has(astrid.party.id)).toBe(true);
+            expect(testGame.parties.has(astrid.party.id)).toBe(true);
+            expect(testGame.whispers.has(astrid.party.id)).toBe(true);
         });
 
         test('dismiss one follower and do not stop following', async () => {
-            const dismissAction = new DismissAction(game, undefined, astrid, astrid.location, false);
+            const dismissAction = new DismissAction(testGame, undefined, astrid, astrid.location, false);
             await dismissAction.performDismissAction([nero], false);
 
             expect(astrid.ledPlayers).toHaveLength(1);
@@ -149,8 +149,8 @@ describe('DismissAction test', () => {
             expect(astrid.isLeading(asuka)).toBe(true);
             expect(astrid.isLeading(nero)).toBe(false);
             expect(deletePartySpy).not.toHaveBeenCalled();
-            expect(game.parties.has("party-an-individual-wearing-a-mask-asuka")).toBe(true);
-            expect(game.whispers.has("party-an-individual-wearing-a-mask-asuka")).toBe(true);
+            expect(testGame.parties.has("party-an-individual-wearing-a-mask-asuka")).toBe(true);
+            expect(testGame.whispers.has("party-an-individual-wearing-a-mask-asuka")).toBe(true);
             expect(astrid.party).not.toBeNull();
             expect(asuka.party).not.toBeNull();
             expect(nero.party).toBeNull();
@@ -180,7 +180,7 @@ describe('DismissAction test', () => {
         });
 
         test('dismiss all followers and do not stop following', async () => {
-            const dismissAction = new DismissAction(game, undefined, astrid, astrid.location, false);
+            const dismissAction = new DismissAction(testGame, undefined, astrid, astrid.location, false);
             await dismissAction.performDismissAction([nero, asuka], false);
 
             expect(astrid.ledPlayers).toHaveLength(0);
@@ -189,12 +189,12 @@ describe('DismissAction test', () => {
             expect(astrid.isLeading(asuka)).toBe(false);
             expect(astrid.isLeading(nero)).toBe(false);
             expect(deletePartySpy).toHaveBeenCalledOnce();
-            expect(game.parties.has("party-an-individual-wearing-a-mask-asuka-nero")).toBe(false);
-            expect(game.parties.has("party-an-individual-wearing-a-mask-asuka")).toBe(false);
-            expect(game.parties.has("party-an-individual-wearing-a-mask")).toBe(false);
-            expect(game.whispers.has("party-an-individual-wearing-a-mask-asuka-nero")).toBe(false);
-            expect(game.whispers.has("party-an-individual-wearing-a-mask-asuka")).toBe(false);
-            expect(game.whispers.has("party-an-individual-wearing-a-mask")).toBe(false);
+            expect(testGame.parties.has("party-an-individual-wearing-a-mask-asuka-nero")).toBe(false);
+            expect(testGame.parties.has("party-an-individual-wearing-a-mask-asuka")).toBe(false);
+            expect(testGame.parties.has("party-an-individual-wearing-a-mask")).toBe(false);
+            expect(testGame.whispers.has("party-an-individual-wearing-a-mask-asuka-nero")).toBe(false);
+            expect(testGame.whispers.has("party-an-individual-wearing-a-mask-asuka")).toBe(false);
+            expect(testGame.whispers.has("party-an-individual-wearing-a-mask")).toBe(false);
             expect(astrid.party).toBeNull();
             expect(asuka.party).toBeNull();
             expect(nero.party).toBeNull();
@@ -224,7 +224,7 @@ describe('DismissAction test', () => {
         });
 
         test('dismiss one follower and stop following', async () => {
-            const dismissAction = new DismissAction(game, undefined, astrid, astrid.location, false);
+            const dismissAction = new DismissAction(testGame, undefined, astrid, astrid.location, false);
             await dismissAction.performDismissAction([nero], true);
 
             expect(astrid.ledPlayers).toHaveLength(1);
@@ -233,8 +233,8 @@ describe('DismissAction test', () => {
             expect(astrid.isLeading(asuka)).toBe(true);
             expect(astrid.isLeading(nero)).toBe(false);
             expect(deletePartySpy).not.toHaveBeenCalled();
-            expect(game.parties.has("party-an-individual-wearing-a-mask-asuka")).toBe(true);
-            expect(game.whispers.has("party-an-individual-wearing-a-mask-asuka")).toBe(true);
+            expect(testGame.parties.has("party-an-individual-wearing-a-mask-asuka")).toBe(true);
+            expect(testGame.whispers.has("party-an-individual-wearing-a-mask-asuka")).toBe(true);
             expect(astrid.party).not.toBeNull();
             expect(asuka.party).not.toBeNull();
             expect(nero.party).toBeNull();
@@ -264,7 +264,7 @@ describe('DismissAction test', () => {
         });
 
         test('dismiss all followers and stop following', async () => {
-            const dismissAction = new DismissAction(game, undefined, astrid, astrid.location, false);
+            const dismissAction = new DismissAction(testGame, undefined, astrid, astrid.location, false);
             await dismissAction.performDismissAction([nero, asuka], true);
 
             expect(astrid.ledPlayers).toHaveLength(0);
@@ -273,12 +273,12 @@ describe('DismissAction test', () => {
             expect(astrid.isLeading(asuka)).toBe(false);
             expect(astrid.isLeading(nero)).toBe(false);
             expect(deletePartySpy).toHaveBeenCalledOnce();
-            expect(game.parties.has("party-an-individual-wearing-a-mask-asuka-nero")).toBe(false);
-            expect(game.parties.has("party-an-individual-wearing-a-mask-asuka")).toBe(false);
-            expect(game.parties.has("party-an-individual-wearing-a-mask")).toBe(false);
-            expect(game.whispers.has("party-an-individual-wearing-a-mask-asuka-nero")).toBe(false);
-            expect(game.whispers.has("party-an-individual-wearing-a-mask-asuka")).toBe(false);
-            expect(game.whispers.has("party-an-individual-wearing-a-mask")).toBe(false);
+            expect(testGame.parties.has("party-an-individual-wearing-a-mask-asuka-nero")).toBe(false);
+            expect(testGame.parties.has("party-an-individual-wearing-a-mask-asuka")).toBe(false);
+            expect(testGame.parties.has("party-an-individual-wearing-a-mask")).toBe(false);
+            expect(testGame.whispers.has("party-an-individual-wearing-a-mask-asuka-nero")).toBe(false);
+            expect(testGame.whispers.has("party-an-individual-wearing-a-mask-asuka")).toBe(false);
+            expect(testGame.whispers.has("party-an-individual-wearing-a-mask")).toBe(false);
             expect(astrid.party).toBeNull();
             expect(asuka.party).toBeNull();
             expect(nero.party).toBeNull();

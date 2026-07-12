@@ -8,22 +8,22 @@ import { createMockMessage } from '../../__mocks__/libs/discord.js';
 
 describe('UnstashAction test', () => {
     beforeAll(async () => {
-        if (!game.inProgress) await game.entityLoader.loadAll();
+        if (!testGame.inProgress) await testGame.entityLoader.loadAll();
     });
 
     afterAll(async () => {
-        clearQueue(game);
+        clearQueue(testGame);
         vi.resetAllMocks();
-        await game.entityLoader.loadInventoryItems(false);
+        await testGame.entityLoader.loadInventoryItems(false);
     });
 
     test('ported legacy test', async () => {
-        const vivian = game.entityFinder.getLivingPlayer("Vivian");
-        const hand = game.entityFinder.getPlayerFreeHand(vivian);
-        let toiletPaperPack = game.entityFinder.getInventoryItem("PACK OF TOILET PAPER 2", "Vivian", "WHITE JEANS 2/RIGHT POCKET", "BAG");
-        const quiver = game.entityFinder.getInventoryItem("VIVIANS QUIVER", "Vivian")
+        const vivian = testGame.entityFinder.getLivingPlayer("Vivian");
+        const hand = testGame.entityFinder.getPlayerFreeHand(vivian);
+        let toiletPaperPack = testGame.entityFinder.getInventoryItem("PACK OF TOILET PAPER 2", "Vivian", "WHITE JEANS 2/RIGHT POCKET", "BAG");
+        const quiver = testGame.entityFinder.getInventoryItem("VIVIANS QUIVER", "Vivian")
         expect(quiver.weight).toStrictEqual(20);
-        const unstashAction = new UnstashAction(game, createMockMessage(), vivian, vivian.location, false);
+        const unstashAction = new UnstashAction(testGame, createMockMessage(), vivian, vivian.location, false);
         unstashAction.performUnstash(toiletPaperPack, hand, toiletPaperPack.container, toiletPaperPack.container.inventory.get(toiletPaperPack.slot));
 
         // Test that all of the data was converted properly.
@@ -59,13 +59,13 @@ describe('UnstashAction test', () => {
         expect(buns.row).toStrictEqual(33);
 
         // Test that all of the inventoryItem row numbers were updated properly.
-        for (let i = 0; i < game.inventoryItems.length; i++)
-            expect(game.inventoryItems[i].row).toStrictEqual(i + 2);
+        for (let i = 0; i < testGame.inventoryItems.length; i++)
+            expect(testGame.inventoryItems[i].row).toStrictEqual(i + 2);
 
         // Test that all of the inventoryItems and Player inventory items have the same row numbers.
         for (const slot of vivian.inventory.values()) {
             for (const item of slot.items) {
-                const match = game.inventoryItems.find(item => item.player.id === vivian.id && (item.prefab === null && item.prefab === null || item.prefab !== null && item.prefab !== null && item.prefab.id === item.prefab.id) && item.equipmentSlot === item.equipmentSlot && item.containerName === item.containerName);
+                const match = testGame.inventoryItems.find(item => item.player.id === vivian.id && (item.prefab === null && item.prefab === null || item.prefab !== null && item.prefab !== null && item.prefab.id === item.prefab.id) && item.equipmentSlot === item.equipmentSlot && item.containerName === item.containerName);
                 expect(match !== null && match !== undefined).toBeTruthy();
                 expect(item.row === match.row);
             }

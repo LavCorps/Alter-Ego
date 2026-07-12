@@ -143,7 +143,7 @@ describe('StartMoveAction test', () => {
     const clearMessages = () => {
         lobby.channel.messages.cache.clear();
         hall3.dest.channel.messages.cache.clear();
-        game.entityFinder.getRoom('locker-room').channel.messages.cache.clear();
+        testGame.entityFinder.getRoom('locker-room').channel.messages.cache.clear();
         hall5.dest.channel.messages.cache.clear();
         meatballRoom.channel.messages.cache.clear();
         cave9.channel.messages.cache.clear();
@@ -154,7 +154,7 @@ describe('StartMoveAction test', () => {
     };
 
     const sendMessages = async () => {
-        await sendQueuedMessages(game);
+        await sendQueuedMessages(testGame);
         lobbyFirstNarrationMessage = lobby.channel.messages.cache.first();
         lobbyLastNarrationMessage = lobby.channel.messages.cache.last();
         hall3NarrationMessage = hall3.dest.channel.messages.cache.first();
@@ -171,24 +171,24 @@ describe('StartMoveAction test', () => {
     }
 
     beforeAll(async () => {
-        if (!game.inProgress) await game.entityLoader.loadAll();
-        astrid = game.entityFinder.getLivingPlayer("Astrid");
-        asuka = game.entityFinder.getLivingPlayer("Asuka");
-        nero = game.entityFinder.getLivingPlayer("Nero");
-        lobby = game.entityFinder.getRoom("lobby");
-        mainEntrance = game.entityFinder.getExit(astrid.location, "MAIN ENTRANCE");
-        hall3 = game.entityFinder.getExit(astrid.location, "HALL 3");
-        hall5 = game.entityFinder.getExit(astrid.location, "HALL 5");
-        meatballRoom = game.entityFinder.getRoom("meatball-room");
-        meatballBeginning = game.entityFinder.getExit(meatballRoom, "BEGINNING");
-        meatballEnd = game.entityFinder.getExit(meatballRoom, "END");
-        cave9 = game.entityFinder.getRoom("cave-9");
-        cave9Door = game.entityFinder.getExit(cave9, "DOOR");
-        courtyard = game.entityFinder.getRoom("courtyard");
-        fast = game.entityFinder.getStatusEffect("fast");
-        concealed = game.entityFinder.getStatusEffect("concealed");
-        cheerful = game.entityFinder.getStatusEffect("cheerful");
-        crutches = game.entityFinder.getStatusEffect("crutches");
+        if (!testGame.inProgress) await testGame.entityLoader.loadAll();
+        astrid = testGame.entityFinder.getLivingPlayer("Astrid");
+        asuka = testGame.entityFinder.getLivingPlayer("Asuka");
+        nero = testGame.entityFinder.getLivingPlayer("Nero");
+        lobby = testGame.entityFinder.getRoom("lobby");
+        mainEntrance = testGame.entityFinder.getExit(astrid.location, "MAIN ENTRANCE");
+        hall3 = testGame.entityFinder.getExit(astrid.location, "HALL 3");
+        hall5 = testGame.entityFinder.getExit(astrid.location, "HALL 5");
+        meatballRoom = testGame.entityFinder.getRoom("meatball-room");
+        meatballBeginning = testGame.entityFinder.getExit(meatballRoom, "BEGINNING");
+        meatballEnd = testGame.entityFinder.getExit(meatballRoom, "END");
+        cave9 = testGame.entityFinder.getRoom("cave-9");
+        cave9Door = testGame.entityFinder.getExit(cave9, "DOOR");
+        courtyard = testGame.entityFinder.getRoom("courtyard");
+        fast = testGame.entityFinder.getStatusEffect("fast");
+        concealed = testGame.entityFinder.getStatusEffect("concealed");
+        cheerful = testGame.entityFinder.getStatusEffect("cheerful");
+        crutches = testGame.entityFinder.getStatusEffect("crutches");
         astrid.inflict(fast);
         astrid.inflict(concealed);
         concealedDisplayName = "an individual wearing a MASK";
@@ -214,7 +214,7 @@ describe('StartMoveAction test', () => {
     });
 
     afterEach(async () => {
-        const action = new StopAction(game, undefined, astrid, astrid.location, false);
+        const action = new StopAction(testGame, undefined, astrid, astrid.location, false);
         await action.performStop(false, undefined, true, new Set([astrid, asuka, nero]));
         for (const player of [astrid, asuka, nero]) {
             player.location.removePlayer(player);
@@ -254,7 +254,7 @@ describe('StartMoveAction test', () => {
 
     describe('one player starts moving with no party', () => {
         test('player moves to the destination room (walking)', async () => {
-            const startMoveAction = new StartMoveAction(game, undefined, astrid, astrid.location, false);
+            const startMoveAction = new StartMoveAction(testGame, undefined, astrid, astrid.location, false);
             await startMoveAction.performStartMove(false, hall5);
             expect(calculateMoveTimeSpy).toHaveBeenCalledOnce();
             const calculatedTime = 3852.926;
@@ -319,7 +319,7 @@ describe('StartMoveAction test', () => {
 
         test('player moves to the destination room (walking) (with next move in queue)', async () => {
             astrid.moveQueue = ["HALL 5", "LOVE SUITE"];
-            const startMoveAction = new StartMoveAction(game, undefined, astrid, astrid.location, false);
+            const startMoveAction = new StartMoveAction(testGame, undefined, astrid, astrid.location, false);
             await startMoveAction.performStartMove(false, hall5);
             expect(calculateMoveTimeSpy).toHaveBeenCalledOnce();
             const calculatedTime = 3852.926;
@@ -366,7 +366,7 @@ describe('StartMoveAction test', () => {
             meatballRoom.addPlayer(nero);
             nero.setPos(meatballBeginning.pos);
             nero.moveQueue = ["END", "NEXT ROOM"];
-            const startMoveAction = new StartMoveAction(game, undefined, nero, nero.location, false);
+            const startMoveAction = new StartMoveAction(testGame, undefined, nero, nero.location, false);
             await startMoveAction.performStartMove(true, meatballEnd);
             expect(calculateMoveTimeSpy).toHaveBeenCalledOnce();
             const calculatedTime = 424339.472;
@@ -420,7 +420,7 @@ describe('StartMoveAction test', () => {
             expect(nero.pos).toStrictEqual({ x: 425, y: 0, z: 2641 });
             expect(nero.stamina).toBeCloseTo(0, 3);
             expect(nero.hasStatus("weary")).toBe(true);
-            nero.cure(game.entityFinder.getStatusEffect("weary"));
+            nero.cure(testGame.entityFinder.getStatusEffect("weary"));
             expect(nero.moveQueue).toHaveLength(0);
             clearMessages();
             await sendMessages();
@@ -433,9 +433,9 @@ describe('StartMoveAction test', () => {
         });
 
         test('no stamina decrease behavior attribute prevents stamina loss', async () => {
-            const noStaminaDecrease = game.entityFinder.getStatusEffect("meatball stamina");
+            const noStaminaDecrease = testGame.entityFinder.getStatusEffect("meatball stamina");
             astrid.inflict(noStaminaDecrease);
-            const startMoveAction = new StartMoveAction(game, undefined, astrid, astrid.location, false);
+            const startMoveAction = new StartMoveAction(testGame, undefined, astrid, astrid.location, false);
             await startMoveAction.performStartMove(false, hall5);
             expect(astrid.isMoving).toBe(true);
             expect(astrid.isRunning).toBe(false);
@@ -470,7 +470,7 @@ describe('StartMoveAction test', () => {
         test('exit is locked', async () => {
             hall5.lock();
             astrid.moveQueue = ["HALL 5", "LOVE SUITE"];
-            const startMoveAction = new StartMoveAction(game, undefined, astrid, astrid.location, false);
+            const startMoveAction = new StartMoveAction(testGame, undefined, astrid, astrid.location, false);
             await startMoveAction.performStartMove(false, hall5);
             expect(narrateStartMoveSpy).toHaveBeenCalledOnce();
             expect(movePlayersSpy).toHaveBeenCalledOnce();
@@ -500,9 +500,9 @@ describe('StartMoveAction test', () => {
         test('exit has restricted exit puzzle that the player can pass', async () => {
             astrid.location.removePlayer(astrid);
             cave9.addPlayer(astrid);
-            const cave9Puzzle = game.entityFinder.getPuzzle("DOOR", "cave-9", "restricted exit");
+            const cave9Puzzle = testGame.entityFinder.getPuzzle("DOOR", "cave-9", "restricted exit");
             cave9Puzzle.setAccessible();
-            const startMoveAction = new StartMoveAction(game, undefined, astrid, astrid.location, false);
+            const startMoveAction = new StartMoveAction(testGame, undefined, astrid, astrid.location, false);
             await startMoveAction.performStartMove(false, cave9Door);
             expect(narrateStartMoveSpy).toHaveBeenCalledOnce();
             expect(movePlayersSpy).toHaveBeenCalledOnce();
@@ -531,9 +531,9 @@ describe('StartMoveAction test', () => {
         test('exit has restricted exit puzzle that the player cannot pass', async () => {
             nero.location.removePlayer(nero);
             cave9.addPlayer(nero);
-            const cave9Puzzle = game.entityFinder.getPuzzle("DOOR", "cave-9", "restricted exit");
+            const cave9Puzzle = testGame.entityFinder.getPuzzle("DOOR", "cave-9", "restricted exit");
             cave9Puzzle.setAccessible();
-            const startMoveAction = new StartMoveAction(game, undefined, nero, nero.location, false);
+            const startMoveAction = new StartMoveAction(testGame, undefined, nero, nero.location, false);
             await startMoveAction.performStartMove(false, cave9Door);
             expect(narrateStartMoveSpy).toHaveBeenCalledOnce();
             expect(movePlayersSpy).toHaveBeenCalledOnce();
@@ -568,12 +568,12 @@ describe('StartMoveAction test', () => {
             meatballRoom.addPlayer(nero);
             asuka.setPos(meatballBeginning.pos);
             nero.setPos(meatballBeginning.pos);
-            const followAction = new FollowAction(game, undefined, asuka, asuka.location, false);
+            const followAction = new FollowAction(testGame, undefined, asuka, asuka.location, false);
             await followAction.performFollow(nero);
             await sendMessages();
             clearMessages();
 
-            const startMoveAction = new StartMoveAction(game, undefined, nero, nero.location, false);
+            const startMoveAction = new StartMoveAction(testGame, undefined, nero, nero.location, false);
             await startMoveAction.performStartMove(true, meatballEnd);
             expect(calculateMoveTimeSpy).toHaveBeenCalledTimes(2);
             const calculatedTime = 424339.472;
@@ -639,7 +639,7 @@ describe('StartMoveAction test', () => {
             expect(nero.pos).toStrictEqual({ x: 425, y: 0, z: 2641 });
             expect(nero.stamina).toBeCloseTo(0, 3);
             expect(nero.hasStatus("weary")).toBe(true);
-            nero.cure(game.entityFinder.getStatusEffect("weary"));
+            nero.cure(testGame.entityFinder.getStatusEffect("weary"));
             expect(nero.moveQueue).toHaveLength(0);
             expect(asuka.remainingTime).toBeCloseTo(0, 3);
             expect(asuka.isMoving).toBe(false);
@@ -670,12 +670,12 @@ describe('StartMoveAction test', () => {
             meatballRoom.addPlayer(nero);
             asuka.setPos(meatballBeginning.pos);
             nero.setPos(meatballBeginning.pos);
-            const followAction = new FollowAction(game, undefined, nero, nero.location, false);
+            const followAction = new FollowAction(testGame, undefined, nero, nero.location, false);
             await followAction.performFollow(asuka);
             await sendMessages();
             clearMessages();
 
-            const startMoveAction = new StartMoveAction(game, undefined, asuka, asuka.location, false);
+            const startMoveAction = new StartMoveAction(testGame, undefined, asuka, asuka.location, false);
             await startMoveAction.performStartMove(true, meatballEnd);
             expect(calculateMoveTimeSpy).toHaveBeenCalledTimes(2);
             const asukaCalculatedTime = 151645.207;
@@ -742,7 +742,7 @@ describe('StartMoveAction test', () => {
             expect(nero.pos).toStrictEqual({ x: 425, y: 0, z: 2641 });
             expect(nero.stamina).toBeCloseTo(0, 3);
             expect(nero.hasStatus("weary")).toBe(true);
-            nero.cure(game.entityFinder.getStatusEffect("weary"));
+            nero.cure(testGame.entityFinder.getStatusEffect("weary"));
             expect(nero.moveQueue).toHaveLength(0);
             expect(asuka.remainingTime).toBeGreaterThan(0);
             expect(asuka.isMoving).toBe(true);
@@ -768,12 +768,12 @@ describe('StartMoveAction test', () => {
         });
 
         test('follower is closer to exit than moving player', async () => {
-            const followAction = new FollowAction(game, undefined, asuka, asuka.location, false);
+            const followAction = new FollowAction(testGame, undefined, asuka, asuka.location, false);
             await followAction.performFollow(astrid);
             await sendMessages();
             clearMessages();
 
-            const startMoveAction = new StartMoveAction(game, undefined, astrid, astrid.location, false);
+            const startMoveAction = new StartMoveAction(testGame, undefined, astrid, astrid.location, false);
             await startMoveAction.performStartMove(false, hall5);
             expect(calculateMoveTimeSpy).toHaveBeenCalledTimes(2);
             const asukaCalculatedTime = 0;
@@ -857,12 +857,12 @@ describe('StartMoveAction test', () => {
         });
 
         test('exit locks before single follower reaches it', async () => {
-            const followAction = new FollowAction(game, undefined, nero, nero.location, false);
+            const followAction = new FollowAction(testGame, undefined, nero, nero.location, false);
             await followAction.performFollow(astrid);
             await sendMessages();
             clearMessages();
 
-            const startMoveAction = new StartMoveAction(game, undefined, astrid, astrid.location, false);
+            const startMoveAction = new StartMoveAction(testGame, undefined, astrid, astrid.location, false);
             await startMoveAction.performStartMove(false, hall5);
             expect(calculateMoveTimeSpy).toHaveBeenCalledTimes(2);
             const astridCalculatedTime = 3852.926;
@@ -954,15 +954,15 @@ describe('StartMoveAction test', () => {
         });
 
         test('exit locks before both followers reach it', async () => {
-            const followAction1 = new FollowAction(game, undefined, nero, nero.location, false);
+            const followAction1 = new FollowAction(testGame, undefined, nero, nero.location, false);
             await followAction1.performFollow(astrid);
-            const followAction2 = new FollowAction(game, undefined, asuka, asuka.location, false);
+            const followAction2 = new FollowAction(testGame, undefined, asuka, asuka.location, false);
             await followAction2.performFollow(astrid);
 
             await sendMessages();
             clearMessages();
 
-            const startMoveAction = new StartMoveAction(game, undefined, astrid, astrid.location, false);
+            const startMoveAction = new StartMoveAction(testGame, undefined, astrid, astrid.location, false);
             await startMoveAction.performStartMove(false, hall3);
             expect(calculateMoveTimeSpy).toHaveBeenCalledTimes(3);
             const astridCalculatedTime = 3838.957;
@@ -1078,14 +1078,14 @@ describe('StartMoveAction test', () => {
             cave9.addPlayer(nero);
             astrid.location.removePlayer(astrid);
             cave9.addPlayer(astrid);
-            const cave9Puzzle = game.entityFinder.getPuzzle("DOOR", "cave-9", "restricted exit");
+            const cave9Puzzle = testGame.entityFinder.getPuzzle("DOOR", "cave-9", "restricted exit");
             cave9Puzzle.setAccessible();
-            const followAction = new FollowAction(game, undefined, astrid, astrid.location, false);
+            const followAction = new FollowAction(testGame, undefined, astrid, astrid.location, false);
             await followAction.performFollow(nero);
             await sendMessages();
             clearMessages();
 
-            const startMoveAction = new StartMoveAction(game, undefined, nero, nero.location, false);
+            const startMoveAction = new StartMoveAction(testGame, undefined, nero, nero.location, false);
             await startMoveAction.performStartMove(false, cave9Door);
             expect(calculateMoveTimeSpy).toHaveBeenCalledTimes(2);
             const calculatedTime = 8523.792;
@@ -1156,11 +1156,11 @@ describe('StartMoveAction test', () => {
         let generateRoomOccupantsNotificationSpy: Mock<typeof GameNotificationGenerator.prototype.generateRoomOccupantsNotification>;
 
         beforeEach(async () => {
-            const followAction1 = new FollowAction(game, undefined, asuka, asuka.location, false);
+            const followAction1 = new FollowAction(testGame, undefined, asuka, asuka.location, false);
             await followAction1.performFollow(astrid);
-            const followAction2 = new FollowAction(game, undefined, nero, nero.location, false);
+            const followAction2 = new FollowAction(testGame, undefined, nero, nero.location, false);
             await followAction2.performFollow(astrid);
-            const leadAction = new LeadAction(game, undefined, astrid, astrid.location, false);
+            const leadAction = new LeadAction(testGame, undefined, astrid, astrid.location, false);
             await leadAction.performLead([asuka, nero]);
             await vi.advanceTimersByTimeAsync(7800);
             await sendMessages();
@@ -1170,12 +1170,12 @@ describe('StartMoveAction test', () => {
         });
 
         afterEach(async () => {
-            const disbandAction = new DisbandPartyAction(game, undefined, astrid, astrid.location, false);
+            const disbandAction = new DisbandPartyAction(testGame, undefined, astrid, astrid.location, false);
             await disbandAction.performDisbandParty(true);
         });
 
         test('party member positions are always the same with 1 follower', async () => {
-            const dismissAction = new DismissAction(game, undefined, astrid, astrid.location, false);
+            const dismissAction = new DismissAction(testGame, undefined, astrid, astrid.location, false);
             await dismissAction.performDismissAction([asuka], true);
             await sendMessages();
             clearMessages();
@@ -1184,7 +1184,7 @@ describe('StartMoveAction test', () => {
             for (const member of party.members.values())
                 expect(member.positionMatches(party.leader));
 
-            const startMoveAction = new StartMoveAction(game, undefined, astrid, astrid.location, false);
+            const startMoveAction = new StartMoveAction(testGame, undefined, astrid, astrid.location, false);
             await startMoveAction.performStartMove(false, mainEntrance);
             expect(calculateMoveTimeSpy).toHaveBeenCalledOnce();
             const calculatedTime = 4045.566;
@@ -1289,7 +1289,7 @@ describe('StartMoveAction test', () => {
             for (const member of party.members.values())
                 expect(member.positionMatches(party.leader));
 
-            const startMoveAction = new StartMoveAction(game, undefined, astrid, astrid.location, false);
+            const startMoveAction = new StartMoveAction(testGame, undefined, astrid, astrid.location, false);
             await startMoveAction.performStartMove(false, mainEntrance);
             expect(calculateMoveTimeSpy).toHaveBeenCalledOnce();
             const calculatedTime = 4045.566;
@@ -1400,7 +1400,7 @@ describe('StartMoveAction test', () => {
                 expect(member.positionMatches(party.leader));
 
             astrid.moveQueue = ["HALL 3", "LOCKER ROOM"];
-            const startMoveAction = new StartMoveAction(game, undefined, astrid, astrid.location, false);
+            const startMoveAction = new StartMoveAction(testGame, undefined, astrid, astrid.location, false);
             await startMoveAction.performStartMove(false, hall3);
             expect(calculateMoveTimeSpy).toHaveBeenCalledOnce();
             let calculatedTime = 11427.364;
@@ -1601,7 +1601,7 @@ describe('StartMoveAction test', () => {
                 expect(member.positionMatches(party.leader));
 
             astrid.moveQueue = ["HALL 3", "LOCKER ROOM"];
-            const startMoveAction = new StartMoveAction(game, undefined, astrid, astrid.location, false);
+            const startMoveAction = new StartMoveAction(testGame, undefined, astrid, astrid.location, false);
             await startMoveAction.performStartMove(false, hall3);
             expect(calculateMoveTimeSpy).toHaveBeenCalledOnce();
             let partyCalculatedTime = 11427.364;
@@ -1630,7 +1630,7 @@ describe('StartMoveAction test', () => {
             expect(asukaFirstNotificationMessage.content).toBe(`> -# Following an individual wearing a MASK, you start walking toward HALL 3 with Nero while carrying a POT.`);
             expect(neroFirstNotificationMessage.content).toBe(`> -# Following an individual wearing a MASK, you start walking toward HALL 3 with Asuka.`);
 
-            const dismissAction = new DismissAction(game, undefined, astrid, astrid.location, false);
+            const dismissAction = new DismissAction(testGame, undefined, astrid, astrid.location, false);
             await dismissAction.performDismissAction([nero]);
             expect(astrid.party.hasFollower(nero)).toBe(false);
             expect(nero.isFollowing(astrid)).toBe(true);

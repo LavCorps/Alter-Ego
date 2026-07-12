@@ -9,41 +9,41 @@ import { createMockMessage } from "../../__mocks__/libs/discord.js";
 
 describe("DropAction test", () => {
     beforeAll(async () => {
-        if (!game.inProgress) await game.entityLoader.loadAll();
+        if (!testGame.inProgress) await testGame.entityLoader.loadAll();
     });
 
     afterAll(async () => {
-        clearQueue(game);
+        clearQueue(testGame);
         vi.resetAllMocks();
-        await game.entityLoader.loadInventoryItems(false);
-        await game.entityLoader.loadRoomItems(false);
+        await testGame.entityLoader.loadInventoryItems(false);
+        await testGame.entityLoader.loadRoomItems(false);
     });
 
     test("ported legacy test", () => {
-        const kyra = game.entityFinder.getPlayer("Kyra");
-        const vivian = game.entityFinder.getPlayer("Vivian");
-        const kyraHand = game.entityFinder.getPlayerHandHoldingItem(kyra, "MUG OF COFFEE");
-        const vivianHand = game.entityFinder.getPlayerFreeHand(vivian);
-        const kyraFloor = game.entityFinder.getFixture("FLOOR", kyra.location.id);
-        const vivianFloor = game.entityFinder.getFixture("FLOOR", vivian.location.id);
+        const kyra = testGame.entityFinder.getPlayer("Kyra");
+        const vivian = testGame.entityFinder.getPlayer("Vivian");
+        const kyraHand = testGame.entityFinder.getPlayerHandHoldingItem(kyra, "MUG OF COFFEE");
+        const vivianHand = testGame.entityFinder.getPlayerFreeHand(vivian);
+        const kyraFloor = testGame.entityFinder.getFixture("FLOOR", kyra.location.id);
+        const vivianFloor = testGame.entityFinder.getFixture("FLOOR", vivian.location.id);
 
         {
             const coffee = kyraHand.equippedItem;
-            const dropAction = new DropAction(game, createMockMessage(), kyra, kyra.location, false);
+            const dropAction = new DropAction(testGame, createMockMessage(), kyra, kyra.location, false);
             dropAction.performDrop(coffee, kyraHand, kyraFloor, null);
         }
 
         {
-            let quiver = game.entityFinder.getInventoryItem("VIVIANS QUIVER");
-            const unequipAction = new UnequipAction(game, createMockMessage(), vivian, vivian.location, false);
-            unequipAction.performUnequip(quiver,game.entityFinder.getPlayerEquipmentSlotWithEquippedItem(vivian, quiver.getIdentifier()),vivianHand);
-            quiver = game.entityFinder.getInventoryItem("VIVIANS QUIVER");
-            const dropAction = new DropAction(game, createMockMessage(), vivian, vivian.location, false);
+            let quiver = testGame.entityFinder.getInventoryItem("VIVIANS QUIVER");
+            const unequipAction = new UnequipAction(testGame, createMockMessage(), vivian, vivian.location, false);
+            unequipAction.performUnequip(quiver,testGame.entityFinder.getPlayerEquipmentSlotWithEquippedItem(vivian, quiver.getIdentifier()),vivianHand);
+            quiver = testGame.entityFinder.getInventoryItem("VIVIANS QUIVER");
+            const dropAction = new DropAction(testGame, createMockMessage(), vivian, vivian.location, false);
             dropAction.performDrop(quiver, vivianHand, vivianFloor, null);
         }
 
-        const coffee = game.entityFinder.getRoomItem("MUG OF COFFEE", kyra.location.id, "FIXTURE", kyraFloor.name);
-        const quiver = game.entityFinder.getRoomItem("VIVIANS QUIVER", vivian.location.id, "FIXTURE", vivianFloor.name);
+        const coffee = testGame.entityFinder.getRoomItem("MUG OF COFFEE", kyra.location.id, "FIXTURE", kyraFloor.name);
+        const quiver = testGame.entityFinder.getRoomItem("VIVIANS QUIVER", vivian.location.id, "FIXTURE", vivianFloor.name);
         const jeans = quiver.inventory.get("QUIVER").items[0];
         const ptp2 = jeans.inventory.get("RIGHT POCKET").items[0];
         const ptp3 = jeans.inventory.get("LEFT POCKET").items[0];
@@ -132,17 +132,17 @@ describe("DropAction test", () => {
         expect(detergent.inventory.size).toStrictEqual(0);
 
         // Test that all of the item row numbers were updated properly.
-        for (let i = 0; i < game.roomItems.length; i++)
-            expect(game.roomItems[i].row).toStrictEqual(i + 2);
+        for (let i = 0; i < testGame.roomItems.length; i++)
+            expect(testGame.roomItems[i].row).toStrictEqual(i + 2);
 
         // Test that all of the inventoryItem row numbers were updated properly.
-        for (let i = 0; i < game.inventoryItems.length; i++)
-            expect(game.inventoryItems[i].row).toStrictEqual(i + 2);
+        for (let i = 0; i < testGame.inventoryItems.length; i++)
+            expect(testGame.inventoryItems[i].row).toStrictEqual(i + 2);
 
         // Test that all of the inventoryItems and Player inventory items have the same row numbers.
         for (const slot of vivian.inventory.values()) {
             for (const item of slot.items) {
-                const match = game.inventoryItems.find(item => item.player.id === vivian.id && (item.prefab === null && item.prefab === null || item.prefab !== null && item.prefab !== null && item.prefab.id === item.prefab.id) && item.equipmentSlot === item.equipmentSlot && item.containerName === item.containerName);
+                const match = testGame.inventoryItems.find(item => item.player.id === vivian.id && (item.prefab === null && item.prefab === null || item.prefab !== null && item.prefab !== null && item.prefab.id === item.prefab.id) && item.equipmentSlot === item.equipmentSlot && item.containerName === item.containerName);
                 expect(match !== null && match !== undefined).toBeTruthy();
                 expect(item.row === match.row);
             }

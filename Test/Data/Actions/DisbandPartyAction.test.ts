@@ -52,14 +52,14 @@ describe('DisbandPartyAction test', () => {
     let crutches: Status;
 
     beforeAll(async () => {
-        if (!game.inProgress) await game.entityLoader.loadAll();
-        astrid = game.entityFinder.getLivingPlayer("Astrid");
-        asuka = game.entityFinder.getLivingPlayer("Asuka");
-        nero = game.entityFinder.getLivingPlayer("Nero");
-        fast = game.entityFinder.getStatusEffect("fast");
-        concealed = game.entityFinder.getStatusEffect("concealed");
-        cheerful = game.entityFinder.getStatusEffect("cheerful");
-        crutches = game.entityFinder.getStatusEffect("crutches");
+        if (!testGame.inProgress) await testGame.entityLoader.loadAll();
+        astrid = testGame.entityFinder.getLivingPlayer("Astrid");
+        asuka = testGame.entityFinder.getLivingPlayer("Asuka");
+        nero = testGame.entityFinder.getLivingPlayer("Nero");
+        fast = testGame.entityFinder.getStatusEffect("fast");
+        concealed = testGame.entityFinder.getStatusEffect("concealed");
+        cheerful = testGame.entityFinder.getStatusEffect("cheerful");
+        crutches = testGame.entityFinder.getStatusEffect("crutches");
         astrid.inflict(fast);
         astrid.inflict(concealed);
         concealedDisplayName = "an individual wearing a MASK";
@@ -102,7 +102,7 @@ describe('DisbandPartyAction test', () => {
         };
 
         const sendMessages = async () => {
-            await sendQueuedMessages(game);
+            await sendQueuedMessages(testGame);
             narrationMessage = astrid.location.channel.messages.cache.last();
             astridNotificationMessage = astrid.notificationChannel.messages.cache.last();
             asukaNotificationMessage = asuka.notificationChannel.messages.cache.last();
@@ -111,14 +111,14 @@ describe('DisbandPartyAction test', () => {
 
         beforeEach(async () => {
             deletePartySpy = vi.spyOn(GameEntityManager.prototype, 'deleteParty');
-            const followAction1 = new FollowAction(game, undefined, asuka, asuka.location, false);
+            const followAction1 = new FollowAction(testGame, undefined, asuka, asuka.location, false);
             await followAction1.performFollow(astrid);
-            const followAction2 = new FollowAction(game, undefined, nero, nero.location, false);
+            const followAction2 = new FollowAction(testGame, undefined, nero, nero.location, false);
             await followAction2.performFollow(astrid);
         });
 
         afterEach(async () => {
-            const stopFollowingAction = new StopFollowingAction(game, undefined, astrid, astrid.location, false);
+            const stopFollowingAction = new StopFollowingAction(testGame, undefined, astrid, astrid.location, false);
             await stopFollowingAction.performStopFollowing(false, new Set([astrid, asuka, nero]));
             await sendMessages();
             clearMessages();
@@ -126,7 +126,7 @@ describe('DisbandPartyAction test', () => {
         });
 
         test('disband party with one follower and do not stop following (no custom messages)', async () => {
-            const leadAction = new LeadAction(game, undefined, astrid, astrid.location, false);
+            const leadAction = new LeadAction(testGame, undefined, astrid, astrid.location, false);
             await leadAction.performLead([asuka]);
             // Ensure the party was formed correctly.
             expect(astrid.party).not.toBeNull();
@@ -135,15 +135,15 @@ describe('DisbandPartyAction test', () => {
             expect(astrid.party.hasFollower(asuka)).toBe(true);
             expect(astrid.party.hasFollower(nero)).toBe(false);
             const partyId = astrid.party.id;
-            expect(game.parties.has(partyId)).toBe(true);
-            expect(game.whispers.has(partyId)).toBe(true);
+            expect(testGame.parties.has(partyId)).toBe(true);
+            expect(testGame.whispers.has(partyId)).toBe(true);
 
             // Send the messages that are irrelevant to this test, then clear them from the cache.
             await sendMessages();
             clearMessages();
 
             // Now disband it.
-            const disbandAction = new DisbandPartyAction(game, undefined, astrid, astrid.location, false);
+            const disbandAction = new DisbandPartyAction(testGame, undefined, astrid, astrid.location, false);
             await disbandAction.performDisbandParty(false);
 
             expect(astrid.ledPlayers).toHaveLength(0);
@@ -152,8 +152,8 @@ describe('DisbandPartyAction test', () => {
             expect(astrid.isLeading(asuka)).toBe(false);
             expect(astrid.isLeading(nero)).toBe(false);
             expect(deletePartySpy).toHaveBeenCalledOnce();
-            expect(game.parties.has(partyId)).toBe(false);
-            expect(game.whispers.has(partyId)).toBe(false);
+            expect(testGame.parties.has(partyId)).toBe(false);
+            expect(testGame.whispers.has(partyId)).toBe(false);
             expect(astrid.party).toBeNull();
             expect(asuka.party).toBeNull();
             expect(nero.party).toBeNull();
@@ -182,7 +182,7 @@ describe('DisbandPartyAction test', () => {
         });
 
         test('disband party with two followers and do not stop following (no custom messages)', async () => {
-            const leadAction = new LeadAction(game, undefined, astrid, astrid.location, false);
+            const leadAction = new LeadAction(testGame, undefined, astrid, astrid.location, false);
             await leadAction.performLead([asuka, nero]);
             // Ensure the party was formed correctly.
             expect(astrid.party).not.toBeNull();
@@ -191,15 +191,15 @@ describe('DisbandPartyAction test', () => {
             expect(astrid.party.hasFollower(asuka)).toBe(true);
             expect(astrid.party.hasFollower(nero)).toBe(true);
             const partyId = astrid.party.id;
-            expect(game.parties.has(partyId)).toBe(true);
-            expect(game.whispers.has(partyId)).toBe(true);
+            expect(testGame.parties.has(partyId)).toBe(true);
+            expect(testGame.whispers.has(partyId)).toBe(true);
 
             // Send the messages that are irrelevant to this test, then clear them from the cache.
             await sendMessages();
             clearMessages();
 
             // Now disband it.
-            const disbandAction = new DisbandPartyAction(game, undefined, astrid, astrid.location, false);
+            const disbandAction = new DisbandPartyAction(testGame, undefined, astrid, astrid.location, false);
             await disbandAction.performDisbandParty(false);
 
             expect(astrid.ledPlayers).toHaveLength(0);
@@ -208,8 +208,8 @@ describe('DisbandPartyAction test', () => {
             expect(astrid.isLeading(asuka)).toBe(false);
             expect(astrid.isLeading(nero)).toBe(false);
             expect(deletePartySpy).toHaveBeenCalledOnce();
-            expect(game.parties.has(partyId)).toBe(false);
-            expect(game.whispers.has(partyId)).toBe(false);
+            expect(testGame.parties.has(partyId)).toBe(false);
+            expect(testGame.whispers.has(partyId)).toBe(false);
             expect(astrid.party).toBeNull();
             expect(asuka.party).toBeNull();
             expect(nero.party).toBeNull();
@@ -239,7 +239,7 @@ describe('DisbandPartyAction test', () => {
         });
 
         test('disband party with one follower and stop following (no custom messages)', async () => {
-            const leadAction = new LeadAction(game, undefined, astrid, astrid.location, false);
+            const leadAction = new LeadAction(testGame, undefined, astrid, astrid.location, false);
             await leadAction.performLead([asuka]);
             // Ensure the party was formed correctly.
             expect(astrid.party).not.toBeNull();
@@ -248,15 +248,15 @@ describe('DisbandPartyAction test', () => {
             expect(astrid.party.hasFollower(asuka)).toBe(true);
             expect(astrid.party.hasFollower(nero)).toBe(false);
             const partyId = astrid.party.id;
-            expect(game.parties.has(partyId)).toBe(true);
-            expect(game.whispers.has(partyId)).toBe(true);
+            expect(testGame.parties.has(partyId)).toBe(true);
+            expect(testGame.whispers.has(partyId)).toBe(true);
 
             // Send the messages that are irrelevant to this test, then clear them from the cache.
             await sendMessages();
             clearMessages();
 
             // Now disband it.
-            const disbandAction = new DisbandPartyAction(game, undefined, astrid, astrid.location, false);
+            const disbandAction = new DisbandPartyAction(testGame, undefined, astrid, astrid.location, false);
             await disbandAction.performDisbandParty(true);
 
             expect(astrid.ledPlayers).toHaveLength(0);
@@ -265,8 +265,8 @@ describe('DisbandPartyAction test', () => {
             expect(astrid.isLeading(asuka)).toBe(false);
             expect(astrid.isLeading(nero)).toBe(false);
             expect(deletePartySpy).toHaveBeenCalledOnce();
-            expect(game.parties.has(partyId)).toBe(false);
-            expect(game.whispers.has(partyId)).toBe(false);
+            expect(testGame.parties.has(partyId)).toBe(false);
+            expect(testGame.whispers.has(partyId)).toBe(false);
             expect(astrid.party).toBeNull();
             expect(asuka.party).toBeNull();
             expect(nero.party).toBeNull();
@@ -295,7 +295,7 @@ describe('DisbandPartyAction test', () => {
         });
 
         test('disband party with two followers and stop following (no custom messages)', async () => {
-            const leadAction = new LeadAction(game, undefined, astrid, astrid.location, false);
+            const leadAction = new LeadAction(testGame, undefined, astrid, astrid.location, false);
             await leadAction.performLead([asuka, nero]);
             // Ensure the party was formed correctly.
             expect(astrid.party).not.toBeNull();
@@ -304,15 +304,15 @@ describe('DisbandPartyAction test', () => {
             expect(astrid.party.hasFollower(asuka)).toBe(true);
             expect(astrid.party.hasFollower(nero)).toBe(true);
             const partyId = astrid.party.id;
-            expect(game.parties.has(partyId)).toBe(true);
-            expect(game.whispers.has(partyId)).toBe(true);
+            expect(testGame.parties.has(partyId)).toBe(true);
+            expect(testGame.whispers.has(partyId)).toBe(true);
 
             // Send the messages that are irrelevant to this test, then clear them from the cache.
             await sendMessages();
             clearMessages();
 
             // Now disband it.
-            const disbandAction = new DisbandPartyAction(game, undefined, astrid, astrid.location, false);
+            const disbandAction = new DisbandPartyAction(testGame, undefined, astrid, astrid.location, false);
             await disbandAction.performDisbandParty(true);
 
             expect(astrid.ledPlayers).toHaveLength(0);
@@ -321,8 +321,8 @@ describe('DisbandPartyAction test', () => {
             expect(astrid.isLeading(asuka)).toBe(false);
             expect(astrid.isLeading(nero)).toBe(false);
             expect(deletePartySpy).toHaveBeenCalledOnce();
-            expect(game.parties.has(partyId)).toBe(false);
-            expect(game.whispers.has(partyId)).toBe(false);
+            expect(testGame.parties.has(partyId)).toBe(false);
+            expect(testGame.whispers.has(partyId)).toBe(false);
             expect(astrid.party).toBeNull();
             expect(asuka.party).toBeNull();
             expect(nero.party).toBeNull();
@@ -352,7 +352,7 @@ describe('DisbandPartyAction test', () => {
         });
 
         test('disband party with two followers and do not stop following (with custom messages)', async () => {
-            const leadAction = new LeadAction(game, undefined, astrid, astrid.location, false);
+            const leadAction = new LeadAction(testGame, undefined, astrid, astrid.location, false);
             await leadAction.performLead([asuka, nero]);
             // Ensure the party was formed correctly.
             expect(astrid.party).not.toBeNull();
@@ -361,8 +361,8 @@ describe('DisbandPartyAction test', () => {
             expect(astrid.party.hasFollower(asuka)).toBe(true);
             expect(astrid.party.hasFollower(nero)).toBe(true);
             const partyId = astrid.party.id;
-            expect(game.parties.has(partyId)).toBe(true);
-            expect(game.whispers.has(partyId)).toBe(true);
+            expect(testGame.parties.has(partyId)).toBe(true);
+            expect(testGame.whispers.has(partyId)).toBe(true);
 
             // Send the messages that are irrelevant to this test, then clear them from the cache.
             await sendMessages();
@@ -373,7 +373,7 @@ describe('DisbandPartyAction test', () => {
             const customFollowerNotification = `Your party has been disbanded, but you are still following the party leader.`;
 
             // Now disband it.
-            const disbandAction = new DisbandPartyAction(game, undefined, astrid, astrid.location, false);
+            const disbandAction = new DisbandPartyAction(testGame, undefined, astrid, astrid.location, false);
             await disbandAction.performDisbandParty(false, customNarration, customLeaderNotification, customFollowerNotification);
 
             expect(astrid.ledPlayers).toHaveLength(0);
@@ -382,8 +382,8 @@ describe('DisbandPartyAction test', () => {
             expect(astrid.isLeading(asuka)).toBe(false);
             expect(astrid.isLeading(nero)).toBe(false);
             expect(deletePartySpy).toHaveBeenCalledOnce();
-            expect(game.parties.has(partyId)).toBe(false);
-            expect(game.whispers.has(partyId)).toBe(false);
+            expect(testGame.parties.has(partyId)).toBe(false);
+            expect(testGame.whispers.has(partyId)).toBe(false);
             expect(astrid.party).toBeNull();
             expect(asuka.party).toBeNull();
             expect(nero.party).toBeNull();
