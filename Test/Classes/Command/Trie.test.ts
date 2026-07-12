@@ -20,9 +20,10 @@ import { clearQueue } from "../../../Modules/messageHandler.js";
  */
 const DEBUG = false;
 
+
 describe("Trie class from NG Commands", () => {
     beforeAll(async () => {
-        if (!game.inProgress) await game.entityLoader.loadAll();
+        if (!testGame.inProgress) await testGame.entityLoader.loadAll();
     });
 
     beforeEach(async () => {
@@ -30,7 +31,7 @@ describe("Trie class from NG Commands", () => {
     });
 
     afterEach(async () => {
-        clearQueue(game);
+        clearQueue(testGame);
         vi.resetAllMocks();
     });
 
@@ -87,11 +88,11 @@ describe("Trie class from NG Commands", () => {
         test("load all loadable game data into trie", async () => {
             const prepositions: Set<string> = new Set();
             const start = process.hrtime.bigint();
-            for (const player of game.players.values()) {
+            for (const player of testGame.players.values()) {
                 trie.insert(player.displayName, new EntityToken(player.displayName, player));
             }
             const playerConclude = process.hrtime.bigint();
-            for (const item of game.inventoryItems) {
+            for (const item of testGame.inventoryItems) {
                 if (item.prefab !== null && item.quantity > 0) {
                     trie.insert(item.prefab.id, new ItemContainerToken(item.prefab.id, item));
                     if (!prepositions.has(item.getPreposition())) {
@@ -102,7 +103,7 @@ describe("Trie class from NG Commands", () => {
                 }
             }
             const inventoryItemConclude = process.hrtime.bigint();
-            for (const item of game.roomItems) {
+            for (const item of testGame.roomItems) {
                 if (item.prefab !== null && item.quantity > 0) {
                     trie.insert(item.prefab.id, new ItemContainerToken(item.prefab.id, item));
                     if (!prepositions.has(item.getPreposition())) {
@@ -113,7 +114,7 @@ describe("Trie class from NG Commands", () => {
                 }
             }
             const roomItemConclude = process.hrtime.bigint();
-            for (const fixture of game.fixtures) {
+            for (const fixture of testGame.fixtures) {
                 trie.insert(fixture.name, new ItemContainerToken(fixture.name, fixture));
                 if (!prepositions.has(fixture.getPreposition())) {
                     const preposition = fixture.getPreposition();
@@ -122,39 +123,39 @@ describe("Trie class from NG Commands", () => {
                 }
             }
             const fixtureConclude = process.hrtime.bigint();
-            for (const puzzle of game.puzzles) {
+            for (const puzzle of testGame.puzzles) {
                 trie.insert(puzzle.name, new ItemContainerToken(puzzle.name, puzzle));
             }
             const puzzleConclude = process.hrtime.bigint();
-            for (const player of game.players.values()) {
+            for (const player of testGame.players.values()) {
                 for (const slot of player.inventory.values()) {
                     trie.insert(slot.id, new EntityToken(slot.id, slot));
                 }
             }
             const equipmentSlotConclude = process.hrtime.bigint();
-            for (const room of game.rooms.values()) {
+            for (const room of testGame.rooms.values()) {
                 trie.insert(room.id, new EntityToken(room.id, room));
             }
             const roomConclude = process.hrtime.bigint();
-            for (const room of game.rooms.values()) {
+            for (const room of testGame.rooms.values()) {
                 for (const exit of room.exits.values()) {
                     trie.insert(exit.name, new EntityToken(exit.name, exit));
                 }
             }
             const exitConclude = process.hrtime.bigint();
-            for (const event of game.events.values()) {
+            for (const event of testGame.events.values()) {
                 trie.insert(event.id, new EntityToken(event.id, event));
             }
             const eventConclude = process.hrtime.bigint();
-            for (const flag of game.flags.values()) {
+            for (const flag of testGame.flags.values()) {
                 trie.insert(flag.id, new EntityToken(flag.id, flag));
             }
             const flagConclude = process.hrtime.bigint();
-            for (const prefab of game.prefabs.values()) {
+            for (const prefab of testGame.prefabs.values()) {
                 trie.insert(prefab.id, new EntityToken(prefab.id, prefab));
             }
             const prefabConclude = process.hrtime.bigint();
-            for (const status of game.statusEffects.values()) {
+            for (const status of testGame.statusEffects.values()) {
                 trie.insert(status.id, new EntityToken(status.id, status));
             }
             const statusConclude = process.hrtime.bigint();

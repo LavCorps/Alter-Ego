@@ -28,15 +28,15 @@ const DEBUG = false;
 
 describe("PlayerContext class from NG Commands", () => {
     beforeAll(async () => {
-        if (!game.inProgress) await game.entityLoader.loadAll();
+        if (!testGame.inProgress) await testGame.entityLoader.loadAll();
     });
 
     beforeEach(async () => {
-        kyra = game.entityFinder.getPlayer("Kyra");
+        kyra = testGame.entityFinder.getPlayer("Kyra");
     });
 
     afterEach(async () => {
-        clearQueue(game);
+        clearQueue(testGame);
         vi.resetAllMocks();
     });
 
@@ -44,7 +44,7 @@ describe("PlayerContext class from NG Commands", () => {
 
     describe("constructor()", () => {
         test("verify that stashedItems does not include top-level items", async () => {
-            const context = new PlayerContext(game, kyra, "test", createMockMessage());
+            const context = new PlayerContext(testGame, kyra, "test", createMockMessage());
             const noStash: Set<InventoryItem> = new Set();
             const stash: Set<InventoryItem> = new Set();
 
@@ -57,7 +57,7 @@ describe("PlayerContext class from NG Commands", () => {
         });
 
         test("verify that stashedItems are not duplicated", async () => {
-            const context = new PlayerContext(game, kyra, "test", createMockMessage());
+            const context = new PlayerContext(testGame, kyra, "test", createMockMessage());
             let stashCount = 0;
             const stash: Set<InventoryItem> = new Set();
 
@@ -77,7 +77,7 @@ describe("PlayerContext class from NG Commands", () => {
             const trieInitConclude = process.hrtime.bigint();
             const message = createMockMessage();
             const mockInitConclude = process.hrtime.bigint();
-            const context = new PlayerContext(game, kyra, "test", message);
+            const context = new PlayerContext(testGame, kyra, "test", message);
             const contextInitConclude = process.hrtime.bigint();
             const patterns = [
                 new Pattern([
@@ -113,7 +113,7 @@ describe("PlayerContext class from NG Commands", () => {
                 console.log(`  lexicon building took ${Number(getLexiconConclude - patternInitConclude) / 1000000}ms`);
                 console.log(`  trie loading took ${Number(trieLoadConclude - getLexiconConclude) / 1000000}ms`);
                 console.log(`final trie size is ${trie.size()}`);
-                console.log(game.clientContext.prettyPrinter.prettyString(trie));
+                console.log(testGame.clientContext.prettyPrinter.prettyString(trie));
             }
             expect(trie.size()).toBe(303);
         });
@@ -124,7 +124,7 @@ describe("PlayerContext class from NG Commands", () => {
             const trieInitConclude = process.hrtime.bigint();
             const message = createMockMessage();
             const mockInitConclude = process.hrtime.bigint();
-            const context = new PlayerContext(game, kyra, "test", message);
+            const context = new PlayerContext(testGame, kyra, "test", message);
             const contextInitConclude = process.hrtime.bigint();
             const patterns = [
                 new Pattern([
@@ -153,7 +153,7 @@ describe("PlayerContext class from NG Commands", () => {
                 console.log(`  lexicon building took ${Number(getLexiconConclude - patternInitConclude) / 1000000}ms`);
                 console.log(`  trie loading took ${Number(trieLoadConclude - getLexiconConclude) / 1000000}ms`);
                 console.log(`final trie size is ${trie.size()}`);
-                console.log(game.clientContext.prettyPrinter.prettyString(trie));
+                console.log(testGame.clientContext.prettyPrinter.prettyString(trie));
             }
             expect(trie.size()).toBe(12);
         });
@@ -164,7 +164,7 @@ describe("PlayerContext class from NG Commands", () => {
             const trieInitConclude = process.hrtime.bigint();
             const message = createMockMessage();
             const mockInitConclude = process.hrtime.bigint();
-            const context = new PlayerContext(game, kyra, "test", message);
+            const context = new PlayerContext(testGame, kyra, "test", message);
             const contextInitConclude = process.hrtime.bigint();
             const patterns = [
                 new Pattern([
@@ -193,7 +193,7 @@ describe("PlayerContext class from NG Commands", () => {
                 console.log(`  lexicon building took ${Number(getLexiconConclude - patternInitConclude) / 1000000}ms`);
                 console.log(`  trie loading took ${Number(trieLoadConclude - getLexiconConclude) / 1000000}ms`);
                 console.log(`final trie size is ${trie.size()}`);
-                console.log(game.clientContext.prettyPrinter.prettyString(trie));
+                console.log(testGame.clientContext.prettyPrinter.prettyString(trie));
             }
             expect(trie.size()).toBe(27);
         });
@@ -204,7 +204,7 @@ describe("PlayerContext class from NG Commands", () => {
             const trieInitConclude = process.hrtime.bigint();
             const message = createMockMessage();
             const mockInitConclude = process.hrtime.bigint();
-            const context = new PlayerContext(game, kyra, "test", message);
+            const context = new PlayerContext(testGame, kyra, "test", message);
             const contextInitConclude = process.hrtime.bigint();
             const patterns = [
                 new Pattern([
@@ -233,7 +233,7 @@ describe("PlayerContext class from NG Commands", () => {
                 console.log(`  lexicon building took ${Number(getLexiconConclude - patternInitConclude) / 1000000}ms`);
                 console.log(`  trie loading took ${Number(trieLoadConclude - getLexiconConclude) / 1000000}ms`);
                 console.log(`final trie size is ${trie.size()}`);
-                console.log(game.clientContext.prettyPrinter.prettyString(trie));
+                console.log(testGame.clientContext.prettyPrinter.prettyString(trie));
             }
             expect(trie.size()).toBe(41);
         });
@@ -244,7 +244,7 @@ describe("PlayerContext class from NG Commands", () => {
             const trieInitConclude = process.hrtime.bigint();
             const message = createMockMessage();
             const mockInitConclude = process.hrtime.bigint();
-            const context = new PlayerContext(game, kyra, "test", message);
+            const context = new PlayerContext(testGame, kyra, "test", message);
             const contextInitConclude = process.hrtime.bigint();
             const patterns = [
                 new Pattern([
@@ -273,7 +273,7 @@ describe("PlayerContext class from NG Commands", () => {
                 console.log(`  lexicon building took ${Number(getLexiconConclude - patternInitConclude) / 1000000}ms`);
                 console.log(`  trie loading took ${Number(trieLoadConclude - getLexiconConclude) / 1000000}ms`);
                 console.log(`final trie size is ${trie.size()}`);
-                console.log(game.clientContext.prettyPrinter.prettyString(trie));
+                console.log(testGame.clientContext.prettyPrinter.prettyString(trie));
             }
             expect(trie.size()).toBe(30);
         });
@@ -284,7 +284,7 @@ describe("PlayerContext class from NG Commands", () => {
             const trieInitConclude = process.hrtime.bigint();
             const message = createMockMessage();
             const mockInitConclude = process.hrtime.bigint();
-            const context = new PlayerContext(game, kyra, "test", message);
+            const context = new PlayerContext(testGame, kyra, "test", message);
             const contextInitConclude = process.hrtime.bigint();
             const patterns = [
                 new Pattern([
@@ -313,7 +313,7 @@ describe("PlayerContext class from NG Commands", () => {
                 console.log(`  lexicon building took ${Number(getLexiconConclude - patternInitConclude) / 1000000}ms`);
                 console.log(`  trie loading took ${Number(trieLoadConclude - getLexiconConclude) / 1000000}ms`);
                 console.log(`final trie size is ${trie.size()}`);
-                console.log(game.clientContext.prettyPrinter.prettyString(trie));
+                console.log(testGame.clientContext.prettyPrinter.prettyString(trie));
             }
             expect(trie.size()).toBe(19);
         });
@@ -324,7 +324,7 @@ describe("PlayerContext class from NG Commands", () => {
             const trieInitConclude = process.hrtime.bigint();
             const message = createMockMessage();
             const mockInitConclude = process.hrtime.bigint();
-            const context = new PlayerContext(game, kyra, "test", message);
+            const context = new PlayerContext(testGame, kyra, "test", message);
             const contextInitConclude = process.hrtime.bigint();
             const patterns = [
                 new Pattern([
@@ -353,7 +353,7 @@ describe("PlayerContext class from NG Commands", () => {
                 console.log(`  lexicon building took ${Number(getLexiconConclude - patternInitConclude) / 1000000}ms`);
                 console.log(`  trie loading took ${Number(trieLoadConclude - getLexiconConclude) / 1000000}ms`);
                 console.log(`final trie size is ${trie.size()}`);
-                console.log(game.clientContext.prettyPrinter.prettyString(trie));
+                console.log(testGame.clientContext.prettyPrinter.prettyString(trie));
             }
             expect(trie.size()).toBe(4);
         });
@@ -364,7 +364,7 @@ describe("PlayerContext class from NG Commands", () => {
             const trieInitConclude = process.hrtime.bigint();
             const message = createMockMessage();
             const mockInitConclude = process.hrtime.bigint();
-            const context = new PlayerContext(game, kyra, "test", message);
+            const context = new PlayerContext(testGame, kyra, "test", message);
             const contextInitConclude = process.hrtime.bigint();
             const patterns = [
                 new Pattern([
@@ -393,7 +393,7 @@ describe("PlayerContext class from NG Commands", () => {
                 console.log(`  lexicon building took ${Number(getLexiconConclude - patternInitConclude) / 1000000}ms`);
                 console.log(`  trie loading took ${Number(trieLoadConclude - getLexiconConclude) / 1000000}ms`);
                 console.log(`final trie size is ${trie.size()}`);
-                console.log(game.clientContext.prettyPrinter.prettyString(trie));
+                console.log(testGame.clientContext.prettyPrinter.prettyString(trie));
             }
             expect(trie.size()).toBe(5);
         });
@@ -404,7 +404,7 @@ describe("PlayerContext class from NG Commands", () => {
             const trieInitConclude = process.hrtime.bigint();
             const message = createMockMessage();
             const mockInitConclude = process.hrtime.bigint();
-            const context = new PlayerContext(game, kyra, "test", message);
+            const context = new PlayerContext(testGame, kyra, "test", message);
             const contextInitConclude = process.hrtime.bigint();
             const patterns = [
                 new Pattern([
@@ -433,7 +433,7 @@ describe("PlayerContext class from NG Commands", () => {
                 console.log(`  lexicon building took ${Number(getLexiconConclude - patternInitConclude) / 1000000}ms`);
                 console.log(`  trie loading took ${Number(trieLoadConclude - getLexiconConclude) / 1000000}ms`);
                 console.log(`final trie size is ${trie.size()}`);
-                console.log(game.clientContext.prettyPrinter.prettyString(trie));
+                console.log(testGame.clientContext.prettyPrinter.prettyString(trie));
             }
             expect(trie.size()).toBe(199);
         });
@@ -444,7 +444,7 @@ describe("PlayerContext class from NG Commands", () => {
             const trieInitConclude = process.hrtime.bigint();
             const message = createMockMessage();
             const mockInitConclude = process.hrtime.bigint();
-            const context = new PlayerContext(game, kyra, "test", message);
+            const context = new PlayerContext(testGame, kyra, "test", message);
             const contextInitConclude = process.hrtime.bigint();
             const patterns = [];
             const patternInitConclude = process.hrtime.bigint();
@@ -464,7 +464,7 @@ describe("PlayerContext class from NG Commands", () => {
                 console.log(`  lexicon building took ${Number(getLexiconConclude - patternInitConclude) / 1000000}ms`);
                 console.log(`  trie loading took ${Number(trieLoadConclude - getLexiconConclude) / 1000000}ms`);
                 console.log(`final trie size is ${trie.size()}`);
-                console.log(game.clientContext.prettyPrinter.prettyString(trie));
+                console.log(testGame.clientContext.prettyPrinter.prettyString(trie));
             }
             expect(trie.size()).toBe(1);
         });
@@ -474,7 +474,7 @@ describe("PlayerContext class from NG Commands", () => {
         test("kyra: (drop) coffee on floor", async () => {
             const trie = new Trie();
             {
-                const context = new PlayerContext(game, kyra, "test", createMockMessage());
+                const context = new PlayerContext(testGame, kyra, "test", createMockMessage());
                 const tokens = context.getLexicon([
                     new Pattern([
                         new Multislot(

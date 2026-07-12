@@ -24,34 +24,34 @@ import { clearQueue } from "../../../Modules/messageHandler.js";
 
 describe("Pattern file from NG Commands", () => {
     beforeAll(async () => {
-        if (!game.inProgress) await game.entityLoader.loadAll();
+        if (!testGame.inProgress) await testGame.entityLoader.loadAll();
     });
 
     beforeEach(async () => {
-        kyra = game.entityFinder.getPlayer("Kyra");
+        kyra = testGame.entityFinder.getPlayer("Kyra");
         playerToken = new EntityToken("Kyra", kyra);
         inventoryItemToken = new ItemContainerToken("COFFEE", kyra.inventory.get("RIGHT HAND").equippedItem);
         roomItemToken = new ItemContainerToken(
             "SIGN IN SHEET",
-            game.entityFinder.getRoomItem("SIGN IN SHEET", "lobby"),
+            testGame.entityFinder.getRoomItem("SIGN IN SHEET", "lobby"),
         );
-        fixtureToken = new ItemContainerToken("FLOOR", game.entityFinder.getFixture("FLOOR", "lobby"));
-        puzzleToken = new ItemContainerToken("SCALE", game.entityFinder.getPuzzle("SCALE", "fitness-room"));
-        roomToken = new EntityToken("lobby", game.entityFinder.getRoom("lobby"));
+        fixtureToken = new ItemContainerToken("FLOOR", testGame.entityFinder.getFixture("FLOOR", "lobby"));
+        puzzleToken = new ItemContainerToken("SCALE", testGame.entityFinder.getPuzzle("SCALE", "fitness-room"));
+        roomToken = new EntityToken("lobby", testGame.entityFinder.getRoom("lobby"));
         exitToken = new EntityToken(
             "REVOLVING DOOR 1",
-            game.entityFinder.getExit(game.entityFinder.getRoom("lobby"), "REVOLVING DOOR 1"),
+            testGame.entityFinder.getExit(testGame.entityFinder.getRoom("lobby"), "REVOLVING DOOR 1"),
         );
         equipmentSlotToken = new EntityToken("RIGHT HAND", kyra.inventory.get("RIGHT HAND"));
-        eventToken = new EntityToken("PROLOGUE", game.entityFinder.getEvent("PROLOGUE"));
-        flagToken = new EntityToken("CHAPTER", game.entityFinder.getFlag("CHAPTER"));
-        prefabToken = new EntityToken("PEN", game.entityFinder.getPrefab("PEN"));
-        statusToken = new EntityToken("heated", game.entityFinder.getStatusEffect("heated"));
-        gestureToken = new EntityToken("giggle", game.entityFinder.getGesture("giggle"))
+        eventToken = new EntityToken("PROLOGUE", testGame.entityFinder.getEvent("PROLOGUE"));
+        flagToken = new EntityToken("CHAPTER", testGame.entityFinder.getFlag("CHAPTER"));
+        prefabToken = new EntityToken("PEN", testGame.entityFinder.getPrefab("PEN"));
+        statusToken = new EntityToken("heated", testGame.entityFinder.getStatusEffect("heated"));
+        gestureToken = new EntityToken("giggle", testGame.entityFinder.getGesture("giggle"))
     });
 
     afterEach(async () => {
-        clearQueue(game);
+        clearQueue(testGame);
         vi.resetAllMocks();
     });
 
@@ -309,10 +309,10 @@ describe("Pattern file from NG Commands", () => {
         beforeEach(async () => {
             const prepositions: Set<string> = new Set();
             trie = new Trie();
-            for (const player of game.players.values()) {
+            for (const player of testGame.players.values()) {
                 trie.insert(player.displayName, new EntityToken(player.displayName, player));
             }
-            for (const item of game.inventoryItems) {
+            for (const item of testGame.inventoryItems) {
                 if (item.prefab !== null && item.quantity > 0) {
                     trie.insert(item.getIdentifier(), new ItemContainerToken(item.getIdentifier(), item));
                     for (const [key, val] of item.inventory)
@@ -324,7 +324,7 @@ describe("Pattern file from NG Commands", () => {
                     }
                 }
             }
-            for (const item of game.roomItems) {
+            for (const item of testGame.roomItems) {
                 if (item.prefab !== null && item.quantity > 0) {
                     trie.insert(item.getIdentifier(), new ItemContainerToken(item.getIdentifier(), item));
                     for (const [key, val] of item.inventory)
@@ -336,7 +336,7 @@ describe("Pattern file from NG Commands", () => {
                     }
                 }
             }
-            for (const fixture of game.fixtures) {
+            for (const fixture of testGame.fixtures) {
                 trie.insert(fixture.name, new ItemContainerToken(fixture.name, fixture));
                 if (!prepositions.has(fixture.getPreposition())) {
                     const preposition = fixture.getPreposition();
@@ -344,35 +344,35 @@ describe("Pattern file from NG Commands", () => {
                     trie.insert(preposition, new PrepositionToken(preposition));
                 }
             }
-            for (const puzzle of game.puzzles) {
+            for (const puzzle of testGame.puzzles) {
                 trie.insert(puzzle.name, new ItemContainerToken(puzzle.name, puzzle));
             }
-            for (const player of game.players.values()) {
+            for (const player of testGame.players.values()) {
                 for (const slot of player.inventory.values()) {
                     trie.insert(slot.id, new EntityToken(slot.id, slot));
                 }
             }
-            for (const room of game.rooms.values()) {
+            for (const room of testGame.rooms.values()) {
                 trie.insert(room.id, new EntityToken(room.id, room));
             }
-            for (const room of game.rooms.values()) {
+            for (const room of testGame.rooms.values()) {
                 for (const exit of room.exits.values()) {
                     trie.insert(exit.name, new EntityToken(exit.name, exit));
                 }
             }
-            for (const event of game.events.values()) {
+            for (const event of testGame.events.values()) {
                 trie.insert(event.id, new EntityToken(event.id, event));
             }
-            for (const flag of game.flags.values()) {
+            for (const flag of testGame.flags.values()) {
                 trie.insert(flag.id, new EntityToken(flag.id, flag));
             }
-            for (const prefab of game.prefabs.values()) {
+            for (const prefab of testGame.prefabs.values()) {
                 trie.insert(prefab.id, new EntityToken(prefab.id, prefab));
             }
-            for (const status of game.statusEffects.values()) {
+            for (const status of testGame.statusEffects.values()) {
                 trie.insert(status.id, new EntityToken(status.id, status));
             }
-            for (const gesture of game.gestures.values()) {
+            for (const gesture of testGame.gestures.values()) {
                 trie.insert(gesture.id, new EntityToken(gesture.id, gesture));
             }
         });
