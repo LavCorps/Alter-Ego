@@ -3,7 +3,6 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { Collection } from "discord.js";
 import { InvalidInvocation, ValidatedInvocation, type MatchedInvocation } from "../../Classes/Command/Invocation.ts";
 import { Pattern, Glob } from "../../Classes/Command/Pattern.ts";
 import PlayerCommand from "../../Classes/Command/PlayerCommand.ts";
