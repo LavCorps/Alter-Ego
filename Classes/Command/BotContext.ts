@@ -72,23 +72,23 @@ export default class BotContext extends Context {
         if (types.has(Player) || types.has(EquipmentSlot)) {
             for (const player of this.game.players.values()) {
                 if (types.has(Player))
-                    tokens.push(player.displayName, new EntityToken(player.displayName, player));
+                    tokens.push(new EntityToken(player.displayName, player));
                 if (types.has(EquipmentSlot))
                     for (const slot of player.inventory.values())
-                        tokens.push(slot.id, new EntityToken(slot.id, slot));
+                        tokens.push(new EntityToken(slot.id, slot));
             }
         }
 
         if (types.has(InventoryItem)) {
             for (const item of this.game.inventoryItems) {
                 if (item.prefab !== null && item.quantity > 0) {
-                    tokens.push(item.getIdentifier(), new ItemContainerToken(item.getIdentifier(), item));
+                    tokens.push(new ItemContainerToken(item.getIdentifier(), item));
                     for (const [key, val] of item.inventory)
-                        tokens.push(key, new PocketToken(key, val, item));
+                        tokens.push(new PocketToken(key, val, item));
                     if (!prepositions.has(item.getPreposition())) {
                         const preposition = item.getPreposition();
                         prepositions.add(preposition);
-                        tokens.push(preposition, new PrepositionToken(preposition));
+                        tokens.push(new PrepositionToken(preposition));
                     }
                 }
             }
@@ -97,13 +97,13 @@ export default class BotContext extends Context {
         if (types.has(RoomItem)) {
             for (const item of this.game.roomItems) {
                 if (item.prefab !== null && item.quantity > 0) {
-                    tokens.push(item.getIdentifier(), new ItemContainerToken(item.getIdentifier(), item));
+                    tokens.push(new ItemContainerToken(item.getIdentifier(), item));
                     for (const [key, val] of item.inventory)
-                        tokens.push(key, new PocketToken(key, val, item));
+                        tokens.push(new PocketToken(key, val, item));
                     if (!prepositions.has(item.getPreposition())) {
                         const preposition = item.getPreposition();
                         prepositions.add(preposition);
-                        tokens.push(preposition, new PrepositionToken(preposition));
+                        tokens.push(new PrepositionToken(preposition));
                     }
                 }
             }
@@ -111,58 +111,58 @@ export default class BotContext extends Context {
 
         if (types.has(Fixture)) {
             for (const fixture of this.game.fixtures) {
-                tokens.push(fixture.name, new ItemContainerToken(fixture.name, fixture));
+                tokens.push(new ItemContainerToken(fixture.name, fixture));
                 if (!prepositions.has(fixture.getPreposition())) {
                     const preposition = fixture.getPreposition();
                     prepositions.add(preposition);
-                    tokens.push(preposition, new PrepositionToken(preposition));
+                    tokens.push(new PrepositionToken(preposition));
                 }
             }
         }
 
         if (types.has(Puzzle)) {
             for (const puzzle of this.game.puzzles) {
-                tokens.push(puzzle.name, new ItemContainerToken(puzzle.name, puzzle));
+                tokens.push(new ItemContainerToken(puzzle.name, puzzle));
             }
         }
 
         if (types.has(Room) || types.has(Exit)) {
             for (const room of this.game.rooms.values()) {
                 if (types.has(Room))
-                    tokens.push(room.id, new EntityToken(room.id, room));
+                    tokens.push(new EntityToken(room.id, room));
                 if (types.has(Exit))
                     for (const exit of room.exits.values())
-                        tokens.push(exit.name, new EntityToken(exit.name, exit));
+                        tokens.push(new EntityToken(exit.name, exit));
             }
         }
 
         if (types.has(Event)) {
             for (const event of this.game.events.values()) {
-                tokens.push(event.id, new EntityToken(event.id, event));
+                tokens.push(new EntityToken(event.id, event));
             }
         }
 
         if (types.has(Flag)) {
             for (const flag of this.game.flags.values()) {
-                tokens.push(flag.id, new EntityToken(flag.id, flag));
+                tokens.push(new EntityToken(flag.id, flag));
             }
         }
 
         if (types.has(Prefab)) {
             for (const prefab of this.game.prefabs.values()) {
-                tokens.push(prefab.id, new EntityToken(prefab.id, prefab));
+                tokens.push(new EntityToken(prefab.id, prefab));
             }
         }
 
         if (types.has(Status)) {
             for (const status of this.game.statusEffects.values()) {
-                tokens.push(status.id, new EntityToken(status.id, status));
+                tokens.push(new EntityToken(status.id, status));
             }
         }
 
         if (types.has(Gesture)) {
             for (const gesture of this.game.gestures.values()) {
-                tokens.push(gesture.id, new EntityToken(gesture.id, gesture));
+                tokens.push(new EntityToken(gesture.id, gesture));
             }
         }
 
