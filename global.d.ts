@@ -17,6 +17,7 @@ import type Room from "./Data/Room.ts";
 import type RoomItem from "./Data/RoomItem.ts";
 import type { Node } from "acorn";
 import type Moderator from "./Data/Moderator.ts";
+import type { CommandConfig } from "./Classes/Command/Command.ts";
 
 export { };
 
@@ -71,31 +72,11 @@ declare global {
     type BotInteraction = ButtonInteraction|StringSelectMenuInteraction|ModalSubmitInteraction;
 
 	/**
-	 * The configuration for a command.
-	 */
-	interface CommandConfig {
-        /** The name of the command. */
-		name: string;
-        /** A brief description of what the command does. */
-		description: string;
-        /** Detailed information about the command. */
-		details: string;
-        /** The role that can use the command. */
-		usableBy: string;
-        /** Alternative names for the command. */
-		aliases: string[];
-        /** Indicates whether the command requires an ongoing game to be executed. */
-		requiresGame: boolean;
-        /** Whether or not the command is sensitive to whitespace, and should not have argument whitespace altered. */
-        whitespaceSensitive?: boolean;
-	}
-
-	/**
 	 * Represents an abstract command with its configuration.
 	 */
 	interface ICommand {
         /** The specific configuration of the command. */
-		config: CommandConfig;
+		config: CommandConfig<Set<string>>;
         /** Examples of the command's usage. */
 		usage: (settings: GameSettings) => string;
 	}

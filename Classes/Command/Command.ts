@@ -16,7 +16,7 @@ type CommandExecute<T extends Context> = (context: T, invocation: ValidatedInvoc
 /**
  * The configuration for a command.
  */
-export interface CommandConfig {
+export interface CommandConfig<T extends (Set<string> | Array<string>)> {
     /** The name of the command. */
     name: string;
     /** A brief description of what the command does. */
@@ -26,7 +26,7 @@ export interface CommandConfig {
     /** The role that can use the command. */
     usableBy: CommandType;
     /** Alternative names for the command. */
-    aliases: Set<string>;
+    aliases: T;
     /** Indicates whether the command requires an ongoing game to be executed. */
     requiresGame: boolean;
     /** Whether or not the command is sensitive to whitespace, and should not have argument whitespace altered. */
@@ -37,7 +37,7 @@ interface CommandConstructorArgs<T extends Context> {
     /**
      * The specific configuration of the command.
      */
-    config: CommandConfig;
+    config: CommandConfig<string[]>;
     /**
      * Examples of the command's usage.
      */
@@ -57,13 +57,26 @@ interface CommandConstructorArgs<T extends Context> {
 }
 
 /**
+ * Converts a CommandConfig whose aliases is an array of strings to a CommandConfig whose aliases is a set of strings
+ * @param config - A CommandConfig whose aliases is an array of strings
+ * @returns A CommandConfig whose aliases is a set of strings
+ */
+function toSetConfig(config: CommandConfig<string[]>): CommandConfig<Set<string>> {
+    const { aliases, ...rest } = config;
+    return {
+        ...rest,
+        aliases: new Set(aliases)
+    };
+}
+
+/**
  * Abstract base class for all new-generation commands.
  */
 export default abstract class Command<T extends Context> {
     /**
      * The specific configuration of the command.
      */
-    readonly config: CommandConfig;
+    readonly config: CommandConfig<Set<string>>;
 
     /**
      * Examples of the command's usage.
@@ -86,7 +99,7 @@ export default abstract class Command<T extends Context> {
     readonly execute: CommandExecute<T>;
 
     constructor(args: CommandConstructorArgs<T>) {
-        this.config = args.config;
+        this.config = toSetConfig(args.config);
         this.usage = args.usage;
         this.patterns = args.patterns ?? [];
         this.validate = args.validate;

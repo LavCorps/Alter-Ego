@@ -295,7 +295,7 @@ export default class ClientContext {
             await Promise.all(commandFiles.map(async file => {
                 await import(path.join(commandsDir, file)).then(module => {
                     const command = module.default as Command<Context>;
-                    const config = command.config as CommandConfig;
+                    const config = command.config;
                     const filepath = path.join(commandsDir, file);
                     for (const alias of config.aliases) {
                         const commandWithAlias = this.getCommand(config.usableBy, alias);
