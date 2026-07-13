@@ -306,7 +306,7 @@ export default class GameNarrationHandler {
      * @param ledPlayers - The players being led.
      * @param partySynchronized - Whether or not the party members' positions are all synchronized.
      * @param leaderInteractables - An array of interactables to send to the leader alongside their notification. Optional.
-     * @param followerInteractables - A map of arrays of interactables, where the key for each entry is the name of the player to send them to.
+     * @param followerInteractables - A map of arrays of interactables, where the key for each entry is the name of the player to send them to. Optional.
      */
     narrateLead(action: Action, leader: Player, ledPlayers: Player[], partySynchronized: boolean, leaderInteractables: Interactable[] = [], followerInteractables: Map<string, Interactable[]> = new Map()) {
         const messageType = MessageDisplayType.MINOR;
@@ -356,7 +356,7 @@ export default class GameNarrationHandler {
      * @param leader - The player who was leading.
      * @param removedLedPlayers - The players who are no longer being led.
      * @param leaderInteractables - An array of interactables to send to the leader alongside their notification. Optional.
-     * @param followerInteractables - A map of arrays of interactables, where the key for each entry is the name of the player to send them to.
+     * @param followerInteractables - A map of arrays of interactables, where the key for each entry is the name of the player to send them to. Optional.
      */
     narrateDismiss(action: Action, leader: Player, removedLedPlayers: Player[], leaderInteractables: Interactable[] = [], followerInteractables: Map<string, Interactable[]> = new Map()) {
         const messageType = MessageDisplayType.MINOR;
@@ -383,9 +383,10 @@ export default class GameNarrationHandler {
      * @param customNarration - A custom narration to send instead of the default narration. Optional.
      * @param customLeaderNotification - A custom notification to send to the leader instead of the default notification. Optional.
      * @param customFollowerNotification - A custom notification to send to the followers instead of the default notification. Optional.
-     * @param interactables - An array of interactables to send to the leader alongside their notification. Optional.
+     * @param leaderInteractables - An array of interactables to send to the leader alongside their notification. Optional.
+     * @param followerInteractables - A map of arrays of interactables, where the key for each entry is the name of the player to send them to. Optional.
      */
-    narrateDisbandParty(action: Action, leader: Player, followers: Player[], stopFollowing: boolean = false, customNarration?: string, customLeaderNotification?: string, customFollowerNotification?: string, interactables: Interactable[] = []) {
+    narrateDisbandParty(action: Action, leader: Player, followers: Player[], stopFollowing: boolean = false, customNarration?: string, customLeaderNotification?: string, customFollowerNotification?: string, leaderInteractables: Interactable[] = [], followerInteractables: Map<string, Interactable[]> = new Map()) {
         const narrationMessageType = action instanceof DieAction ? MessageDisplayType.ALERT : MessageDisplayType.MINOR;
         const notificationMessageType = action instanceof DieAction ? MessageDisplayType.ALERT : MessageDisplayType.STANDARD;
         const followerListString = generatePlayerListString(followers);
@@ -393,14 +394,16 @@ export default class GameNarrationHandler {
         let narration = customNarration;
         if (leaderNotification === undefined)
             leaderNotification = this.#game.notificationGenerator.generateDisbandPartyNotification(leader, true, stopFollowing, followerListString);
-        if (leaderNotification) this.sendNotification(leader, action, leaderNotification, notificationMessageType, undefined, undefined, interactables);
+        if (leaderNotification) this.sendNotification(leader, action, leaderNotification, notificationMessageType, undefined, undefined, leaderInteractables);
 
         let followerNotification = customFollowerNotification;
         if (followerNotification === undefined)
             followerNotification = this.#game.notificationGenerator.generatePartyDisbandedNotification(leader, stopFollowing);
         if (followerNotification) {
-            for (const follower of followers)
-                this.sendNotification(follower, action, followerNotification, notificationMessageType);
+            for (const follower of followers) {
+                const interactables = followerInteractables.get(follower.name) ?? [];
+                this.sendNotification(follower, action, followerNotification, notificationMessageType, undefined, undefined, interactables);
+            }
         }
         if (narration === undefined)
             narration = this.#game.notificationGenerator.generateDisbandPartyNotification(leader, false, stopFollowing, followerListString);

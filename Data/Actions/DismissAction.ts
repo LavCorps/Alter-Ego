@@ -93,7 +93,7 @@ export default class DismissAction extends Action {
         if (!args[0] || args[0].getEntityType() !== "Player") throw new Error(errorMessageGenerator.generateInvalidEntityError("Player"));
         const follower = args[0];
         if (follower.location?.id !== this.player.location.id) throw new Error(errorMessageGenerator.generatePlayerLocationMismatchError());
-        const disabledStatusEffects = this.player.getStatusEffectsDisablingCommand("lead");
+        const disabledStatusEffects = this.player.getStatusEffectsDisablingCommand("dismiss");
         if (disabledStatusEffects.length > 0)
             throw new Error(errorMessageGenerator.generateCommandDisabledError(disabledStatusEffects[0]));
         const hiddenStatusEffects = this.player.getBehaviorAttributeStatusEffects("hidden");

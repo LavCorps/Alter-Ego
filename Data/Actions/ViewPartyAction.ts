@@ -32,6 +32,7 @@ export default class ViewPartyAction extends Action {
         if (!this.forced)
             interactables = interactables.concat(interactableManager.getInspectPartyMembersInteractables(this.player, this.user));
         interactables = interactables.concat(interactableManager.getDismissInteractables(this.player, this.user));
+        interactables = interactables.concat(interactableManager.getDisbandPartyInteractables(this.player, this.user));
         interactables = interactables.concat(interactableManager.getStopFollowingInteractables(this.player, this.user));
         return interactables;
     }

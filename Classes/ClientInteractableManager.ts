@@ -27,6 +27,7 @@ import QueueMoveAction from "../Data/Actions/QueueMoveAction.ts";
 import FollowAction from "../Data/Actions/FollowAction.ts";
 import LeadAction from "../Data/Actions/LeadAction.ts";
 import DismissAction from "../Data/Actions/DismissAction.ts";
+import DisbandPartyAction from "../Data/Actions/DisbandPartyAction.ts";
 import ViewPartyAction from "../Data/Actions/ViewPartyAction.ts";
 import StopAction from "../Data/Actions/StopAction.ts";
 import InspectAction from "../Data/Actions/InspectAction.ts";
@@ -337,6 +338,19 @@ export default class ClientInteractableManager {
         }
         const actionDirective = this.#createActionDirective(DismissAction, ["DismissAction Menu"], player, user);
         return this.#createStringSelectMenuInteractable(actionDirective, interactableOptions, "Dismiss", ActionPriority.DISMISS);
+    }
+
+    /**
+     * Creates a DisbandPartyAction interactable and adds it to the cache.
+     * @param player - The player these interactables are being created for.
+     * @param user - The user these interactables are being created for. Defaults to the given player.
+     */
+    private createDisbandPartyActionInteractables(player: Player, user: User = player): ButtonInteractable[] {
+        if (!player.canUseCommand("disband")) return [];
+        if (!player.party) return [];
+        const actionDirective = this.#createActionDirective(DisbandPartyAction, [], player, user);
+        const interactableOptions = new InteractableOptions(actionDirective, `Disband Party`);
+        return [this.#createButtonInteractable(interactableOptions, ButtonStyle.Danger, ActionPriority.DISBAND)];
     }
 
     /**
@@ -970,6 +984,18 @@ export default class ClientInteractableManager {
     }
 
     /**
+     * Generates an array of disband party interactables if the player is the leader of a party.
+     * @param player - The player who can perform a disband party action.
+     * @param user - The user these interactables are being created for. Defaults to the given player.
+     */
+    getDisbandPartyInteractables(player: Player, user: User = player): Interactable[] {
+        let interactables: Interactable[] = [];
+        if (player.party && player.party.hasLeader(player))
+            interactables = interactables.concat(this.createDisbandPartyActionInteractables(player, user));
+        return interactables;
+    }
+
+    /**
      * Generates an array of view party interactables for the given player. This will only produce one view party interactable.
      * @param player - The player who can perform a view party action.
      * @param user - The user these interactables are being created for. Defaults to the given player.
@@ -988,7 +1014,7 @@ export default class ClientInteractableManager {
         if (player.followedPlayer) {
             const userIsModerator = !(user instanceof Player);
             const displayName = userIsModerator ? player.name : player.followedPlayerDisplayName;
-            const label = `Stop following ${displayName}`;
+            const label = `Stop Following ${displayName}`;
             interactables = interactables.concat(this.createStopActionInteractable(player, user, label));
         }
         return interactables;

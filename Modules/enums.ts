@@ -50,7 +50,8 @@ export const ActionPriority = {
     ACTIVATE: 45,
     DEACTIVATE: 46,
     VIEW_PARTY: 50,
-    DISMISS: 51
+    DISMISS: 51,
+    DISBAND: 52
 } as const;
 
 export type ActionPriority = valueof<typeof ActionPriority>

@@ -8,6 +8,7 @@ import QueueMoveAction from "../Data/Actions/QueueMoveAction.ts";
 import FollowAction from "../Data/Actions/FollowAction.ts";
 import LeadAction from "../Data/Actions/LeadAction.ts";
 import DismissAction from "../Data/Actions/DismissAction.ts";
+import DisbandPartyAction from "../Data/Actions/DisbandPartyAction.ts";
 import ViewPartyAction from "../Data/Actions/ViewPartyAction.ts";
 import StopAction from "../Data/Actions/StopAction.ts";
 import TakeAction from "../Data/Actions/TakeAction.ts";
@@ -206,6 +207,20 @@ export default class ClientInteractionHandler {
                     await action.performDismissAction(validatedArgs[0]);
                     this.#replyOrDeleteActionResponse(action, interaction, reply);
                     this.#logInteraction("DismissAction", author, timestamp, validatedArgs);
+                    return true;
+                }
+            }
+            catch (error) { throw new Error(error.message); }
+        }
+        if (action instanceof DisbandPartyAction) {
+            const args = interactable.actionDirective.getArgs();
+            const parsedArgs = action.parseInteractionArgs(args);
+            try {
+                const validatedArgs = action.validateInteractionArgs(parsedArgs);
+                if (validatedArgs.length === 0) {
+                    await action.performDisbandParty();
+                    this.#replyOrDeleteActionResponse(action, interaction, reply);
+                    this.#logInteraction("DisbandPartyAction", author, timestamp, validatedArgs);
                     return true;
                 }
             }
