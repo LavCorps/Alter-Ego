@@ -27,6 +27,7 @@
   },
   "types": "dist/bot.d.ts",
   "dependencies": {
+    "@typescript/native-preview": "^7.0.0-dev.20260705.1",
     "@xmldom/xmldom": "^0.8.11",
     "acorn": "^8.15.0",
     "date-fns": "^4.1.0",
