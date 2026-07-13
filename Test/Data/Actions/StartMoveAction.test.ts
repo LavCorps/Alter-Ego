@@ -1787,23 +1787,338 @@ describe('StartMoveAction test', () => {
         });
 
         test('party leader runs out of stamina', async () => {
+            const party = astrid.party;
+            for (const member of party.members.values())
+                expect(member.positionMatches(party.leader));
 
+            astrid.stamina = 0.001;
+            const startMoveAction = new StartMoveAction(testGame, undefined, astrid, astrid.location, false);
+            await startMoveAction.performStartMove(false, mainEntrance);
+            expect(calculateMoveTimeSpy).toHaveBeenCalledOnce();
+            const calculatedTime = 4045.566;
+            expect(calculateMoveTimeSpy.mock.results[0].value).toBeCloseTo(calculatedTime, 3);
+            expect(narrateStartMoveSpy).toHaveBeenCalledOnce();
+            expect(movePlayersSpy).toHaveBeenCalledOnce();
+            expect(doAfterDelaySpy).not.toHaveBeenCalled();
+            expect(queueMoveSpy).not.toHaveBeenCalled();
+            for (const member of party.members.values()) {
+                expect(member.remainingTime).toBeCloseTo(calculatedTime, 3);
+                expect(member.isMoving).toBe(true);
+                expect(member.isRunning).toBe(false);
+                expect(member.moveTimer).not.toBeNull();
+                expect(member.currentMovingSpeed).toEqual(1);
+            }
+
+            await sendMessages();
+            expect(lobby.channel.messages.cache).toHaveSize(1);
+            expect(astrid.notificationChannel.messages.cache).toHaveSize(1);
+            expect(asuka.notificationChannel.messages.cache).toHaveSize(1);
+            expect(nero.notificationChannel.messages.cache).toHaveSize(1);
+            let lobbyNarration = `An individual wearing a MASK starts walking toward the MAIN ENTRANCE with Asuka and Nero. `
+                + `An individual wearing a MASK carries an APPLE and an unpeeled ORANGE; Asuka carries a POT.`;
+            expect(lobbyFirstNarrationMessage.content).toBe(`> -# ${lobbyNarration}`);
+            expect(astridFirstNotificationMessage.content).toBe(`> -# You start walking toward the MAIN ENTRANCE with Asuka and Nero while carrying an APPLE and an unpeeled ORANGE.`);
+            expect(asukaFirstNotificationMessage.content).toBe(`> -# Following an individual wearing a MASK, you start walking toward the MAIN ENTRANCE with Nero while carrying a POT.`);
+            expect(neroFirstNotificationMessage.content).toBe(`> -# Following an individual wearing a MASK, you start walking toward the MAIN ENTRANCE with Asuka.`);
+
+            /**
+             * Fast forward one tick. We can expect Astrid's stamina to have depleted by half.
+             */
+            let elapsedTime = 100;
+            await vi.advanceTimersByTimeAsync(elapsedTime);
+            expect(narrateReachedHalfStaminaSpy).toHaveBeenCalledOnce();
+            expect(astrid.stamina).toBeGreaterThan(0);
+            expect(astrid.hasStatus("weary")).toBe(false);
+            expect(moveSpy).not.toHaveBeenCalled();
+
+            clearMessages();
+            await sendMessages();
+            expect(lobby.channel.messages.cache).toHaveSize(1);
+            expect(astrid.notificationChannel.messages.cache).toHaveSize(1);
+            expect(asuka.notificationChannel.messages.cache).toHaveSize(0);
+            expect(nero.notificationChannel.messages.cache).toHaveSize(0);
+            expect(lobbyFirstNarrationMessage.content).toBe(`> -# An individual wearing a MASK's breathing is getting heavy. It seems like they're starting to get tired.`);
+            expect(astridFirstNotificationMessage.content).toBe(`Your breathing is getting heavy. You might want to stop moving and rest soon.`);
+
+            /**
+             * Fast forward two more ticks.
+             */
+            await vi.advanceTimersByTimeAsync(2 * elapsedTime);
+            expect(movePlayersSpy).toHaveBeenCalledOnce();
+            expect(narrateReachedHalfStaminaSpy).toHaveBeenCalledOnce();
+            expect(moveSpy).not.toHaveBeenCalled();
+            expect(astrid.stamina).toBeCloseTo(0, 3);
+            expect(asuka.stamina).toBeGreaterThan(0);
+            expect(nero.stamina).toBeGreaterThan(0);
+            expect(astrid.hasStatus("weary")).toBe(true);
+            expect(asuka.hasStatus("weary")).toBe(false);
+            expect(nero.hasStatus("weary")).toBe(false);
+            expect(astrid.isLeading(asuka)).toBe(true);
+            expect(astrid.isLeading(nero)).toBe(true);
+            expect(asuka.isFollowing(astrid)).toBe(true);
+            expect(nero.isFollowing(astrid)).toBe(true);
+            for (const member of party.members.values()) {
+                expect(member.remainingTime).toBeCloseTo(0, 3);
+                expect(member.isMoving).toBe(false);
+                expect(member.isRunning).toBe(false);
+                expect(member.moveTimer).toBeNull();
+                expect(member.currentMovingSpeed).toEqual(0);
+                expect(member.pos).toStrictEqual(astrid.pos);
+                expect(member.party).toStrictEqual(party);
+            }
+
+            clearMessages();
+            await sendMessages();
+            expect(lobby.channel.messages.cache).toHaveSize(2);
+            expect(astrid.notificationChannel.messages.cache).toHaveSize(2);
+            expect(asuka.notificationChannel.messages.cache).toHaveSize(1);
+            expect(nero.notificationChannel.messages.cache).toHaveSize(1);
+            expect(lobbyFirstNarrationMessage.content).toBe(`> -# An individual wearing a MASK stops moving. They seem weary.`);
+            expect(lobbyLastNarrationMessage.content).toBe(`> -# Asuka and Nero stop moving.`);
+            expect(astridFirstNotificationMessage.content).toBe(`After to moving to this room, you have become **weary**. You need to take a short break before moving to another room.`);
+            expect(astridLastNotificationMessage.content).toBe(`> -# Asuka and Nero stop moving.`);
+            expect(asukaFirstNotificationMessage.content).toBe(`> -# You and Nero stop moving.`);
+            expect(neroFirstNotificationMessage.content).toBe(`> -# You and Asuka stop moving.`);
+            astrid.cure(testGame.entityFinder.getStatusEffect("weary"));
         });
 
         test('party follower runs out of stamina', async () => {
+            const party = astrid.party;
+            for (const member of party.members.values())
+                expect(member.positionMatches(party.leader));
 
+            nero.stamina = 0.001;
+            const startMoveAction = new StartMoveAction(testGame, undefined, astrid, astrid.location, false);
+            await startMoveAction.performStartMove(false, mainEntrance);
+            expect(calculateMoveTimeSpy).toHaveBeenCalledOnce();
+            const calculatedTime = 4045.566;
+            expect(calculateMoveTimeSpy.mock.results[0].value).toBeCloseTo(calculatedTime, 3);
+            expect(narrateStartMoveSpy).toHaveBeenCalledOnce();
+            expect(movePlayersSpy).toHaveBeenCalledOnce();
+            expect(doAfterDelaySpy).not.toHaveBeenCalled();
+            expect(queueMoveSpy).not.toHaveBeenCalled();
+            for (const member of party.members.values()) {
+                expect(member.remainingTime).toBeCloseTo(calculatedTime, 3);
+                expect(member.isMoving).toBe(true);
+                expect(member.isRunning).toBe(false);
+                expect(member.moveTimer).not.toBeNull();
+                expect(member.currentMovingSpeed).toEqual(1);
+            }
+
+            await sendMessages();
+            expect(lobby.channel.messages.cache).toHaveSize(1);
+            expect(astrid.notificationChannel.messages.cache).toHaveSize(1);
+            expect(asuka.notificationChannel.messages.cache).toHaveSize(1);
+            expect(nero.notificationChannel.messages.cache).toHaveSize(1);
+            let lobbyNarration = `An individual wearing a MASK starts walking toward the MAIN ENTRANCE with Asuka and Nero. `
+                + `An individual wearing a MASK carries an APPLE and an unpeeled ORANGE; Asuka carries a POT.`;
+            expect(lobbyFirstNarrationMessage.content).toBe(`> -# ${lobbyNarration}`);
+            expect(astridFirstNotificationMessage.content).toBe(`> -# You start walking toward the MAIN ENTRANCE with Asuka and Nero while carrying an APPLE and an unpeeled ORANGE.`);
+            expect(asukaFirstNotificationMessage.content).toBe(`> -# Following an individual wearing a MASK, you start walking toward the MAIN ENTRANCE with Nero while carrying a POT.`);
+            expect(neroFirstNotificationMessage.content).toBe(`> -# Following an individual wearing a MASK, you start walking toward the MAIN ENTRANCE with Asuka.`);
+
+            /**
+             * Fast forward one tick. We can expect Nero's stamina to have depleted by half.
+             */
+            let elapsedTime = 100;
+            await vi.advanceTimersByTimeAsync(elapsedTime);
+            expect(narrateReachedHalfStaminaSpy).toHaveBeenCalledOnce();
+            expect(nero.stamina).toBeGreaterThan(0);
+            expect(nero.hasStatus("weary")).toBe(false);
+            expect(moveSpy).not.toHaveBeenCalled();
+
+            clearMessages();
+            await sendMessages();
+            expect(lobby.channel.messages.cache).toHaveSize(1);
+            expect(astrid.notificationChannel.messages.cache).toHaveSize(1);
+            expect(asuka.notificationChannel.messages.cache).toHaveSize(0);
+            expect(nero.notificationChannel.messages.cache).toHaveSize(1);
+            expect(lobbyFirstNarrationMessage.content).toBe(`> -# Nero's breathing is getting heavy. It seems like he's starting to get tired.`);
+            expect(astridFirstNotificationMessage.content).toBe(`> -# Nero's breathing is getting heavy. It seems like he's starting to get tired.`);
+            expect(neroFirstNotificationMessage.content).toBe(`Your breathing is getting heavy. You might want to stop moving and rest soon.`);
+
+            /**
+             * Fast forward two more ticks.
+             */
+            await vi.advanceTimersByTimeAsync(2 * elapsedTime);
+            expect(movePlayersSpy).toHaveBeenCalledOnce();
+            expect(narrateReachedHalfStaminaSpy).toHaveBeenCalledOnce();
+            expect(moveSpy).not.toHaveBeenCalled();
+            expect(astrid.stamina).toBeGreaterThan(0);
+            expect(asuka.stamina).toBeGreaterThan(0);
+            expect(nero.stamina).toBeCloseTo(0, 3);
+            expect(astrid.hasStatus("weary")).toBe(false);
+            expect(asuka.hasStatus("weary")).toBe(false);
+            expect(nero.hasStatus("weary")).toBe(true);
+            expect(astrid.isLeading(asuka)).toBe(true);
+            expect(astrid.isLeading(nero)).toBe(true);
+            expect(asuka.isFollowing(astrid)).toBe(true);
+            expect(nero.isFollowing(astrid)).toBe(true);
+            for (const member of party.members.values()) {
+                expect(member.remainingTime).toBeCloseTo(0, 3);
+                expect(member.isMoving).toBe(false);
+                expect(member.isRunning).toBe(false);
+                expect(member.moveTimer).toBeNull();
+                expect(member.currentMovingSpeed).toEqual(0);
+                expect(member.pos).toStrictEqual(astrid.pos);
+                expect(member.party).toStrictEqual(party);
+            }
+
+            clearMessages();
+            await sendMessages();
+            expect(lobby.channel.messages.cache).toHaveSize(2);
+            expect(astrid.notificationChannel.messages.cache).toHaveSize(2);
+            expect(asuka.notificationChannel.messages.cache).toHaveSize(1);
+            expect(nero.notificationChannel.messages.cache).toHaveSize(1);
+            expect(lobbyFirstNarrationMessage.content).toBe(`> -# Nero stops moving. He seems weary.`);
+            expect(lobbyLastNarrationMessage.content).toBe(`> -# An individual wearing a MASK and Asuka stop moving.`);
+            expect(astridFirstNotificationMessage.content).toBe(`> -# Nero stops moving. He seems weary.`);
+            expect(astridLastNotificationMessage.content).toBe(`> -# You and Asuka stop moving.`);
+            expect(asukaFirstNotificationMessage.content).toBe(`> -# You and an individual wearing a MASK stop moving.`);
+            expect(neroFirstNotificationMessage.content).toBe(`After to moving to this room, you have become **weary**. You need to take a short break before moving to another room.`);
+            nero.cure(testGame.entityFinder.getStatusEffect("weary"));
         });
 
-        test('exit has restricted exit puzzle that only the leader can pass', async () => {
+        describe('party restricted exit tests', () => {
+            beforeEach(async () => {
+                nero.location.removePlayer(nero);
+                cave9.addPlayer(nero);
+                astrid.location.removePlayer(astrid);
+                cave9.addPlayer(astrid);
+                asuka.location.removePlayer(asuka);
+                cave9.addPlayer(asuka);
+                const cave9Puzzle = testGame.entityFinder.getPuzzle("DOOR", "cave-9", "restricted exit");
+                cave9Puzzle.setAccessible();
+                await sendMessages();
+                clearMessages();
+            });
 
-        });
+            afterEach(() => {
+                const cave9Puzzle = testGame.entityFinder.getPuzzle("DOOR", "cave-9", "restricted exit");
+                cave9Puzzle.setInaccessible();
+            });
 
-        test('exit has restricted exit puzzle that the leader and one follower can pass', async () => {
+            test('exit has restricted exit puzzle that only the leader can pass', async () => {
+                const party = astrid.party;
+                const dismissAction = new DismissAction(testGame, undefined, astrid, astrid.location, false);
+                await dismissAction.performDismissAction([asuka], true);
+                expect(astrid.party.hasFollower(asuka)).toBe(false);
+                expect(asuka.isFollowing(astrid)).toBe(false);
+                await sendMessages();
+                clearMessages();
 
-        });
+                for (const member of party.members.values())
+                    expect(member.positionMatches(party.leader));
 
-        test('exit has restricted exit puzzle that only a follower can pass', async () => {
+                const startMoveAction = new StartMoveAction(testGame, undefined, astrid, astrid.location, false);
+                await startMoveAction.performStartMove(false, cave9Door);
+                expect(calculateMoveTimeSpy).toHaveBeenCalledOnce();
+                const calculatedTime = 8523.792;
+                expect(calculateMoveTimeSpy.mock.results[0].value).toBeCloseTo(calculatedTime, 3);
+                expect(narrateStartMoveSpy).toHaveBeenCalledOnce();
+                expect(movePlayersSpy).toHaveBeenCalledOnce();
+                expect(doAfterDelaySpy).not.toHaveBeenCalled();
+                expect(queueMoveSpy).not.toHaveBeenCalled();
+                for (const member of party.members.values()) {
+                    expect(member.remainingTime).toBeCloseTo(calculatedTime, 3);
+                    expect(member.isMoving).toBe(true);
+                    expect(member.isRunning).toBe(false);
+                    expect(member.moveTimer).not.toBeNull();
+                    expect(member.currentMovingSpeed).toEqual(1);
+                }
 
+                await sendMessages();
+
+                /**
+                 * Fast forward to the end of the move.
+                 */
+                await vi.advanceTimersByTimeAsync(8600);
+                expect(movePlayersSpy).toHaveBeenCalledOnce();
+                expect(narrateReachedHalfStaminaSpy).not.toHaveBeenCalled();
+                expect(moveSpy).not.toHaveBeenCalled();
+                expect(astrid.isLeading(asuka)).toBe(false);
+                expect(astrid.isLeading(nero)).toBe(true);
+                expect(asuka.isFollowing(astrid)).toBe(false);
+                expect(nero.isFollowing(astrid)).toBe(true);
+                for (const member of party.members.values()) {
+                    expect(member.remainingTime).toBeCloseTo(0, 3);
+                    expect(member.isMoving).toBe(false);
+                    expect(member.isRunning).toBe(false);
+                    expect(member.moveTimer).toBeNull();
+                    expect(member.currentMovingSpeed).toEqual(0);
+                    expect(member.pos).toStrictEqual(cave9Door.pos);
+                    expect(member.hasStatus("weary")).toBe(false);
+                    expect(member.party).toStrictEqual(party);
+                }
+
+                clearMessages();
+                await sendMessages();
+                expect(cave9.channel.messages.cache).toHaveSize(1);
+                expect(astrid.notificationChannel.messages.cache).toHaveSize(1);
+                expect(asuka.notificationChannel.messages.cache).toHaveSize(0);
+                expect(nero.notificationChannel.messages.cache).toHaveSize(1);
+                expect(cave9NarrationMessage.content).toBe(`> -# An individual wearing a MASK tries to open the DOOR, but it seems to be locked. Nero stops behind them.`);
+                expect(astridFirstNotificationMessage.content).toBe(`You try to open the DOOR, but it seems to be locked. Nero stops behind you.`);
+                expect(neroFirstNotificationMessage.content).toBe(`An individual wearing a MASK tries to open the DOOR, but it seems to be locked. You stop behind them.`);
+            });
+
+            test('exit has restricted exit puzzle that the leader and one follower can pass', async () => {
+                const party = astrid.party;
+                for (const member of party.members.values())
+                    expect(member.positionMatches(party.leader));
+
+                const startMoveAction = new StartMoveAction(testGame, undefined, astrid, astrid.location, false);
+                await startMoveAction.performStartMove(false, cave9Door);
+                expect(calculateMoveTimeSpy).toHaveBeenCalledOnce();
+                const calculatedTime = 8523.792;
+                expect(calculateMoveTimeSpy.mock.results[0].value).toBeCloseTo(calculatedTime, 3);
+                expect(narrateStartMoveSpy).toHaveBeenCalledOnce();
+                expect(movePlayersSpy).toHaveBeenCalledOnce();
+                expect(doAfterDelaySpy).not.toHaveBeenCalled();
+                expect(queueMoveSpy).not.toHaveBeenCalled();
+                for (const member of party.members.values()) {
+                    expect(member.remainingTime).toBeCloseTo(calculatedTime, 3);
+                    expect(member.isMoving).toBe(true);
+                    expect(member.isRunning).toBe(false);
+                    expect(member.moveTimer).not.toBeNull();
+                    expect(member.currentMovingSpeed).toEqual(1);
+                }
+
+                await sendMessages();
+
+                /**
+                 * Fast forward to the end of the move.
+                 */
+                await vi.advanceTimersByTimeAsync(8600);
+                expect(movePlayersSpy).toHaveBeenCalledOnce();
+                expect(narrateReachedHalfStaminaSpy).not.toHaveBeenCalled();
+                expect(moveSpy).not.toHaveBeenCalled();
+                expect(astrid.isLeading(asuka)).toBe(true);
+                expect(astrid.isLeading(nero)).toBe(true);
+                expect(asuka.isFollowing(astrid)).toBe(true);
+                expect(nero.isFollowing(astrid)).toBe(true);
+                for (const member of party.members.values()) {
+                    expect(member.remainingTime).toBeCloseTo(0, 3);
+                    expect(member.isMoving).toBe(false);
+                    expect(member.isRunning).toBe(false);
+                    expect(member.moveTimer).toBeNull();
+                    expect(member.currentMovingSpeed).toEqual(0);
+                    expect(member.pos).toStrictEqual(cave9Door.pos);
+                    expect(member.hasStatus("weary")).toBe(false);
+                    expect(member.party).toStrictEqual(party);
+                }
+
+                clearMessages();
+                await sendMessages();
+                expect(cave9.channel.messages.cache).toHaveSize(1);
+                expect(astrid.notificationChannel.messages.cache).toHaveSize(1);
+                expect(asuka.notificationChannel.messages.cache).toHaveSize(1);
+                expect(nero.notificationChannel.messages.cache).toHaveSize(1);
+                expect(cave9NarrationMessage.content).toBe(`> -# An individual wearing a MASK tries to open the DOOR, but it seems to be locked. Asuka and Nero stop behind them.`);
+                expect(astridFirstNotificationMessage.content).toBe(`You try to open the DOOR, but it seems to be locked. Asuka and Nero stop behind you.`);
+                expect(asukaFirstNotificationMessage.content).toBe(`An individual wearing a MASK tries to open the DOOR, but it seems to be locked. You and Nero stop behind them.`);
+                expect(neroFirstNotificationMessage.content).toBe(`An individual wearing a MASK tries to open the DOOR, but it seems to be locked. You and Asuka stop behind them.`);
+            });
         });
     });
 });

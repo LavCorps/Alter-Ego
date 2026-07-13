@@ -4,6 +4,7 @@
 
 import Action from "../Action.ts";
 import type Player from "../Player.ts";
+import { generateListString } from "../../Modules/helpers.ts";
 
 /**
  * Represents a stop following action.
@@ -21,6 +22,9 @@ export default class StopFollowingAction extends Action {
         if (this.performed) return;
         super.perform();
         if (narrate) this.getGame().narrationHandler.narrateStop(this, this.player, players, false, undefined, true);
+        const followedPlayer = this.player.followedPlayer;
+        const followedPlayerName = followedPlayer && players.values().every(player => player.followedPlayer?.name === followedPlayer?.name)
+            ? ` ${followedPlayer.name}` : ``;
         for (const player of players) {
             player.stopFollowing();
             if (player.party) {
@@ -28,5 +32,8 @@ export default class StopFollowingAction extends Action {
                 await player.party.removeFollower(player);
             }
         }
+        const playerList = generateListString(Array.from(players, player => player.name));
+        this.getGame().logHandler.logStopFollowing(this.player, playerList, this.forced, followedPlayerName);
+        this.successMessage = `Successfully made ${playerList} stop following${followedPlayerName}.`;
     }
 }

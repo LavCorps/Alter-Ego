@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+// SPDX-FileCopyrightText: 2026 LavCorps <lavcorps@protonmail.com>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -252,11 +253,11 @@ export default class GameNarrationHandler {
      */
     narrateStop(action: Action, player: Player, stoppingPlayers: Set<Player>, exitLocked: boolean, exit?: Exit, stopFollowing = false, interactables: Interactable[] = []) {
         const messageType = MessageDisplayType.MINOR;
-        const narration = exitLocked ? this.#game.notificationGenerator.generateExitLockedNotification(player, false, exit.getDoorPhrase())
+        const narration = exitLocked ? this.#game.notificationGenerator.generateExitLockedNotification(player, false, stoppingPlayers, exit.getDoorPhrase())
             : player.followedPlayer && stopFollowing ? this.#game.notificationGenerator.generateStopFollowingNotification(player, false, stoppingPlayers, player.followedPlayerDisplayName)
                 : this.#game.notificationGenerator.generateStopNotification(player, false, stoppingPlayers);
         for (const stoppingPlayer of stoppingPlayers) {
-            const notification = exitLocked ? this.#game.notificationGenerator.generateExitLockedNotification(stoppingPlayer, true, exit.getDoorPhrase())
+            const notification = exitLocked ? this.#game.notificationGenerator.generateExitLockedNotification(stoppingPlayer, true, stoppingPlayers, exit.getDoorPhrase())
                 : stoppingPlayer.followedPlayer && stopFollowing ? this.#game.notificationGenerator.generateStopFollowingNotification(stoppingPlayer, true, stoppingPlayers, stoppingPlayer.followedPlayerDisplayName)
                     : this.#game.notificationGenerator.generateStopNotification(stoppingPlayer, true, stoppingPlayers);
             this.sendNotification(stoppingPlayer, action, notification, exitLocked ? MessageDisplayType.WARNING : messageType, undefined, undefined, interactables);
@@ -410,7 +411,7 @@ export default class GameNarrationHandler {
     narrateInspect(action: Action, target: Inspectable, player: Player) {
         let notification = "";
         let narration = "";
-        let messageType = MessageDisplayType.MINOR;
+        let messageType: MessageDisplayType = MessageDisplayType.MINOR;
         if (target instanceof Room) {
             notification = this.#game.notificationGenerator.generateInspectRoomNotification(player, true);
             narration = this.#game.notificationGenerator.generateInspectRoomNotification(player, false);
@@ -542,7 +543,7 @@ export default class GameNarrationHandler {
      */
     narrateInflict(action: Action, status: Status, player: Player) {
         let narration = "";
-        let messageType = MessageDisplayType.STANDARD;
+        let messageType: MessageDisplayType = MessageDisplayType.STANDARD;
         if (status.id === "asleep") narration = this.#game.notificationGenerator.generateFallAsleepNotification(player.displayName);
         else if (status.id === "blacked out") {
             narration = this.#game.notificationGenerator.generateBlackOutNotification(player.displayName);
@@ -564,7 +565,7 @@ export default class GameNarrationHandler {
      */
     narrateCure(action: Action, status: Status, player: Player, item?: InventoryItem) {
         let narration = "";
-        let messageType = MessageDisplayType.STANDARD;
+        let messageType: MessageDisplayType = MessageDisplayType.STANDARD;
         if (status.behaviorAttributes.has("concealed")) {
             const maskName = item ? item.name : "MASK";
             narration = this.#game.notificationGenerator.generateConcealedCuredNotification(maskName, player.displayName);
@@ -927,7 +928,7 @@ export default class GameNarrationHandler {
      * @param interactables - An array of interactables to send to the player alongside their notification. Optional.
      */
     narrateActivate(action: Action, fixture: Fixture, player?: Player, recipeInitiatedDescriptionSent: boolean = false, customNarration: string = "", interactables: Interactable[] = []) {
-        let messageType = MessageDisplayType.STANDARD;
+        let messageType: MessageDisplayType = MessageDisplayType.STANDARD;
         const fixturePhrase = fixture.getContainingPhrase();
         let notification = customNarration;
         let narration = customNarration;

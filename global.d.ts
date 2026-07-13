@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+// SPDX-FileCopyrightText: 2026 LavCorps <lavcorps@protonmail.com>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -22,6 +23,9 @@ import type { CommandConfig } from "./Classes/Command/Command.ts";
 export { };
 
 declare global {
+    /** Utility type that indicates that something is to be a value of T. Used for enums. */
+    type valueof<T> = T[keyof T];
+
     /**
      * Represents a user of the bot in a game context.
      */

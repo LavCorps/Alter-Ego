@@ -40,6 +40,8 @@ export default class DismissAction extends Action {
             await party.removeFollower(follower, this, this.getGame().notificationGenerator.generateDismissNotification(this.player, false, party.getMemberDisplayName(follower)));
             if (stopFollowing) follower.stopFollowing();
         }
-        this.successMessage = `Successfully dismissed ${generateListString(followers.map(follower => follower.name))} from ${this.player.name}'s party.`;
+        const dismissedFollowerList = generateListString(followers.map(follower => follower.name));
+        this.getGame().logHandler.logDismiss(this.player, dismissedFollowerList, this.forced);
+        this.successMessage = `Successfully dismissed ${dismissedFollowerList} from ${this.player.name}'s party.`;
     }
 }

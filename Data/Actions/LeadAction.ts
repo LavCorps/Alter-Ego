@@ -90,7 +90,45 @@ export default class LeadAction extends Action {
             });
         }
         this.getGame().narrationHandler.narrateLead(this, this.player, newFollowers, considerPartySynchronized);
+        const followerList = generateListString(followers.map(player => player.name));
+        this.getGame().logHandler.logLead(this.player, followerList, this.forced);
 
-        this.successMessage = `Successfully made ${this.player.name} begin leading ${generateListString(followers.map(player => player.name))}.`;
+        this.successMessage = `Successfully made ${this.player.name} begin leading ${followerList}.`;
+    }
+
+    /**
+     * Finds the required player to call performLead.
+     *
+     * @param args - The args as strings.
+     */
+    parseInteractionArgs(args: string[]): [Player] {
+        const player = this.getGame().entityFinder.getLivingPlayer(args[0]);
+        return [player];
+    }
+
+    /**
+     * Validates the parsed args. The results can be passed directly into performLead.
+     *
+     * @param args - The args after being parsed.
+     */
+    validateInteractionArgs(args: [Player]): [Player[]] {
+        const errorMessageGenerator = this.getGame().errorMessageGenerator;
+        if (args.length !== 1) throw new Error(errorMessageGenerator.generateInsufficientArgumentsError());
+        if (!args[0] || args[0].getEntityType() !== "Player") throw new Error(errorMessageGenerator.generateInvalidEntityError("Player"));
+        const follower = args[0];
+        if (follower.location?.id !== this.player.location.id) throw new Error(errorMessageGenerator.generatePlayerLocationMismatchError());
+        const disabledStatusEffects = this.player.getStatusEffectsDisablingCommand("lead");
+        if (disabledStatusEffects.length > 0)
+            throw new Error(errorMessageGenerator.generateCommandDisabledError(disabledStatusEffects[0]));
+        const hiddenStatusEffects = this.player.getBehaviorAttributeStatusEffects("hidden");
+        if (hiddenStatusEffects.length > 0 && !this.player.isHiddenWith(follower))
+            throw new Error(errorMessageGenerator.generateCommandDisabledError(hiddenStatusEffects[0]));
+        const context = this.forced ? "Moderator" : "Player";
+        if (this.player.followedPlayer) throw new Error(errorMessageGenerator.generateCannotLeadWhileFollowingError(this.player, context));
+        if (follower?.name === this.player.name) throw new Error(errorMessageGenerator.generateCannotSelectSelfError(this.player, context, "lead"));
+        if (!follower.isFollowing(this.player)) throw new Error(errorMessageGenerator.generateCannotSelectNonFollowerError(this.player, follower, context, "lead"));
+        if (follower.ledPlayers.length !== 0) throw new Error(errorMessageGenerator.generateCannotLeadLeaderError(this.player, follower, context));
+        if (this.player.isLeading(follower)) throw new Error(errorMessageGenerator.generateNoNewLedPlayersError(this.player, context));
+        return [[follower]];
     }
 }

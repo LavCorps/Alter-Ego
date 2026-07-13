@@ -1,9 +1,14 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+// SPDX-FileCopyrightText: 2026 LavCorps <lavcorps@protonmail.com>
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import { DOMParser, XMLSerializer } from '@xmldom/xmldom';
 import CollatedItem from '../Data/CollatedItem.ts';
 import Description from '../Data/Description.ts';
 import ItemContainer from '../Data/ItemContainer.ts';
 import Player from '../Data/Player.ts';
-import { MessageDisplayType } from './enums.js';
+import { MessageDisplayType } from './enums.ts';
 import { default as evaluateScript } from './scriptParser.js';
 import { capitalizeFirstLetter, clamp, lowercaseFirstLetter } from './helpers.ts';
 import type GameEntity from '../Data/GameEntity.ts';

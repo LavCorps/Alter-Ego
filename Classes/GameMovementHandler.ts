@@ -182,8 +182,8 @@ export default class GameMovementHandler {
      * @param entities - The set of entities to get the first entity from.
      */
     #first<T extends Positionable>(entities: Set<T>): T {
-        for (const entity of entities) return entity;
-        return null;
+        const [entity] = entities;
+        return entity ?? null;
     }
 
     /**
@@ -278,6 +278,7 @@ export default class GameMovementHandler {
                     this.#clearMoveTimerFor(players);
                     anyPlayersOutOfStamina = true;
                     player.stamina = 0;
+                    remainingTime = 0;
                     const wearyStatus = this.#game.entityFinder.getStatusEffect("weary");
                     if (wearyStatus) {
                         // Inflicting one player with weary should cause all players in their party to stop, as well.

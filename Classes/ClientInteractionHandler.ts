@@ -5,6 +5,8 @@
 import type Action from "../Data/Action.ts";
 import InspectAction from "../Data/Actions/InspectAction.ts";
 import QueueMoveAction from "../Data/Actions/QueueMoveAction.ts";
+import FollowAction from "../Data/Actions/FollowAction.ts";
+import LeadAction from "../Data/Actions/LeadAction.ts";
 import StopAction from "../Data/Actions/StopAction.ts";
 import TakeAction from "../Data/Actions/TakeAction.ts";
 import DropAction from "../Data/Actions/DropAction.ts";
@@ -160,6 +162,34 @@ export default class ClientInteractionHandler {
                     await action.performQueueMove(validatedArgs[0], validatedArgs[1]);
                     this.#replyOrDeleteActionResponse(action, interaction, reply);
                     this.#logInteraction("QueueMoveAction", author, timestamp, validatedArgs);
+                    return true;
+                }
+            }
+            catch (error) { throw new Error(error.message); }
+        }
+        if (action instanceof FollowAction) {
+            const args = interactable.actionDirective.getArgs();
+            const parsedArgs = action.parseInteractionArgs(args);
+            try {
+                const validatedArgs = action.validateInteractionArgs(parsedArgs);
+                if (validatedArgs.length === 1) {
+                    await action.performFollow(validatedArgs[0]);
+                    this.#replyOrDeleteActionResponse(action, interaction, reply);
+                    this.#logInteraction("FollowAction", author, timestamp, validatedArgs);
+                    return true;
+                }
+            }
+            catch (error) { throw new Error(error.message); }
+        }
+        if (action instanceof LeadAction) {
+            const args = interactable.actionDirective.getArgs();
+            const parsedArgs = action.parseInteractionArgs(args);
+            try {
+                const validatedArgs = action.validateInteractionArgs(parsedArgs);
+                if (validatedArgs.length === 1) {
+                    await action.performLead(validatedArgs[0]);
+                    this.#replyOrDeleteActionResponse(action, interaction, reply);
+                    this.#logInteraction("LeadAction", author, timestamp, validatedArgs);
                     return true;
                 }
             }

@@ -20,15 +20,55 @@ export default class FollowAction extends Action {
     async performFollow(player: Player): Promise<void> {
         if (this.performed) return;
         super.perform();
-        this.getGame().narrationHandler.narrateFollow(this, this.player, player);
         this.player.stopMoving();
         this.player.stopFollowing();
         this.player.startFollowing(player);
+        const interactables = this.getGame().clientContext.interactableManager.getLeadInteractables(this.player, player);
+        this.getGame().narrationHandler.narrateFollow(this, this.player, player, interactables);
+        this.getGame().logHandler.logFollow(this.player, player, this.forced);
         if (player.isMoving) {
             this.player.moveQueue = [player.moveQueue[0]];
             const queueMoveAction = new QueueMoveAction(this.getGame(), undefined, this.player, this.player.location, this.forced);
             await queueMoveAction.performQueueMove(player.isRunning, this.player.moveQueue[0], this.player.getFollowingSpeed());
         }
         this.successMessage = `Successfully made ${this.player.name} begin following ${player.name}.`;
+    }
+
+    /**
+     * Finds the required player to call performFollow.
+     *
+     * @param args - The args as strings.
+     */
+    parseInteractionArgs(args: string[]): [Player] {
+        const player = this.getGame().entityFinder.getLivingPlayer(args[0]);
+        return [player];
+    }
+
+    /**
+     * Validates the parsed args. The results can be passed directly into performFollow.
+     *
+     * @param args - The args after being parsed.
+     */
+    validateInteractionArgs(args: [Player]): [Player] {
+        const errorMessageGenerator = this.getGame().errorMessageGenerator;
+        if (args.length !== 1) throw new Error(errorMessageGenerator.generateInsufficientArgumentsError());
+        if (!args[0] || args[0].getEntityType() !== "Player") throw new Error(errorMessageGenerator.generateInvalidEntityError("Player"));
+        const leader = args[0];
+        if (leader.location?.id !== this.player.location.id) throw new Error(errorMessageGenerator.generatePlayerLocationMismatchError());
+        const disabledStatusEffects = this.player.getStatusEffectsDisablingCommand("follow");
+        if (disabledStatusEffects.length > 0)
+            throw new Error(errorMessageGenerator.generateCommandDisabledError(disabledStatusEffects[0]));
+        const hiddenStatusEffects = this.player.getBehaviorAttributeStatusEffects("hidden");
+        if (hiddenStatusEffects.length > 0 && !this.player.isHiddenWith(leader))
+            throw new Error(errorMessageGenerator.generateCommandDisabledError(hiddenStatusEffects[0]));
+        const context = this.forced ? "Moderator" : "Player";
+        if (this.player.speed <= 0) throw new Error(errorMessageGenerator.generateCannotMoveWithNoSpeedError(this.player, context));
+        if (this.player.isMoving) throw new Error(errorMessageGenerator.generateAlreadyMovingError());
+        if (this.player.isFollowing(leader)) throw new Error(errorMessageGenerator.generateAlreadyFollowingPlayerError(this.player, context));
+        if (this.player.followedPlayer) throw new Error(errorMessageGenerator.generateCannotFollowWhenAlreadyFollowingError(this.player, context));
+        if (leader?.name === this.player.name) throw new Error(errorMessageGenerator.generateCannotSelectSelfError(this.player, context, "follow"));
+        if (leader.isFollowing(this.player)) throw new Error(errorMessageGenerator.generateCannotFollowFollowerError(this.player, context, leader));
+        if (this.player.wouldCreateFollowingLoop(leader)) throw new Error(errorMessageGenerator.generateFollowingWouldCauseInfiniteLoopError(this.player, context, leader));
+        return [leader];
     }
 }
