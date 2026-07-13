@@ -7,6 +7,7 @@ import InspectAction from "../Data/Actions/InspectAction.ts";
 import QueueMoveAction from "../Data/Actions/QueueMoveAction.ts";
 import FollowAction from "../Data/Actions/FollowAction.ts";
 import LeadAction from "../Data/Actions/LeadAction.ts";
+import ViewPartyAction from "../Data/Actions/ViewPartyAction.ts";
 import StopAction from "../Data/Actions/StopAction.ts";
 import TakeAction from "../Data/Actions/TakeAction.ts";
 import DropAction from "../Data/Actions/DropAction.ts";
@@ -194,6 +195,14 @@ export default class ClientInteractionHandler {
                 }
             }
             catch (error) { throw new Error(error.message); }
+        }
+        if (action instanceof ViewPartyAction) {
+            if (player.canUseCommand("party")) {
+                action.performViewParty();
+                this.#replyOrDeleteActionResponse(action, interaction, reply);
+                this.#logInteraction("ViewPartyAction", author, timestamp, []);
+                return true;
+            }
         }
         if (action instanceof StopAction) {
             if (player && player.isMoving) {

@@ -274,15 +274,16 @@ export default class GameNarrationHandler {
      * @param action - The action that initiated this narration.
      * @param player - The player performing the follow action.
      * @param target - The player being followed.
-     * @param interactables - An array of interactables to send to the player alongside their notification. Optional.
+     * @param followerInteractables - An array of interactables to send to the follower alongside their notification. Optional.
+     * @param leaderInteractables - An array of interactables to send to the followed player alongside their notification. Optional.
      */
-    narrateFollow(action: Action, player: Player, target: Player, interactables: Interactable[] = []) {
+    narrateFollow(action: Action, player: Player, target: Player, followerInteractables: Interactable[] = [], leaderInteractables: Interactable[] = []) {
         const messageType = MessageDisplayType.MINOR;
         const playerNotification = this.#game.notificationGenerator.generateFollowNotification(player, true, target.displayName);
         const targetNotification = this.#game.notificationGenerator.generateBeingFollowedNotification(player.displayName);
         const narration = this.#game.notificationGenerator.generateFollowNotification(player, false, target.displayName);
-        this.sendNotification(player, action, playerNotification, MessageDisplayType.STANDARD);
-        this.sendNotification(target, action, targetNotification, MessageDisplayType.WARNING, true, undefined, interactables);
+        this.sendNotification(player, action, playerNotification, MessageDisplayType.STANDARD, true, undefined, followerInteractables);
+        this.sendNotification(target, action, targetNotification, MessageDisplayType.WARNING, true, undefined, leaderInteractables);
         this.#sendNarration(messageType, action, player, narration);
     }
 
@@ -304,19 +305,21 @@ export default class GameNarrationHandler {
      * @param leader - The player performing the lead action.
      * @param ledPlayers - The players being led.
      * @param partySynchronized - Whether or not the party members' positions are all synchronized.
-     * @param interactables - An array of interactables to send to the leader alongside their notification. Optional.
+     * @param leaderInteractables - An array of interactables to send to the leader alongside their notification. Optional.
+     * @param followerInteractables - A map of arrays of interactables, where the key for each entry is the name of the player to send them to.
      */
-    narrateLead(action: Action, leader: Player, ledPlayers: Player[], partySynchronized: boolean, interactables: Interactable[] = []) {
+    narrateLead(action: Action, leader: Player, ledPlayers: Player[], partySynchronized: boolean, leaderInteractables: Interactable[] = [], followerInteractables: Map<string, Interactable[]> = new Map()) {
         const messageType = MessageDisplayType.MINOR;
         const partyHasOtherFollowers = leader.party ? leader.party.followers.size !== ledPlayers.length : false;
         const leaderNotification = this.#game.notificationGenerator.generateLeadNotification(leader, true, ledPlayers, partySynchronized, partyHasOtherFollowers);
-        this.sendNotification(leader, action, leaderNotification, MessageDisplayType.STANDARD, undefined, undefined, interactables);
+        this.sendNotification(leader, action, leaderNotification, MessageDisplayType.STANDARD, undefined, undefined, leaderInteractables);
         for (const ledPlayer of ledPlayers) {
             const tailoredFollowers = ["you"].concat(ledPlayers.filter(player => player.name !== ledPlayer.name).map(player => player.displayName));
             const tailoredFollowerListString = generateListString(tailoredFollowers);
             const ledPlayerSynchronized = partySynchronized || ledPlayer.positionMatches(leader);
             const ledPlayerNotification = this.#game.notificationGenerator.generateBeingLedNotification(leader, tailoredFollowerListString, ledPlayerSynchronized);
-            this.sendNotification(ledPlayer, action, ledPlayerNotification, MessageDisplayType.STANDARD);
+            const interactables = followerInteractables.get(ledPlayer.name) ?? [];
+            this.sendNotification(ledPlayer, action, ledPlayerNotification, MessageDisplayType.STANDARD, undefined, undefined, interactables);
         }
         const narration = this.#game.notificationGenerator.generateLeadNotification(leader, false, ledPlayers, partySynchronized, partyHasOtherFollowers);
         this.#sendNarration(messageType, action, leader, narration);

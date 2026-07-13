@@ -26,6 +26,7 @@ import ActionDirective from "./ActionDirective.ts";
 import QueueMoveAction from "../Data/Actions/QueueMoveAction.ts";
 import FollowAction from "../Data/Actions/FollowAction.ts";
 import LeadAction from "../Data/Actions/LeadAction.ts";
+import ViewPartyAction from "../Data/Actions/ViewPartyAction.ts";
 import StopAction from "../Data/Actions/StopAction.ts";
 import InspectAction from "../Data/Actions/InspectAction.ts";
 import TakeAction from "../Data/Actions/TakeAction.ts";
@@ -46,7 +47,7 @@ import DestroyRoomItemAction from "../Data/Actions/DestroyRoomItemAction.ts";
 import FindAction from "../Data/Actions/FindAction.ts";
 import ViewAction, { type EntityField } from "../Data/Actions/ViewAction.ts";
 import { removeInteractablesFromMessage } from "../Modules/messageHandler.ts";
-import { ActionPriority } from "../Modules/enums.js";
+import { ActionPriority } from "../Modules/enums.ts";
 import { capitalizeFirstLetter, getSortedItems } from "../Modules/helpers.ts";
 
 class InteractableOptions<T extends Action> {
@@ -315,6 +316,19 @@ export default class ClientInteractableManager {
         const actionDirective = this.#createActionDirective(LeadAction, follower.getGeneralActionDirectiveArgs(), player, user);
         const interactableOptions = new InteractableOptions(actionDirective, `Lead ${follower.displayName}`);
         return [this.#createButtonInteractable(interactableOptions, ButtonStyle.Success, ActionPriority.LEAD)];
+    }
+
+    /**
+     * Creates a ViewPartyAction interactable and adds it to the cache.
+     * @param player - The player these interactables are being created for.
+     * @param user - The user these interactables are being created for. Defaults to the given player.
+     */
+    private createViewPartyActionInteractable(player: Player, user: User = player): ButtonInteractable[] {
+        if (!player.canUseCommand("party")) return [];
+        if (!player.party && !player.followedPlayer) return [];
+        const actionDirective = this.#createActionDirective(ViewPartyAction, [], player, user);
+        const interactableOptions = new InteractableOptions(actionDirective, `View Party`);
+        return [this.#createButtonInteractable(interactableOptions, ButtonStyle.Secondary, ActionPriority.VIEW_PARTY)];
     }
 
     /**
@@ -876,7 +890,7 @@ export default class ClientInteractableManager {
     }
 
     /**
-     * Generates an array of follow interactables based on who the player is currently able to follow.
+     * Generates an array of follow interactables based on who the player is currently able to follow. This will only produce one follow interactable.
      * @param leader - The player to follow.
      * @param player - The player these interactables are being created for.
      * @param user - The user these interactables are being created for. Defaults to the given player.
@@ -886,13 +900,22 @@ export default class ClientInteractableManager {
     }
 
     /**
-     * Generates an array of lead interactables based on who the player is currently able to lead.
+     * Generates an array of lead interactables based on who the player is currently able to lead. This will only produce one lead interactable.
      * @param follower - The player to lead.
      * @param player - The player who can perform a lead action.
      * @param user - The user these interactables are being created for. Defaults to the given player.
      */
     getLeadInteractables(follower: Player, player: Player, user: User = player): Interactable[] {
         return this.createLeadActionInteractable(follower, player, user);
+    }
+
+    /**
+     * Generates an array of view party interactables for the given player. This will only produce one view party interactable.
+     * @param player - The player who can perform a view party action.
+     * @param user - The user these interactables are being created for. Defaults to the given player.
+     */
+    getViewPartyInteractables(player: Player, user: User = player): Interactable[] {
+        return this.createViewPartyActionInteractable(player, user);
     }
 
     /**

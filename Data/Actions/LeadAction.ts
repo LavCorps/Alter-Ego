@@ -4,6 +4,7 @@
 
 import Action from "../Action.ts";
 import Game from "../Game.ts";
+import type Interactable from "../../Classes/Interactables/Interactable.ts";
 import type Player from "../Player.ts";
 import type Party from "../Party.ts";
 import StopAction from "./StopAction.ts";
@@ -89,11 +90,35 @@ export default class LeadAction extends Action {
                     this.getGame().narrationHandler.narratePartyReady(dummyAction, this.player);
             });
         }
-        this.getGame().narrationHandler.narrateLead(this, this.player, newFollowers, considerPartySynchronized);
+        const leaderInteractables = this.#getLeaderInteractables();
+        const followerInteractables = this.#getFollowerInteractables(newFollowers);
+        this.getGame().narrationHandler.narrateLead(this, this.player, newFollowers, considerPartySynchronized, leaderInteractables, followerInteractables);
         const followerList = generateListString(followers.map(player => player.name));
         this.getGame().logHandler.logLead(this.player, followerList, this.forced);
 
         this.successMessage = `Successfully made ${this.player.name} begin leading ${followerList}.`;
+    }
+
+    /**
+     * Gets an array of interactables to send to the player performing the action.
+     */
+    #getLeaderInteractables(): Interactable[] {
+        let interactables = this.getGame().clientContext.interactableManager.getViewPartyInteractables(this.player);
+        return interactables;
+    }
+
+    /**
+     * Gets an array of interactables to send to each follower.
+     * @param followers - The followers to send interactables to.
+     * @returns A map of arrays of interactables, where the key for each entry is the name of the player to send them to.
+     */
+    #getFollowerInteractables(followers: Player[]): Map<string, Interactable[]> {
+        let interactables: Map<string, Interactable[]> = new Map();
+        for (const follower of followers) {
+            let followerInteractables = this.getGame().clientContext.interactableManager.getViewPartyInteractables(follower);
+            interactables.set(follower.name, followerInteractables);
+        }
+        return interactables;
     }
 
     /**
