@@ -713,6 +713,19 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
     }
 
     /**
+     * Returns true if following the given player would create an endless loop of followers.
+     * @param player - The first player in the chain.
+     */
+    wouldCreateFollowingLoop(player: Player): boolean {
+        let nextFollowedPlayer = player.followedPlayer;
+        while (nextFollowedPlayer) {
+            if (nextFollowedPlayer.name === this.name) return true;
+            nextFollowedPlayer = nextFollowedPlayer.followedPlayer;
+        }
+        return false;
+    }
+
+    /**
      * Returns true if the player this player is following is still visible in the room
      * and has the same display name as when this player first started following them.
      */

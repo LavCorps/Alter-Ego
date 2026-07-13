@@ -24,6 +24,7 @@ import Player from "../Data/Player.ts";
 import RoomItem from "../Data/RoomItem.ts";
 import ActionDirective from "./ActionDirective.ts";
 import QueueMoveAction from "../Data/Actions/QueueMoveAction.ts";
+import FollowAction from "../Data/Actions/FollowAction.ts";
 import LeadAction from "../Data/Actions/LeadAction.ts";
 import StopAction from "../Data/Actions/StopAction.ts";
 import InspectAction from "../Data/Actions/InspectAction.ts";
@@ -281,6 +282,23 @@ export default class ClientInteractableManager {
             }
         }
         return moveButtons.concat(runButtons);
+    }
+
+    /**
+     * Creates a FollowAction interactable and adds it to the cache.
+     * @param leader - The player to follow.
+     * @param player - The player these interactables are being created for.
+     * @param user - The user these interactables are being created for. Defaults to the given player.
+     */
+    private createFollowActionInteractable(leader: Player, player: Player, user: User = player): ButtonInteractable[] {
+        if (!player.canUseCommand("follow") || player.followedPlayer) return [];
+        if (player.isMoving || player.speed <= 0) return [];
+        if (player.isHidden() && !player.isHiddenWith(leader)) return [];
+        if (player.isFollowing(leader)) return [];
+        if (leader.isFollowing(player) || player.wouldCreateFollowingLoop(leader)) return [];
+        const actionDirective = this.#createActionDirective(FollowAction, leader.getGeneralActionDirectiveArgs(), player, user);
+        const interactableOptions = new InteractableOptions(actionDirective, `Follow ${leader.displayName}`);
+        return [this.#createButtonInteractable(interactableOptions, ButtonStyle.Primary, ActionPriority.FOLLOW)];
     }
 
     /**
@@ -855,6 +873,16 @@ export default class ClientInteractableManager {
         }
         const actionDirective = this.#createActionDirective(ViewAction, ["ViewAction Menu"], undefined, user);
         return this.#createStringSelectMenuInteractable(actionDirective, interactableOptions, "View Entity", ActionPriority.VIEW);
+    }
+
+    /**
+     * Generates an array of follow interactables based on who the player is currently able to follow.
+     * @param leader - The player to follow.
+     * @param player - The player these interactables are being created for.
+     * @param user - The user these interactables are being created for. Defaults to the given player.
+     */
+    getFollowInteractables(leader: Player, player: Player, user: User = player): Interactable[] {
+        return this.createFollowActionInteractable(leader, player, user);
     }
 
     /**

@@ -151,6 +151,7 @@ export default class Description extends GameConstruct {
                 }
             }
             else if (container instanceof Player) {
+                interactables = interactables.concat(interactableManager.getFollowInteractables(container, player));
                 interactables = interactables.concat(interactableManager.getLeadInteractables(container, player));
             }
             player.sendDescription(parsedDescription, container, this.messageDisplayType ?? MessageDisplayType.PLAIN_TEXT, interactables);
