@@ -27,7 +27,12 @@ export default class ViewPartyAction extends Action {
 	}
 
     #getInteractables(): Interactable[] {
+        const interactableManager = this.getGame().clientContext.interactableManager;
         let interactables: Interactable[] = [];
+        if (!this.forced)
+            interactables = interactables.concat(interactableManager.getInspectPartyMembersInteractables(this.player, this.user));
+        interactables = interactables.concat(interactableManager.getDismissInteractables(this.player, this.user));
+        interactables = interactables.concat(interactableManager.getStopFollowingInteractables(this.player, this.user));
         return interactables;
     }
 }

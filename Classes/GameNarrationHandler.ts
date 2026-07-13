@@ -355,18 +355,20 @@ export default class GameNarrationHandler {
      * @param action - The action that initiated this narration.
      * @param leader - The player who was leading.
      * @param removedLedPlayers - The players who are no longer being led.
-     * @param interactables - An array of interactables to send to the leader alongside their notification. Optional.
+     * @param leaderInteractables - An array of interactables to send to the leader alongside their notification. Optional.
+     * @param followerInteractables - A map of arrays of interactables, where the key for each entry is the name of the player to send them to.
      */
-    narrateDismiss(action: Action, leader: Player, removedLedPlayers: Player[], interactables: Interactable[] = []) {
+    narrateDismiss(action: Action, leader: Player, removedLedPlayers: Player[], leaderInteractables: Interactable[] = [], followerInteractables: Map<string, Interactable[]> = new Map()) {
         const messageType = MessageDisplayType.MINOR;
         const followerListString = generatePlayerListString(removedLedPlayers);
         const leaderNotification = this.#game.notificationGenerator.generateDismissNotification(leader, true, followerListString);
-        this.sendNotification(leader, action, leaderNotification, MessageDisplayType.STANDARD, undefined, undefined, interactables);
+        this.sendNotification(leader, action, leaderNotification, MessageDisplayType.STANDARD, undefined, undefined, leaderInteractables);
         for (const removedLedPlayer of removedLedPlayers) {
             const tailoredFollowers = removedLedPlayers.filter(player => player.name !== removedLedPlayer.name).map(player => player.displayName).concat("you");
             const tailoredFollowerListString = generateListString(tailoredFollowers);
             const removedLedPlayerNotification = this.#game.notificationGenerator.generateNoLongerBeingLedNotification(leader.displayName, tailoredFollowerListString);
-            this.sendNotification(removedLedPlayer, action, removedLedPlayerNotification, MessageDisplayType.STANDARD);
+            const interactables = followerInteractables.get(removedLedPlayer.name) ?? [];
+            this.sendNotification(removedLedPlayer, action, removedLedPlayerNotification, MessageDisplayType.STANDARD, undefined, undefined, interactables);
         }
         const narration = this.#game.notificationGenerator.generateDismissNotification(leader, false, followerListString);
         this.#sendNarration(messageType, action, leader, narration);

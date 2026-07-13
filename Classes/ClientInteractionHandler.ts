@@ -7,6 +7,7 @@ import InspectAction from "../Data/Actions/InspectAction.ts";
 import QueueMoveAction from "../Data/Actions/QueueMoveAction.ts";
 import FollowAction from "../Data/Actions/FollowAction.ts";
 import LeadAction from "../Data/Actions/LeadAction.ts";
+import DismissAction from "../Data/Actions/DismissAction.ts";
 import ViewPartyAction from "../Data/Actions/ViewPartyAction.ts";
 import StopAction from "../Data/Actions/StopAction.ts";
 import TakeAction from "../Data/Actions/TakeAction.ts";
@@ -196,6 +197,20 @@ export default class ClientInteractionHandler {
             }
             catch (error) { throw new Error(error.message); }
         }
+        if (action instanceof DismissAction) {
+            const args = interactable.actionDirective.getArgs();
+            const parsedArgs = action.parseInteractionArgs(args);
+            try {
+                const validatedArgs = action.validateInteractionArgs(parsedArgs);
+                if (validatedArgs.length === 1) {
+                    await action.performDismissAction(validatedArgs[0]);
+                    this.#replyOrDeleteActionResponse(action, interaction, reply);
+                    this.#logInteraction("DismissAction", author, timestamp, validatedArgs);
+                    return true;
+                }
+            }
+            catch (error) { throw new Error(error.message); }
+        }
         if (action instanceof ViewPartyAction) {
             if (player.canUseCommand("party")) {
                 action.performViewParty();
@@ -205,7 +220,7 @@ export default class ClientInteractionHandler {
             }
         }
         if (action instanceof StopAction) {
-            if (player && player.isMoving) {
+            if (player && (player.isMoving || player.followedPlayer)) {
                 await action.performStop();
                 this.#replyOrDeleteActionResponse(action, interaction, reply);
                 this.#logInteraction("StopAction", author, timestamp, []);

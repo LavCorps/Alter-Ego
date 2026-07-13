@@ -26,6 +26,7 @@ import ActionDirective from "./ActionDirective.ts";
 import QueueMoveAction from "../Data/Actions/QueueMoveAction.ts";
 import FollowAction from "../Data/Actions/FollowAction.ts";
 import LeadAction from "../Data/Actions/LeadAction.ts";
+import DismissAction from "../Data/Actions/DismissAction.ts";
 import ViewPartyAction from "../Data/Actions/ViewPartyAction.ts";
 import StopAction from "../Data/Actions/StopAction.ts";
 import InspectAction from "../Data/Actions/InspectAction.ts";
@@ -319,6 +320,26 @@ export default class ClientInteractableManager {
     }
 
     /**
+     * Creates Interactables for a list of dismissable players and adds them to the cache.
+     * @param followers - A collection of followers that can be dismissed.
+     * @param player - The player these interactables are being created for.
+     * @param user - The user these interactables are being created for. Defaults to the given player.
+     */
+    private createDismissActionInteractables(followers: Collection<string, Player>, player: Player, user: User = player): StringSelectMenuInteractable[] {
+        if (!player.canUseCommand("dismiss")) return [];
+        const interactableOptions: InteractableOptions<DismissAction>[] = [];
+        for (const follower of followers.values()) {
+            const actionDirective = this.#createActionDirective(DismissAction, follower.getGeneralActionDirectiveArgs(), player, user);
+            const userIsModerator = !(user instanceof Player);
+            const displayName = userIsModerator ? player.party?.getMemberDisplayName(follower) ?? follower.displayName : follower.name;
+            const label = `Dismiss ${displayName}`;
+            interactableOptions.push(new InteractableOptions(actionDirective, label, label));
+        }
+        const actionDirective = this.#createActionDirective(DismissAction, ["DismissAction Menu"], player, user);
+        return this.#createStringSelectMenuInteractable(actionDirective, interactableOptions, "Dismiss", ActionPriority.DISMISS);
+    }
+
+    /**
      * Creates a ViewPartyAction interactable and adds it to the cache.
      * @param player - The player these interactables are being created for.
      * @param user - The user these interactables are being created for. Defaults to the given player.
@@ -335,11 +356,12 @@ export default class ClientInteractableManager {
      * Creates a StopAction interactable and adds it to the cache.
      * @param player - The player these interactables are being created for.
      * @param user - The user these interactables are being created for. Defaults to the given player.
+     * @param label - The label to display in the interactable. Defaults to "Stop".
      */
-    createStopActionInteractable(player: Player, user: User = player): ButtonInteractable[] {
+    createStopActionInteractable(player: Player, user: User = player, label: string = "Stop"): ButtonInteractable[] {
         if (!player.canUseCommand("stop")) return [];
         const actionDirective = this.#createActionDirective(StopAction, [], player, user);
-        const interactableOptions = new InteractableOptions(actionDirective, `Stop`);
+        const interactableOptions = new InteractableOptions(actionDirective, label);
         return [this.#createButtonInteractable(interactableOptions, ButtonStyle.Danger, ActionPriority.STOP)];
     }
 
@@ -354,10 +376,16 @@ export default class ClientInteractableManager {
         const interactableOptions: InteractableOptions<InspectAction>[] = [];
         for (const entity of entities) {
             const actionDirective = this.#createActionDirective(InspectAction, entity.getInspectActionDirectiveArgs(), player, user);
-            const label = entity instanceof Player ? entity.displayName : entity.name;
-            const containerString = entity instanceof ItemInstance && entity.container ?
-                entity.container instanceof ItemInstance && entity.container.inventory.size > 1 ?
-                    ` ${entity.container.getPreposition()} ${entity.slot} of ${entity.container.name}`
+            const label = entity instanceof Player
+                ? player.party && player.party.hasMember(entity)
+                    ? player.party.getMemberDisplayName(entity)
+                    : player.isFollowing(entity)
+                        ? player.followedPlayerDisplayName
+                        : entity.displayName
+                : entity.name;
+            const containerString = entity instanceof ItemInstance && entity.container
+                ? entity.container instanceof ItemInstance && entity.container.inventory.size > 1
+                    ? ` ${entity.container.getPreposition()} ${entity.slot} of ${entity.container.name}`
                     : ` ${entity.container.getPreposition()} ${entity.container.name}`
                 : "";
             const description = `Inspect ${label}${containerString}`;
@@ -890,6 +918,25 @@ export default class ClientInteractableManager {
     }
 
     /**
+     * Generates an array of inspect interactables based on the party members or followed players the player is currently able to inspect.
+     * This will only produce one string select menu interactable.
+     * @param player - The player these interactables are being created for.
+     * @param user - The user these interactables are being created for. Defaults to the given player.
+     */
+    getInspectPartyMembersInteractables(player: Player, user: User = player): Interactable[] {
+        let interactables: Interactable[] = [];
+        const players = player.party
+            ? player.party.members.filter(member => member.name !== player.name).map(player => player)
+            : player.followedPlayer
+                ? [player.followedPlayer]
+                : [];
+        const filteredMembers = players.filter(player => player.location.id === player.location.id && (!player.isHidden() || player.isHiddenWith(player)));
+        if (filteredMembers.length > 0)
+            interactables = interactables.concat(this.createInspectActionInteractable(filteredMembers, player, user));
+        return interactables;
+    }
+
+    /**
      * Generates an array of follow interactables based on who the player is currently able to follow. This will only produce one follow interactable.
      * @param leader - The player to follow.
      * @param player - The player these interactables are being created for.
@@ -910,12 +957,41 @@ export default class ClientInteractableManager {
     }
 
     /**
+     * Generates an array of dismiss interactables based on the followers the player is currently able to dismiss.
+     * These will only generate if the player's party has more than one follower.
+     * @param player - The player who can perform a dismiss action.
+     * @param user - The user these interactables are being created for. Defaults to the given player.
+     */
+    getDismissInteractables(player: Player, user: User = player): Interactable[] {
+        let interactables: Interactable[] = [];
+        if (player.party && player.party.hasLeader(player) && player.party.followers.size > 1)
+            interactables = interactables.concat(this.createDismissActionInteractables(player.party.followers, player, user));
+        return interactables;
+    }
+
+    /**
      * Generates an array of view party interactables for the given player. This will only produce one view party interactable.
      * @param player - The player who can perform a view party action.
      * @param user - The user these interactables are being created for. Defaults to the given player.
      */
     getViewPartyInteractables(player: Player, user: User = player): Interactable[] {
         return this.createViewPartyActionInteractable(player, user);
+    }
+
+    /**
+     * Generates an array of stop interactables for the given player. This will only produce one stop interactable.
+     * @param player - The player who can perform a stop action.
+     * @param user - The user these interactables are being created for. Defaults to the given player.
+     */
+    getStopFollowingInteractables(player: Player, user: User = player): Interactable[] {
+        let interactables: Interactable[] = [];
+        if (player.followedPlayer) {
+            const userIsModerator = !(user instanceof Player);
+            const displayName = userIsModerator ? player.name : player.followedPlayerDisplayName;
+            const label = `Stop following ${displayName}`;
+            interactables = interactables.concat(this.createStopActionInteractable(player, user, label));
+        }
+        return interactables;
     }
 
     /**

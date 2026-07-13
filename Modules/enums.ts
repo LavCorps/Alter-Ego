@@ -34,7 +34,6 @@ export const ActionPriority = {
     DESTROY: 5,
     QUEUE_MOVE: 7,
     QUEUE_RUN: 8,
-    STOP: 9,
     STASH: 10,
     UNSTASH: 11,
     CRAFT: 12,
@@ -42,6 +41,7 @@ export const ActionPriority = {
     INSPECT: 14,
     FOLLOW: 15,
     LEAD: 16,
+    STOP: 17,
     TAKE: 20,
     EQUIP: 25,
     USE: 30,
@@ -49,7 +49,8 @@ export const ActionPriority = {
     DROP: 40,
     ACTIVATE: 45,
     DEACTIVATE: 46,
-    VIEW_PARTY: 50
+    VIEW_PARTY: 50,
+    DISMISS: 51
 } as const;
 
 export type ActionPriority = valueof<typeof ActionPriority>
