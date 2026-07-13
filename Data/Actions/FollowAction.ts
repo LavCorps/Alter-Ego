@@ -20,11 +20,12 @@ export default class FollowAction extends Action {
     async performFollow(player: Player): Promise<void> {
         if (this.performed) return;
         super.perform();
-        this.getGame().narrationHandler.narrateFollow(this, this.player, player);
-        this.getGame().logHandler.logFollow(this.player, player, this.forced);
         this.player.stopMoving();
         this.player.stopFollowing();
         this.player.startFollowing(player);
+        const interactables = this.getGame().clientContext.interactableManager.getLeadInteractables(this.player, player);
+        this.getGame().narrationHandler.narrateFollow(this, this.player, player, interactables);
+        this.getGame().logHandler.logFollow(this.player, player, this.forced);
         if (player.isMoving) {
             this.player.moveQueue = [player.moveQueue[0]];
             const queueMoveAction = new QueueMoveAction(this.getGame(), undefined, this.player, this.player.location, this.forced);

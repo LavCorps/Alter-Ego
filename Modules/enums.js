@@ -37,6 +37,7 @@ export const ActionPriority = {
     CRAFT: 12,
     UNCRAFT: 13,
     INSPECT: 14,
+    LEAD: 15,
     TAKE: 20,
     EQUIP: 25,
     USE: 30,

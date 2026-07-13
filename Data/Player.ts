@@ -520,14 +520,23 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
     }
 
     /**
-     * Returns a custom ID for this player.
+     * Returns the args for an ActionDirective that only needs to be able to look up this Player.
+     * @returns [name]
+     */
+    getGeneralActionDirectiveArgs(): string[] {
+        return [this.name];
+    }
+
+    /**
+     * Returns the args for the Inspect ActionDirective for this Player.
+     * @returns ["P", name]
      */
     getInspectActionDirectiveArgs(): string[] {
         return ["P", this.name];
     }
 
     /**
-     * Returns a custom ID for the given crafting recipe.
+     * Returns the args for the Craft ActionDirective for the given crafting recipe.
      * @param item1 - The first item in the player's hands.
      * @param item2 - The second item in the player's hands.
      * @param recipe - The crafting recipe satisfied by these items.
@@ -545,7 +554,7 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
     }
 
     /**
-     * Returns a custom ID for the given uncraftable recipe.
+     * Returns the args for the Craft ActionDirective for the given uncraftable recipe.
      * @param item - The sole item in the player's hands.
      * @param recipe - The uncraftable recipe satisfied by this item.
      */
