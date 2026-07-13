@@ -7,7 +7,7 @@ import type Game from "./Game.ts";
 import GameConstruct from "./GameConstruct.ts";
 import type Player from "./Player.ts";
 import Whisper from "./Whisper.ts";
-import { WhisperType } from "../Modules/enums.js";
+import { WhisperType } from "../Modules/enums.ts";
 import { generateListString } from "../Modules/helpers.ts";
 import { Collection } from "discord.js";
 

@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { generatePlayerListString } from "../Modules/helpers.ts";
-import { WhisperType } from "../Modules/enums.js";
+import { WhisperType } from "../Modules/enums.ts";
 import type Action from "./Action.ts";
 import type Fixture from "./Fixture.ts";
 import type Game from "./Game.ts";

@@ -1,5 +1,5 @@
 import NarrateAction from '../Data/Actions/NarrateAction.ts';
-import { MessageDisplayType } from '../Modules/enums.js';
+import { MessageDisplayType } from '../Modules/enums.ts';
 
 /** @import Moderator from '../Data/Moderator.ts' */
 /** @import GameSettings from '../Classes/GameSettings.ts' */

@@ -1,7 +1,7 @@
 ﻿import Dialog from '../Data/Dialog.ts';
 import NarrateAction from '../Data/Actions/NarrateAction.ts';
 import SayAction from '../Data/Actions/SayAction.ts';
-import { MessageDisplayType } from '../Modules/enums.js';
+import { MessageDisplayType } from '../Modules/enums.ts';
 import { ChannelType } from 'discord.js';
 
 /** @import Moderator from '../Data/Moderator.ts' */

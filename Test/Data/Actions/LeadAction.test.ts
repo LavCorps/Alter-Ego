@@ -17,7 +17,7 @@ import StopAction from "../../../Data/Actions/StopAction.ts";
 import GameEntityManager from "../../../Classes/GameEntityManager.ts";
 import GameMovementHandler from "../../../Classes/GameMovementHandler.ts";
 import { sendQueuedMessages } from "../../../Modules/messageHandler.ts";
-import { WhisperType } from "../../../Modules/enums.js";
+import { WhisperType } from "../../../Modules/enums.ts";
 import type { Message } from "discord.js";
 import type { Mock } from "vitest";
 

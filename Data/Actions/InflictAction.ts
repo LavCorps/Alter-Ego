@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import type { Duration } from "luxon";
-import { MessageDisplayType } from "../../Modules/enums.js";
+import { MessageDisplayType } from "../../Modules/enums.ts";
 import Action from "../Action.ts";
 import type InventoryItem from "../InventoryItem.ts";
 import type Status from "../Status.ts";

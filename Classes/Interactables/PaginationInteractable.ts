@@ -1,5 +1,10 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+// SPDX-FileCopyrightText: 2026 Ms. VBLANK <alteregomolly@pm.me>
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import Interactable from "./Interactable.ts";
-import { InteractableType } from "../../Modules/enums.js";
+import { InteractableType } from "../../Modules/enums.ts";
 import { ButtonBuilder, ButtonStyle } from "discord.js";
 
 /**

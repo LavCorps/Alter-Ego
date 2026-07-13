@@ -7,7 +7,7 @@ import AnnounceAction from '../Data/Actions/AnnounceAction.ts';
 import NarrateAction from '../Data/Actions/NarrateAction.ts';
 import SayAction from '../Data/Actions/SayAction.ts';
 import * as discordUtils from './discordUtils.ts';
-import { MessageDisplayType } from './enums.js';
+import { MessageDisplayType } from './enums.ts';
 import { capitalizeFirstLetter } from './helpers.ts';
 import {
     type Message,

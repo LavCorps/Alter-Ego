@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+// SPDX-FileCopyrightText: 2026 Ms. VBLANK <alteregomolly@pm.me>
 // SPDX-FileCopyrightText: 2026 LavCorps <lavcorps@protonmail.com>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
@@ -47,7 +48,8 @@ export const ActionPriority = {
     UNEQUIP: 35,
     DROP: 40,
     ACTIVATE: 45,
-    DEACTIVATE: 46
+    DEACTIVATE: 46,
+    VIEW_PARTY: 50
 } as const;
 
 export type ActionPriority = valueof<typeof ActionPriority>

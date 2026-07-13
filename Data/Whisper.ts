@@ -4,7 +4,7 @@
 
 import { Collection, type TextChannel } from "discord.js";
 import { generatePlayerListString, sortPlayersByDisplayName } from "../Modules/helpers.ts";
-import { WhisperType } from "../Modules/enums.js";
+import { WhisperType } from "../Modules/enums.ts";
 import type Action from "./Action.ts";
 import type Game from "./Game.ts";
 import GameConstruct from "./GameConstruct.ts";

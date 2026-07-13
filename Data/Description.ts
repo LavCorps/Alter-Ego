@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import type Interactable from "../Classes/Interactables/Interactable.ts";
-import { MessageDisplayType } from "../Modules/enums.js";
+import { MessageDisplayType } from "../Modules/enums.ts";
 import { createDocument, parseDescription, stringify } from "../Modules/parser.ts";
 import type Exit from "./Exit.ts";
 import Fixture from "./Fixture.ts";

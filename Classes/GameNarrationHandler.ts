@@ -12,7 +12,7 @@ import Room from "../Data/Room.ts";
 import RoomItem from "../Data/RoomItem.ts";
 import DieAction from "../Data/Actions/DieAction.ts";
 import NarrateAction from "../Data/Actions/NarrateAction.ts";
-import { MessageDisplayType } from "../Modules/enums.js";
+import { MessageDisplayType } from "../Modules/enums.ts";
 import { parseDescription } from "../Modules/parser.ts";
 import { capitalizeFirstLetter, generateListString, generatePlayerListString } from "../Modules/helpers.ts";
 import { Collection } from "discord.js";

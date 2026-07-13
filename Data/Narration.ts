@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { Attachment, Collection, Embed } from "discord.js";
-import { MessageDisplayType } from "../Modules/enums.js";
+import { MessageDisplayType } from "../Modules/enums.ts";
 import { capitalizeFirstLetter } from "../Modules/helpers.ts";
 import type Action from "./Action.ts";
 import UnhideAction from "./Actions/UnhideAction.ts";
