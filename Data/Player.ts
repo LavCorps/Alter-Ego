@@ -1770,7 +1770,7 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
         const whisperRemovalMessage = this.getGame().notificationGenerator.generateDieNotification(this, false);
         await this.removeFromWhispers(whisperRemovalMessage, action);
         const hidingSpot = this.getGame().entityFinder.getFixture(this.hidingSpot, this.location.id)?.hidingSpot ?? undefined;
-        if (hidingSpot) await hidingSpot.removePlayer(this, action);
+        if (hidingSpot) await hidingSpot.removePlayers(this, action);
         // Update various data.
         this.alive = false;
         this.location = null;

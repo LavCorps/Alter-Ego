@@ -25,7 +25,7 @@ export default class UnhideAction extends Action {
             if (hidingSpotFixture) hidingSpot = hidingSpotFixture.hidingSpot;
         }
         this.getGame().narrationHandler.narrateUnhide(this, hidingSpot, this.player);
-        if (hidingSpot) await hidingSpot.removePlayer(this.player, this);
+        if (hidingSpot) await hidingSpot.removePlayers(this.player, this);
         else {
             const whisperNarration = this.getGame().notificationGenerator.generateUnhideNotification(this.player, false, "hiding");
             await this.player.removeFromWhispers(whisperNarration, this);

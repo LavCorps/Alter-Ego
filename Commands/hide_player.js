@@ -43,6 +43,7 @@ export function usage(settings) {
 export async function execute(game, message, command, args, player) {
     const status = player.getBehaviorAttributeStatusEffects("disable hide");
     if (status.length > 0) return game.communicationHandler.reply(message, `You cannot do that because you are **${status[0].id}**.`);
+    if (player.party && !player.party.positionsSynchronized) return game.communicationHandler.reply(message, `You cannot do that because your party is not ready.`);
 
     if (player.status.has("hidden") && command === "unhide") {
         const fixture = game.entityFinder.getFixtures(player.hidingSpot, player.location.id, true)[0];

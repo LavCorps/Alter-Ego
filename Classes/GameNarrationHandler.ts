@@ -504,25 +504,30 @@ export default class GameNarrationHandler {
      * @param action - The action that initiated this narration.
      * @param hidingSpot - The hiding spot the player is hiding in.
      * @param player - The player performing the hide action.
+     * @param hidingPlayers - A set of all players who are hiding, including the player performing the action.
      * @param interactables - An array of interactables to send to the player alongside their notification. Optional.
      */
-    narrateHide(action: Action, hidingSpot: HidingSpot, player: Player, interactables: Interactable[] = []) {
+    narrateHide(action: Action, hidingSpot: HidingSpot, player: Player, hidingPlayers: Set<Player>, interactables: Interactable[] = []) {
         const messageType = MessageDisplayType.STANDARD;
         const hidingSpotPhrase = hidingSpot.getContainingPhrase();
-        let playerNotification = "";
-        const narration = this.#game.notificationGenerator.generateHideNotification(player, false, hidingSpotPhrase);
-        const hiddenPlayersList = hidingSpot.generateOccupantsString(!player.canSee());
-        if (hidingSpot.occupants.length + 1 > hidingSpot.capacity && !action.forced)
-            playerNotification = this.#game.notificationGenerator.generateHidingSpotFullNotification(hidingSpotPhrase, hiddenPlayersList);
-        else {
-            if (hidingSpot.occupants.length > 0) playerNotification = this.#game.notificationGenerator.generateHidingSpotOccupiedNotification(hidingSpotPhrase, hiddenPlayersList);
-            else playerNotification = this.#game.notificationGenerator.generateHideNotification(player, true, hidingSpotPhrase);
+        const narration = this.#game.notificationGenerator.generateHideNotification(player, hidingPlayers, false, hidingSpotPhrase);
+        for (const hidingPlayer of hidingPlayers) {
+            let playerNotification = "";
+            const hiddenPlayersList = hidingSpot.generateOccupantsString(!hidingPlayer.canSee());
+            if (hidingSpot.occupants.length + hidingPlayers.size > hidingSpot.capacity && !action.forced)
+                playerNotification = this.#game.notificationGenerator.generateHidingSpotFullNotification(hidingSpotPhrase, hiddenPlayersList, hidingPlayer, hidingPlayers);
+            else {
+                if (hidingSpot.occupants.length > 0)
+                    playerNotification = this.#game.notificationGenerator.generateHidingSpotOccupiedNotification(hidingSpotPhrase, hiddenPlayersList, hidingPlayer, hidingPlayers);
+                else playerNotification = this.#game.notificationGenerator.generateHideNotification(hidingPlayer, hidingPlayers, true, hidingSpotPhrase);
+            }
+            this.sendNotification(hidingPlayer, action, playerNotification, messageType, undefined, undefined, interactables);
         }
-        this.sendNotification(player, action, playerNotification, messageType, undefined, undefined, interactables);
         this.#sendNarration(messageType, action, player, narration);
         for (const occupant of hidingSpot.occupants) {
-            const occupantNotification = hidingSpot.occupants.length + 1 > hidingSpot.capacity && !action.forced ? this.#game.notificationGenerator.generateFoundInFullHidingSpotNotification(occupant, player)
-            : this.#game.notificationGenerator.generateFoundInOccupiedHidingSpotNotification(occupant, player);
+            const occupantNotification = hidingSpot.occupants.length + hidingPlayers.size > hidingSpot.capacity && !action.forced
+                ? this.#game.notificationGenerator.generateFoundInFullHidingSpotNotification(occupant, player, hidingPlayers)
+                : this.#game.notificationGenerator.generateFoundInOccupiedHidingSpotNotification(occupant, player, hidingPlayers);
             this.sendNotification(occupant, action, occupantNotification, messageType);
         }
     }

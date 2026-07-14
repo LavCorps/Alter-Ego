@@ -540,8 +540,8 @@ describe('messageHandler test', () => {
 
                     test('players are hidden together', async () => {
                         const hidingSpot = testGame.entityFinder.getFixture("SHED", "courtyard").hidingSpot;
-                        hidingSpot.addPlayer(luna);
-                        hidingSpot.addPlayer(asuka);
+                        hidingSpot.addPlayers(luna);
+                        hidingSpot.addPlayers(asuka);
                         luna.inflict(hidden);
                         asuka.inflict(hidden);
 
@@ -560,16 +560,16 @@ describe('messageHandler test', () => {
                         expect(asukaSpectateMessage).toBeWebhookMessage();
                         expect(asukaSpectateMessage).toBeMessageWith("Luna", luna.member.avatarURL(), "Oh, hello!");
 
-                        await hidingSpot.removePlayer(luna);
-                        await hidingSpot.removePlayer(asuka);
+                        await hidingSpot.removePlayers(luna);
+                        await hidingSpot.removePlayers(asuka);
                         luna.cure(hidden);
                         asuka.cure(hidden);
                     });
 
                     test('players are hidden together and display name of speaker does not match her name', async () => {
                         const hidingSpot = testGame.entityFinder.getFixture("SHED", "courtyard").hidingSpot;
-                        hidingSpot.addPlayer(luna);
-                        hidingSpot.addPlayer(asuka);
+                        hidingSpot.addPlayers(luna);
+                        hidingSpot.addPlayers(asuka);
                         luna.inflict(hidden);
                         asuka.inflict(hidden);
                         luna.displayName = "an individual wearing a MASK";
@@ -590,8 +590,8 @@ describe('messageHandler test', () => {
                         expect(asukaSpectateMessage).toBeWebhookMessage();
                         expect(asukaSpectateMessage).toBeMessageWith("An individual wearing a MASK", testGame.settings.defaultConcealedIconURL, "Oh, hello!");
 
-                        await hidingSpot.removePlayer(luna);
-                        await hidingSpot.removePlayer(asuka);
+                        await hidingSpot.removePlayers(luna);
+                        await hidingSpot.removePlayers(asuka);
                         luna.cure(hidden);
                         asuka.cure(hidden);
                         luna.displayName = luna.name;
@@ -776,8 +776,8 @@ describe('messageHandler test', () => {
 
                     test('players are hidden together', async () => {
                         const hidingSpot = testGame.entityFinder.getFixture("SHED", "courtyard").hidingSpot;
-                        hidingSpot.addPlayer(luna);
-                        hidingSpot.addPlayer(asuka);
+                        hidingSpot.addPlayers(luna);
+                        hidingSpot.addPlayers(asuka);
                         luna.inflict(hidden);
                         asuka.inflict(hidden);
 
@@ -792,16 +792,16 @@ describe('messageHandler test', () => {
                         expect(asukaNotificationMessage.content).toBe(`Luna says "( Oh, hello!"`);
                         expect(asuka.spectateChannel.messages.cache).toHaveSize(0);
 
-                        await hidingSpot.removePlayer(luna);
-                        await hidingSpot.removePlayer(asuka);
+                        await hidingSpot.removePlayers(luna);
+                        await hidingSpot.removePlayers(asuka);
                         luna.cure(hidden);
                         asuka.cure(hidden);
                     });
 
                     test('players are hidden together and display name of speaker does not match her name', async () => {
                         const hidingSpot = testGame.entityFinder.getFixture("SHED", "courtyard").hidingSpot;
-                        hidingSpot.addPlayer(luna);
-                        hidingSpot.addPlayer(asuka);
+                        hidingSpot.addPlayers(luna);
+                        hidingSpot.addPlayers(asuka);
                         luna.inflict(hidden);
                         asuka.inflict(hidden);
                         luna.displayName = "an individual wearing a MASK";
@@ -818,8 +818,8 @@ describe('messageHandler test', () => {
                         expect(asukaNotificationMessage.content).toBe(`An individual wearing a MASK says "( Oh, hello!"`);
                         expect(asuka.spectateChannel.messages.cache).toHaveSize(0);
 
-                        await hidingSpot.removePlayer(luna);
-                        await hidingSpot.removePlayer(asuka);
+                        await hidingSpot.removePlayers(luna);
+                        await hidingSpot.removePlayers(asuka);
                         luna.cure(hidden);
                         asuka.cure(hidden);
                         luna.displayName = luna.name;
@@ -1007,8 +1007,8 @@ describe('messageHandler test', () => {
 
                     test('players are hidden together', async () => {
                         const hidingSpot = testGame.entityFinder.getFixture("SHED", "courtyard").hidingSpot;
-                        hidingSpot.addPlayer(kiara);
-                        hidingSpot.addPlayer(astrid);
+                        hidingSpot.addPlayers(kiara);
+                        hidingSpot.addPlayers(astrid);
                         kiara.inflict(hidden);
                         astrid.inflict(hidden);
 
@@ -1027,16 +1027,16 @@ describe('messageHandler test', () => {
                         expect(astridSpectateMessage).toBeWebhookMessage();
                         expect(astridSpectateMessage).toBeMessageWith("Kiara", kiara.member.avatarURL(), "Bonjour!");
 
-                        await hidingSpot.removePlayer(kiara);
-                        await hidingSpot.removePlayer(astrid);
+                        await hidingSpot.removePlayers(kiara);
+                        await hidingSpot.removePlayers(astrid);
                         kiara.cure(hidden);
                         astrid.cure(hidden);
                     });
 
                     test('players are hidden together and display name of speaker does not match her name', async () => {
                         const hidingSpot = testGame.entityFinder.getFixture("SHED", "courtyard").hidingSpot;
-                        hidingSpot.addPlayer(kiara);
-                        hidingSpot.addPlayer(astrid);
+                        hidingSpot.addPlayers(kiara);
+                        hidingSpot.addPlayers(astrid);
                         kiara.inflict(hidden);
                         astrid.inflict(hidden);
                         kiara.displayName = "an individual wearing a MASK";
@@ -1057,8 +1057,8 @@ describe('messageHandler test', () => {
                         expect(astridSpectateMessage).toBeWebhookMessage();
                         expect(astridSpectateMessage).toBeMessageWith("An individual wearing a MASK (Kiara)", testGame.settings.defaultConcealedIconURL, "Bonjour!");
 
-                        await hidingSpot.removePlayer(kiara);
-                        await hidingSpot.removePlayer(astrid);
+                        await hidingSpot.removePlayers(kiara);
+                        await hidingSpot.removePlayers(astrid);
                         kiara.cure(hidden);
                         astrid.cure(hidden);
                         kiara.displayName = kiara.name;
@@ -1260,8 +1260,8 @@ describe('messageHandler test', () => {
 
                     test('players are hidden together', async () => {
                         const hidingSpot = testGame.entityFinder.getFixture("SHED", "courtyard").hidingSpot;
-                        hidingSpot.addPlayer(kiara);
-                        hidingSpot.addPlayer(astrid);
+                        hidingSpot.addPlayers(kiara);
+                        hidingSpot.addPlayers(astrid);
                         kiara.inflict(hidden);
                         astrid.inflict(hidden);
 
@@ -1276,16 +1276,16 @@ describe('messageHandler test', () => {
                         expect(astridNotificationMessage.content).toBe(`Kiara says "( Bonjour!"`);
                         expect(astrid.spectateChannel.messages.cache).toHaveSize(0);
 
-                        await hidingSpot.removePlayer(kiara);
-                        await hidingSpot.removePlayer(astrid);
+                        await hidingSpot.removePlayers(kiara);
+                        await hidingSpot.removePlayers(astrid);
                         kiara.cure(hidden);
                         astrid.cure(hidden);
                     });
 
                     test('players are hidden together and display name of speaker does not match her name', async () => {
                         const hidingSpot = testGame.entityFinder.getFixture("SHED", "courtyard").hidingSpot;
-                        hidingSpot.addPlayer(kiara);
-                        hidingSpot.addPlayer(astrid);
+                        hidingSpot.addPlayers(kiara);
+                        hidingSpot.addPlayers(astrid);
                         kiara.inflict(hidden);
                         astrid.inflict(hidden);
                         kiara.displayName = "an individual wearing a MASK";
@@ -1302,8 +1302,8 @@ describe('messageHandler test', () => {
                         expect(astridNotificationMessage.content).toBe(`An individual wearing a MASK says "( Bonjour!"`);
                         expect(astrid.spectateChannel.messages.cache).toHaveSize(0);
 
-                        await hidingSpot.removePlayer(kiara);
-                        await hidingSpot.removePlayer(astrid);
+                        await hidingSpot.removePlayers(kiara);
+                        await hidingSpot.removePlayers(astrid);
                         kiara.cure(hidden);
                         astrid.cure(hidden);
                         kiara.displayName = kiara.name;
@@ -1528,8 +1528,8 @@ describe('messageHandler test', () => {
 
                         test('acute hearing player cannot see whispering players because they are hidden', async () => {
                             const hidingSpot = testGame.entityFinder.getFixture("SHED", "courtyard").hidingSpot;
-                            await hidingSpot.addPlayer(luna);
-                            await hidingSpot.addPlayer(kiara);
+                            await hidingSpot.addPlayers(luna);
+                            await hidingSpot.addPlayers(kiara);
                             luna.inflict(hidden);
                             kiara.inflict(hidden);
 
@@ -1552,8 +1552,8 @@ describe('messageHandler test', () => {
                             expect(astridSpectateMessage).toBeWebhookMessage();
                             expect(astridSpectateMessage).toBeMessageWith("Someone in the room with a gentle voice", testGame.settings.hiddenIconURL, "-# *(Whispered):*\nHello!");
 
-                            await hidingSpot.removePlayer(luna);
-                            await hidingSpot.removePlayer(kiara);
+                            await hidingSpot.removePlayers(luna);
+                            await hidingSpot.removePlayers(kiara);
                             luna.cure(hidden);
                             kiara.cure(hidden);
                             await testGame.entityLoader.deleteWhisper(hidingSpot.whisper);
@@ -1562,7 +1562,7 @@ describe('messageHandler test', () => {
 
                         test('acute hearing player cannot see whispering player because she is hidden', async () => {
                             const hidingSpot = testGame.entityFinder.getFixture("SHED", "courtyard").hidingSpot;
-                            await hidingSpot.addPlayer(luna);
+                            await hidingSpot.addPlayers(luna);
                             luna.inflict(hidden);
 
                             await sendPlayerMessage(luna, "Hello!", hidingSpot.whisper.channel);
@@ -1582,7 +1582,7 @@ describe('messageHandler test', () => {
                             expect(astridSpectateMessage).toBeWebhookMessage();
                             expect(astridSpectateMessage).toBeMessageWith("Someone in the room with a gentle voice", testGame.settings.hiddenIconURL, "-# *(Whispered):*\nHello!");
 
-                            await hidingSpot.removePlayer(luna);
+                            await hidingSpot.removePlayers(luna);
                             luna.cure(hidden);
                             await testGame.entityLoader.deleteWhisper(hidingSpot.whisper);
                             whisperLunaKiara = await testGame.entityLoader.createWhisper([luna, kiara]);
@@ -1789,8 +1789,8 @@ describe('messageHandler test', () => {
 
                         test('acute hearing player cannot see whispering players because they are hidden', async () => {
                             const hidingSpot = testGame.entityFinder.getFixture("SHED", "courtyard").hidingSpot;
-                            await hidingSpot.addPlayer(luna);
-                            await hidingSpot.addPlayer(kiara);
+                            await hidingSpot.addPlayers(luna);
+                            await hidingSpot.addPlayers(kiara);
                             luna.inflict(hidden);
                             kiara.inflict(hidden);
 
@@ -1813,8 +1813,8 @@ describe('messageHandler test', () => {
                             expect(astridSpectateMessage).toBeWebhookMessage();
                             expect(astridSpectateMessage).toBeMessageWith("Kiara", testGame.settings.hiddenIconURL, "-# *(Whispered):*\nHello!");
 
-                            await hidingSpot.removePlayer(luna);
-                            await hidingSpot.removePlayer(kiara);
+                            await hidingSpot.removePlayers(luna);
+                            await hidingSpot.removePlayers(kiara);
                             luna.cure(hidden);
                             kiara.cure(hidden);
                             await testGame.entityLoader.deleteWhisper(hidingSpot.whisper);
@@ -1823,7 +1823,7 @@ describe('messageHandler test', () => {
 
                         test('acute hearing player cannot see whispering player because she is hidden', async () => {
                             const hidingSpot = testGame.entityFinder.getFixture("SHED", "courtyard").hidingSpot;
-                            await hidingSpot.addPlayer(kiara);
+                            await hidingSpot.addPlayers(kiara);
                             kiara.inflict(hidden);
 
                             await sendPlayerMessage(kiara, "Hello!", hidingSpot.whisper.channel);
@@ -1843,7 +1843,7 @@ describe('messageHandler test', () => {
                             expect(astridSpectateMessage).toBeWebhookMessage();
                             expect(astridSpectateMessage).toBeMessageWith("Kiara", testGame.settings.hiddenIconURL, "-# *(Whispered):*\nHello!");
 
-                            await hidingSpot.removePlayer(kiara);
+                            await hidingSpot.removePlayers(kiara);
                             kiara.cure(hidden);
                             await testGame.entityLoader.deleteWhisper(hidingSpot.whisper);
                             whisperLunaKiara = await testGame.entityLoader.createWhisper([luna, kiara]);
@@ -2052,8 +2052,8 @@ describe('messageHandler test', () => {
 
                     test('players are hidden together', async () => {
                         const hidingSpot = testGame.entityFinder.getFixture("RECEPTION DESK", "lobby").hidingSpot;
-                        await hidingSpot.addPlayer(amadeus);
-                        await hidingSpot.addPlayer(luna);
+                        await hidingSpot.addPlayers(amadeus);
+                        await hidingSpot.addPlayers(luna);
                         amadeus.inflict(hidden);
                         luna.inflict(hidden);
 
@@ -2071,8 +2071,8 @@ describe('messageHandler test', () => {
                         expect(lunaSpectateMessage).toBeWebhookMessage();
                         expect(lunaSpectateMessage).toBeMessageWith("Amadeus", amadeus.member.avatarURL(), "-# *(Whispered to Luna in the RECEPTION DESK):*\nHello.");
 
-                        await hidingSpot.removePlayer(amadeus);
-                        await hidingSpot.removePlayer(luna);
+                        await hidingSpot.removePlayers(amadeus);
+                        await hidingSpot.removePlayers(luna);
                         amadeus.cure(hidden);
                         luna.cure(hidden);
                         await testGame.entityLoader.deleteWhisper(hidingSpot.whisper);
@@ -2081,7 +2081,7 @@ describe('messageHandler test', () => {
 
                     test('player is hidden alone', async () => {
                         const hidingSpot = testGame.entityFinder.getFixture("RECEPTION DESK", "lobby").hidingSpot;
-                        await hidingSpot.addPlayer(amadeus);
+                        await hidingSpot.addPlayers(amadeus);
                         amadeus.inflict(hidden);
 
                         await sendPlayerMessage(amadeus, "Hello.", hidingSpot.whisper.channel);
@@ -2096,7 +2096,7 @@ describe('messageHandler test', () => {
                         expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                         expect(luna.spectateChannel.messages.cache).toHaveSize(0);
 
-                        await hidingSpot.removePlayer(amadeus);
+                        await hidingSpot.removePlayers(amadeus);
                         amadeus.cure(hidden);
                         await testGame.entityLoader.deleteWhisper(hidingSpot.whisper);
                         whisperAmadeusLuna = await testGame.entityLoader.createWhisper([amadeus, luna]);
@@ -2104,8 +2104,8 @@ describe('messageHandler test', () => {
 
                     test('players are hidden together and display name of speaker does not match its name', async () => {
                         const hidingSpot = testGame.entityFinder.getFixture("RECEPTION DESK", "lobby").hidingSpot;
-                        await hidingSpot.addPlayer(amadeus);
-                        await hidingSpot.addPlayer(luna);
+                        await hidingSpot.addPlayers(amadeus);
+                        await hidingSpot.addPlayers(luna);
                         amadeus.inflict(hidden);
                         luna.inflict(hidden);
                         amadeus.displayName = "an individual wearing a MASK";
@@ -2125,8 +2125,8 @@ describe('messageHandler test', () => {
                         expect(lunaSpectateMessage).toBeWebhookMessage();
                         expect(lunaSpectateMessage).toBeMessageWith("An individual wearing a MASK", testGame.settings.defaultConcealedIconURL, "-# *(Whispered to Luna in the RECEPTION DESK):*\nHello.");
 
-                        await hidingSpot.removePlayer(amadeus);
-                        await hidingSpot.removePlayer(luna);
+                        await hidingSpot.removePlayers(amadeus);
+                        await hidingSpot.removePlayers(luna);
                         amadeus.cure(hidden);
                         luna.cure(hidden);
                         amadeus.displayName = amadeus.name;
@@ -2241,15 +2241,15 @@ describe('messageHandler test', () => {
 
                             beforeAll(async () => {
                                 hidingSpot = testGame.entityFinder.getFixture("RECEPTION DESK", "lobby").hidingSpot;
-                                await hidingSpot.addPlayer(amadeus);
-                                await hidingSpot.addPlayer(luna);
+                                await hidingSpot.addPlayers(amadeus);
+                                await hidingSpot.addPlayers(luna);
                                 amadeus.inflict(hidden);
                                 luna.inflict(hidden);
                             });
 
                             afterAll(async () => {
-                                await hidingSpot.removePlayer(amadeus);
-                                await hidingSpot.removePlayer(luna);
+                                await hidingSpot.removePlayers(amadeus);
+                                await hidingSpot.removePlayers(luna);
                                 amadeus.cure(hidden);
                                 luna.cure(hidden);
                                 await testGame.entityLoader.deleteWhisper(hidingSpot.whisper);
@@ -2392,15 +2392,15 @@ describe('messageHandler test', () => {
 
                             beforeAll(async () => {
                                 hidingSpot = testGame.entityFinder.getFixture("RECEPTION DESK", "lobby").hidingSpot;
-                                await hidingSpot.addPlayer(amadeus);
-                                await hidingSpot.addPlayer(luna);
+                                await hidingSpot.addPlayers(amadeus);
+                                await hidingSpot.addPlayers(luna);
                                 amadeus.inflict(hidden);
                                 luna.inflict(hidden);
                             });
 
                             afterAll(async () => {
-                                await hidingSpot.removePlayer(amadeus);
-                                await hidingSpot.removePlayer(luna);
+                                await hidingSpot.removePlayers(amadeus);
+                                await hidingSpot.removePlayers(luna);
                                 amadeus.cure(hidden);
                                 luna.cure(hidden);
                                 await testGame.entityLoader.deleteWhisper(hidingSpot.whisper);
@@ -2501,8 +2501,8 @@ describe('messageHandler test', () => {
 
                     test('players are hidden together', async () => {
                         const hidingSpot = testGame.entityFinder.getFixture("RECEPTION DESK", "lobby").hidingSpot;
-                        await hidingSpot.addPlayer(amadeus);
-                        await hidingSpot.addPlayer(luna);
+                        await hidingSpot.addPlayers(amadeus);
+                        await hidingSpot.addPlayers(luna);
                         amadeus.inflict(hidden);
                         luna.inflict(hidden);
 
@@ -2520,8 +2520,8 @@ describe('messageHandler test', () => {
                         expect(lunaSpectateMessage).toBeWebhookMessage();
                         expect(lunaSpectateMessage).toBeMessageWith("Luna", luna.member.avatarURL(), "-# *(Whispered to Amadeus in the RECEPTION DESK):*\nOh, hello!");
 
-                        await hidingSpot.removePlayer(amadeus);
-                        await hidingSpot.removePlayer(luna);
+                        await hidingSpot.removePlayers(amadeus);
+                        await hidingSpot.removePlayers(luna);
                         amadeus.cure(hidden);
                         luna.cure(hidden);
                         await testGame.entityLoader.deleteWhisper(hidingSpot.whisper);
@@ -2530,7 +2530,7 @@ describe('messageHandler test', () => {
 
                     test('player is hidden alone', async () => {
                         const hidingSpot = testGame.entityFinder.getFixture("RECEPTION DESK", "lobby").hidingSpot;
-                        await hidingSpot.addPlayer(luna);
+                        await hidingSpot.addPlayers(luna);
                         luna.inflict(hidden);
 
                         await sendPlayerMessage(luna, "Oh, hello!", hidingSpot.whisper.channel);
@@ -2545,7 +2545,7 @@ describe('messageHandler test', () => {
                         expect(amadeus.notificationChannel.messages.cache).toHaveSize(0);
                         expect(amadeus.spectateChannel.messages.cache).toHaveSize(0);
 
-                        await hidingSpot.removePlayer(luna);
+                        await hidingSpot.removePlayers(luna);
                         luna.cure(hidden);
                         await testGame.entityLoader.deleteWhisper(hidingSpot.whisper);
                         whisperAmadeusLuna = await testGame.entityLoader.createWhisper([amadeus, luna]);
@@ -2553,8 +2553,8 @@ describe('messageHandler test', () => {
 
                     test('players are hidden together and display name of speaker does not match her name', async () => {
                         const hidingSpot = testGame.entityFinder.getFixture("RECEPTION DESK", "lobby").hidingSpot;
-                        await hidingSpot.addPlayer(amadeus);
-                        await hidingSpot.addPlayer(luna);
+                        await hidingSpot.addPlayers(amadeus);
+                        await hidingSpot.addPlayers(luna);
                         amadeus.inflict(hidden);
                         luna.inflict(hidden);
                         luna.displayName = "an individual wearing a MASK";
@@ -2575,8 +2575,8 @@ describe('messageHandler test', () => {
                         expect(lunaSpectateMessage).toBeWebhookMessage();
                         expect(lunaSpectateMessage).toBeMessageWith("An individual wearing a MASK (Luna)", testGame.settings.defaultConcealedIconURL, "-# *(Whispered to Amadeus in the RECEPTION DESK):*\nOh, hello!");
 
-                        await hidingSpot.removePlayer(amadeus);
-                        await hidingSpot.removePlayer(luna);
+                        await hidingSpot.removePlayers(amadeus);
+                        await hidingSpot.removePlayers(luna);
                         amadeus.cure(hidden);
                         luna.cure(hidden);
                         luna.displayName = luna.name;
@@ -2691,15 +2691,15 @@ describe('messageHandler test', () => {
 
                             beforeAll(async () => {
                                 hidingSpot = testGame.entityFinder.getFixture("RECEPTION DESK", "lobby").hidingSpot;
-                                await hidingSpot.addPlayer(amadeus);
-                                await hidingSpot.addPlayer(luna);
+                                await hidingSpot.addPlayers(amadeus);
+                                await hidingSpot.addPlayers(luna);
                                 amadeus.inflict(hidden);
                                 luna.inflict(hidden);
                             });
 
                             afterAll(async () => {
-                                await hidingSpot.removePlayer(amadeus);
-                                await hidingSpot.removePlayer(luna);
+                                await hidingSpot.removePlayers(amadeus);
+                                await hidingSpot.removePlayers(luna);
                                 amadeus.cure(hidden);
                                 luna.cure(hidden);
                                 await testGame.entityLoader.deleteWhisper(hidingSpot.whisper);
@@ -2802,8 +2802,8 @@ describe('messageHandler test', () => {
 
                     test('players are hidden together and display name of speaker does not match her name', async () => {
                         const hidingSpot = testGame.entityFinder.getFixture("RECEPTION DESK", "lobby").hidingSpot;
-                        await hidingSpot.addPlayer(amadeus);
-                        await hidingSpot.addPlayer(luna);
+                        await hidingSpot.addPlayers(amadeus);
+                        await hidingSpot.addPlayers(luna);
                         amadeus.inflict(hidden);
                         luna.inflict(hidden);
                         luna.displayName = "an individual wearing a MASK";
@@ -2819,8 +2819,8 @@ describe('messageHandler test', () => {
                         expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                         expect(luna.spectateChannel.messages.cache).toHaveSize(0);
 
-                        await hidingSpot.removePlayer(amadeus);
-                        await hidingSpot.removePlayer(luna);
+                        await hidingSpot.removePlayers(amadeus);
+                        await hidingSpot.removePlayers(luna);
                         amadeus.cure(hidden);
                         luna.cure(hidden);
                         luna.displayName = luna.name;
@@ -2889,15 +2889,15 @@ describe('messageHandler test', () => {
 
                             beforeAll(async () => {
                                 hidingSpot = testGame.entityFinder.getFixture("RECEPTION DESK", "lobby").hidingSpot;
-                                await hidingSpot.addPlayer(amadeus);
-                                await hidingSpot.addPlayer(luna);
+                                await hidingSpot.addPlayers(amadeus);
+                                await hidingSpot.addPlayers(luna);
                                 amadeus.inflict(hidden);
                                 luna.inflict(hidden);
                             });
 
                             afterAll(async () => {
-                                await hidingSpot.removePlayer(amadeus);
-                                await hidingSpot.removePlayer(luna);
+                                await hidingSpot.removePlayers(amadeus);
+                                await hidingSpot.removePlayers(luna);
                                 amadeus.cure(hidden);
                                 luna.cure(hidden);
                                 await testGame.entityLoader.deleteWhisper(hidingSpot.whisper);
@@ -3616,7 +3616,7 @@ describe('messageHandler test', () => {
 
                     test('speaker is hidden', async () => {
                         const hidingSpot = testGame.entityFinder.getFixture("COFFIN", "command-center").hidingSpot;
-                        hidingSpot.addPlayer(kyra);
+                        hidingSpot.addPlayers(kyra);
                         kyra.inflict(hidden);
 
                         await sendPlayerMessage(kyra, "Hello.");
@@ -3662,7 +3662,7 @@ describe('messageHandler test', () => {
                             }
                         }
 
-                        await hidingSpot.removePlayer(kyra);
+                        await hidingSpot.removePlayers(kyra);
                         kyra.cure(hidden);
                     });
 
@@ -4101,7 +4101,7 @@ describe('messageHandler test', () => {
 
                     test('speaker is hidden', async () => {
                         const hidingSpot = testGame.entityFinder.getFixture("LUNCH TABLES", "break-room").hidingSpot;
-                        hidingSpot.addPlayer(nero);
+                        hidingSpot.addPlayers(nero);
                         nero.inflict(hidden);
 
                         await sendPlayerMessage(nero, "Hello.");
@@ -4135,7 +4135,7 @@ describe('messageHandler test', () => {
                             }
                         }
 
-                        await hidingSpot.removePlayer(nero);
+                        await hidingSpot.removePlayers(nero);
                         nero.cure(hidden);
                     });
 
@@ -4210,7 +4210,7 @@ describe('messageHandler test', () => {
                     audioVideoMonitoringRooms = [commandCenter];
                     onlyAudioMonitoringRooms = [lobby, breakRoom];
                     desk = testGame.entityFinder.getFixture("DESK", "general-managers-office").hidingSpot;
-                    desk.removePlayer(qm);
+                    desk.removePlayers(qm);
                     qm.cure(hidden);
                     luna.location.removePlayer(luna);
                     gmOffice.addPlayer(luna);
@@ -4218,7 +4218,7 @@ describe('messageHandler test', () => {
 
                 afterAll(() => {
                     lobby.tags.add('video monitoring');
-                    desk.addPlayer(qm);
+                    desk.addPlayers(qm);
                     qm.inflict(hidden);
                     gmOffice.removePlayer(luna);
                     lobby.addPlayer(luna);
@@ -4425,7 +4425,7 @@ describe('messageHandler test', () => {
 
                 test('speaker is hidden', async () => {
                     const hidingSpot = testGame.entityFinder.getFixture("LUNCH TABLES", "break-room").hidingSpot;
-                    hidingSpot.addPlayer(nero);
+                    hidingSpot.addPlayers(nero);
                     nero.inflict(hidden);
 
                     await sendPlayerMessage(nero, "Hello.");
@@ -4461,7 +4461,7 @@ describe('messageHandler test', () => {
                         }
                     }
 
-                    await hidingSpot.removePlayer(nero);
+                    await hidingSpot.removePlayers(nero);
                     nero.cure(hidden);
                 });
 
