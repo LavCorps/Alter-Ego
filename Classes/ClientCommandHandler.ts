@@ -73,7 +73,7 @@ export default class ClientCommandHandler {
         if (!message) return "Bot";
         else {
             // Don't attempt to find the member who sent this message if it was sent by a webhook.
-            if (message.webhookId !== null) return undefined;
+            if (message.webhookId !== null && message.webhookId !== undefined) return undefined;
             const member = game.guildContext.getMember(message.author.id);
             if (!member) return undefined;
             if (game.guildContext.hasModeratorRole(member)) return "Moderator";
