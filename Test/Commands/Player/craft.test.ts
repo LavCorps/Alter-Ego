@@ -31,7 +31,9 @@ describe("craft_player command", () => {
     /**
      * Puts items with the given prefab IDs into the player's hands, destroying
      * whatever was there before. Returns the newly created InventoryItems.
-     * @param player - The player whose
+     * @param player - The player whose hands we want to set.
+     * @param rightPrefabId - The ID of the prefab to instantiate in the right hand. Optional.
+     * @param leftPrefabId - The ID of the prefab to instantiate in the left hand. Optional.
      */
     function setHandItems(player: Player, rightPrefabId?: string, leftPrefabId?: string) {
         const hands = testGame.entityFinder.getPlayerHands(player);
