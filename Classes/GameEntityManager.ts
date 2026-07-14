@@ -16,7 +16,7 @@ import type Prefab from "../Data/Prefab.ts";
 import type Puzzle from "../Data/Puzzle.ts";
 import type Status from "../Data/Status.ts";
 import type { GuildMember, TextChannel } from "discord.js";
-import { WhisperType } from "../Modules/enums.js";
+import { WhisperType } from "../Modules/enums.ts";
 
 /**
  * A set of functions to manage game entities.

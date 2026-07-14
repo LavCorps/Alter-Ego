@@ -1,5 +1,5 @@
 import HideAction from '../Data/Actions/HideAction.ts';
-import UnhideAction from '../Data/Actions/UnhideAction.ts';
+import EmergeAction from '../Data/Actions/EmergeAction.ts';
 
 /** @import Moderator from '../Data/Moderator.ts' */
 /** @import GameSettings from '../Classes/GameSettings.ts' */
@@ -11,10 +11,10 @@ export const config = {
     description: "Hides a player in the given fixture.",
     details: `Forcibly hides a player in the specified fixture. They will be able to hide in the specified fixture `
         + `even if it is attached to a lock-type puzzle that is unsolved, and even if the hiding spot is beyond its `
-        + `capacity. To force them out of hiding, use the \`unhide\` command.\n\n`
+        + `capacity. To force them out of hiding, use the \`emerge\` command.\n\n`
         + `This command supports NPC latching. For more information, see the help details for the \`latch\` command.`,
     usableBy: "Moderator",
-    aliases: ["hide", "unhide"],
+    aliases: ["hide", "emerge", "unhide"],
     requiresGame: true
 };
 
@@ -25,7 +25,8 @@ export const config = {
 export function usage(settings) {
     return `${settings.commandPrefix}hide Xenia DESK\n`
         + `${settings.commandPrefix}hide Kiara SHOWER 1\n`
-        + `${settings.commandPrefix}unhide Aisha`;
+        + `${settings.commandPrefix}emerge Aisha\n`
+        + `${settings.commandPrefix}unhide Nero`;
 }
 
 /**
@@ -36,6 +37,7 @@ export function usage(settings) {
  * @param {Moderator} moderator - The moderator who issued the command.
  */
 export async function execute(game, message, command, args, moderator) {
+    if (command === "unhide") command = "emerge";
     const sentMessageInLatchChannel = moderator?.sentMessageInLatchChannel(message) ?? false;
     if (!sentMessageInLatchChannel && args.length === 0)
         return game.communicationHandler.reply(message, `You need to specify a player. Usage:\n${usage(game.settings)}`);
@@ -47,14 +49,14 @@ export async function execute(game, message, command, args, moderator) {
         player = moderator.getLatch();
     if (player === undefined) return game.communicationHandler.reply(message, `Player "${args[0]}" not found.`);
 
-    if (player.status.has("hidden") && command === "unhide") {
-        const unhideAction = new UnhideAction(game, message, player, player.location, true);
-        unhideAction.performUnhide();
-        unhideAction.sendSuccessMessageToCommandChannel();
+    if (player.status.has("hidden") && command === "emerge") {
+        const emergeAction = new EmergeAction(game, message, player, player.location, true);
+        await emergeAction.performEmerge();
+        emergeAction.sendSuccessMessageToCommandChannel();
     }
     else if (player.status.has("hidden"))
-        return game.communicationHandler.reply(message, `${player.name} is already **hidden**. If you want ${player.originalPronouns.obj} to stop hiding, use "${game.settings.commandPrefix}unhide ${player.name}".`);
-    else if (command === "unhide")
+        return game.communicationHandler.reply(message, `${player.name} is already **hidden**. If you want ${player.originalPronouns.obj} to stop hiding, use "${game.settings.commandPrefix}emerge ${player.name}".`);
+    else if (command === "emerge")
         return game.communicationHandler.reply(message, `${player.name} is not currently hidden.`);
     // Player is currently not hidden and the hide command is being used.
     else {

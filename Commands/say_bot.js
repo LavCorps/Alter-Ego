@@ -1,7 +1,7 @@
 import Dialog from '../Data/Dialog.ts';
 import NarrateAction from '../Data/Actions/NarrateAction.ts';
 import SayAction from '../Data/Actions/SayAction.ts';
-import { MessageDisplayType } from '../Modules/enums.js';
+import { MessageDisplayType } from '../Modules/enums.ts';
 
 /** @import GameSettings from '../Classes/GameSettings.ts' */
 /** @import Game from '../Data/Game.ts' */

@@ -29,7 +29,7 @@ export default class StopFollowingAction extends Action {
             player.stopFollowing();
             if (player.party) {
                 player.party.leader.stopLeading(player);
-                await player.party.removeFollower(player);
+                await player.party.removeFollowers(player);
             }
         }
         const playerList = generateListString(Array.from(players, player => player.name));

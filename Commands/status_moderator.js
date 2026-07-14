@@ -100,7 +100,7 @@ export async function execute(game, message, command, args, moderator) {
     if (command !== "view") {
         status = game.entityFinder.getStatusEffect(input);
         if (!status) return game.communicationHandler.reply(message, `Couldn't find status effect "${input}".`);
-        if (status.id === "hidden") return game.communicationHandler.reply(message, `To inflict or cure "hidden", use the hide/unhide command instead.`);
+        if (status.id === "hidden") return game.communicationHandler.reply(message, `To inflict or cure "hidden", use the hide/emerge command instead.`);
     }
 
     if (command === "inflict") {

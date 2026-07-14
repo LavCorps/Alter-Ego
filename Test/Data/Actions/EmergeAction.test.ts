@@ -2,6 +2,6 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-describe('UnhideAction test', () => {
+describe('EmergeAction test', () => {
     test('', () => {});
 });

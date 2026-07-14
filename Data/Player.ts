@@ -6,7 +6,7 @@ import { Collection, GuildMember, type TextChannel } from "discord.js";
 import type { Duration } from "luxon";
 import type Interactable from "../Classes/Interactables/Interactable.ts";
 import Timer from "../Classes/Timer.ts";
-import { MessageDisplayType, WhisperType } from "../Modules/enums.js";
+import { MessageDisplayType, WhisperType } from "../Modules/enums.ts";
 import * as itemManager from "../Modules/itemManager.ts";
 import { itemIdentifierMatches } from "../Modules/matchers.ts";
 import { capitalizeFirstLetter, generateListString, makeCopyable } from "../Modules/helpers.ts";
@@ -1770,7 +1770,7 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
         const whisperRemovalMessage = this.getGame().notificationGenerator.generateDieNotification(this, false);
         await this.removeFromWhispers(whisperRemovalMessage, action);
         const hidingSpot = this.getGame().entityFinder.getFixture(this.hidingSpot, this.location.id)?.hidingSpot ?? undefined;
-        if (hidingSpot) await hidingSpot.removePlayer(this, action);
+        if (hidingSpot) await hidingSpot.removePlayers(this, action);
         // Update various data.
         this.alive = false;
         this.location = null;
@@ -1799,7 +1799,7 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
     async removeFromWhispers(narration: string, action?: Action, removeFromParty: boolean = true): Promise<void> {
         for (const whisper of this.getGame().whispers.values()) {
             if (whisper.players.has(this.name) && (removeFromParty || whisper.type !== WhisperType.PARTY))
-                await whisper.removePlayer(this, narration, action);
+                await whisper.removePlayers(this, narration, action);
         }
     }
 

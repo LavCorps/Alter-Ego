@@ -200,12 +200,13 @@ Hides you in a fixture.
 
 #### Aliases
 
-`.hide` `.unhide`
+`.hide` `.emerge` `.unhide`
 
 #### Examples
 
     .hide DESK
     .hide SHOWER 1
+    .emerge
     .unhide
 
 #### Details
@@ -222,7 +223,7 @@ remain a secret), use the `say` command. If someone hides in the same hiding spo
 whisper channel together. If someone inspects or tries to hide in the fixture that you're hiding in, your position will
 be revealed.
 
-If you wish to come out of hiding, use the `unhide` command.
+If you wish to come out of hiding, use the `emerge` command.
 
 ### inspect
 

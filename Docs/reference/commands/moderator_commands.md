@@ -612,19 +612,20 @@ Hides a player in the given fixture.
 
 #### Aliases
 
-`.hide` `.unhide`
+`.hide` `.emerge` `.unhide`
 
 #### Examples
 
     .hide Xenia DESK
     .hide Kiara SHOWER 1
-    .unhide Aisha
+    .emerge Aisha
+    .unhide Nero
 
 #### Details
 
 Forcibly hides a player in the specified fixture. They will be able to hide in the specified fixture even if it is
 attached to a lock-type puzzle that is unsolved, and even if the hiding spot is beyond its capacity. To force them out
-of hiding, use the `unhide` command.
+of hiding, use the `emerge` command.
 
 This command supports NPC latching. For more information, see the help details for the `latch` command.
 

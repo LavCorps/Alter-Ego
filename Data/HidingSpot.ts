@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { generatePlayerListString } from "../Modules/helpers.ts";
-import { WhisperType } from "../Modules/enums.js";
+import { WhisperType } from "../Modules/enums.ts";
 import type Action from "./Action.ts";
 import type Fixture from "./Fixture.ts";
 import type Game from "./Game.ts";
@@ -56,28 +56,36 @@ export default class HidingSpot extends GameEntity {
     }
 
     /**
-     * Adds a player to the hiding spot.
+     * Adds a list of players to the hiding spot.
      *
-     * @param player - The player to add to the hiding spot.
+     * @param players - The players to add to the hiding spot.
      */
-    async addPlayer(player: Player): Promise<void> {
-        if (player.canSee()) await this.deleteWhisper();
-        this.occupants.push(player);
-        player.hidingSpot = this.name;
+    async addPlayers(players: Set<Player> | Player[] | Player): Promise<void> {
+        if (!(players instanceof Set) && !(players instanceof Array)) players = new Set([players]);
+        if (!(players instanceof Set)) players = new Set(players);
+        if (players.values().every(player => player.canSee())) await this.deleteWhisper();
+        for (const player of players) {
+            this.occupants.push(player);
+            player.hidingSpot = this.name;
+        }
         this.whisper = await this.getGame().entityLoader.createWhisper(this.occupants, this.name, WhisperType.HIDING_SPOT);
     }
 
     /**
-     * Removes a player from the hiding spot.
+     * Removes a list of players from the hiding spot.
      *
-     * @param player - The player to remove from the hiding spot.
-     * @param action - The action that caused the player to be removed.
+     * @param players - The players to remove from the hiding spot.
+     * @param action - The action that caused the players to be removed.
      */
-    async removePlayer(player: Player, action?: Action): Promise<void> {
-        this.occupants.splice(this.occupants.indexOf(player), 1);
-        const whisperNarration = action ? this.getGame().notificationGenerator.generateUnhideNotification(player, false, this.getContainingPhrase()) : "";
-        await player.removeFromWhispers(whisperNarration, action);
-        player.hidingSpot = "";
+    async removePlayers(players: Set<Player> | Player[] | Player, action?: Action): Promise<void> {
+        if (!(players instanceof Set) && !(players instanceof Array)) players = new Set([players]);
+        if (!(players instanceof Set)) players = new Set(players);
+        for (const player of players) {
+            this.occupants.splice(this.occupants.indexOf(player), 1);
+            const whisperNarration = action ? this.getGame().notificationGenerator.generateEmergeNotification(player, players, false, this.getContainingPhrase()) : "";
+            await player.removeFromWhispers(whisperNarration, action, false);
+            player.hidingSpot = "";
+        }
     }
 
     /**
@@ -85,7 +93,7 @@ export default class HidingSpot extends GameEntity {
      */
     async deleteWhisper(): Promise<void> {
         for (const occupant of this.occupants)
-            await occupant.removeFromWhispers("");
+            await occupant.removeFromWhispers("", undefined, false);
         this.whisper = null;
     }
 

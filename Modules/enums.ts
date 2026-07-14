@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+// SPDX-FileCopyrightText: 2026 Ms. VBLANK <alteregomolly@pm.me>
 // SPDX-FileCopyrightText: 2026 LavCorps <lavcorps@protonmail.com>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
@@ -33,7 +34,6 @@ export const ActionPriority = {
     DESTROY: 5,
     QUEUE_MOVE: 7,
     QUEUE_RUN: 8,
-    STOP: 9,
     STASH: 10,
     UNSTASH: 11,
     CRAFT: 12,
@@ -41,13 +41,17 @@ export const ActionPriority = {
     INSPECT: 14,
     FOLLOW: 15,
     LEAD: 16,
+    STOP: 17,
     TAKE: 20,
     EQUIP: 25,
     USE: 30,
     UNEQUIP: 35,
     DROP: 40,
     ACTIVATE: 45,
-    DEACTIVATE: 46
+    DEACTIVATE: 46,
+    VIEW_PARTY: 50,
+    DISMISS: 51,
+    DISBAND: 52
 } as const;
 
 export type ActionPriority = valueof<typeof ActionPriority>

@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import Action from "../Action.ts";
+import type Interactable from "../../Classes/Interactables/Interactable.ts";
 import type Player from "../Player.ts";
 import QueueMoveAction from "./QueueMoveAction.ts";
 
@@ -23,8 +24,9 @@ export default class FollowAction extends Action {
         this.player.stopMoving();
         this.player.stopFollowing();
         this.player.startFollowing(player);
-        const interactables = this.getGame().clientContext.interactableManager.getLeadInteractables(this.player, player);
-        this.getGame().narrationHandler.narrateFollow(this, this.player, player, interactables);
+        const followerInteractables = this.#getFollowerInteractables();
+        const leaderInteractables = this.#getLeaderInteractables(player);
+        this.getGame().narrationHandler.narrateFollow(this, this.player, player, followerInteractables, leaderInteractables);
         this.getGame().logHandler.logFollow(this.player, player, this.forced);
         if (player.isMoving) {
             this.player.moveQueue = [player.moveQueue[0]];
@@ -32,6 +34,24 @@ export default class FollowAction extends Action {
             await queueMoveAction.performQueueMove(player.isRunning, this.player.moveQueue[0], this.player.getFollowingSpeed());
         }
         this.successMessage = `Successfully made ${this.player.name} begin following ${player.name}.`;
+    }
+
+    /**
+     * Gets an array of interactables to send to the player performing the action.
+     */
+    #getFollowerInteractables(): Interactable[] {
+        let interactables = this.getGame().clientContext.interactableManager.getViewPartyInteractables(this.player);
+        return interactables;
+    }
+
+    /**
+     * Gets an array of interactables to send to the given player.
+     * @param leader - The player to send the interactables to.
+     */
+    #getLeaderInteractables(leader: Player): Interactable[] {
+        let interactables = this.getGame().clientContext.interactableManager.getLeadInteractables(this.player, leader);
+        interactables = interactables.concat(this.getGame().clientContext.interactableManager.getViewPartyInteractables(leader));
+        return interactables;
     }
 
     /**

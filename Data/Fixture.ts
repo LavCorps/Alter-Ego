@@ -4,7 +4,7 @@
 
 import { Duration } from "luxon";
 import Timer from "../Classes/Timer.ts";
-import { MessageDisplayType } from "../Modules/enums.js";
+import { MessageDisplayType } from "../Modules/enums.ts";
 import { getChildItems, combineProceduralSelections } from "../Modules/itemManager.ts";
 import DeactivateAction from "./Actions/DeactivateAction.ts";
 import InstantiateRoomItemAction from "./Actions/InstantiateRoomItemAction.ts";
