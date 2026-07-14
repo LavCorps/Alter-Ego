@@ -80,7 +80,7 @@ export default class HidingSpot extends GameEntity {
         if (!(players instanceof Array)) players = [players];
         for (const player of players) {
             this.occupants.splice(this.occupants.indexOf(player), 1);
-            const whisperNarration = action ? this.getGame().notificationGenerator.generateUnhideNotification(player, false, this.getContainingPhrase()) : "";
+            const whisperNarration = action ? this.getGame().notificationGenerator.generateEmergeNotification(player, false, this.getContainingPhrase()) : "";
             await player.removeFromWhispers(whisperNarration, action);
             player.hidingSpot = "";
         }

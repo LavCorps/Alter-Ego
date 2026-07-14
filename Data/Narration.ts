@@ -6,7 +6,7 @@ import { Attachment, Collection, Embed } from "discord.js";
 import { MessageDisplayType } from "../Modules/enums.ts";
 import { capitalizeFirstLetter } from "../Modules/helpers.ts";
 import type Action from "./Action.ts";
-import UnhideAction from "./Actions/UnhideAction.ts";
+import EmergeAction from "./Actions/EmergeAction.ts";
 import type Game from "./Game.ts";
 import GameConstruct from "./GameConstruct.ts";
 import Player from "./Player.ts";
@@ -48,13 +48,13 @@ export default class Narration extends GameConstruct {
      */
     readonly message: UserMessage;
     /**
-	 * A collection of attachments sent with the original message.
-	 */
-	attachments: Collection<string, Attachment>;
-	/**
-	 * An array of embeds sent with the original message.
-	 */
-	embeds: Embed[];
+     * A collection of attachments sent with the original message.
+     */
+    attachments: Collection<string, Attachment>;
+    /**
+     * An array of embeds sent with the original message.
+     */
+    embeds: Embed[];
     /**
      * The player or guild member who wrote the narration, if applicable. If the narration didn't originate with a message, this is null.
      */
@@ -68,8 +68,8 @@ export default class Narration extends GameConstruct {
      */
     readonly narratorDisplayIcon: string;
     /**
-	 * Whether or not this narration is considered out-of-character, and thus not a true narration.
-	 */
+     * Whether or not this narration is considered out-of-character, and thus not a true narration.
+     */
     isOOCMessage: boolean;
     /**
      * Whether or not the location has the `video surveilled` tag.
@@ -77,9 +77,9 @@ export default class Narration extends GameConstruct {
      */
     locationIsVideoSurveilled: boolean;
     /**
-	 * A list of occupied rooms with the `video monitoring` tag.
-	 * If the location doesn't have the `video surveilled` tag, or if this is an OOC message, this is empty.
-	 */
+     * A list of occupied rooms with the `video monitoring` tag.
+     * If the location doesn't have the `video surveilled` tag, or if this is an OOC message, this is empty.
+     */
     videoMonitoringRooms: Room[];
 
     /**
@@ -109,7 +109,7 @@ export default class Narration extends GameConstruct {
         this.whisper = whisper;
         this.message = message;
         this.attachments = message?.attachments ?? new Collection();
-		this.embeds = message?.embeds ?? [];
+        this.embeds = message?.embeds ?? [];
         this.isOOCMessage = false;
         this.narrator = narrator;
         if (this.narrator) {
@@ -130,7 +130,7 @@ export default class Narration extends GameConstruct {
      * Returns the prefix string to append before the rest of the message text in spectate messages. If the narration didn't occur in a whisper, returns an empty string.
      */
     getWhisperPrefixString(): string {
-        if (!this.whisper || this.action instanceof UnhideAction) return "";
+        if (!this.whisper || this.action instanceof EmergeAction) return "";
         const associatedEntity = this.whisper.associatedEntity;
         const preposition = associatedEntity ? associatedEntity.getPreposition() : "in";
         const whisperPhrase = associatedEntity ? associatedEntity.getContainingPhrase() : "a whisper";
@@ -157,6 +157,6 @@ export default class Narration extends GameConstruct {
      * Returns true if the narration is only intended to be narrated in a hiding spot.
      */
     isInHidingSpot(): boolean {
-        return (this.player && this.player.isHidden() || this.isModeratorNarration()) && this.whisper && !(this.action instanceof UnhideAction);
+        return (this.player && this.player.isHidden() || this.isModeratorNarration()) && this.whisper && !(this.action instanceof EmergeAction);
     }
 }

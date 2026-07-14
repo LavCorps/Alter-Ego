@@ -533,17 +533,17 @@ export default class GameNarrationHandler {
     }
 
     /**
-     * Narrates an unhide action.
+     * Narrates an emerge action.
      * @param action - The action that initiated this narration.
      * @param hidingSpot - The hiding spot the player is coming out from.
-     * @param player - The player performing the unhide action.
+     * @param player - The player performing the emerge action.
      * @param interactables - An array of interactables to send to the player alongside their notification. Optional.
      */
-    narrateUnhide(action: Action, hidingSpot: HidingSpot, player: Player, interactables: Interactable[] = []) {
+    narrateEmerge(action: Action, hidingSpot: HidingSpot, player: Player, interactables: Interactable[] = []) {
         const messageType = MessageDisplayType.STANDARD;
         const hidingSpotPhrase = hidingSpot ? hidingSpot.getContainingPhrase() : "hiding";
-        const notification = this.#game.notificationGenerator.generateUnhideNotification(player, true, hidingSpotPhrase);
-        const narration = this.#game.notificationGenerator.generateUnhideNotification(player, false, hidingSpotPhrase);
+        const notification = this.#game.notificationGenerator.generateEmergeNotification(player, true, hidingSpotPhrase);
+        const narration = this.#game.notificationGenerator.generateEmergeNotification(player, false, hidingSpotPhrase);
         this.sendNotification(player, action, notification, messageType, undefined, undefined, interactables);
         this.#sendNarration(messageType, action, player, narration);
     }

@@ -963,7 +963,7 @@ export default class GameNotificationGenerator {
      * @param secondPerson - Whether or not the player should be referred to in second person.
      * @param hidingSpotPhrase - The phrase of the hiding spot the player is coming out from.
      */
-    generateUnhideNotification(player: Player, secondPerson: boolean, hidingSpotPhrase: string) {
+    generateEmergeNotification(player: Player, secondPerson: boolean, hidingSpotPhrase: string) {
         const subject = secondPerson ? `You` : capitalizeFirstLetter(player.displayName);
         const verb = secondPerson ? `come out` : `comes out`;
         return `${subject} ${verb} of ${hidingSpotPhrase}.`;

@@ -1,5 +1,5 @@
 import HideAction from '../Data/Actions/HideAction.ts';
-import UnhideAction from '../Data/Actions/UnhideAction.ts';
+import EmergeAction from '../Data/Actions/EmergeAction.ts';
 
 /** @import GameSettings from '../Classes/GameSettings.ts' */
 /** @import Game from '../Data/Game.ts' */
@@ -17,9 +17,9 @@ export const config = {
         + `what you say in this channel. However, if you want to speak so that everyone can hear you (while having your identity `
         + `remain a secret), use the \`say\` command. If someone hides in the same hiding spot as you, you will be placed in a whisper channel together. `
         + `If someone inspects or tries to hide in the fixture that you're hiding in, your position will be revealed.\n\n`
-        + `If you wish to come out of hiding, use the \`unhide\` command.`,
+        + `If you wish to come out of hiding, use the \`emerge\` command.`,
     usableBy: "Player",
-    aliases: ["hide", "unhide"],
+    aliases: ["hide", "emerge", "unhide"],
     requiresGame: true
 };
 
@@ -30,6 +30,7 @@ export const config = {
 export function usage(settings) {
     return `${settings.commandPrefix}hide DESK\n`
         + `${settings.commandPrefix}hide SHOWER 1\n`
+        + `${settings.commandPrefix}emerge\n`
         + `${settings.commandPrefix}unhide`;
 }
 
@@ -41,22 +42,23 @@ export function usage(settings) {
  * @param {Player} player - The player who issued the command.
  */
 export async function execute(game, message, command, args, player) {
+    if (command === "unhide") command = "emerge";
     const status = player.getBehaviorAttributeStatusEffects("disable hide");
     if (status.length > 0) return game.communicationHandler.reply(message, `You cannot do that because you are **${status[0].id}**.`);
     if (player.party && !player.party.positionsSynchronized) return game.communicationHandler.reply(message, `You cannot do that because your party is not ready.`);
 
-    if (player.status.has("hidden") && command === "unhide") {
+    if (player.status.has("hidden") && command === "emerge") {
         const fixture = game.entityFinder.getFixtures(player.hidingSpot, player.location.id, true)[0];
         if (fixture !== undefined && (fixture.childPuzzle !== null && fixture.childPuzzle.type.endsWith("lock") && !fixture.childPuzzle.solved))
             return game.communicationHandler.reply(message, `You cannot come out of hiding right now.`);
         else {
-            const unhideAction = new UnhideAction(game, message, player, player.location, false);
-            unhideAction.performUnhide(fixture.hidingSpot);
+            const emergeAction = new EmergeAction(game, message, player, player.location, false);
+            emergeAction.performEmerge(fixture.hidingSpot);
         }
     }
     else if (player.status.has("hidden"))
-        return game.communicationHandler.reply(message, `You are already **hidden**. If you wish to stop hiding, use "${game.settings.commandPrefix}unhide".`);
-    else if (command === "unhide")
+        return game.communicationHandler.reply(message, `You are already **hidden**. If you wish to stop hiding, use "${game.settings.commandPrefix}emerge".`);
+    else if (command === "emerge")
         return game.communicationHandler.reply(message, "You are not currently hidden.");
     // Player is currently not hidden and is using the hide command.
     else {

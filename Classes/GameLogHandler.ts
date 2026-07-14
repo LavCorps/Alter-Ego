@@ -189,12 +189,12 @@ export default class GameLogHandler {
     }
 
     /**
-     * Logs an unhide action.
+     * Logs an emerge action.
      * @param hidingSpot - The hiding spot the player came out of.
      * @param player - The player who performed the action.
      * @param forced - Whether or not the player was forced to perform the action.
      */
-    logUnhide(hidingSpot: HidingSpot, player: Player, forced: boolean) {
+    logEmerge(hidingSpot: HidingSpot, player: Player, forced: boolean) {
         const hidingSpotName = hidingSpot ? hidingSpot.name : "hiding";
         this.#sendLogMessage(`${this.#getTime()} - ${player.name} ${this.#getForcedString(forced)}came out of ${hidingSpotName} in ${player.location.channel}`);
     }
