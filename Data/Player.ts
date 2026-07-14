@@ -1799,7 +1799,7 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
     async removeFromWhispers(narration: string, action?: Action, removeFromParty: boolean = true): Promise<void> {
         for (const whisper of this.getGame().whispers.values()) {
             if (whisper.players.has(this.name) && (removeFromParty || whisper.type !== WhisperType.PARTY))
-                await whisper.removePlayer(this, narration, action);
+                await whisper.removePlayers(this, narration, action);
         }
     }
 

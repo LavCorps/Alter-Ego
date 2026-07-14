@@ -82,6 +82,8 @@ export default class InflictAction extends Action {
             this.player.stopMoving();
             // If the player is in a party, stop all other members from moving as well, but keep them in a party together.
             // Only do this if the positions are synchronized, as the party is not fully formed until this occurs.
+            // TODO: This is narrating party members stopping movement when they hide together.
+            // TODO: Something is also removing party members during hide. Investigate more when I have the spoons to write tests.
             if (this.player.party && this.player.party.positionsSynchronized) {
                 const partyMembers = this.player.party.getMemberSet(this.player);
                 const [firstMember] = partyMembers;

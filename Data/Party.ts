@@ -152,18 +152,22 @@ export default class Party extends GameConstruct {
     }
 
     /**
-     * Removes a follower from the party.
-     * @param player - The follower to remove from the party.
+     * Removes one or more followers from the party.
+     * @param players - The followers to remove from the party.
      * @param action - The action that caused the player to be removed.
      * @param leaveNarration - The narration to send to the party whisper channel when the player leaves. Optional.
      */
-    async removeFollower(player: Player, action?: Action, leaveNarration: string = ""): Promise<void> {
-        player.leaveParty();
-        this.followers.delete(player.name);
-        this.members.delete(player.name);
-        this.#memberDisplayNames.delete(player.name);
+    async removeFollowers(players: Set<Player> | Player[] | Player, action?: Action, leaveNarration: string = ""): Promise<void> {
+        if (!(players instanceof Set) && !(players instanceof Array)) players = new Set([players]);
+        if (!(players instanceof Set)) players = new Set(players);
+        for (const player of players) {
+            player.leaveParty();
+            this.followers.delete(player.name);
+            this.members.delete(player.name);
+            this.#memberDisplayNames.delete(player.name);
+        }
         const whisperNarration = action ? leaveNarration : "";
-        await this.whisper.removePlayer(player, whisperNarration, action);
+        await this.whisper.removePlayers(players, whisperNarration, action);
         this.getGame().entityLoader.updatePartyId(this, this.whisper.id);
         if (this.followers.size === 0) {
             await this.disband();
@@ -174,8 +178,7 @@ export default class Party extends GameConstruct {
      * Removes all members from the whisper and sets it to null.
      */
     async deleteWhisper(): Promise<void> {
-        for (const player of this.members.values())
-            await this.whisper.removePlayer(player, "");
+        await this.whisper.removePlayers(this.getMemberSet());
         this.whisper = null;
     }
 

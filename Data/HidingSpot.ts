@@ -60,9 +60,10 @@ export default class HidingSpot extends GameEntity {
      *
      * @param players - The players to add to the hiding spot.
      */
-    async addPlayers(players: Player[] | Player): Promise<void> {
-        if (!(players instanceof Array)) players = [players];
-        if (players.every(player => player.canSee())) await this.deleteWhisper();
+    async addPlayers(players: Set<Player> | Player[] | Player): Promise<void> {
+        if (!(players instanceof Set) && !(players instanceof Array)) players = new Set([players]);
+        if (!(players instanceof Set)) players = new Set(players);
+        if (players.values().every(player => player.canSee())) await this.deleteWhisper();
         for (const player of players) {
             this.occupants.push(player);
             player.hidingSpot = this.name;
@@ -76,12 +77,13 @@ export default class HidingSpot extends GameEntity {
      * @param players - The players to remove from the hiding spot.
      * @param action - The action that caused the players to be removed.
      */
-    async removePlayers(players: Player[] | Player, action?: Action): Promise<void> {
-        if (!(players instanceof Array)) players = [players];
+    async removePlayers(players: Set<Player> | Player[] | Player, action?: Action): Promise<void> {
+        if (!(players instanceof Set) && !(players instanceof Array)) players = new Set([players]);
+        if (!(players instanceof Set)) players = new Set(players);
         for (const player of players) {
             this.occupants.splice(this.occupants.indexOf(player), 1);
-            const whisperNarration = action ? this.getGame().notificationGenerator.generateEmergeNotification(player, false, this.getContainingPhrase()) : "";
-            await player.removeFromWhispers(whisperNarration, action);
+            const whisperNarration = action ? this.getGame().notificationGenerator.generateEmergeNotification(player, players, false, this.getContainingPhrase()) : "";
+            await player.removeFromWhispers(whisperNarration, action, false);
             player.hidingSpot = "";
         }
     }
@@ -91,7 +93,7 @@ export default class HidingSpot extends GameEntity {
      */
     async deleteWhisper(): Promise<void> {
         for (const occupant of this.occupants)
-            await occupant.removeFromWhispers("");
+            await occupant.removeFromWhispers("", undefined, false);
         this.whisper = null;
     }
 

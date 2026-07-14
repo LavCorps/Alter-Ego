@@ -82,8 +82,7 @@ export default class LeadAction extends Action {
                         misalignedFollowersString,
                         party.getMemberDisplayName(party.leader)
                     );
-                    for (const follower of misalignedFollowers)
-                        await this.player.party.removeFollower(follower, this, removalMessage);
+                    await this.player.party.removeFollowers(misalignedFollowers, this, removalMessage);
                 }
                 this.player.party.positionsSynchronized = true;
                 if (!considerPartySynchronized)

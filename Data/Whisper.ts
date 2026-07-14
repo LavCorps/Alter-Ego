@@ -139,24 +139,32 @@ export default class Whisper extends GameConstruct {
     }
 
     /**
-     * Removes a player from the whisper. If the whisper has no more players after this, or the resulting whisper already exists, deletes the whisper entirely.
+     * Removes a list of players from the whisper.
+     * If the whisper has no more players after this, or the resulting whisper already exists, deletes the whisper entirely.
      *
-     * @param player - The player to remove.
-     * @param narration - The text of the narration to send in the whisper channel when the player is removed.
-     * @param action - The action that caused the player to be removed.
+     * @param players - The players to remove.
+     * @param narration - The text of the narration to send in the whisper channel when the players are removed.
+     * @param action - The action that caused the players to be removed.
      */
-    async removePlayer(player: Player, narration?: string, action?: Action): Promise<void> {
-        await this.revokeChannelAccess(player);
-        this.players.delete(player.name);
+    async removePlayers(players: Set<Player> | Player[] | Player, narration?: string, action?: Action): Promise<void> {
+        if (!(players instanceof Set) && !(players instanceof Array)) players = new Set([players]);
+        if (!(players instanceof Set)) players = new Set(players);
+        for (const player of players) {
+            await this.revokeChannelAccess(player);
+            this.players.delete(player.name);
+        }
         const newId = Whisper.generateValidId(this.players.map(player => player), this.type !== WhisperType.PARTY ? this.location : undefined, this.associatedEntityName);
         const deleteWhisper = this.players.size === 0 || this.getGame().whispers.get(newId);
         if (!deleteWhisper) {
             this.getGame().entityLoader.updateWhisperId(this, newId);
-            if (narration) this.getGame().narrationHandler.narrateLeaveWhisper(action, player, this, narration);
+            if (narration) {
+                const [player] = players;
+                this.getGame().narrationHandler.narrateLeaveWhisper(action, player, this, narration);
+            }
         }
         else {
-            this.deleted = true;
             await this.getGame().entityLoader.deleteWhisper(this);
+            this.deleted = true;
         }
     }
 

@@ -51,7 +51,7 @@ export async function execute(game, message, command, args, moderator) {
 
     if (player.status.has("hidden") && command === "emerge") {
         const emergeAction = new EmergeAction(game, message, player, player.location, true);
-        emergeAction.performEmerge();
+        await emergeAction.performEmerge();
         emergeAction.sendSuccessMessageToCommandChannel();
     }
     else if (player.status.has("hidden"))

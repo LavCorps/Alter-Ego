@@ -292,7 +292,7 @@ export default class GameMovementHandler {
                                 player.party.getMemberDisplayName(player.party.leader)
                             );
                             player.party.leader.stopLeading(player);
-                            await player.party.removeFollower(player, wearyAction, removalMessage);
+                            await player.party.removeFollowers(player, wearyAction, removalMessage);
                         }
 
                     }

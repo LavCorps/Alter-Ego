@@ -38,9 +38,10 @@ export default class DismissAction extends Action {
         const leaderInteractables = this.#getLeaderInteractables();
         const followerInteractables = this.#getFollowerInteractables(followers);
         this.getGame().narrationHandler.narrateDismiss(this, this.player, followers, leaderInteractables, followerInteractables);
+        const dismissedPlayerDisplayNames = generateListString(followers.map(follower => party.getMemberDisplayName(follower)));
+        await party.removeFollowers(followers, this, this.getGame().notificationGenerator.generateDismissNotification(this.player, false, dismissedPlayerDisplayNames));
         for (const follower of followers) {
             this.player.stopLeading(follower);
-            await party.removeFollower(follower, this, this.getGame().notificationGenerator.generateDismissNotification(this.player, false, party.getMemberDisplayName(follower)));
             if (stopFollowing) follower.stopFollowing();
         }
         const dismissedFollowerList = generateListString(followers.map(follower => follower.name));

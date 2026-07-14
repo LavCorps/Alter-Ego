@@ -505,9 +505,9 @@ export default class GameNarrationHandler {
      * @param hidingSpot - The hiding spot the player is hiding in.
      * @param player - The player performing the hide action.
      * @param hidingPlayers - A set of all players who are hiding, including the player performing the action.
-     * @param interactables - An array of interactables to send to the player alongside their notification. Optional.
+     * @param hidingPlayerInteractables - A map of arrays of interactables, where the key for each entry is the name of the player to send them to. Optional.
      */
-    narrateHide(action: Action, hidingSpot: HidingSpot, player: Player, hidingPlayers: Set<Player>, interactables: Interactable[] = []) {
+    narrateHide(action: Action, hidingSpot: HidingSpot, player: Player, hidingPlayers: Set<Player>, hidingPlayerInteractables: Map<string, Interactable[]> = new Map()) {
         const messageType = MessageDisplayType.STANDARD;
         const hidingSpotPhrase = hidingSpot.getContainingPhrase();
         const narration = this.#game.notificationGenerator.generateHideNotification(player, hidingPlayers, false, hidingSpotPhrase);
@@ -521,6 +521,7 @@ export default class GameNarrationHandler {
                     playerNotification = this.#game.notificationGenerator.generateHidingSpotOccupiedNotification(hidingSpotPhrase, hiddenPlayersList, hidingPlayer, hidingPlayers);
                 else playerNotification = this.#game.notificationGenerator.generateHideNotification(hidingPlayer, hidingPlayers, true, hidingSpotPhrase);
             }
+            const interactables = hidingPlayerInteractables.get(hidingPlayer.name) ?? [];
             this.sendNotification(hidingPlayer, action, playerNotification, messageType, undefined, undefined, interactables);
         }
         this.#sendNarration(messageType, action, player, narration);
@@ -537,14 +538,18 @@ export default class GameNarrationHandler {
      * @param action - The action that initiated this narration.
      * @param hidingSpot - The hiding spot the player is coming out from.
      * @param player - The player performing the emerge action.
-     * @param interactables - An array of interactables to send to the player alongside their notification. Optional.
+     * @param emergingPlayers - A set of all players who are emerging, including the player performing the action.
+     * @param emergingPlayerInteractables - A map of arrays of interactables, where the key for each entry is the name of the player to send them to. Optional.
      */
-    narrateEmerge(action: Action, hidingSpot: HidingSpot, player: Player, interactables: Interactable[] = []) {
+    narrateEmerge(action: Action, hidingSpot: HidingSpot, player: Player, emergingPlayers: Set<Player>, emergingPlayerInteractables: Map<string, Interactable[]> = new Map()) {
         const messageType = MessageDisplayType.STANDARD;
         const hidingSpotPhrase = hidingSpot ? hidingSpot.getContainingPhrase() : "hiding";
-        const notification = this.#game.notificationGenerator.generateEmergeNotification(player, true, hidingSpotPhrase);
-        const narration = this.#game.notificationGenerator.generateEmergeNotification(player, false, hidingSpotPhrase);
-        this.sendNotification(player, action, notification, messageType, undefined, undefined, interactables);
+        const narration = this.#game.notificationGenerator.generateEmergeNotification(player, emergingPlayers, false, hidingSpotPhrase);
+        for (const emergingPlayer of emergingPlayers) {
+            const notification = this.#game.notificationGenerator.generateEmergeNotification(emergingPlayer, emergingPlayers, true, hidingSpotPhrase);
+            const interactables = emergingPlayerInteractables.get(emergingPlayer.name) ?? [];
+            this.sendNotification(emergingPlayer, action, notification, messageType, undefined, undefined, interactables);
+        }
         this.#sendNarration(messageType, action, player, narration);
     }
 

@@ -178,25 +178,27 @@ export default class GameLogHandler {
 
     /**
      * Logs a hide action.
-     * @param hidingSpot - The hiding spot the player hid in.
+     * @param hidingSpot - The hiding spot the players hid in.
      * @param player - The player who performed the action.
-     * @param successful - Whether or not the player was successful in hiding.
-     * @param forced - Whether or not the player was forced to perform the action.
+     * @param hiddenPlayerList - A list of players who performed the action, including the player the action was created with.
+     * @param successful - Whether or not the players were successful in hiding.
+     * @param forced - Whether or not the players were forced to perform the action.
      */
-    logHide(hidingSpot: HidingSpot, player: Player, successful: boolean, forced: boolean) {
+    logHide(hidingSpot: HidingSpot, player: Player, hiddenPlayerList: string, successful: boolean, forced: boolean) {
         const actionVerb = successful ? `hid` : `attempted and failed to hide`;
-        this.#sendLogMessage(`${this.#getTime()} - ${player.name} ${this.#getForcedString(forced)}${actionVerb} in ${hidingSpot.name} in ${player.location.channel}`);
+        this.#sendLogMessage(`${this.#getTime()} - ${hiddenPlayerList} ${this.#getForcedString(forced)}${actionVerb} in ${hidingSpot.name} in ${player.location.channel}`);
     }
 
     /**
      * Logs an emerge action.
-     * @param hidingSpot - The hiding spot the player came out of.
+     * @param hidingSpot - The hiding spot the players came out of.
      * @param player - The player who performed the action.
-     * @param forced - Whether or not the player was forced to perform the action.
+     * @param emergingPlayerList - A list of players who performed the action, including the player the action was created with.
+     * @param forced - Whether or not the players were forced to perform the action.
      */
-    logEmerge(hidingSpot: HidingSpot, player: Player, forced: boolean) {
+    logEmerge(hidingSpot: HidingSpot, player: Player, emergingPlayerList: string, forced: boolean) {
         const hidingSpotName = hidingSpot ? hidingSpot.name : "hiding";
-        this.#sendLogMessage(`${this.#getTime()} - ${player.name} ${this.#getForcedString(forced)}came out of ${hidingSpotName} in ${player.location.channel}`);
+        this.#sendLogMessage(`${this.#getTime()} - ${emergingPlayerList} ${this.#getForcedString(forced)}came out of ${hidingSpotName} in ${player.location.channel}`);
     }
 
     /**

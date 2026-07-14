@@ -6,6 +6,7 @@
 import Action from "../Action.ts";
 import type HidingSpot from "../HidingSpot.ts";
 import InflictAction from "./InflictAction.ts";
+import { generateListString } from "../../Modules/helpers.ts";
 
 /**
  * Represents a hide action.
@@ -28,7 +29,7 @@ export default class HideAction extends Action {
         this.getGame().narrationHandler.narrateHide(this, hidingSpot, this.player, players);
         let successful = false;
         if (hidingSpot.occupants.length + players.size <= hidingSpot.capacity || this.forced) {
-            hidingSpot.addPlayers(Array.from(players));
+            hidingSpot.addPlayers(players);
             const hiddenStatus = this.getGame().entityFinder.getStatusEffect("hidden");
             for (const player of players) {
                 const hiddenStatusAction = new InflictAction(this.getGame(), undefined, player, player.location, false);
@@ -45,7 +46,8 @@ export default class HideAction extends Action {
             successful = true;
         }
 
-        this.getGame().logHandler.logHide(hidingSpot, this.player, successful, this.forced);
-        this.successMessage = `Successfully hid ${this.player.name} in ${hidingSpot.getFixture().getContainingPhrase()}.`;
+        const hiddenPlayerList = generateListString(Array.from(players).map(player => player.name));
+        this.getGame().logHandler.logHide(hidingSpot, this.player, hiddenPlayerList, successful, this.forced);
+        this.successMessage = `Successfully hid ${hiddenPlayerList} in ${hidingSpot.getFixture().getContainingPhrase()}.`;
     }
 }

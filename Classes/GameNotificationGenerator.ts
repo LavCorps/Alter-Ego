@@ -805,7 +805,7 @@ export default class GameNotificationGenerator {
             const playerDisplayNames = [`you`].concat(otherDisplayNames);
             object = generateListString(playerDisplayNames);
         }
-        return `You attempt to hide in the ${hidingSpotPhrase}, but you find ${hiddenPlayersList} already there! There doesn't seem to be enough room for ${object}.`;
+        return `You attempt to hide in ${hidingSpotPhrase}, but you find ${hiddenPlayersList} already there! There doesn't seem to be enough room for ${object}.`;
     }
 
     /**
@@ -822,7 +822,7 @@ export default class GameNotificationGenerator {
             const playerDisplayNames = [`you`].concat(otherDisplayNames);
             subject = generateListString(playerDisplayNames);
         }
-        return `When ${subject} hide in the ${hidingSpotPhrase}, you find ${hiddenPlayersList} already there!`;
+        return `When ${subject} hide in ${hidingSpotPhrase}, you find ${hiddenPlayersList} already there!`;
     }
 
     /**
@@ -832,7 +832,7 @@ export default class GameNotificationGenerator {
      * @param allPlayers - The set of all players who are hiding together.
      */
     generateFoundInOccupiedHidingSpotNotification(player: Player, findingPlayer: Player, allPlayers: Set<Player>) {
-        const [playerDisplayName, _, otherDisplayNames] = this.getPlayerDisplayNames(player, allPlayers);
+        const [playerDisplayName, _, otherDisplayNames] = this.getPlayerDisplayNames(findingPlayer, allPlayers);
         const findingPlayersList = generateListString([playerDisplayName].concat(otherDisplayNames));
         const foundNotification = player.canSee()
             ? `You're found by ${findingPlayersList}`
@@ -851,7 +851,7 @@ export default class GameNotificationGenerator {
      * @param allPlayers - The set of all players who are hiding together.
      */
     generateFoundInFullHidingSpotNotification(player: Player, findingPlayer: Player, allPlayers: Set<Player>) {
-        const [playerDisplayName, _, otherDisplayNames] = this.getPlayerDisplayNames(player, allPlayers);
+        const [playerDisplayName, _, otherDisplayNames] = this.getPlayerDisplayNames(findingPlayer, allPlayers);
         const findingPlayersList = generateListString([playerDisplayName].concat(otherDisplayNames));
         const foundNotification = player.canSee()
             ? `You're found by ${findingPlayersList}`
@@ -960,13 +960,19 @@ export default class GameNotificationGenerator {
     /**
      * Generates a notification indicating the player came out of a hiding spot.
      * @param player - The player referred to in this notification.
+     * @param allPlayers - The set of all players who are emerging together, including the player being addressed.
      * @param secondPerson - Whether or not the player should be referred to in second person.
      * @param hidingSpotPhrase - The phrase of the hiding spot the player is coming out from.
      */
-    generateEmergeNotification(player: Player, secondPerson: boolean, hidingSpotPhrase: string) {
-        const subject = secondPerson ? `You` : capitalizeFirstLetter(player.displayName);
-        const verb = secondPerson ? `come out` : `comes out`;
-        return `${subject} ${verb} of ${hidingSpotPhrase}.`;
+    generateEmergeNotification(player: Player, allPlayers: Set<Player>, secondPerson: boolean, hidingSpotPhrase: string) {
+        let subject = secondPerson ? `you` : player.displayName;
+        if (allPlayers.size > 1) {
+            const [_, __, otherDisplayNames] = this.getPlayerDisplayNames(player, allPlayers);
+            const playerDisplayNames = [subject].concat(otherDisplayNames);
+            subject = generateListString(playerDisplayNames);
+        }
+        const verb = subject === `you` || allPlayers.size > 1 ? `come out` : `comes out`;
+        return `${capitalizeFirstLetter(subject)} ${verb} of ${hidingSpotPhrase}.`;
     }
 
     /**

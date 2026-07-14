@@ -53,7 +53,7 @@ export async function execute(game, message, command, args, player) {
             return game.communicationHandler.reply(message, `You cannot come out of hiding right now.`);
         else {
             const emergeAction = new EmergeAction(game, message, player, player.location, false);
-            emergeAction.performEmerge(fixture.hidingSpot);
+            await emergeAction.performEmerge(fixture.hidingSpot);
         }
     }
     else if (player.status.has("hidden"))

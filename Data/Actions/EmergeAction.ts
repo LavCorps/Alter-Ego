@@ -1,10 +1,12 @@
 // SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+// SPDX-FileCopyrightText: 2026 Ms. VBLANK <alteregomolly@pm.me>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import Action from "../Action.ts";
 import type HidingSpot from "../HidingSpot.ts";
 import CureAction from "./CureAction.ts";
+import { generateListString } from "../../Modules/helpers.ts";
 
 /**
  * Represents an emerge action.
@@ -20,21 +22,34 @@ export default class EmergeAction extends Action {
     async performEmerge(hidingSpot?: HidingSpot): Promise<void> {
         if (this.performed) return;
         super.perform();
+
+        const party = this.player.party;
+        const players = party ? party.getMemberSet() : new Set([this.player]);
+
         if (!hidingSpot) {
             const hidingSpotFixture = this.getGame().entityFinder.getFixture(this.player.hidingSpot, this.player.location.id);
-            if (hidingSpotFixture) hidingSpot = hidingSpotFixture.hidingSpot;
+            if (hidingSpotFixture && players.values().every(player => player.hidingSpot === hidingSpotFixture.name))
+                hidingSpot = hidingSpotFixture.hidingSpot;
         }
-        this.getGame().narrationHandler.narrateEmerge(this, hidingSpot, this.player);
-        if (hidingSpot) await hidingSpot.removePlayers(this.player, this);
+
+        this.getGame().narrationHandler.narrateEmerge(this, hidingSpot, this.player, players);
+        if (hidingSpot)
+            await hidingSpot.removePlayers(players, this);
         else {
-            const whisperNarration = this.getGame().notificationGenerator.generateEmergeNotification(this.player, false, "hiding");
-            await this.player.removeFromWhispers(whisperNarration, this);
-            this.player.hidingSpot = "";
+            for (const player of players) {
+                const whisperNarration = this.getGame().notificationGenerator.generateEmergeNotification(player, new Set([player]), false, "hiding");
+                await player.removeFromWhispers(whisperNarration, this, false);
+                player.hidingSpot = "";
+            }
         }
         const hiddenStatus = this.getGame().entityFinder.getStatusEffect("hidden");
-        const cureAction = new CureAction(this.getGame(), undefined, this.player, this.player.location, true);
-        cureAction.performCure(hiddenStatus, true, false, true);
-        this.getGame().logHandler.logEmerge(hidingSpot, this.player, this.forced);
-        this.successMessage = `Successfully brought ${this.player.name} out of hiding.`;
+        for (const player of players) {
+            const cureAction = new CureAction(this.getGame(), undefined, player, player.location, true);
+            cureAction.performCure(hiddenStatus, true, false, true);
+        }
+
+        const emergingPlayerList = generateListString(Array.from(players).map(player => player.name));
+        this.getGame().logHandler.logEmerge(hidingSpot, this.player, emergingPlayerList, this.forced);
+        this.successMessage = `Successfully brought ${emergingPlayerList} out of hiding.`;
     }
 }
