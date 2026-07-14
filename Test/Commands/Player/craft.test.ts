@@ -32,22 +32,22 @@ describe("craft_player command", () => {
      * Puts items with the given prefab IDs into the player's hands, destroying
      * whatever was there before. Returns the newly created InventoryItems.
      * @param player - The player whose hands we want to set.
-     * @param rightPrefabId - The ID of the prefab to instantiate in the right hand. Optional.
-     * @param leftPrefabId - The ID of the prefab to instantiate in the left hand. Optional.
+     * @param firstHandId - The ID of the prefab to instantiate in the first hand. Optional.
+     * @param secondHandId - The ID of the prefab to instantiate in the second hand. Optional.
      */
-    function setHandItems(player: Player, rightPrefabId?: string, leftPrefabId?: string) {
+    function setHandItems(player: Player, firstHandId?: string, secondHandId?: string) {
         const hands = testGame.entityFinder.getPlayerHands(player);
         for (const hand of hands) {
             if (hand.equippedItem !== null)
                 player.directUnequip(hand.equippedItem);
         }
-        const rightItem = rightPrefabId
-            ? instantiateInventoryItem(testGame.entityFinder.getPrefab(rightPrefabId), player, hands[0].id, null, "", 1)
+        const firstItem = firstHandId
+            ? instantiateInventoryItem(testGame.entityFinder.getPrefab(firstHandId), player, hands[0].id, null, "", 1)
             : null;
-        const leftItem = leftPrefabId
-            ? instantiateInventoryItem(testGame.entityFinder.getPrefab(leftPrefabId), player, hands[1].id, null, "", 1)
+        const secondItem = secondHandId
+            ? instantiateInventoryItem(testGame.entityFinder.getPrefab(secondHandId), player, hands[1].id, null, "", 1)
             : null;
-        return { right: rightItem, left: leftItem };
+        return { first: firstItem, second: secondItem };
     }
 
     /**
@@ -123,34 +123,34 @@ describe("craft_player command", () => {
 
     test("crafts successfully when held items match a recipe", async () => {
         const player = testGame.entityFinder.getPlayer("Kyra");
-        const { right, left } = setHandItems(player, "MILK", "CLEAN BOWL");
+        const { first: first, second: second } = setHandItems(player, "MILK", "CLEAN BOWL");
         const performCraftSpy = vi.spyOn(CraftAction.prototype, "performCraft");
         const result = await runCommand("craft BOWL and MILK");
         expect(result).toBe(true);
         const recipes = testGame.entityFinder.getRecipes("crafting");
-        const recipe = recipes.find(recipe => player.canCraft(recipe, [right, left]));
-        expect(performCraftSpy).toBeInvokedWith(left, right, recipe);
+        const recipe = recipes.find(recipe => player.canCraft(recipe, [first, second]));
+        expect(performCraftSpy).toBeInvokedWith(second, first, recipe);
     });
 
     test("crafts successfully when held items include separators in name", async () => {
         const player = testGame.entityFinder.getPlayer("Kyra");
-        const { right, left } = setHandItems(player, "POT OF SPAGHETTI AND MEATBALLS", "RAGU");
+        const { first: first, second: second } = setHandItems(player, "POT OF SPAGHETTI AND MEATBALLS", "RAGU");
         const performCraftSpy = vi.spyOn(CraftAction.prototype, "performCraft");
         const result = await runCommand("craft SPAGHETTI AND MEATBALLS and RAGU");
         expect(result).toBe(true);
         const recipes = testGame.entityFinder.getRecipes("crafting");
-        const recipe = recipes.find(recipe => player.canCraft(recipe, [right, left]));
-        expect(performCraftSpy).toBeInvokedWith(right, left, recipe);
+        const recipe = recipes.find(recipe => player.canCraft(recipe, [first, second]));
+        expect(performCraftSpy).toBeInvokedWith(first, second, recipe);
     });
 
     test("crafts successfully when held items include separators in name in reverse order", async () => {
         const player = testGame.entityFinder.getPlayer("Kyra");
-        const { right, left } = setHandItems(player, "POT OF SPAGHETTI AND MEATBALLS", "RAGU");
+        const { first: first, second: second } = setHandItems(player, "POT OF SPAGHETTI AND MEATBALLS", "RAGU");
         const performCraftSpy = vi.spyOn(CraftAction.prototype, "performCraft");
         const result = await runCommand("craft RAGU and SPAGHETTI AND MEATBALLS");
         expect(result).toBe(true);
         const recipes = testGame.entityFinder.getRecipes("crafting");
-        const recipe = recipes.find(recipe => player.canCraft(recipe, [right, left]));
-        expect(performCraftSpy).toBeInvokedWith(left, right, recipe);
+        const recipe = recipes.find(recipe => player.canCraft(recipe, [first, second]));
+        expect(performCraftSpy).toBeInvokedWith(second, first, recipe);
     });
 });
