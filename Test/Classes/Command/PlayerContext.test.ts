@@ -3,6 +3,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import type { CommandConfig } from "../../../Classes/Command/Command.ts";
 import { Multislot, Pattern, Slot } from "../../../Classes/Command/Pattern.ts";
 import PlayerContext from "../../../Classes/Command/PlayerContext.ts";
 import { ItemContainerToken, PrepositionToken } from "../../../Classes/Command/Token.ts";
@@ -29,6 +30,14 @@ const DEBUG = false;
 describe("PlayerContext class from NG Commands", () => {
     beforeAll(async () => {
         if (!testGame.inProgress) await testGame.entityLoader.loadAll();
+        commandConfig = {
+            name: "not_real",
+            description: "This command is not real",
+            details: "This command is not real",
+            usableBy: "Moderator",
+            aliases: new Set(),
+            requiresGame: false,
+        };
     });
 
     beforeEach(async () => {
@@ -41,6 +50,7 @@ describe("PlayerContext class from NG Commands", () => {
     });
 
     let kyra: Player;
+    let commandConfig: CommandConfig<Set<string>>;
 
     describe("constructor()", () => {
         test("verify that stashedItems does not include top-level items", async () => {
@@ -97,7 +107,7 @@ describe("PlayerContext class from NG Commands", () => {
                 ]),
             ];
             const patternInitConclude = process.hrtime.bigint();
-            const tokens = context.getLexicon(patterns);
+            const tokens = context.getLexicon(patterns, commandConfig);
             const getLexiconConclude = process.hrtime.bigint();
             for (const token of tokens) {
                 trie.insert(token.value, token);
@@ -137,7 +147,7 @@ describe("PlayerContext class from NG Commands", () => {
                 ]),
             ];
             const patternInitConclude = process.hrtime.bigint();
-            const tokens = context.getLexicon(patterns);
+            const tokens = context.getLexicon(patterns, commandConfig);
             const getLexiconConclude = process.hrtime.bigint();
             for (const token of tokens) {
                 trie.insert(token.value, token);
@@ -177,7 +187,7 @@ describe("PlayerContext class from NG Commands", () => {
                 ]),
             ];
             const patternInitConclude = process.hrtime.bigint();
-            const tokens = context.getLexicon(patterns);
+            const tokens = context.getLexicon(patterns, commandConfig);
             const getLexiconConclude = process.hrtime.bigint();
             for (const token of tokens) {
                 trie.insert(token.value, token);
@@ -217,7 +227,7 @@ describe("PlayerContext class from NG Commands", () => {
                 ]),
             ];
             const patternInitConclude = process.hrtime.bigint();
-            const tokens = context.getLexicon(patterns);
+            const tokens = context.getLexicon(patterns, commandConfig);
             const getLexiconConclude = process.hrtime.bigint();
             for (const token of tokens) {
                 trie.insert(token.value, token);
@@ -257,7 +267,7 @@ describe("PlayerContext class from NG Commands", () => {
                 ]),
             ];
             const patternInitConclude = process.hrtime.bigint();
-            const tokens = context.getLexicon(patterns);
+            const tokens = context.getLexicon(patterns, commandConfig);
             const getLexiconConclude = process.hrtime.bigint();
             for (const token of tokens) {
                 trie.insert(token.value, token);
@@ -297,7 +307,7 @@ describe("PlayerContext class from NG Commands", () => {
                 ]),
             ];
             const patternInitConclude = process.hrtime.bigint();
-            const tokens = context.getLexicon(patterns);
+            const tokens = context.getLexicon(patterns, commandConfig);
             const getLexiconConclude = process.hrtime.bigint();
             for (const token of tokens) {
                 trie.insert(token.value, token);
@@ -337,7 +347,7 @@ describe("PlayerContext class from NG Commands", () => {
                 ]),
             ];
             const patternInitConclude = process.hrtime.bigint();
-            const tokens = context.getLexicon(patterns);
+            const tokens = context.getLexicon(patterns, commandConfig);
             const getLexiconConclude = process.hrtime.bigint();
             for (const token of tokens) {
                 trie.insert(token.value, token);
@@ -377,7 +387,7 @@ describe("PlayerContext class from NG Commands", () => {
                 ]),
             ];
             const patternInitConclude = process.hrtime.bigint();
-            const tokens = context.getLexicon(patterns);
+            const tokens = context.getLexicon(patterns, commandConfig);
             const getLexiconConclude = process.hrtime.bigint();
             for (const token of tokens) {
                 trie.insert(token.value, token);
@@ -417,7 +427,7 @@ describe("PlayerContext class from NG Commands", () => {
                 ]),
             ];
             const patternInitConclude = process.hrtime.bigint();
-            const tokens = context.getLexicon(patterns);
+            const tokens = context.getLexicon(patterns, commandConfig);
             const getLexiconConclude = process.hrtime.bigint();
             for (const token of tokens) {
                 trie.insert(token.value, token);
@@ -448,7 +458,7 @@ describe("PlayerContext class from NG Commands", () => {
             const contextInitConclude = process.hrtime.bigint();
             const patterns = [];
             const patternInitConclude = process.hrtime.bigint();
-            const tokens = context.getLexicon(patterns);
+            const tokens = context.getLexicon(patterns, commandConfig);
             const getLexiconConclude = process.hrtime.bigint();
             for (const token of tokens) {
                 trie.insert(token.value, token);
@@ -480,9 +490,9 @@ describe("PlayerContext class from NG Commands", () => {
                         new Multislot(
                             [new Slot(InventoryItem, "inventory item"), new Slot(Fixture, "fixture")],
                             "multislot",
-                        ),
-                    ]),
-                ]);
+                        )]),
+                    ], commandConfig,
+                );
                 for (const token of tokens) {
                     trie.insert(token.value, token);
                 }

@@ -363,7 +363,7 @@ export class Pattern implements PatternElement {
     /**
      * The constants contained within a pattern. Informs Contexts what constants exist for the given pattern.
      */
-    #constants: Set<ConstantToken>;
+    #constants: Set<string>;
 
     /**
      * @param grammar - The grammar of the pattern. This is an ordered array, containing pattern elements, as well as other patterns.
@@ -382,9 +382,10 @@ export class Pattern implements PatternElement {
             else if (element instanceof Multislot)
                 this.types = this.types.union(element.types);
             else if (element instanceof Constant)
-                this.constants.add(new ConstantToken(element.value));
+                this.constants.add(element.value);
             else if (element instanceof Multiconstant)
-                for (const choice of element.values) this.constants.add(new ConstantToken(choice));
+                for (const choice of element.values)
+                    this.constants.add(choice);
             else if (element instanceof Pattern) {
                 this.constants = this.constants.union(element.constants);
                 this.types = this.types.union(element.types);
@@ -408,11 +409,11 @@ export class Pattern implements PatternElement {
     /**
      * The constants contained within a pattern. Informs Contexts what constants exist for the given pattern.
      */
-    get constants(): Set<ConstantToken> {
+    get constants(): Set<string> {
         return this.#constants;
     }
 
-    protected set constants(constants: Set<ConstantToken>) {
+    protected set constants(constants: Set<string>) {
         this.#constants = constants;
     }
 

@@ -118,7 +118,7 @@ export default class ClientCommandHandler {
      * Thrown if the command invocation is invalid.
      */
     private async validateCommand<T extends Context>(command: Command<T>, context: T, args: string[]): Promise<ValidatedInvocation> {
-        const trie = Trie.buildFromContextAndPatterns(context, command.patterns);
+        const trie = Trie.buildFromCommandAndPatterns(context, command);
         const tokens = trie.tokenize(args);
         const errors: InvalidInvocation[] = [];
         const matches: MatchedInvocation[] = [];

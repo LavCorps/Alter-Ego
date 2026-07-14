@@ -386,7 +386,7 @@ describe("Pattern file from NG Commands", () => {
                 new Slot(InventoryItem, "item2"),
             ]);
             for (const constant of pattern.constants)
-                trie.insert(constant.value, constant);
+                trie.insert(constant, new ConstantToken(constant));
             const invocation = pattern.match(trie.tokenize(["MUG", "OF", "COFFEE", "and", "PACK", "OF", "TOILET", "PAPER", "2"])) as MatchedInvocation;
             expect(invocation).toBeInstanceOf(MatchedInvocation);
             expect(invocation.args.size).toBe(2);
@@ -412,7 +412,7 @@ describe("Pattern file from NG Commands", () => {
                 new Slot(InventoryItem, "item2"),
             ]);
             for (const constant of pattern.constants)
-                trie.insert(constant.value, constant);
+                trie.insert(constant, new ConstantToken(constant));
             const invocation = pattern.match(trie.tokenize(["MG", "F", "CFF", "and", "PACK", "OF", "TOILET", "PAPER", "2"])) as InvalidInvocation;
             expect(invocation).toBeInstanceOf(InvalidInvocation);
             expect(invocation.errors).toBeLength(1);
@@ -488,7 +488,7 @@ describe("Pattern file from NG Commands", () => {
                 new Slot(InventoryItem, "destination"),
             ]);
             for (const constant of pattern.constants)
-                trie.insert(constant.value, constant);
+                trie.insert(constant, new ConstantToken(constant));
             const invocation = pattern.match(trie.tokenize(["MUG", "OF", "COFFEE", "in", "RIGHT", "POCKET", "of", "KYRAS", "LAB", "COAT", "1"])) as MatchedInvocation;
             expect(invocation).toBeInstanceOf(MatchedInvocation);
             expect(invocation.args.size).toBe(3);
@@ -520,7 +520,7 @@ describe("Pattern file from NG Commands", () => {
                 new Slot(Fixture, "destination"),
             ]);
             for (const constant of pattern.constants)
-                trie.insert(constant.value, constant);
+                trie.insert(constant, new ConstantToken(constant));
             const invocation = pattern.match(trie.tokenize(["MUG", "OF", "COFFEE", "with"])) as InvalidInvocation;
             expect(invocation).toBeInstanceOf(InvalidInvocation);
             expect(invocation.errors).toBeLength(1);
@@ -538,7 +538,7 @@ describe("Pattern file from NG Commands", () => {
                 new Slot(InventoryItem, "destination"),
             ]);
             for (const constant of pattern.constants)
-                trie.insert(constant.value, constant);
+                trie.insert(constant, new ConstantToken(constant));
             const invocation = pattern.match(trie.tokenize(["MUG", "OF", "COFFEE", "in", "RIGHT", "POCKET", "of", "KYRAS", "LAB", "COAT", "1"])) as MatchedInvocation;
             expect(invocation).toBeInstanceOf(MatchedInvocation);
             expect(invocation.args.size).toBe(3);
@@ -574,7 +574,7 @@ describe("Pattern file from NG Commands", () => {
                 new Slot(InventoryItem, "destination"),
             ]);
             for (const constant of pattern.constants)
-                trie.insert(constant.value, constant);
+                trie.insert(constant, new ConstantToken(constant));
             const invocation = pattern.match(trie.tokenize(["MUG", "OF", "COFFEE", "in", "KYRAS", "LAB", "COAT", "1"])) as MatchedInvocation;
             expect(invocation).toBeInstanceOf(MatchedInvocation);
             expect(invocation.args.size).toBe(2);
@@ -638,7 +638,7 @@ describe("Pattern file from NG Commands", () => {
                 new Slot(InventoryItem, "destination"),
             ]);
             for (const constant of pattern.constants)
-                trie.insert(constant.value, constant);
+                trie.insert(constant, new ConstantToken(constant));
             const invocation = pattern.match(trie.tokenize(["MUG", "OF", "COFFEE", "in", "RIGHT", "POCKET", "KYRAS", "LAB", "COAT", "1"])) as InvalidInvocation;
             expect(invocation).toBeInstanceOf(InvalidInvocation);
             expect(invocation.errors).toBeLength(4);
@@ -669,7 +669,7 @@ describe("Pattern file from NG Commands", () => {
                 new Slot(InventoryItem, "destination"),
             ]);
             for (const constant of pattern.constants)
-                trie.insert(constant.value, constant);
+                trie.insert(constant, new ConstantToken(constant));
             const invocation = pattern.match(trie.tokenize(["MUG", "OF", "COFFEE", "IN", "RIGHT", "POCKET", "OF", "KYRAS", "LAB", "COAT", "1"])) as MatchedInvocation;
             expect(invocation).toBeInstanceOf(MatchedInvocation);
             expect(invocation.args.size).toBe(3);
@@ -743,7 +743,7 @@ describe("Pattern file from NG Commands", () => {
                 new Slot(InventoryItem, "item 2"),
             ]);
             for (const constant of pattern.constants)
-                trie.insert(constant.value, constant);
+                trie.insert(constant, new ConstantToken(constant));
             let invocation = pattern.match(trie.tokenize(["MUG", "OF", "COFFEE", "with", "KYRAS", "LAB", "COAT", "1"])) as MatchedInvocation;
             expect(invocation).toBeInstanceOf(MatchedInvocation);
             expect(invocation.args.size).toBe(2);
@@ -785,7 +785,7 @@ describe("Pattern file from NG Commands", () => {
                 new Slot(InventoryItem, "item 2"),
             ]);
             for (const constant of pattern.constants)
-                trie.insert(constant.value, constant);
+                trie.insert(constant, new ConstantToken(constant));
             let invocation = pattern.match(trie.tokenize(["MUG", "OF", "COFFEE", "with", "KYRAS", "LAB", "COAT", "1"])) as MatchedInvocation;
             expect(invocation).toBeInstanceOf(MatchedInvocation);
             expect(invocation.args.size).toBe(2);

@@ -3,6 +3,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
+import type Command from "./Command.ts";
 import type Context from "./Context.ts";
 import type { Pattern } from "./Pattern.ts";
 import { SentinelToken, type Token } from "./Token.ts";
@@ -29,9 +30,9 @@ export default class Trie {
      * @param ctx - Command context to get lexicon from.
      * @param pat - Patterns to use when gathering lexicon.
      */
-    static buildFromContextAndPatterns(ctx: Context, pat: Pattern[]): Trie {
+    static buildFromCommandAndPatterns(ctx: Context, cmd: Command<Context>): Trie {
         const trie = new Trie();
-        const tokens = ctx.getLexicon(pat);
+        const tokens = ctx.getLexicon(cmd.patterns, cmd.config);
         for (const token of tokens)
             trie.insert(token.value, token);
         return trie;

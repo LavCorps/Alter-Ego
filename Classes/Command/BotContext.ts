@@ -18,9 +18,10 @@ import Puzzle from "../../Data/Puzzle.ts";
 import Room from "../../Data/Room.ts";
 import RoomItem from "../../Data/RoomItem.ts";
 import Status from "../../Data/Status.ts";
+import type { CommandConfig } from "./Command.ts";
 import Context from "./Context.ts"
 import type { Pattern } from "./Pattern.ts";
-import { EntityToken, ItemContainerToken, PocketToken, PrepositionToken, type Token } from "./Token.ts";
+import { ConstantToken, EntityToken, ItemContainerToken, PocketToken, PrepositionToken, type Token } from "./Token.ts";
 
 /**
  * Represents the command context of a new-generation bot command.
@@ -54,7 +55,7 @@ export default class BotContext extends Context {
         this.callee = callee;
     }
 
-    getLexicon(patterns: Pattern[]): Token[] {
+    getLexicon(patterns: Pattern[], config: CommandConfig<Set<string>>): Token[] {
         const prepositions: Set<string> = new Set();
         const constants: Set<string> = new Set();
         const tokens: Token[] = [];
@@ -62,17 +63,27 @@ export default class BotContext extends Context {
 
         for (const pattern of patterns) {
             for (const constant of pattern.constants) {
-                if (!constants.has(constant.value)) {
-                    tokens.push(constant);
-                    constants.add(constant.value);
+                if (!constants.has(constant)) {
+                    tokens.push(new ConstantToken(constant));
+                    constants.add(constant);
                 }
             }
         }
 
         if (types.has(Player) || types.has(EquipmentSlot)) {
             for (const player of this.game.players.values()) {
-                if (types.has(Player))
-                    tokens.push(new EntityToken(player.displayName, player));
+                if (types.has(Player)) {
+                    if (!config?.playerNameStyle || config?.playerNameStyle === 2) {
+                        tokens.push(new EntityToken(player.name, player));
+                        if (config?.possessivePlayer)
+                            tokens.push(new EntityToken(`${player.name}'s`, player));
+                    }
+                    if (config?.playerNameStyle === 1 || config?.playerNameStyle === 2) {
+                        tokens.push(new EntityToken(player.displayName, player));
+                        if (config?.possessivePlayer)
+                            tokens.push(new EntityToken(`${player.displayName}'s`, player));
+                    }
+                }
                 if (types.has(EquipmentSlot))
                     for (const slot of player.inventory.values())
                         tokens.push(new EntityToken(slot.id, slot));
@@ -122,7 +133,12 @@ export default class BotContext extends Context {
 
         if (types.has(Puzzle)) {
             for (const puzzle of this.game.puzzles) {
+                const preposition = puzzle.getPreposition();
                 tokens.push(new ItemContainerToken(puzzle.name, puzzle));
+                if (!prepositions.has(preposition) && preposition !== "") {
+                    prepositions.add(preposition);
+                    tokens.push(new PrepositionToken(preposition));
+                }
             }
         }
 
@@ -136,35 +152,25 @@ export default class BotContext extends Context {
             }
         }
 
-        if (types.has(Event)) {
-            for (const event of this.game.events.values()) {
+        if (types.has(Event))
+            for (const event of this.game.events.values())
                 tokens.push(new EntityToken(event.id, event));
-            }
-        }
 
-        if (types.has(Flag)) {
-            for (const flag of this.game.flags.values()) {
+        if (types.has(Flag))
+            for (const flag of this.game.flags.values())
                 tokens.push(new EntityToken(flag.id, flag));
-            }
-        }
 
-        if (types.has(Prefab)) {
-            for (const prefab of this.game.prefabs.values()) {
+        if (types.has(Prefab))
+            for (const prefab of this.game.prefabs.values())
                 tokens.push(new EntityToken(prefab.id, prefab));
-            }
-        }
 
-        if (types.has(Status)) {
-            for (const status of this.game.statusEffects.values()) {
+        if (types.has(Status))
+            for (const status of this.game.statusEffects.values())
                 tokens.push(new EntityToken(status.id, status));
-            }
-        }
 
-        if (types.has(Gesture)) {
-            for (const gesture of this.game.gestures.values()) {
+        if (types.has(Gesture))
+            for (const gesture of this.game.gestures.values())
                 tokens.push(new EntityToken(gesture.id, gesture));
-            }
-        }
 
         return tokens;
     }

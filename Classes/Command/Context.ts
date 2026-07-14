@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import type Game from "../../Data/Game.ts";
+import type { CommandConfig } from "./Command.ts";
 import type { Pattern } from "./Pattern.ts";
 import type { Token } from "./Token.ts";
 
@@ -31,6 +32,7 @@ export default abstract class Context {
     /**
      * Gather the lexicon for tokenizing from a given context.
      * @param patterns - The command patterns to use for determining which tokens to gather.
+     * @param config - The command config to use for miscellaneous command lexicon gathering.
      */
-    abstract getLexicon(patterns: Pattern[]): Token[];
+    abstract getLexicon(patterns: Pattern[], config: CommandConfig<Set<string>>): Token[];
 }

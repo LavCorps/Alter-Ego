@@ -12,14 +12,15 @@ import Player from "../../Data/Player.ts";
 import Room from "../../Data/Room.ts";
 import RoomItem from "../../Data/RoomItem.ts";
 import type Game from "../../Data/Game.ts";
-import type EquipmentSlot from "../../Data/EquipmentSlot.ts";
+import EquipmentSlot from "../../Data/EquipmentSlot.ts";
 import Context from "./Context.ts";
-import { EntityToken, ItemContainerToken, PocketToken, PrepositionToken, type Token } from "./Token.ts";
+import { ConstantToken, EntityToken, ItemContainerToken, PocketToken, PrepositionToken, type Token } from "./Token.ts";
 import Puzzle from "../../Data/Puzzle.ts";
 import Gesture from "../../Data/Gesture.ts";
 import type HidingSpot from "../../Data/HidingSpot.ts";
 import type { Pattern } from "./Pattern.ts";
 import type GameEntity from "../../Data/GameEntity.ts";
+import type { CommandConfig } from "./Command.ts";
 
 /**
  * Represents the in-game context of a new-generation player command.
@@ -333,7 +334,7 @@ export default class PlayerContext extends Context {
         return this.#roomItems;
     }
 
-    getLexicon(patterns: Pattern[]): Token[] {
+    getLexicon(patterns: Pattern[], config: CommandConfig<Set<string>>): Token[] {
         const prepositions: Set<string> = new Set();
         const constants: Set<string> = new Set();
         const tokens: Token[] = [];
@@ -341,19 +342,31 @@ export default class PlayerContext extends Context {
 
         for (const pattern of patterns) {
             for (const constant of pattern.constants) {
-                if (!constants.has(constant.value)) {
-                    tokens.push(constant);
-                    constants.add(constant.value);
+                if (!constants.has(constant)) {
+                    tokens.push(new ConstantToken(constant));
+                    constants.add(constant);
                 }
             }
         }
 
         if (types.has(Player)) {
             for (const player of this.game.players.values()) {
-                tokens.push(new EntityToken(player.displayName, player));
-                if (player.displayName !== player.name) tokens.push(new EntityToken(player.name, player));
+                if (!config?.playerNameStyle || config?.playerNameStyle === 2) {
+                    tokens.push(new EntityToken(player.displayName, player));
+                    if (config?.possessivePlayer)
+                        tokens.push(new EntityToken(`${player.displayName}'s`, player));
+                }
+                if (config?.playerNameStyle === 1 || config?.playerNameStyle === 2) {
+                    tokens.push(new EntityToken(player.name, player));
+                    if (config?.possessivePlayer)
+                        tokens.push(new EntityToken(`${player.name}'s`, player));
+                }
             }
         }
+
+        if (types.has(EquipmentSlot))
+            for (const slot of this.player.inventory.values())
+                tokens.push(new EntityToken(slot.id, slot));
 
         if (types.has(InventoryItem)) {
             for (const item of this.inventoryItems) {
@@ -362,7 +375,8 @@ export default class PlayerContext extends Context {
                     tokens.push(new ItemContainerToken(item.name, item));
                     for (const [key, val] of item.inventory)
                         tokens.push(new PocketToken(key, val, item));
-                    if (item.pluralName !== "") tokens.push(new ItemContainerToken(item.pluralName, item));
+                    if (item.pluralName !== "")
+                        tokens.push(new ItemContainerToken(item.pluralName, item));
                     if (!prepositions.has(preposition) && preposition !== "") {
                         prepositions.add(preposition);
                         tokens.push(new PrepositionToken(preposition));
@@ -376,10 +390,10 @@ export default class PlayerContext extends Context {
                 if (item.prefab !== null && item.quantity > 0) {
                     const preposition = item.getPreposition();
                     tokens.push(new ItemContainerToken(item.name, item));
-                    for (const [key, val] of item.inventory) {
+                    for (const [key, val] of item.inventory)
                         tokens.push(new PocketToken(key, val, item));
-                    }
-                    if (item.pluralName !== "") tokens.push(new ItemContainerToken(item.pluralName, item));
+                    if (item.pluralName !== "")
+                        tokens.push(new ItemContainerToken(item.pluralName, item));
                     if (!prepositions.has(preposition) && preposition !== "") {
                         prepositions.add(preposition);
                         tokens.push(new PrepositionToken(preposition));
@@ -410,23 +424,17 @@ export default class PlayerContext extends Context {
             }
         }
 
-        if (types.has(Room)) {
-            for (const room of this.adjacentRooms) {
+        if (types.has(Room))
+            for (const room of this.adjacentRooms)
                 tokens.push(new EntityToken(room.id, room));
-            }
-        }
 
-        if (types.has(Exit)) {
-            for (const exit of this.exits.values()) {
+        if (types.has(Exit))
+            for (const exit of this.exits.values())
                 tokens.push(new EntityToken(exit.name, exit));
-            }
-        }
 
-        if (types.has(Gesture)) {
-            for (const gesture of this.gestures.values()) {
+        if (types.has(Gesture))
+            for (const gesture of this.gestures.values())
                 tokens.push(new EntityToken(gesture.id, gesture));
-            }
-        }
 
         return tokens;
     }

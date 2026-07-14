@@ -29,8 +29,17 @@ export interface CommandConfig<T extends (Set<string> | Array<string>)> {
     aliases: T;
     /** Indicates whether the command requires an ongoing game to be executed. */
     requiresGame: boolean;
-    /** Whether or not the command is sensitive to whitespace, and should not have argument whitespace altered. */
+    /** Whether the command is sensitive to whitespace, and should not have argument whitespace altered. */
     whitespaceSensitive?: boolean;
+    /** Whether the possessive genitive form of player names should be allowed for the command. */
+    possessivePlayer?: boolean;
+    /** 
+     * Declare the behavior for how player names should be specified.
+     * - 0, or undefined, is the default (moderators and the bot use name, players use display name)
+     * - 1 is inverted (moderators and the bot use display name, players use name)
+     * - 2 is simultaneous (moderators, players, and the bot all can use display name or name)
+     */
+    playerNameStyle?: 0 | 1 | 2;
 }
 
 interface CommandConstructorArgs<T extends Context> {
