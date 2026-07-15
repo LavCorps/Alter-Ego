@@ -85,7 +85,7 @@ export class Slot<T extends GameEntity = GameEntity> implements PatternElement {
     /**
      * The type of the Slot. Tokens must match this type to fit into the Slot.
      */
-    readonly type: { new (...args: any[]): T };
+    readonly type: Constructor<T>;
     /**
      * The name to refer to the Slot with. Inherited by any Tokens that fit the Slot.
      */
@@ -95,8 +95,8 @@ export class Slot<T extends GameEntity = GameEntity> implements PatternElement {
      * @param type - The type of the Slot. Tokens must match this type to fit into the Slot.
      * @param name - The name to refer to the Slot with. Inherited by any Tokens that fit the Slot.
      */
-    constructor(type: { new (...args: any[]): T }, name: string) {
-        this.type = type.prototype.constructor as { new (...args: any[]): T };
+    constructor(type: Constructor<T>, name: string) {
+        this.type = type.prototype.constructor as Constructor<T>;
         this.name = name;
     }
 
