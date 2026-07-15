@@ -91,19 +91,7 @@ describe("PlayerContext class from NG Commands", () => {
             const contextInitConclude = process.hrtime.bigint();
             const patterns = [
                 new Pattern([
-                    new Multislot(
-                        [
-                            new Slot(Player, "player"),
-                            new Slot(InventoryItem, "inventory item"),
-                            new Slot(RoomItem, "room item"),
-                            new Slot(Fixture, "fixture"),
-                            new Slot(Puzzle, "puzzle"),
-                            new Slot(Room, "room"),
-                            new Slot(Exit, "exit"),
-                            new Slot(Gesture, "gesture"),
-                        ],
-                        "multislot",
-                    ),
+                    new Multislot([Player, InventoryItem, RoomItem, Fixture, Puzzle, Room, Exit, Gesture], "multislot"),
                 ]),
             ];
             const patternInitConclude = process.hrtime.bigint();
@@ -136,16 +124,7 @@ describe("PlayerContext class from NG Commands", () => {
             const mockInitConclude = process.hrtime.bigint();
             const context = new PlayerContext(testGame, kyra, "test", message);
             const contextInitConclude = process.hrtime.bigint();
-            const patterns = [
-                new Pattern([
-                    new Multislot(
-                        [
-                            new Slot(Player, "player"),
-                        ],
-                        "multislot",
-                    ),
-                ]),
-            ];
+            const patterns = [new Pattern([new Multislot([Player], "multislot")])];
             const patternInitConclude = process.hrtime.bigint();
             const tokens = context.getLexicon(patterns, commandConfig);
             const getLexiconConclude = process.hrtime.bigint();
@@ -176,16 +155,7 @@ describe("PlayerContext class from NG Commands", () => {
             const mockInitConclude = process.hrtime.bigint();
             const context = new PlayerContext(testGame, kyra, "test", message);
             const contextInitConclude = process.hrtime.bigint();
-            const patterns = [
-                new Pattern([
-                    new Multislot(
-                        [
-                            new Slot(InventoryItem, "inventory item"),
-                        ],
-                        "multislot",
-                    ),
-                ]),
-            ];
+            const patterns = [new Pattern([new Multislot([InventoryItem], "multislot")])];
             const patternInitConclude = process.hrtime.bigint();
             const tokens = context.getLexicon(patterns, commandConfig);
             const getLexiconConclude = process.hrtime.bigint();
@@ -216,16 +186,7 @@ describe("PlayerContext class from NG Commands", () => {
             const mockInitConclude = process.hrtime.bigint();
             const context = new PlayerContext(testGame, kyra, "test", message);
             const contextInitConclude = process.hrtime.bigint();
-            const patterns = [
-                new Pattern([
-                    new Multislot(
-                        [
-                            new Slot(RoomItem, "room item"),
-                        ],
-                        "multislot",
-                    ),
-                ]),
-            ];
+            const patterns = [new Pattern([new Multislot([RoomItem], "multislot")])];
             const patternInitConclude = process.hrtime.bigint();
             const tokens = context.getLexicon(patterns, commandConfig);
             const getLexiconConclude = process.hrtime.bigint();
@@ -256,16 +217,7 @@ describe("PlayerContext class from NG Commands", () => {
             const mockInitConclude = process.hrtime.bigint();
             const context = new PlayerContext(testGame, kyra, "test", message);
             const contextInitConclude = process.hrtime.bigint();
-            const patterns = [
-                new Pattern([
-                    new Multislot(
-                        [
-                            new Slot(Fixture, "fixture"),
-                        ],
-                        "multislot",
-                    ),
-                ]),
-            ];
+            const patterns = [new Pattern([new Multislot([Fixture], "multislot")])];
             const patternInitConclude = process.hrtime.bigint();
             const tokens = context.getLexicon(patterns, commandConfig);
             const getLexiconConclude = process.hrtime.bigint();
@@ -296,16 +248,7 @@ describe("PlayerContext class from NG Commands", () => {
             const mockInitConclude = process.hrtime.bigint();
             const context = new PlayerContext(testGame, kyra, "test", message);
             const contextInitConclude = process.hrtime.bigint();
-            const patterns = [
-                new Pattern([
-                    new Multislot(
-                        [
-                            new Slot(Puzzle, "puzzle"),
-                        ],
-                        "multislot",
-                    ),
-                ]),
-            ];
+            const patterns = [new Pattern([new Multislot([Puzzle], "multislot")])];
             const patternInitConclude = process.hrtime.bigint();
             const tokens = context.getLexicon(patterns, commandConfig);
             const getLexiconConclude = process.hrtime.bigint();
@@ -336,16 +279,7 @@ describe("PlayerContext class from NG Commands", () => {
             const mockInitConclude = process.hrtime.bigint();
             const context = new PlayerContext(testGame, kyra, "test", message);
             const contextInitConclude = process.hrtime.bigint();
-            const patterns = [
-                new Pattern([
-                    new Multislot(
-                        [
-                            new Slot(Room, "room"),
-                        ],
-                        "multislot",
-                    ),
-                ]),
-            ];
+            const patterns = [new Pattern([new Multislot([Room], "multislot")])];
             const patternInitConclude = process.hrtime.bigint();
             const tokens = context.getLexicon(patterns, commandConfig);
             const getLexiconConclude = process.hrtime.bigint();
@@ -376,16 +310,7 @@ describe("PlayerContext class from NG Commands", () => {
             const mockInitConclude = process.hrtime.bigint();
             const context = new PlayerContext(testGame, kyra, "test", message);
             const contextInitConclude = process.hrtime.bigint();
-            const patterns = [
-                new Pattern([
-                    new Multislot(
-                        [
-                            new Slot(Exit, "exit"),
-                        ],
-                        "multislot",
-                    ),
-                ]),
-            ];
+            const patterns = [new Pattern([new Multislot([Exit], "multislot")])];
             const patternInitConclude = process.hrtime.bigint();
             const tokens = context.getLexicon(patterns, commandConfig);
             const getLexiconConclude = process.hrtime.bigint();
@@ -416,16 +341,7 @@ describe("PlayerContext class from NG Commands", () => {
             const mockInitConclude = process.hrtime.bigint();
             const context = new PlayerContext(testGame, kyra, "test", message);
             const contextInitConclude = process.hrtime.bigint();
-            const patterns = [
-                new Pattern([
-                    new Multislot(
-                        [
-                            new Slot(Gesture, "gesture"),
-                        ],
-                        "multislot",
-                    ),
-                ]),
-            ];
+            const patterns = [new Pattern([new Multislot([Gesture], "multislot")])];
             const patternInitConclude = process.hrtime.bigint();
             const tokens = context.getLexicon(patterns, commandConfig);
             const getLexiconConclude = process.hrtime.bigint();
@@ -485,13 +401,9 @@ describe("PlayerContext class from NG Commands", () => {
             const trie = new Trie();
             {
                 const context = new PlayerContext(testGame, kyra, "test", createMockMessage());
-                const tokens = context.getLexicon([
-                    new Pattern([
-                        new Multislot(
-                            [new Slot(InventoryItem, "inventory item"), new Slot(Fixture, "fixture")],
-                            "multislot",
-                        )]),
-                    ], commandConfig,
+                const tokens = context.getLexicon(
+                    [new Pattern([new Multislot([InventoryItem, Fixture], "multislot")])],
+                    commandConfig,
                 );
                 for (const token of tokens) {
                     trie.insert(token.value, token);

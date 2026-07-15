@@ -116,7 +116,7 @@ export class Multislot implements PatternElement {
     /**
      * The slots that make up the Multislot.
      */
-    readonly slots: Set<Slot>;
+    readonly slots: Set<Constructor<GameEntity>>;
     /**
      * The name to refer to the Multislot with. Inherited by any Tokens that fit the Slot.
      */
@@ -124,18 +124,18 @@ export class Multislot implements PatternElement {
     /**
      * The types of Game Entities contained within a multislot.
      */
-    #types: Set<{ new (...args: any[]): GameEntity }>;
+    #types: Set<Constructor<GameEntity>>;
 
     /**
      * @param slots - The slots that make up the Multislot.
      * @param name - The name to refer to the Multislot with. Inherited by any Tokens that fit the Slot.
      */
-    constructor(slots: Slot[], name: string) {
+    constructor(slots: Constructor<GameEntity>[], name: string) {
         this.slots = new Set(slots);
         this.name = name;
         this.#types = new Set();
         for (const slot of slots) {
-            this.types.add(slot.type);
+            this.types.add(slot);
         }
     }
 
@@ -156,7 +156,7 @@ export class Multislot implements PatternElement {
      */
     satisfiedBy(token: EntityToken<GameEntity>): boolean {
         for (const slot of this.slots) {
-            if (slot.satisfiedBy(token)) return true;
+            if (slot.name === token.reference.getEntityType()) return true;
         }
         return false;
     }
@@ -434,7 +434,7 @@ export class Pattern implements PatternElement {
         else if (element instanceof Multislot) {
             const slotTypes: string[] = [];
             for (const slot of element.slots) {
-                slotTypes.push(slot.type.name.replace(/([A-Z])/g, (match) => " " + match.toLowerCase()).trim());
+                slotTypes.push(slot.name.replace(/([A-Z])/g, (match) => " " + match.toLowerCase()).trim());
             }
 
             data.errors.push(`Couldn't find any ${slotTypes.join("/")} "${nearMatch}" in your input.`);
