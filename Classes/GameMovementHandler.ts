@@ -284,7 +284,7 @@ export default class GameMovementHandler {
                         // Inflicting one player with weary should cause all players in their party to stop, as well.
                         const wearyAction = new InflictAction(this.#game, undefined, player, player.location, true);
                         this.#game.narrationHandler.narrateWeary(wearyAction, player);
-                        wearyAction.performInflict(wearyStatus, false, true, true);
+                        await wearyAction.performInflict(wearyStatus, false, true, true);
                         // If the player is moving toward the leader during party formation, remove them from the party.
                         if (player.party && !player.party.positionsSynchronized && !(destination instanceof Exit) && !player.positionMatches(player.party.leader)) {
                             const removalMessage = this.#game.notificationGenerator.generateLedPlayerCouldNotSynchronizeNotification(

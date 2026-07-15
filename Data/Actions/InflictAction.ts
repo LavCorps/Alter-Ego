@@ -28,7 +28,7 @@ export default class InflictAction extends Action {
      * @param item - The inventory item that caused the status to be inflicted, if applicable.
      * @param duration - A custom duration that overrides the status's default duration.
      */
-    performInflict(status: Status, notify: boolean = true, doCures: boolean = true, narrate: boolean = true, item?: InventoryItem, duration: Duration<true> = null): void {
+    async performInflict(status: Status, notify: boolean = true, doCures: boolean = true, narrate: boolean = true, item?: InventoryItem, duration: Duration<true> = null): Promise<void> {
         if (this.performed) return;
         super.perform();
         const playerStatusIds = this.player.status.map(statusEffect => statusEffect.id);
@@ -43,7 +43,7 @@ export default class InflictAction extends Action {
                 const cureAction = new CureAction(this.getGame(), undefined, this.player, this.player.location, true);
                 cureAction.performCure(status, false, false, false);
                 const duplicatedStatusAction = new InflictAction(this.getGame(), undefined, this.player, this.player.location, true);
-                duplicatedStatusAction.performInflict(status.duplicatedStatus, true, true, true);
+                await duplicatedStatusAction.performInflict(status.duplicatedStatus, true, true, true);
                 if (this.message) this.successMessage = `Status was duplicated, so inflicted ${this.player.name} with ${status.duplicatedStatus.id} instead.`;
                 return;
             }
@@ -88,23 +88,23 @@ export default class InflictAction extends Action {
                 const partyMembers = this.player.party.getMemberSet(this.player);
                 const [firstMember] = partyMembers;
                 const stopAction = new StopAction(this.getGame(), undefined, firstMember, firstMember.location, true);
-                stopAction.performStop(false, undefined, false, partyMembers);
+                await stopAction.performStop(false, undefined, false, partyMembers);
             }
             else if (!this.player.party) {
                 this.player.stopFollowing();
-                this.getGame().movementHandler.stopFollowers(this.player, false, true);
+                await this.getGame().movementHandler.stopFollowers(this.player, false, true);
             }
         }
         if (this.player.followedPlayer &&
             (status.behaviorAttributes.has("disable follow") || status.behaviorAttributes.has("disable all") && !status.behaviorAttributes.has("enable follow"))) {
             const stopFollowingAction = new StopFollowingAction(this.getGame(), undefined, this.player, this.player.location, true);
-            stopFollowingAction.performStopFollowing(true);
+            await stopFollowingAction.performStopFollowing(true);
         }
         if (this.player.party && this.player.party.hasLeader(this.player) &&
             (status.behaviorAttributes.has("disable lead") || status.behaviorAttributes.has("disable all") && !status.behaviorAttributes.has("enable lead"))) {
             const disbandNotification = this.getGame().notificationGenerator.generatePartyDisbandedByStatusNotification(this.player, `**${status.id}**`, true);
             const disbandAction = new DisbandPartyAction(this.getGame(), undefined, this.player, this.player.location, true);
-            disbandAction.performDisbandParty(true, "", "", disbandNotification);
+            await disbandAction.performDisbandParty(true, "", "", disbandNotification);
         }
 
         this.player.inflict(status, duration);
@@ -113,7 +113,7 @@ export default class InflictAction extends Action {
             this.player.sendDescription(inflictedDescription, status, status.inflictedDescription.messageDisplayType ?? MessageDisplayType.STANDARD);
         }
         if (narrate) this.getGame().narrationHandler.narrateInflict(this, status, this.player);
-        if (removeFromWhisperNarration) this.player.removeFromWhispers(removeFromWhisperNarration, this);
+        if (removeFromWhisperNarration) await this.player.removeFromWhispers(removeFromWhisperNarration, this);
         this.getGame().logHandler.logInflict(status, this.player);
         this.successMessage = `Successfully added status effect ${status.id} to ${this.player?.name}.`;
     }

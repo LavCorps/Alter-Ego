@@ -107,13 +107,13 @@ export async function execute(game, message, command, args, moderator) {
         if (players.length > 1) {
             for (let i = 0; i < players.length; i++) {
                 const action = new InflictAction(game, undefined, players[i], players[i].location, true);
-                action.performInflict(status, true, true, true);
+                await action.performInflict(status, true, true, true);
             }
             game.communicationHandler.sendToCommandChannel(`Successfully added status effect ${status.id} to the listed players.`);
         }
         else {
             const action = new InflictAction(game, message, players[0], players[0].location, true);
-            action.performInflict(status, true, true, true);
+            await action.performInflict(status, true, true, true);
             action.sendSuccessMessageToCommandChannel();
         }
     }

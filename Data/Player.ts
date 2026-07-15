@@ -1268,10 +1268,10 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
      * @param item - The inventory item to use.
      * @param target - The player the inventory item is to be used on. Defaults to the player using it.
      */
-    use(item: InventoryItem, target: Player = this): void {
+    async use(item: InventoryItem, target: Player = this): Promise<void> {
         for (let effect of item.prefab.effects) {
             const inflictAction = new InflictAction(this.getGame(), undefined, target, target.location, true);
-            inflictAction.performInflict(effect, true, true, true, item);
+            await inflictAction.performInflict(effect, true, true, true, item);
         }
         for (let cure of item.prefab.cures) {
             const cureAction = new CureAction(this.getGame(), undefined, target, target.location, true);

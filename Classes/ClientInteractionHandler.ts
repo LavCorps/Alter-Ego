@@ -346,7 +346,7 @@ export default class ClientInteractionHandler {
             const parsedArgs = action.parseInteractionArgs(args);
             const validatedArgs = action.validateInteractionArgs(parsedArgs);
             if (validatedArgs.length === 2) {
-                action.performUse(validatedArgs[0], validatedArgs[1]);
+                await action.performUse(validatedArgs[0], validatedArgs[1]);
                 this.#replyOrDeleteActionResponse(action, interaction, reply);
                 this.#logInteraction("UseAction", author, timestamp, validatedArgs);
                 return true;

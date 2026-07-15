@@ -1884,7 +1884,8 @@ export default class GameEntityLoader extends GameEntityManager {
                                         }
                                     } else timeRemaining = null;
                                     const inflictAction = new InflictAction(this.game, undefined, player, player.location, true);
-                                    inflictAction.performInflict(status, false, false, false, undefined, timeRemaining);
+                                    // TODO: This clogs up the messageHandler. Add sendLogMessage parameter to performInflict signature.
+                                    await inflictAction.performInflict(status, false, false, false, undefined, timeRemaining);
                                 }
                             }
                             if (invalidStatusFound) continue;
