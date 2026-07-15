@@ -793,19 +793,29 @@ export default class GameNotificationGenerator {
 
     /**
      * Generates a notification indicating the player can't hide in the hiding spot because it's already full.
-     * @param hidingSpotPhrase - The phrase of the hiding spot the players are hiding in.
-     * @param hiddenPlayersList - A list of hidden players.
      * @param player - The player referred to in this notification.
      * @param allPlayers - The set of all players who are hiding together, including the player being addressed.
+     * @param secondPerson - Whether or not the player should be referred to in second person.
+     * @param hidingSpotPhrase - The phrase of the hiding spot the players are hiding in.
+     * @param hiddenPlayersList - A list of hidden players. Only necessary if secondPerson is true.
      */
-    generateHidingSpotFullNotification(hidingSpotPhrase: string, hiddenPlayersList: string, player: Player, allPlayers: Set<Player>) {
-        let object = `you`;
+    generateHidingSpotFullNotification(player: Player, allPlayers: Set<Player>, secondPerson: boolean, hidingSpotPhrase: string, hiddenPlayersList?: string) {
+        let subject = secondPerson ? `you` : player.displayName;
+        let verb = secondPerson ? `attempt` : `attempts`;
+        let object = secondPerson ? `you` : player.pronouns.obj;
         if (allPlayers.size > 1) {
             const [_, __, otherDisplayNames] = this.getPlayerDisplayNames(player, allPlayers);
-            const playerDisplayNames = [`you`].concat(otherDisplayNames);
-            object = generateListString(playerDisplayNames);
+            const playerDisplayNames = [subject].concat(otherDisplayNames);
+            const playerList = generateListString(playerDisplayNames);
+            if (secondPerson) object = playerList;
+            else {
+                subject = playerList;
+                verb = `attempt`;
+                object = `them`;
+            }
         }
-        return `You attempt to hide in ${hidingSpotPhrase}, but you find ${hiddenPlayersList} already there! There doesn't seem to be enough room for ${object}.`;
+        let hiddenPlayersString = secondPerson ? `you find ${hiddenPlayersList} already there! There` : `there`
+        return `${capitalizeFirstLetter(subject)} ${verb} to hide in ${hidingSpotPhrase}, but ${hiddenPlayersString} doesn't seem to be enough room for ${object}.`;
     }
 
     /**

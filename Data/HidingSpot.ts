@@ -63,7 +63,7 @@ export default class HidingSpot extends GameEntity {
     async addPlayers(players: Set<Player> | Player[] | Player): Promise<void> {
         if (!(players instanceof Set) && !(players instanceof Array)) players = new Set([players]);
         if (!(players instanceof Set)) players = new Set(players);
-        if (players.values().every(player => player.canSee())) await this.deleteWhisper();
+        await this.deleteWhisper();
         for (const player of players) {
             this.occupants.push(player);
             player.hidingSpot = this.name;

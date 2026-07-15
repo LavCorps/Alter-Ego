@@ -80,7 +80,7 @@ export async function execute(game, message, command, args, moderator) {
         if (fixture === null) return game.communicationHandler.reply(message, `Couldn't find fixture "${input}".`);
 
         const hideAction = new HideAction(game, message, player, player.location, true);
-        hideAction.performHide(fixture.hidingSpot);
+        await hideAction.performHide(fixture.hidingSpot);
         hideAction.sendSuccessMessageToCommandChannel();
     }
 }

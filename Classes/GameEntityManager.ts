@@ -392,26 +392,27 @@ export default abstract class GameEntityManager {
      * @returns The created channel.
      */
     async #createWhisperChannel(whisper: Whisper): Promise<TextChannel> {
-        return new Promise(resolve => {
-            this.game.guildContext.guild.channels.create({
+        return new Promise(async resolve => {
+            const channel = await this.game.guildContext.guild.channels.create({
                 name: whisper.channelName,
                 type: ChannelType.GuildText,
                 parent: this.game.guildContext.whisperCategoryId
-            }).then(channel => {
-                whisper.players.forEach(player => {
+            }).catch(error => console.error(`Couldn't create whisper channel with name "${whisper?.channelName}".`, error));
+            if (channel) {
+                for (const player of whisper.players.values()) {
                     const noChannel = player.isNPC
                         || player.isHidden() && player.getBehaviorAttributeStatusEffects("no channel").length > 1
                         || !player.isHidden() && player.hasBehaviorAttribute("no channel")
                         || !player.canHear();
                     if (!noChannel) {
-                        channel.permissionOverwrites.create(player.id, {
+                        await channel.permissionOverwrites.create(player.id, {
                             ViewChannel: true,
                             ReadMessageHistory: true
                         });
                     }
-                });
+                }
                 resolve(channel);
-            }).catch();
+            }
         });
     }
 

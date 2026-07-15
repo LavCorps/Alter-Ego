@@ -209,7 +209,8 @@ describe('StartMoveAction test', () => {
         moveSpy = vi.spyOn(MoveAction.prototype, 'performMove');
         await sendMessages();
         clearMessages();
-        vi.useFakeTimers();        asuka.setPos(hall5.pos);
+        vi.useFakeTimers();
+        asuka.setPos(hall5.pos);
         nero.setPos(mainEntrance.pos);
     });
 

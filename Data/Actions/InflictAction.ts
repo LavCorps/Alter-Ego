@@ -66,7 +66,8 @@ export default class InflictAction extends Action {
             this.getGame().heated = true;
         if (status.behaviorAttributes.has("no channel")) {
             this.location.leaveChannel(this.player);
-            removeFromWhisperNarration = this.getGame().notificationGenerator.generateNoChannelLeaveWhisperNotification(this.player, status.id);
+            if (status.behaviorAttributes.has("hidden") && !this.player.party)
+                removeFromWhisperNarration = this.getGame().notificationGenerator.generateNoChannelLeaveWhisperNotification(this.player, status.id);
         }
         if (status.behaviorAttributes.has("no hearing")) {
             removeFromWhisperNarration = this.getGame().notificationGenerator.generateNoHearingLeaveWhisperNotification(this.player.displayName);
@@ -78,12 +79,10 @@ export default class InflictAction extends Action {
             this.player.setPronouns(this.player.pronouns, "neutral");
             this.location.setOccupantsString();
         }
-        if (status.behaviorAttributes.has("disable all") || status.behaviorAttributes.has("disable move") || status.behaviorAttributes.has("disable run")) {
+        if (this.player.isMoving && (status.behaviorAttributes.has("disable all") || status.behaviorAttributes.has("disable move") || status.behaviorAttributes.has("disable run"))) {
             this.player.stopMoving();
             // If the player is in a party, stop all other members from moving as well, but keep them in a party together.
             // Only do this if the positions are synchronized, as the party is not fully formed until this occurs.
-            // TODO: This is narrating party members stopping movement when they hide together.
-            // TODO: Something is also removing party members during hide. Investigate more when I have the spoons to write tests.
             if (this.player.party && this.player.party.positionsSynchronized) {
                 const partyMembers = this.player.party.getMemberSet(this.player);
                 const [firstMember] = partyMembers;
