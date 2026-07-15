@@ -104,7 +104,7 @@ export class Slot<T extends GameEntity = GameEntity> implements PatternElement {
      * Returns whether this Slot is satisfied by the given token.
      * @param token - The token to check against this Slot.
      */
-    satisfiedBy(token: EntityToken<GameEntity>): boolean {
+    satisfiedBy(token: EntityToken<GameEntity>): token is EntityToken<T> {
         return this.type.name === token.reference.getEntityType();
     }
 }
