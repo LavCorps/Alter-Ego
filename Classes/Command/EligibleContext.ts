@@ -5,7 +5,7 @@
 
 import type { User as DiscordUser } from "discord.js";
 import Context from "./Context.ts";
-import type { Token } from "./Token.ts";
+import { ConstantToken, type Token } from "./Token.ts";
 import type { Pattern } from "./Pattern.ts";
 import type Game from "../../Data/Game.ts";
 
@@ -46,9 +46,9 @@ export default class EligibleContext extends Context {
 
         for (const pattern of patterns) {
             for (const constant of pattern.constants) {
-                if (!constants.has(constant.value)) {
-                    tokens.push(constant);
-                    constants.add(constant.value);
+                if (!constants.has(constant)) {
+                    tokens.push(new ConstantToken(constant));
+                    constants.add(constant);
                 }
             }
         }
