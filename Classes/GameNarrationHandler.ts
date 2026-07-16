@@ -553,6 +553,16 @@ export default class GameNarrationHandler {
             const interactables = emergingPlayerInteractables.get(emergingPlayer.name) ?? [];
             this.sendNotification(emergingPlayer, action, notification, messageType, undefined, undefined, interactables);
         }
+        if (hidingSpot) {
+            // Send a notification to players who can't see the whisper channel.
+            for (const occupant of hidingSpot.occupants) {
+                if (emergingPlayers.has(occupant)) continue;
+                // If the only reason this player has the `no channel` behavior attribute is because they're hidden, skip over them.
+                if (occupant.getBehaviorAttributeStatusEffects("no channel").length === 1) continue;
+                const occupantNotification = this.#game.notificationGenerator.generateEmergeFromOccupiedHidingSpotNotification(occupant, player, emergingPlayers, hidingSpotPhrase);
+                this.sendNotification(occupant, action, occupantNotification, messageType);
+            }
+        }
         this.#sendNarration(messageType, action, player, narration);
     }
 

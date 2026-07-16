@@ -874,6 +874,25 @@ export default class GameNotificationGenerator {
     }
 
     /**
+     * Generates a notification indicating that a player emerged from a hiding spot that remains occupied.
+     * @param player - The player referred to in this notification.
+     * @param emergingPlayer - The player who emerged from hiding.
+     * @param allPlayers - The set of all players who emerged from hiding, including the emerging player.
+     * @param hidingSpotPhrase - The phrase of the hiding spot the player is coming out from.
+     */
+    generateEmergeFromOccupiedHidingSpotNotification(player: Player, emergingPlayer: Player, allPlayers: Set<Player>, hidingSpotPhrase: string) {
+        const [playerDisplayName, _, otherDisplayNames] = this.getPlayerDisplayNames(emergingPlayer, allPlayers);
+        const findingPlayersList = generateListString([playerDisplayName].concat(otherDisplayNames));
+        const subject = player.canSee()
+            ? `${findingPlayersList}`
+            : allPlayers.size > 1
+                ? `Several people`
+                : `Someone`;
+        const verb = allPlayers.size === 1 ? `comes out` : `come out`;
+        return `${capitalizeFirstLetter(subject)} ${verb} of ${hidingSpotPhrase}.`;
+    }
+
+    /**
      * Generates a notification indicating the player can no longer whisper
      * because they were inflicted with a status effect with the `no channel` behavior attribute.
      * @param player - The player referred to in this notification.

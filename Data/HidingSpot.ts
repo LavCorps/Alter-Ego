@@ -86,6 +86,7 @@ export default class HidingSpot extends GameEntity {
             await player.removeFromWhispers(whisperNarration, action, false);
             player.hidingSpot = "";
         }
+        if (this.occupants.length === 0) await this.deleteWhisper();
     }
 
     /**
