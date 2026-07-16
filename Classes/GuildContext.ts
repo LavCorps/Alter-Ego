@@ -13,6 +13,7 @@ import {
     type Role,
     type TextChannel
 } from "discord.js";
+import type Player from "../Data/Player.ts";
 
 /**
  * Represents the guild in which a Game is occurring and all of the parts of a Guild needed by the bot.
@@ -68,6 +69,7 @@ export default class GuildContext {
 	readonly playerRole: Role;
 	/**
 	 * A role that can be added to someone with the player role to allow them to move to any room, regardless of if it's adjacent to their current room.
+     * @deprecated Use the {@link https://msvblank.github.io/Alter-Ego/reference/data_structures/status.html#can-move-freely | `can move freely` behavior attribute} instead.
 	 */
 	readonly freeMovementRole: Role;
 	/**
@@ -185,6 +187,7 @@ export default class GuildContext {
 
     /**
      * Returns true if the given guild member has the free movement role.
+     * @deprecated Use {@link Player.canMoveFreely()} instead.
      * @param member
      */
     hasFreeMovementRole(member: GuildMember): boolean {

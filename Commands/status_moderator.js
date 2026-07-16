@@ -76,7 +76,7 @@ export async function execute(game, message, command, args, moderator) {
     /** @type {Player[]} */
     let players = [];
     if (command !== "view" && (args[0] === "all" || args[0] === "living")) {
-        players = game.entityFinder.getLivingPlayers(undefined, false).filter(player => !game.guildContext.hasFreeMovementRole(player.member));
+        players = game.entityFinder.getLivingPlayers(undefined, false).filter(player => !player.canMoveFreely());
         args.splice(0, 1);
     }
     else {

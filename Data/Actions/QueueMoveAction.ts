@@ -7,6 +7,7 @@ import type Exit from "../Exit.js";
 import Room from "../Room.ts";
 import MoveAction from "./MoveAction.ts";
 import StartMoveAction from "./StartMoveAction.ts";
+import StopFollowingAction from "./StopFollowingAction.ts";
 
 /**
  * Represents a queue move action.
@@ -29,7 +30,7 @@ export default class QueueMoveAction extends Action {
         let destinationRoom: Room = null;
         let entrance: Exit = null;
         let isMovingInstantly = false;
-        const canMoveFreely = this.getGame().guildContext.hasFreeMovementRole(this.player.member);
+        const canMoveFreely = this.player.canMoveFreely();
 
         exit = currentRoom.getExit(destinationString);
         if (!exit) {
@@ -71,15 +72,17 @@ export default class QueueMoveAction extends Action {
                 this.successMessage += ` ${this.player.originalPronouns.Dpos} move queue is now: "${this.player.moveQueue.join(' > ')}".`;
         }
         else {
+            // If anyone if following the player who teleported, they have lost track of them and should stop following them.
+            const followers = new Set(this.player.location.occupants.filter(occupant => occupant.isFollowing(this.player)));
+            if (followers.size > 0) {
+                const [firstFollower] = followers;
+                const stopFollowingAction = new StopFollowingAction(this.getGame(), undefined, firstFollower, firstFollower.location, true);
+                await stopFollowingAction.performStopFollowing(false, followers);
+            }
+
             const moveAction = new MoveAction(this.getGame(), this.message, this.player, this.player.location, this.forced);
             await moveAction.performMove(isRunning, currentRoom, destinationRoom, exit, entrance, isMovingInstantly && canMoveFreely);
             this.player.moveQueue.length = 0;
-            // If anyone if following the player who teleported, they have lost track of them and should stop following them.
-            for (const occupant of this.location.occupants) {
-                if (occupant.isFollowing(this.player)) {
-                    occupant.stopFollowing();
-                }
-            }
             this.successMessage = `Successfully moved ${this.player.name} to ${destinationRoom.channel}.`;
         }
     }

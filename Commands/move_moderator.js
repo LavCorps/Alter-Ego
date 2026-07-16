@@ -70,7 +70,7 @@ export async function execute(game, message, command, args, moderator) {
     const players = [];
     if (args[0] === "all" || args[0] === "living") {
         game.entityFinder.getLivingPlayers(null, false).map((player) => {
-            if (!game.guildContext.hasFreeMovementRole(player.member))
+            if (!player.canMoveFreely())
                 players.push(player);
         });
         args.splice(0, 1);

@@ -1068,6 +1068,13 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
     }
 
     /**
+     * Returns true if the player has the `can move freely` behavior attribute or the free movement role.
+     */
+    canMoveFreely(): boolean {
+        return this.hasBehaviorAttribute("can move freely") || this.getGame().guildContext.hasFreeMovementRole(this.member);
+    }
+
+    /**
      * Returns true if the player doesn't have the `no sight` behavior attribute.
      */
     canSee(): boolean {
