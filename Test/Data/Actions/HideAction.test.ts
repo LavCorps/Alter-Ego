@@ -140,8 +140,8 @@ describe('HideAction test', () => {
             expect(astrid.notificationChannel.messages.cache).toHaveSize(2);
             expect(asuka.notificationChannel.messages.cache).toHaveSize(0);
             expect(nero.notificationChannel.messages.cache).toHaveSize(0);
-            expect(lockerRoomFirstNarrationMessage.content).toBe(`An individual wearing a MASK hides in the STALL 1.`);
-            expect(astridFirstNotificationMessage.content).toBe(`You hide in the STALL 1.`);
+            expect(lockerRoomFirstNarrationMessage.content).toBe(`An individual wearing a MASK hides in STALL 1.`);
+            expect(astridFirstNotificationMessage.content).toBe(`You hide in STALL 1.`);
             expect(astridLastNotificationMessage.content).toBe(`You are now **hidden**.`);
         });
 
@@ -172,9 +172,9 @@ describe('HideAction test', () => {
             expect(astrid.notificationChannel.messages.cache).toHaveSize(1);
             expect(asuka.notificationChannel.messages.cache).toHaveSize(2);
             expect(nero.notificationChannel.messages.cache).toHaveSize(0);
-            expect(lockerRoomFirstNarrationMessage.content).toBe(`Asuka hides in the STALL 1.`);
+            expect(lockerRoomFirstNarrationMessage.content).toBe(`Asuka hides in STALL 1.`);
             expect(astridFirstNotificationMessage.content).toBe(`You're found by Asuka! She hides with you.`);
-            expect(asukaFirstNotificationMessage.content).toBe(`When you hide in the STALL 1, you find an individual wearing a MASK already there!`);
+            expect(asukaFirstNotificationMessage.content).toBe(`When you hide in STALL 1, you find an individual wearing a MASK already there!`);
             expect(asukaLastNotificationMessage.content).toBe(`You are now **hidden**.`);
         });
 
@@ -205,9 +205,9 @@ describe('HideAction test', () => {
             expect(astrid.notificationChannel.messages.cache).toHaveSize(1);
             expect(asuka.notificationChannel.messages.cache).toHaveSize(0);
             expect(nero.notificationChannel.messages.cache).toHaveSize(2);
-            expect(lockerRoomFirstNarrationMessage.content).toBe(`Nero hides in the STALL 1.`);
+            expect(lockerRoomFirstNarrationMessage.content).toBe(`Nero hides in STALL 1.`);
             expect(astridFirstNotificationMessage.content).toBe(`You're found by Nero! He hides with you.`);
-            expect(neroFirstNotificationMessage.content).toBe(`When you hide in the STALL 1, you find someone already there!`);
+            expect(neroFirstNotificationMessage.content).toBe(`When you hide in STALL 1, you find someone already there!`);
             expect(neroLastNotificationMessage.content).toBe(`You are now **hidden**.`);
         });
 
@@ -243,9 +243,9 @@ describe('HideAction test', () => {
             expect(astrid.notificationChannel.messages.cache).toHaveSize(1);
             expect(asuka.notificationChannel.messages.cache).toHaveSize(1);
             expect(nero.notificationChannel.messages.cache).toHaveSize(1);
-            expect(lockerRoomFirstNarrationMessage.content).toBe(`Asuka attempts to hide in the STALL 1, but there doesn't seem to be enough room for it.`);
+            expect(lockerRoomFirstNarrationMessage.content).toBe(`Asuka attempts to hide in STALL 1, but there doesn't seem to be enough room for it.`);
             expect(astridFirstNotificationMessage.content).toBe(`You're found by Asuka! She tries to hide with you, but there isn't enough room.`);
-            expect(asukaFirstNotificationMessage.content).toBe(`You attempt to hide in the STALL 1, but you find an individual wearing a MASK and Nero already there! There doesn't seem to be enough room for you.`);
+            expect(asukaFirstNotificationMessage.content).toBe(`You attempt to hide in STALL 1, but you find an individual wearing a MASK and Nero already there! There doesn't seem to be enough room for you.`);
             expect(neroFirstNotificationMessage.content).toBe(`Someone finds you! They try to hide with you, but there isn't enough room.`);
         });
 
@@ -281,9 +281,9 @@ describe('HideAction test', () => {
             expect(astrid.notificationChannel.messages.cache).toHaveSize(1);
             expect(asuka.notificationChannel.messages.cache).toHaveSize(2);
             expect(nero.notificationChannel.messages.cache).toHaveSize(1);
-            expect(lockerRoomFirstNarrationMessage.content).toBe(`Asuka hides in the STALL 1.`);
+            expect(lockerRoomFirstNarrationMessage.content).toBe(`Asuka hides in STALL 1.`);
             expect(astridFirstNotificationMessage.content).toBe(`You're found by Asuka! She hides with you.`);
-            expect(asukaFirstNotificationMessage.content).toBe(`When you hide in the STALL 1, you find an individual wearing a MASK and Nero already there!`);
+            expect(asukaFirstNotificationMessage.content).toBe(`When you hide in STALL 1, you find an individual wearing a MASK and Nero already there!`);
             expect(asukaLastNotificationMessage.content).toBe(`You are now **hidden**.`);
             expect(neroFirstNotificationMessage.content).toBe(`Someone finds you! They hide with you.`);
         });
@@ -327,10 +327,10 @@ describe('HideAction test', () => {
             expect(astrid.notificationChannel.messages.cache).toHaveSize(2);
             expect(asuka.notificationChannel.messages.cache).toHaveSize(2);
             expect(nero.notificationChannel.messages.cache).toHaveSize(0);
-            expect(lockerRoomFirstNarrationMessage.content).toBe(`An individual wearing a MASK and Asuka hide in the STALL 1.`);
-            expect(astridFirstNotificationMessage.content).toBe(`You and Asuka hide in the STALL 1.`);
+            expect(lockerRoomFirstNarrationMessage.content).toBe(`An individual wearing a MASK and Asuka hide in STALL 1.`);
+            expect(astridFirstNotificationMessage.content).toBe(`You and Asuka hide in STALL 1.`);
             expect(astridLastNotificationMessage.content).toBe(`You are now **hidden**.`);
-            expect(asukaFirstNotificationMessage.content).toBe(`You and an individual wearing a MASK hide in the STALL 1.`);
+            expect(asukaFirstNotificationMessage.content).toBe(`You and an individual wearing a MASK hide in STALL 1.`);
             expect(asukaLastNotificationMessage.content).toBe(`You are now **hidden**.`);
         });
 
@@ -364,9 +364,9 @@ describe('HideAction test', () => {
             expect(astrid.notificationChannel.messages.cache).toHaveSize(1);
             expect(asuka.notificationChannel.messages.cache).toHaveSize(1);
             expect(nero.notificationChannel.messages.cache).toHaveSize(1);
-            expect(lockerRoomFirstNarrationMessage.content).toBe(`An individual wearing a MASK and Asuka attempt to hide in the STALL 1, but there doesn't seem to be enough room for them.`);
-            expect(astridFirstNotificationMessage.content).toBe(`You attempt to hide in the STALL 1, but you find Nero already there! There doesn't seem to be enough room for you and Asuka.`);
-            expect(asukaFirstNotificationMessage.content).toBe(`You attempt to hide in the STALL 1, but you find Nero already there! There doesn't seem to be enough room for you and an individual wearing a MASK.`);
+            expect(lockerRoomFirstNarrationMessage.content).toBe(`An individual wearing a MASK and Asuka attempt to hide in STALL 1, but there doesn't seem to be enough room for them.`);
+            expect(astridFirstNotificationMessage.content).toBe(`You attempt to hide in STALL 1, but you find Nero already there! There doesn't seem to be enough room for you and Asuka.`);
+            expect(asukaFirstNotificationMessage.content).toBe(`You attempt to hide in STALL 1, but you find Nero already there! There doesn't seem to be enough room for you and an individual wearing a MASK.`);
             expect(neroFirstNotificationMessage.content).toBe(`Several people find you! They try to hide with you, but there isn't enough room.`);
         });
 
@@ -400,12 +400,57 @@ describe('HideAction test', () => {
             expect(astrid.notificationChannel.messages.cache).toHaveSize(2);
             expect(asuka.notificationChannel.messages.cache).toHaveSize(2);
             expect(nero.notificationChannel.messages.cache).toHaveSize(1);
-            expect(lockerRoomFirstNarrationMessage.content).toBe(`An individual wearing a MASK and Asuka hide in the STALL 1.`);
-            expect(astridFirstNotificationMessage.content).toBe(`When you and Asuka hide in the STALL 1, you find Nero already there!`);
+            expect(lockerRoomFirstNarrationMessage.content).toBe(`An individual wearing a MASK and Asuka hide in STALL 1.`);
+            expect(astridFirstNotificationMessage.content).toBe(`When you and Asuka hide in STALL 1, you find Nero already there!`);
             expect(astridLastNotificationMessage.content).toBe(`You are now **hidden**.`);
-            expect(asukaFirstNotificationMessage.content).toBe(`When you and an individual wearing a MASK hide in the STALL 1, you find Nero already there!`);
+            expect(asukaFirstNotificationMessage.content).toBe(`When you and an individual wearing a MASK hide in STALL 1, you find Nero already there!`);
             expect(asukaLastNotificationMessage.content).toBe(`You are now **hidden**.`);
             expect(neroFirstNotificationMessage.content).toBe(`Several people find you! They hide with you.`);
+        });
+    });
+
+    describe('party of three hide', () => {
+        beforeAll(async () => {
+            const followAction1 = new FollowAction(testGame, undefined, asuka, asuka.location, false);
+            await followAction1.performFollow(astrid);
+            const followAction2 = new FollowAction(testGame, undefined, nero, nero.location, false);
+            await followAction2.performFollow(astrid);
+            const leadAction = new LeadAction(testGame, undefined, astrid, astrid.location, false);
+            await leadAction.performLead([asuka, nero]);
+            await sendMessages();
+            clearMessages();
+            vi.clearAllMocks();
+        });
+
+        afterAll(async () => {
+            const disbandAction = new DisbandPartyAction(testGame, undefined, astrid, astrid.location, false);
+            await disbandAction.performDisbandParty(true);
+        });
+
+        test('party of three cannot hide in empty hiding spot', async () => {
+            const hideAction1 = new HideAction(testGame, undefined, astrid, astrid.location, false);
+            await hideAction1.performHide(stall1);
+            expect(stall1.occupants.length).toBe(0);
+            expect(stall1.occupants).not.toContainEqual(astrid);
+            expect(stall1.occupants).not.toContainEqual(asuka);
+            expect(stall1.occupants).not.toContainEqual(nero);
+            expect(astrid.hasStatus("hidden")).toBe(false);
+            expect(asuka.hasStatus("hidden")).toBe(false);
+            expect(nero.hasStatus("hidden")).toBe(false);
+            expect(deleteWhisperSpy).not.toHaveBeenCalled();
+            expect(createWhisperSpy).not.toHaveBeenCalledOnce();
+            expect(stall1.whisper).toBeNull();
+            expect(lockerRoom.occupantsString).toBe(`an individual wearing a MASK, Asuka, and Nero`);
+
+            await sendMessages();
+            expect(lockerRoom.channel.messages.cache).toHaveSize(1);
+            expect(astrid.notificationChannel.messages.cache).toHaveSize(1);
+            expect(asuka.notificationChannel.messages.cache).toHaveSize(1);
+            expect(nero.notificationChannel.messages.cache).toHaveSize(1);
+            expect(lockerRoomFirstNarrationMessage.content).toBe(`An individual wearing a MASK, Asuka, and Nero attempt to hide in STALL 1, but there doesn't seem to be enough room for them.`);
+            expect(astridFirstNotificationMessage.content).toBe(`You attempt to hide in STALL 1, but there doesn't seem to be enough room for you, Asuka, and Nero.`);
+            expect(asukaFirstNotificationMessage.content).toBe(`You attempt to hide in STALL 1, but there doesn't seem to be enough room for you, an individual wearing a MASK, and Nero.`);
+            expect(neroFirstNotificationMessage.content).toBe(`You attempt to hide in STALL 1, but there doesn't seem to be enough room for you, an individual wearing a MASK, and Asuka.`);
         });
     });
 });

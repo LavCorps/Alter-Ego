@@ -167,8 +167,8 @@ describe('EmergeAction test', () => {
             expect(astrid.notificationChannel.messages.cache).toHaveSize(2);
             expect(asuka.notificationChannel.messages.cache).toHaveSize(0);
             expect(nero.notificationChannel.messages.cache).toHaveSize(0);
-            expect(lockerRoomFirstNarrationMessage.content).toBe(`An individual wearing a MASK comes out of the STALL 1.`);
-            expect(astridFirstNotificationMessage.content).toBe(`You come out of the STALL 1.`);
+            expect(lockerRoomFirstNarrationMessage.content).toBe(`An individual wearing a MASK comes out of STALL 1.`);
+            expect(astridFirstNotificationMessage.content).toBe(`You come out of STALL 1.`);
             expect(astridLastNotificationMessage.content).toBe(`You are no longer hidden.`);
         });
 
@@ -202,9 +202,9 @@ describe('EmergeAction test', () => {
             expect(astrid.notificationChannel.messages.cache).toHaveSize(2);
             expect(asuka.notificationChannel.messages.cache).toHaveSize(0);
             expect(nero.notificationChannel.messages.cache).toHaveSize(0);
-            expect(lockerRoomFirstNarrationMessage.content).toBe(`An individual wearing a MASK comes out of the STALL 1.`);
-            expect(stall1FirstNarrationMessage.content).toBe(`An individual wearing a MASK comes out of the STALL 1.`);
-            expect(astridFirstNotificationMessage.content).toBe(`You come out of the STALL 1.`);
+            expect(lockerRoomFirstNarrationMessage.content).toBe(`An individual wearing a MASK comes out of STALL 1.`);
+            expect(stall1FirstNarrationMessage.content).toBe(`An individual wearing a MASK comes out of STALL 1.`);
+            expect(astridFirstNotificationMessage.content).toBe(`You come out of STALL 1.`);
             expect(astridLastNotificationMessage.content).toBe(`You are no longer hidden.`);
         });
 
@@ -243,11 +243,11 @@ describe('EmergeAction test', () => {
             expect(astrid.notificationChannel.messages.cache).toHaveSize(2);
             expect(asuka.notificationChannel.messages.cache).toHaveSize(0);
             expect(nero.notificationChannel.messages.cache).toHaveSize(1);
-            expect(lockerRoomFirstNarrationMessage.content).toBe(`An individual wearing a MASK comes out of the STALL 1.`);
-            expect(stall1FirstNarrationMessage.content).toBe(`An individual wearing a MASK comes out of the STALL 1.`);
-            expect(astridFirstNotificationMessage.content).toBe(`You come out of the STALL 1.`);
+            expect(lockerRoomFirstNarrationMessage.content).toBe(`An individual wearing a MASK comes out of STALL 1.`);
+            expect(stall1FirstNarrationMessage.content).toBe(`An individual wearing a MASK comes out of STALL 1.`);
+            expect(astridFirstNotificationMessage.content).toBe(`You come out of STALL 1.`);
             expect(astridLastNotificationMessage.content).toBe(`You are no longer hidden.`);
-            expect(neroFirstNotificationMessage.content).toBe(`Someone comes out of the STALL 1.`);
+            expect(neroFirstNotificationMessage.content).toBe(`Someone comes out of STALL 1.`);
         });
     });
 
@@ -317,10 +317,10 @@ describe('EmergeAction test', () => {
             expect(astrid.notificationChannel.messages.cache).toHaveSize(2);
             expect(asuka.notificationChannel.messages.cache).toHaveSize(2);
             expect(nero.notificationChannel.messages.cache).toHaveSize(0);
-            expect(lockerRoomFirstNarrationMessage.content).toBe(`An individual wearing a MASK and Asuka come out of the STALL 1.`);
-            expect(astridFirstNotificationMessage.content).toBe(`You and Asuka come out of the STALL 1.`);
+            expect(lockerRoomFirstNarrationMessage.content).toBe(`An individual wearing a MASK and Asuka come out of STALL 1.`);
+            expect(astridFirstNotificationMessage.content).toBe(`You and Asuka come out of STALL 1.`);
             expect(astridLastNotificationMessage.content).toBe(`You are no longer hidden.`);
-            expect(asukaFirstNotificationMessage.content).toBe(`You and an individual wearing a MASK come out of the STALL 1.`);
+            expect(asukaFirstNotificationMessage.content).toBe(`You and an individual wearing a MASK come out of STALL 1.`);
             expect(asukaLastNotificationMessage.content).toBe(`You are no longer hidden.`);
         });
 
@@ -358,11 +358,11 @@ describe('EmergeAction test', () => {
             expect(astrid.notificationChannel.messages.cache).toHaveSize(2);
             expect(asuka.notificationChannel.messages.cache).toHaveSize(2);
             expect(nero.notificationChannel.messages.cache).toHaveSize(0);
-            expect(lockerRoomFirstNarrationMessage.content).toBe(`An individual wearing a MASK and Asuka come out of the STALL 1.`);
-            expect(stall1FirstNarrationMessage.content).toBe(`An individual wearing a MASK and Asuka come out of the STALL 1.`);
-            expect(astridFirstNotificationMessage.content).toBe(`You and Asuka come out of the STALL 1.`);
+            expect(lockerRoomFirstNarrationMessage.content).toBe(`An individual wearing a MASK and Asuka come out of STALL 1.`);
+            expect(stall1FirstNarrationMessage.content).toBe(`An individual wearing a MASK and Asuka come out of STALL 1.`);
+            expect(astridFirstNotificationMessage.content).toBe(`You and Asuka come out of STALL 1.`);
             expect(astridLastNotificationMessage.content).toBe(`You are no longer hidden.`);
-            expect(asukaFirstNotificationMessage.content).toBe(`You and an individual wearing a MASK come out of the STALL 1.`);
+            expect(asukaFirstNotificationMessage.content).toBe(`You and an individual wearing a MASK come out of STALL 1.`);
             expect(asukaLastNotificationMessage.content).toBe(`You are no longer hidden.`);
             nero.inflict(blind);
         });
@@ -400,13 +400,13 @@ describe('EmergeAction test', () => {
             expect(astrid.notificationChannel.messages.cache).toHaveSize(2);
             expect(asuka.notificationChannel.messages.cache).toHaveSize(2);
             expect(nero.notificationChannel.messages.cache).toHaveSize(1);
-            expect(lockerRoomFirstNarrationMessage.content).toBe(`An individual wearing a MASK and Asuka come out of the STALL 1.`);
-            expect(stall1FirstNarrationMessage.content).toBe(`An individual wearing a MASK and Asuka come out of the STALL 1.`);
-            expect(astridFirstNotificationMessage.content).toBe(`You and Asuka come out of the STALL 1.`);
+            expect(lockerRoomFirstNarrationMessage.content).toBe(`An individual wearing a MASK and Asuka come out of STALL 1.`);
+            expect(stall1FirstNarrationMessage.content).toBe(`An individual wearing a MASK and Asuka come out of STALL 1.`);
+            expect(astridFirstNotificationMessage.content).toBe(`You and Asuka come out of STALL 1.`);
             expect(astridLastNotificationMessage.content).toBe(`You are no longer hidden.`);
-            expect(asukaFirstNotificationMessage.content).toBe(`You and an individual wearing a MASK come out of the STALL 1.`);
+            expect(asukaFirstNotificationMessage.content).toBe(`You and an individual wearing a MASK come out of STALL 1.`);
             expect(asukaLastNotificationMessage.content).toBe(`You are no longer hidden.`);
-            expect(neroFirstNotificationMessage.content).toBe(`Several people come out of the STALL 1.`);
+            expect(neroFirstNotificationMessage.content).toBe(`Several people come out of STALL 1.`);
         });
     });
 });

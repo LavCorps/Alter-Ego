@@ -107,9 +107,10 @@ export default class HidingSpot extends GameEntity {
 
     /**
      * Gets the fixture's name preceded by "the".
+     * It will not be preceded by "the" if its name ends in a number.
      */
     getContainingPhrase(): string {
-        return `the ${this.name}`;
+        return this.#fixture.getContainingPhrase();
     }
 
     /**
@@ -132,7 +133,12 @@ export default class HidingSpot extends GameEntity {
      * @param viewerHasNoSightBehaviorAttribute - Whether or not to return a vague list indicating the quantity of occupants. Defaults to `false`.
      */
     generateOccupantsString(viewerHasNoSightBehaviorAttribute: boolean = false): string {
-        if (viewerHasNoSightBehaviorAttribute) return this.occupants.length > 1 ? `${String(this.occupants.length)} people` : `someone`;
+        if (viewerHasNoSightBehaviorAttribute)
+            return this.occupants.length > 1
+                ? `${String(this.occupants.length)} people`
+                : this.occupants.length === 1
+                    ? `someone`
+                    : ``;
         return generatePlayerListString(this.occupants);
     }
 

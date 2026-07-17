@@ -305,14 +305,14 @@ export default class Puzzle extends ItemContainer implements PersistentGameEntit
     }
 
     /**
-	 * Gets all of the items that should appear in the puzzle's item list.
+     * Gets all of the items that should appear in the puzzle's item list.
      *
-	 * @param itemListName - The name of the item list. Unused.
-	 * @param player - The player the description is being sent to. Unused.
-	 */
-	override getContainedItemsForItemList(itemListName?: string, player?: Player): RoomItem[] {
-		return this.getGame().entityFinder.getRoomItems(undefined, this.location.id, undefined, 'Puzzle', this.name);
-	}
+     * @param itemListName - The name of the item list. Unused.
+     * @param player - The player the description is being sent to. Unused.
+     */
+    override getContainedItemsForItemList(itemListName?: string, player?: Player): RoomItem[] {
+        return this.getGame().entityFinder.getRoomItems(undefined, this.location.id, undefined, 'Puzzle', this.name);
+    }
 
     /**
      * Returns true if this entity contains an item with the given identifier or prefab ID.
@@ -453,9 +453,14 @@ export default class Puzzle extends ItemContainer implements PersistentGameEntit
 
     /**
      * Gets the name of the parent fixture preceded by "the". If no parent fixture exists, returns the puzzle's name preceded by "the" instead.
+     * If the puzzle's name or the name of its parent fixture ends with a number, it will not be preceded by "the".
      */
     getContainingPhrase(): string {
-        return this.parentFixture ? this.parentFixture.getContainingPhrase() : `the ${this.name}`;
+        return this.parentFixture
+            ? this.parentFixture.getContainingPhrase()
+            : this.name.match(/.*\d+$/)
+                ? this.name
+                : `the ${this.name}`;
     }
 
     /**
@@ -527,7 +532,7 @@ export default class Puzzle extends ItemContainer implements PersistentGameEntit
     getSolutionSatisfiedByItem(item: ItemInstance): string {
         for (const solution of this.solutions) {
             if ((solution.startsWith("Item:") || solution.startsWith("InventoryItem:") || solution.startsWith("Prefab:"))
-            && item.prefab.id === solution.substring(solution.indexOf(':') + 1).trim()) {
+                && item.prefab.id === solution.substring(solution.indexOf(':') + 1).trim()) {
                 return solution;
             }
         }

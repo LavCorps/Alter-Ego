@@ -814,7 +814,7 @@ export default class GameNotificationGenerator {
                 object = `them`;
             }
         }
-        let hiddenPlayersString = secondPerson ? `you find ${hiddenPlayersList} already there! There` : `there`
+        let hiddenPlayersString = secondPerson && hiddenPlayersList !== `` ? `you find ${hiddenPlayersList} already there! There` : `there`;
         return `${capitalizeFirstLetter(subject)} ${verb} to hide in ${hidingSpotPhrase}, but ${hiddenPlayersString} doesn't seem to be enough room for ${object}.`;
     }
 
