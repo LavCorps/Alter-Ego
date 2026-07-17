@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+// SPDX-FileCopyrightText: 2026 Ms. VBLANK <alteregomolly@pm.me>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -1884,8 +1885,7 @@ export default class GameEntityLoader extends GameEntityManager {
                                         }
                                     } else timeRemaining = null;
                                     const inflictAction = new InflictAction(this.game, undefined, player, player.location, true);
-                                    // TODO: This clogs up the messageHandler. Add sendLogMessage parameter to performInflict signature.
-                                    await inflictAction.performInflict(status, false, false, false, undefined, timeRemaining);
+                                    await inflictAction.performInflict(status, false, false, false, undefined, timeRemaining, false);
                                 }
                             }
                             if (invalidStatusFound) continue;

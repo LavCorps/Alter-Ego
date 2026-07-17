@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+// SPDX-FileCopyrightText: 2026 Ms. VBLANK <alteregomolly@pm.me>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -27,8 +28,9 @@ export default class InflictAction extends Action {
      * @param narrate - Whether or not to send any narrations caused by the status being inflicted. Defaults to true.
      * @param item - The inventory item that caused the status to be inflicted, if applicable.
      * @param duration - A custom duration that overrides the status's default duration.
+     * @param log - Whether or not to send a log message in the bot log channel. Defaults to true.
      */
-    async performInflict(status: Status, notify: boolean = true, doCures: boolean = true, narrate: boolean = true, item?: InventoryItem, duration: Duration<true> = null): Promise<void> {
+    async performInflict(status: Status, notify: boolean = true, doCures: boolean = true, narrate: boolean = true, item?: InventoryItem, duration: Duration<true> = null, log: boolean = true): Promise<void> {
         if (this.performed) return;
         super.perform();
         const playerStatusIds = this.player.status.map(statusEffect => statusEffect.id);
@@ -113,7 +115,7 @@ export default class InflictAction extends Action {
         }
         if (narrate) this.getGame().narrationHandler.narrateInflict(this, status, this.player);
         if (removeFromWhisperNarration) await this.player.removeFromWhispers(removeFromWhisperNarration, this);
-        this.getGame().logHandler.logInflict(status, this.player);
+        if (log) this.getGame().logHandler.logInflict(status, this.player);
         this.successMessage = `Successfully added status effect ${status.id} to ${this.player?.name}.`;
     }
 }
