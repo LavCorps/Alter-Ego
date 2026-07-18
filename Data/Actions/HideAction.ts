@@ -102,12 +102,13 @@ export default class HideAction extends Action {
          * - AC
          */
         if (this.player.party && !this.player.party.positionsSynchronized)
-            throw new Error("TODO");
+            throw new Error(errorMessageGenerator.generateDesyncError());
         /** 
          * @privateRemarks
          * This checks if the given fixture is falsy. Most importantly, this catches undefined.
          * - AC
-         */if (!args[0] || args[0].getEntityType() !== "Fixture")
+         */
+        if (!args[0] || args[0].getEntityType() !== "Fixture")
             throw new Error(errorMessageGenerator.generateInvalidEntityError("Fixture"));
         /** 
          * @privateRemarks
@@ -115,14 +116,14 @@ export default class HideAction extends Action {
          * - AC
          */
         if (!args[0].accessible)
-            throw new Error("TODO")
+            throw new Error(errorMessageGenerator.generateFixtureAccessError(args[0]))
         /** 
          * @privateRemarks
          * If a fixture is "locked", it cannot be hidden in. Validation fails.
          * - AC
          */
         if (args[0].childPuzzle !== null && args[0].childPuzzle.type.endsWith("lock") && !args[0].childPuzzle.solved)
-            throw new Error("TODO");
+            throw new Error(errorMessageGenerator.generateFixtureLockedError(args[0]));
         /** 
          * @privateRemarks
          * ...?
@@ -144,14 +145,14 @@ export default class HideAction extends Action {
          * - AC
          */
         if (args[0].hidingSpotCapacity === 0)
-            throw new Error("TODO");
+            throw new Error(errorMessageGenerator.generateFixtureNotHidingSpotError(args[0]));
         /** 
          * @privateRemarks
          * If, somehow, the hiding spot is falsy (thus likely undefined or null), validation fails.
          * - AC
          */
         if (!args[0].hidingSpot)
-            throw new Error("TODO");
+            throw new Error(errorMessageGenerator.generateFixtureNotHidingSpotError(args[0]));
         /** 
          * @privateRemarks
          * Finally, it is time to return the fixture hiding spot.

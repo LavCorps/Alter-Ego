@@ -138,6 +138,48 @@ export default class GameErrorMessageGenerator {
     }
 
     /**
+     * Generates an error message indicating that the player is not hidden.
+     */
+    generateNotHiddenError() {
+        return `${this.youCannotString} **not** hidden.`
+    }
+
+    /**
+     * Generates an error message indicating that the player is not synchronized with their party.
+     */
+    generateDesyncError() {
+        return `You cannot do that because your party is not ready.`
+    }
+
+    /**
+     * Generates an error message indicating that the fixture is locked.
+     */
+    generateFixtureLockedError(fixture: Fixture) {
+        return `You cannot do that because ${fixture.name} is locked.`
+    }
+
+    /**
+     * Generates an error message indicating that the fixture is inaccessible.
+     */
+    generateFixtureAccessError(fixture: Fixture) {
+        return `You cannot do that because ${fixture.name} is inaccessible.`
+    }
+
+    /**
+     * Generates an error message indicating that the fixture is not a hiding spot.
+     */
+    generateFixtureNotHidingSpotError(fixture: Fixture) {
+        return `You cannot do that because ${fixture.name} is not a hiding spot.`
+    }
+
+    /**
+     * Generates an error message indicating that the player cannot perform an action because their hiding spot has changed.
+     */
+    generatePlayerFixtureMismatchError() {
+        return `${this.youCannotString} no longer in that hiding spot.`;
+    }
+
+    /**
      * Generates an error message indicating that the player cannot move because their speed is 0.
      * @param player - The player being addressed.
      * @param context - The context in which the command is being issued.

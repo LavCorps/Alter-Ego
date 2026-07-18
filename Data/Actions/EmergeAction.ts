@@ -82,7 +82,7 @@ export default class EmergeAction extends Action {
          * - AC
          */
         if (!this.player.isHidden())
-            throw new Error("TODO");
+            throw new Error(errorMessageGenerator.generateNotHiddenError());
         /** 
          * @privateRemarks
          * If we somehow get args that is not a length of 1, then validation fails.
@@ -105,28 +105,28 @@ export default class EmergeAction extends Action {
          * - AC
          */
         if (this.player.party && !this.player.party.positionsSynchronized)
-            throw new Error("TODO");
+            throw new Error(errorMessageGenerator.generateDesyncError());
         /** 
          * @privateRemarks
          * This checks if the given fixture is falsy. Most importantly, this catches undefined.
          * - AC
          */
-        if (!args[0])
-            throw new Error("TODO");
+        if (!args[0] || args[0].getEntityType() !== "Fixture")
+            throw new Error(errorMessageGenerator.generateInvalidEntityError("Fixture"));
         /** 
          * @privateRemarks
          * I believe this is correct. If the fixture is inaccessible, validation fails.
          * - AC
          */
         if (!args[0].accessible)
-            throw new Error("TODO");
+            throw new Error(errorMessageGenerator.generateFixtureAccessError(args[0]))
         /** 
          * @privateRemarks
          * If a fixture is "locked", it cannot be emerged from. Validation fails.
          * - AC
          */
         if (args[0].childPuzzle !== null && args[0].childPuzzle.type.endsWith("lock") && !args[0].childPuzzle.solved)
-            throw new Error("TODO");
+            throw new Error(errorMessageGenerator.generateFixtureLockedError(args[0]));
         /** 
          * @privateRemarks
          * ...?
@@ -148,14 +148,14 @@ export default class EmergeAction extends Action {
          * - AC
          */
         if (this.player.hidingSpot !== args[0].name)
-            throw new Error("TODO");
+            throw new Error(errorMessageGenerator.generatePlayerFixtureMismatchError());
         /** 
          * @privateRemarks
          * If, somehow, the hiding spot is falsy (thus likely undefined or null), validation fails.
          * - AC
          */
         if (!args[0].hidingSpot)
-            throw new Error("TODO");
+            throw new Error(errorMessageGenerator.generateFixtureNotHidingSpotError(args[0]));
         /** 
          * @privateRemarks
          * Finally, it is time to return the fixture hiding spot.
