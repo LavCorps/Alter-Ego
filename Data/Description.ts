@@ -148,6 +148,8 @@ export default class Description extends GameConstruct {
                 interactables = interactables.concat(interactableManager.getTakeInteractables(container, selectableInteractableGameEntities[1], player));
                 interactables = interactables.concat(interactableManager.getDropInteractables(container, player));
                 if (container instanceof Fixture) {
+                    interactables = interactables.concat(interactableManager.createHideActionInteractable(container, player));
+                    interactables = interactables.concat(interactableManager.createEmergeActionInteractable(container, player));
                     interactables = interactables.concat(interactableManager.getActivateOrDeactivateInteractables(container, player));
                     if (container.childPuzzle)
                         interactables = interactables.concat(interactableManager.getAttemptInteractables(container.childPuzzle, player));
