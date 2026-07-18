@@ -384,30 +384,20 @@ export default class ClientInteractableManager {
     }
 
     createHideActionInteractable(fixture: Fixture, player: Player, user: User = player, label: string = "Hide"): ButtonInteractable[] {
-        console.log("createHideActionInteractable();");
         if (!player.canUseCommand("hide")) return [];
-        console.log("  check 1 passed");
         if (fixture.hidingSpotCapacity === 0 || !fixture.hidingSpot) return [];
-        console.log("  check 2 passed");
         if (player.isHidden()) return [];
-        console.log("  check 3 passed");
         const actionDirective = this.#createActionDirective(HideAction, [fixture.name, fixture.location.id], player, user);
         const interactableOptions = new InteractableOptions(actionDirective, label);
-        console.log("  returning");
         return [this.#createButtonInteractable(interactableOptions, ButtonStyle.Secondary, 0)];
     }
 
     createEmergeActionInteractable(fixture: Fixture, player: Player, user: User = player, label: string = "Emerge"): ButtonInteractable[] {
-        console.log("createEmergeActionInteractable();");
         if (!player.canUseCommand("hide")) return [];
-        console.log("  check 1 passed");
         if (fixture.hidingSpotCapacity === 0 || !fixture.hidingSpot) return [];
-        console.log("  check 2 passed");
         if (!player.isHidden() || player.hidingSpot !== fixture.name) return [];
-        console.log("  check 3 passed");
         const actionDirective = this.#createActionDirective(EmergeAction, [fixture.name, fixture.location.id], player, user);
         const interactableOptions = new InteractableOptions(actionDirective, label);
-        console.log("  returning");
         return [this.#createButtonInteractable(interactableOptions, ButtonStyle.Secondary, 0)];
     }
 
