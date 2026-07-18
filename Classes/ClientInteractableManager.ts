@@ -42,6 +42,7 @@ import UncraftAction from "../Data/Actions/UncraftAction.ts";
 import UseAction from "../Data/Actions/UseAction.ts";
 import ActivateAction from "../Data/Actions/ActivateAction.ts";
 import DeactivateAction from "../Data/Actions/DeactivateAction.ts";
+import AttemptAction from "../Data/Actions/AttemptAction.ts";
 import InstantiateInventoryItemAction from "../Data/Actions/InstantiateInventoryItemAction.ts";
 import InstantiateRoomItemAction from "../Data/Actions/InstantiateRoomItemAction.ts";
 import DestroyInventoryItemAction from "../Data/Actions/DestroyInventoryItemAction.ts";
@@ -51,6 +52,7 @@ import ViewAction, { type EntityField } from "../Data/Actions/ViewAction.ts";
 import { removeInteractablesFromMessage } from "../Modules/messageHandler.ts";
 import { ActionPriority } from "../Modules/enums.ts";
 import { capitalizeFirstLetter, getSortedItems } from "../Modules/helpers.ts";
+import type Puzzle from "../Data/Puzzle.ts";
 
 class InteractableOptions<T extends Action> {
     actionDirective: ActionDirective<T>;
@@ -651,6 +653,22 @@ export default class ClientInteractableManager {
     }
 
     /**
+     * Creates Button Interactables for an attemptable puzzle and adds them to the cache.
+     * @param puzzle - The puzzle that can be attempted.
+     * @param player - The player these interactables are being created for.
+     * @param user - The user these interactables are being created for. Defaults to the given player.
+     */
+    private createAttemptButtonInteractables(puzzle: Puzzle, player: Player, user: User = player): ButtonInteractable[] {
+        if (!player.canUseCommand("use")) return [];
+        const actionDirective = this.#createActionDirective(AttemptAction, puzzle.getButtonAttemptActionDirectiveArgs(), player, user);
+        const name = puzzle.parentFixture ? puzzle.parentFixture.name : puzzle.name;
+        const label = `${capitalizeFirstLetter(puzzle.getAttemptVerb())} ${name}`;
+        const interactableOptions = new InteractableOptions(actionDirective, label);
+        return [this.#createButtonInteractable(interactableOptions, ButtonStyle.Primary, ActionPriority.ATTEMPT)];
+
+    }
+
+    /**
      * Creates Interactables for a list of equipment slots and player inventory slots that can be instantiated to and adds them to the cache.
      * @param freeEquipmentSlots - An array of equipment slots with nothing equipped.
      * @param viableContainers - A map of viable inventory items with inventory slots an item can be instantiated into.
@@ -1231,6 +1249,23 @@ export default class ClientInteractableManager {
                 interactables = interactables.concat(this.createDeactivateInteractables(fixture, player, user));
             else
                 interactables = interactables.concat(this.createActivateInteractables(fixture, player, user));
+        }
+        return interactables;
+    }
+
+    /**
+     * Generates an array of attempt interactables for a given puzzle. What kind of interactables are returned depends on the Puzzle's type.
+     * @param puzzle - The puzzle the player can attempt.
+     * @param player - The player who can perform an attempt action.
+     * @param user - The user these interactables are being created for. Defaults to the given player.
+     */
+    getAttemptInteractables(puzzle: Puzzle, player: Player, user: User = player): Interactable[] {
+        let interactables: Interactable[] = [];
+        const matchingFixture = this.#game.entityFinder.getFixture(puzzle.name, puzzle.location.id);
+        if (!matchingFixture || matchingFixture.recipeTag === "") {
+            const buttonTypes = new Set(["interact", "toggle", "player", "player toggle", "matrix"]);
+            if (buttonTypes.has(puzzle.type) || puzzle.type.endsWith("probability"))
+                interactables = interactables.concat(this.createAttemptButtonInteractables(puzzle, player, user));
         }
         return interactables;
     }

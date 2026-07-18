@@ -1,3 +1,8 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+// SPDX-FileCopyrightText: 2026 Ms. VBLANK <alteregomolly@pm.me>
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import Action from "../Action.ts";
 import Die from "../Die.ts";
 import type ItemInstance from "../ItemInstance.ts";
@@ -265,6 +270,45 @@ export default class AttemptAction extends Action {
                 this.#failPuzzle(puzzle);
         }
         this.successMessage = `Successfully attempted ${puzzle.name} for ${this.player?.name}.`;
+    }
+
+    /**
+     * Finds the required entities to call performAttempt.
+     *
+     * @param args - The args as strings.
+     */
+    parseInteractionArgs(args: string[]): [Puzzle, ItemInstance, string, string, string, string, Player] {
+        const puzzle = this.getGame().entityFinder.getPuzzle(args[0], args[1], args[2]);
+        const item = this.getGame().entityFinder.getInventoryItem(args[3], this.player.name, args[4], args[5], args[6]);
+        const targetPlayer = this.getGame().entityFinder.getLivingPlayers(args[7], undefined, this.player.location.id, this.player.hidingSpot)[0];
+        return [puzzle, item, args[7], args[8], args[9], args[10], targetPlayer];
+    }
+
+    /**
+     * Validates the parsed args. The results can be passed directly into performAttempt.
+     *
+     * @param args - The args after being parsed.
+     */
+    validateInteractionArgs(args: [Puzzle, ItemInstance, string, string, string, string, Player]): [Puzzle, ItemInstance, string, string, string, Player] {
+        const errorMessageGenerator = this.getGame().errorMessageGenerator;
+        if (args.length !== 7) throw new Error(errorMessageGenerator.generateInsufficientArgumentsError());
+        if (!args[0] || args[0].getEntityType() !== "Puzzle") throw new Error(errorMessageGenerator.generateInvalidEntityError("Puzzle"));
+        const puzzle = args[0];
+        if (puzzle.location.id !== this.player.location.id) throw new Error(errorMessageGenerator.generatePlayerLocationMismatchError());
+        if (args[6] && args[6].getEntityType() === "Player" && args[6].location?.id !== this.player.location.id)
+            throw new Error(errorMessageGenerator.generatePlayerNotFoundInRoomError(args[5]))
+        const disabledStatusEffects = this.player.getStatusEffectsDisablingCommand("use");
+        if (disabledStatusEffects.length > 0)
+            throw new Error(errorMessageGenerator.generateCommandDisabledError(disabledStatusEffects[0]));
+        const hiddenStatusEffects = this.player.getBehaviorAttributeStatusEffects("hidden");
+        if (hiddenStatusEffects.length > 0 && puzzle.parentFixture && this.player.hidingSpot !== puzzle.parentFixture.name)
+            throw new Error(errorMessageGenerator.generateCommandDisabledError(hiddenStatusEffects[0]));
+        const item = args[1];
+        const password = args[2];
+        const command = args[3];
+        const input = args[4];
+        const targetPlayer = args[6];
+        return [puzzle, item, password, command, input, targetPlayer];
     }
 
     /**

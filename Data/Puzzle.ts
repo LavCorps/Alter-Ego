@@ -261,10 +261,47 @@ export default class Puzzle extends ItemContainer implements PersistentGameEntit
     }
 
     /**
+     * Gets a second-person verb to use to describe how a player attempts this puzzle.
+     * The verb chosen largely depends on the puzzle's name and type.
+     * The default verb is "use".
+     */
+    getAttemptVerb(): string {
+        const names = this.parentFixture ? `${this.name} ${this.parentFixture.name}` : this.name;
+        const nameWords = new Set(names.split(' '));
+        if (nameWords.has("BUTTON")) return "press";
+        if (nameWords.has("SWITCH") || nameWords.has("lever")) return "flip";
+        if (nameWords.has("BOLT") && this.type === "toggle") return "flip";
+        if (nameWords.has("SHOWER") && this.solved) return "turn off";
+        if (nameWords.has("TELEVISION") && this.solved) return "turn off";
+        else return "use";
+    }
+
+    /**
+     * Returns the args for the Attempt ActionDirective for this puzzle.
+     * Intended to be used for puzzles that can be attempted with only the press of a button.
+     * @returns [name, location, type, undefined (item identifier), undefined (item containerName), undefined (item equipmentSlot), undefined (proceduralSelectionsString), "" (password), getAttemptVerb() (command), name (input), "" (targetPlayer displayName)]
+     */
+    getButtonAttemptActionDirectiveArgs(): [string, string, string, string, string, string, string, string, string, string, string] {
+        return [
+            this.name,
+            this.location.id,
+            this.type,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            "",
+            this.getAttemptVerb(),
+            this.name,
+            ""
+        ];
+    }
+
+    /**
      * Returns the args for the InstantiateRoomItem ActionDirective for this puzzle.
      * @returns ["PZ", name, location, preposition, type]
      */
-    getPartialInstantiateActionDirectiveArgs() {
+    getPartialInstantiateActionDirectiveArgs(): [string, string, string, string, string] {
         return ["PZ", this.name, this.location.displayName, this.getPreposition(), this.type];
     }
 

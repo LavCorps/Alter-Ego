@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+// SPDX-FileCopyrightText: 2026 Ms. VBLANK <alteregomolly@pm.me>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -148,6 +149,10 @@ export default class Description extends GameConstruct {
                 interactables = interactables.concat(interactableManager.getDropInteractables(container, player));
                 if (container instanceof Fixture) {
                     interactables = interactables.concat(interactableManager.getActivateOrDeactivateInteractables(container, player));
+                    if (container.childPuzzle)
+                        interactables = interactables.concat(interactableManager.getAttemptInteractables(container.childPuzzle, player));
+                    else if (selectableInteractableGameEntities[2].length > 0)
+                        interactables = interactables.concat(interactableManager.getAttemptInteractables(selectableInteractableGameEntities[2][0], player));
                 }
             }
             else if (container instanceof Player) {
