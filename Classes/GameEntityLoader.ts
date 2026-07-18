@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+// SPDX-FileCopyrightText: 2026 Ms. VBLANK <alteregomolly@pm.me>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -23,7 +24,7 @@ import Gesture from '../Data/Gesture.ts';
 import { default as Flag, type FlagCommandSet } from '../Data/Flag.ts';
 import InflictAction from '../Data/Actions/InflictAction.ts';
 import { getSheetValues } from '../Modules/sheets.js';
-import { convertTimeStringToDurationUnits, parseDuration, validateDuration } from '../Modules/helpers.ts';
+import { round, convertTimeStringToDurationUnits, parseDuration, validateDuration } from '../Modules/helpers.ts';
 import { parsePrefabPossibleNames } from '../Modules/stringDataExtractor.ts';
 import { ChannelType, Collection, type GuildBasedChannel, type GuildMember } from 'discord.js';
 import { Duration } from 'luxon';
@@ -704,12 +705,8 @@ export default class GameEntityLoader extends GameEntityManager {
                 // Create a list of commands to run when this prefab is equipped/unequipped. Temporarily replace forward slashes in URLs with back slashes.
                 const commandString = sheet[row][columnCommandsString] ? sheet[row][columnCommandsString].replace(/(?<=http(s?):.*?)\/(?! )(?=.*?(jpg|jpeg|png|webp|avif))/g, '\\') : "";
                 const commands: string[] = commandString ? commandString.split('/') : ["", ""];
-                let equippedCommands: string[] = commands[0] ? commands[0].split(/(?<!`.*?[^`])\s*?,/) : [];
-                for (let i = 0; i < equippedCommands.length; i++)
-                    equippedCommands[i] = equippedCommands[i].trim();
-                let unequippedCommands: string[] = commands[1] ? commands[1].split(/(?<!`.*?[^`])\s*?,/) : [];
-                for (let i = 0; i < unequippedCommands.length; i++)
-                    unequippedCommands[i] = unequippedCommands[i].trim();
+                let equippedCommands: string[] = commands[0] ? (commands[0].match(/(?:`[^`]*`|[^,])+/g)?.map(s => s.trim()).filter(s => s !== '') ?? []) : [];
+                let unequippedCommands: string[] = commands[1] ? (commands[1].match(/(?:`[^`]*`|[^,])+/g)?.map(s => s.trim()).filter(s => s !== '') ?? []) : [];
                 // Create a list of inventory slots this prefab contains.
                 let inventorySlotStrings: string[] = sheet[row][columnInventorySlotsStrings] ? sheet[row][columnInventorySlotsStrings].split(',') : [];
                 let inventorySlots = new Collection<string, InventorySlot<ItemInstance>>();
@@ -735,7 +732,7 @@ export default class GameEntityLoader extends GameEntityManager {
                     possibleContainingPhrases,
                     sheet[row][columnDiscreet] ? sheet[row][columnDiscreet].trim() === "TRUE" : false,
                     parseInt(sheet[row][columnSize]),
-                    parseInt(sheet[row][columnWeight]),
+                    round(parseFloat(sheet[row][columnWeight])),
                     sheet[row][columnUsable] ? sheet[row][columnUsable].trim() === "TRUE" : false,
                     useVerbs[0] ? useVerbs[0].trim() : "",
                     useVerbs[1] ? useVerbs[1].trim() : "",
@@ -1296,12 +1293,8 @@ export default class GameEntityLoader extends GameEntityManager {
                 let commandSets: PuzzleCommandSet[] = [];
                 let getCommands = function (commandString: string): PuzzleCommandSet {
                     const commands: string[] = commandString.split('/');
-                    let solvedCommands: string[] = commands[0] ? commands[0].split(/(?<!`.*?[^`])\s*?,/) : [];
-                    for (let i = 0; i < solvedCommands.length; i++)
-                        solvedCommands[i] = solvedCommands[i].trim();
-                    let unsolvedCommands: string[] = commands[1] ? commands[1].split(/(?<!`.*?[^`])\s*?,/) : [];
-                    for (let i = 0; i < unsolvedCommands.length; i++)
-                        unsolvedCommands[i] = unsolvedCommands[i].trim();
+                    let solvedCommands: string[] = commands[0] ? (commands[0].match(/(?:`[^`]*`|[^,])+/g)?.map(s => s.trim()).filter(s => s !== '') ?? []) : [];
+                    let unsolvedCommands: string[] = commands[1] ? (commands[1].match(/(?:`[^`]*`|[^,])+/g)?.map(s => s.trim()).filter(s => s !== '') ?? []) : [];
                     return { solvedCommands: solvedCommands, unsolvedCommands: unsolvedCommands };
                 };
                 const regex = new RegExp(/(\[((.*?)(?<!(?:(?:Room|Inventory)?Item)|Prefab): (.*?))\],?)/g);
@@ -1435,8 +1428,8 @@ export default class GameEntityLoader extends GameEntityManager {
                 return new Error(`Couldn't load puzzle on row ${puzzle.row}. "${puzzle.type}" is not a valid stat probability puzzle type.`);
         }
         for (let solution of puzzle.solutions) {
-            if (puzzle.type === "weight" && isNaN(parseInt(solution)))
-                return new Error(`Couldn't load puzzle on row ${puzzle.row}. The puzzle is a weight-type puzzle, but the solution "${solution}" is not an integer.`);
+            if (puzzle.type === "weight" && isNaN(parseFloat(solution)))
+                return new Error(`Couldn't load puzzle on row ${puzzle.row}. The puzzle is a weight-type puzzle, but the solution "${solution}" is not a number.`);
             if (!solution.startsWith("Item: ") && !solution.startsWith("Prefab: ")) {
                 if (puzzle.type === "media")
                     return new Error(`Couldn't load puzzle on row ${puzzle.row}. The puzzle is a media-type puzzle, but the solution "${solution}" does not have the "Item: " or "Prefab: " prefix.`);
@@ -1531,12 +1524,8 @@ export default class GameEntityLoader extends GameEntityManager {
                     triggerTimesStrings[i] = triggerTimesStrings[i].trim();
                 const commandString = sheet[row][columnCommandsString] ? sheet[row][columnCommandsString].replace(/(?<=http(s?):.*?)\/(?! )(?=.*?(jpg|jpeg|png|webp|avif))/g, '\\') : "";
                 const commands: string[] = commandString ? commandString.split('/') : ["", ""];
-                let triggeredCommands: string[] = commands[0] ? commands[0].split(/(?<!`.*?[^`])\s*?,/) : [];
-                for (let i = 0; i < triggeredCommands.length; i++)
-                    triggeredCommands[i] = triggeredCommands[i].trim();
-                let endedCommands: string[] = commands[1] ? commands[1].split(/(?<!`.*?[^`])\s*?,/) : [];
-                for (let i = 0; i < endedCommands.length; i++)
-                    endedCommands[i] = endedCommands[i].trim();
+                let triggeredCommands: string[] = commands[0] ? (commands[0].match(/(?:`[^`]*`|[^,])+/g)?.map(s => s.trim()).filter(s => s !== '') ?? []) : [];
+                let endedCommands: string[] = commands[1] ? (commands[1].match(/(?:`[^`]*`|[^,])+/g)?.map(s => s.trim()).filter(s => s !== '') ?? []) : [];
                 let effectsStrings: string[] = sheet[row][columnEffectsStrings] ? sheet[row][columnEffectsStrings].split(',') : [];
                 for (let i = 0; i < effectsStrings.length; i++)
                     effectsStrings[i] = Status.generateValidId(effectsStrings[i]);
@@ -1884,7 +1873,7 @@ export default class GameEntityLoader extends GameEntityManager {
                                         }
                                     } else timeRemaining = null;
                                     const inflictAction = new InflictAction(this.game, undefined, player, player.location, true);
-                                    inflictAction.performInflict(status, false, false, false, undefined, timeRemaining);
+                                    await inflictAction.performInflict(status, false, false, false, undefined, timeRemaining, false);
                                 }
                             }
                             if (invalidStatusFound) continue;
@@ -2315,12 +2304,8 @@ export default class GameEntityLoader extends GameEntityManager {
                 let commandSets: FlagCommandSet[] = [];
                 let getCommands = function (commandString: string): FlagCommandSet {
                     const commands: string[] = commandString.split('/');
-                    let setCommands: string[] = commands[0] ? commands[0].split(/(?<!`.*?[^`])\s*?,/) : [];
-                    for (let i = 0; i < setCommands.length; i++)
-                        setCommands[i] = setCommands[i].trim();
-                    let clearedCommands: string[] = commands[1] ? commands[1].split(/(?<!`.*?[^`])\s*?,/) : [];
-                    for (let i = 0; i < clearedCommands.length; i++)
-                        clearedCommands[i] = clearedCommands[i].trim();
+                    let setCommands: string[] = commands[0] ? (commands[0].match(/(?:`[^`]*`|[^,])+/g)?.map(s => s.trim()).filter(s => s !== '') ?? []) : [];
+                    let clearedCommands: string[] = commands[1] ? (commands[1].match(/(?:`[^`]*`|[^,])+/g)?.map(s => s.trim()).filter(s => s !== '') ?? []) : [];
                     return { setCommands: setCommands, clearedCommands: clearedCommands };
                 };
                 const regex = new RegExp(/(\[((.*?): (.*?))\],?)/g);

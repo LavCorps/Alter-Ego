@@ -234,21 +234,21 @@ export default class Event extends GameEntity implements PersistentGameEntity {
 
     startEffectsTimer(): void {
         let event = this;
-        this.effectsTimer = new Timer(1000, { start: true, loop: true }, function () {
+        this.effectsTimer = new Timer(1000, { start: true, loop: true }, async function () {
             const rooms = event.getGame().entityFinder.getRooms(null, event.roomTag, true);
             for (let room of rooms) {
                 for (let occupant of room.occupants) {
-                    event.effects.forEach(effect => {
+                    for (const effect of event.effects) {
                         if (!occupant.hasStatus(effect.id)) {
                             const action = new InflictAction(event.getGame(), undefined, occupant, occupant.location, true);
-                            action.performInflict(effect, true, true, true);
+                            await action.performInflict(effect, true, true, true);
                         }
-                    });
-                    event.refreshes.forEach(refresh => {
+                    }
+                    for (const refresh of event.refreshes) {
                         let status: Status = occupant.status.get(refresh.id);
                         if (status !== undefined && status.remaining !== null)
                             status.remaining = refresh.duration;
-                    });
+                    }
                 }
             }
         });

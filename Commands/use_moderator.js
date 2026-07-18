@@ -101,6 +101,6 @@ export async function execute(game, message, command, args, moderator) {
     if (!item.usableOn(target)) return game.communicationHandler.reply(message, `${item.getIdentifier()} currently has no effect on ${target.name}.`);
     // Use the player's item.
     const action = new UseAction(game, message, player, player.location, true);
-    action.performUse(item, target, announcement);
+    await action.performUse(item, target, announcement);
     action.sendSuccessMessageToCommandChannel();
 }

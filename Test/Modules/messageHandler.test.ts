@@ -1556,7 +1556,6 @@ describe('messageHandler test', () => {
                             await hidingSpot.removePlayers(kiara);
                             luna.cure(hidden);
                             kiara.cure(hidden);
-                            await testGame.entityLoader.deleteWhisper(hidingSpot.whisper);
                             whisperLunaKiara = await testGame.entityLoader.createWhisper([luna, kiara]);
                         });
 
@@ -1584,7 +1583,6 @@ describe('messageHandler test', () => {
 
                             await hidingSpot.removePlayers(luna);
                             luna.cure(hidden);
-                            await testGame.entityLoader.deleteWhisper(hidingSpot.whisper);
                             whisperLunaKiara = await testGame.entityLoader.createWhisper([luna, kiara]);
                         });
 
@@ -1817,7 +1815,6 @@ describe('messageHandler test', () => {
                             await hidingSpot.removePlayers(kiara);
                             luna.cure(hidden);
                             kiara.cure(hidden);
-                            await testGame.entityLoader.deleteWhisper(hidingSpot.whisper);
                             whisperLunaKiara = await testGame.entityLoader.createWhisper([luna, kiara]);
                         });
 
@@ -1845,7 +1842,6 @@ describe('messageHandler test', () => {
 
                             await hidingSpot.removePlayers(kiara);
                             kiara.cure(hidden);
-                            await testGame.entityLoader.deleteWhisper(hidingSpot.whisper);
                             whisperLunaKiara = await testGame.entityLoader.createWhisper([luna, kiara]);
                         });
 
@@ -2075,7 +2071,6 @@ describe('messageHandler test', () => {
                         await hidingSpot.removePlayers(luna);
                         amadeus.cure(hidden);
                         luna.cure(hidden);
-                        await testGame.entityLoader.deleteWhisper(hidingSpot.whisper);
                         whisperAmadeusLuna = await testGame.entityLoader.createWhisper([amadeus, luna]);
                     });
 
@@ -2098,7 +2093,6 @@ describe('messageHandler test', () => {
 
                         await hidingSpot.removePlayers(amadeus);
                         amadeus.cure(hidden);
-                        await testGame.entityLoader.deleteWhisper(hidingSpot.whisper);
                         whisperAmadeusLuna = await testGame.entityLoader.createWhisper([amadeus, luna]);
                     });
 
@@ -2131,7 +2125,6 @@ describe('messageHandler test', () => {
                         luna.cure(hidden);
                         amadeus.displayName = amadeus.name;
                         amadeus.displayIcon = null;
-                        await testGame.entityLoader.deleteWhisper(hidingSpot.whisper);
                         whisperAmadeusLuna = await testGame.entityLoader.createWhisper([amadeus, luna]);
                     });
 
@@ -2252,7 +2245,6 @@ describe('messageHandler test', () => {
                                 await hidingSpot.removePlayers(luna);
                                 amadeus.cure(hidden);
                                 luna.cure(hidden);
-                                await testGame.entityLoader.deleteWhisper(hidingSpot.whisper);
                                 whisperAmadeusLuna = await testGame.entityLoader.createWhisper([amadeus, luna]);
                             });
 
@@ -2403,7 +2395,6 @@ describe('messageHandler test', () => {
                                 await hidingSpot.removePlayers(luna);
                                 amadeus.cure(hidden);
                                 luna.cure(hidden);
-                                await testGame.entityLoader.deleteWhisper(hidingSpot.whisper);
                                 whisperAmadeusLuna = await testGame.entityLoader.createWhisper([amadeus, luna]);
                             });
 
@@ -2524,7 +2515,6 @@ describe('messageHandler test', () => {
                         await hidingSpot.removePlayers(luna);
                         amadeus.cure(hidden);
                         luna.cure(hidden);
-                        await testGame.entityLoader.deleteWhisper(hidingSpot.whisper);
                         whisperAmadeusLuna = await testGame.entityLoader.createWhisper([amadeus, luna]);
                     });
 
@@ -2547,7 +2537,6 @@ describe('messageHandler test', () => {
 
                         await hidingSpot.removePlayers(luna);
                         luna.cure(hidden);
-                        await testGame.entityLoader.deleteWhisper(hidingSpot.whisper);
                         whisperAmadeusLuna = await testGame.entityLoader.createWhisper([amadeus, luna]);
                     });
 
@@ -2581,7 +2570,6 @@ describe('messageHandler test', () => {
                         luna.cure(hidden);
                         luna.displayName = luna.name;
                         luna.displayIcon = null;
-                        await testGame.entityLoader.deleteWhisper(hidingSpot.whisper);
                         whisperAmadeusLuna = await testGame.entityLoader.createWhisper([amadeus, luna]);
                     });
 
@@ -2702,7 +2690,6 @@ describe('messageHandler test', () => {
                                 await hidingSpot.removePlayers(luna);
                                 amadeus.cure(hidden);
                                 luna.cure(hidden);
-                                await testGame.entityLoader.deleteWhisper(hidingSpot.whisper);
                                 whisperAmadeusLuna = await testGame.entityLoader.createWhisper([amadeus, luna]);
                             });
 
@@ -2825,7 +2812,6 @@ describe('messageHandler test', () => {
                         luna.cure(hidden);
                         luna.displayName = luna.name;
                         luna.displayIcon = null;
-                        await testGame.entityLoader.deleteWhisper(hidingSpot.whisper);
                         whisperAmadeusLuna = await testGame.entityLoader.createWhisper([amadeus, luna]);
                     });
 
@@ -2900,7 +2886,6 @@ describe('messageHandler test', () => {
                                 await hidingSpot.removePlayers(luna);
                                 amadeus.cure(hidden);
                                 luna.cure(hidden);
-                                await testGame.entityLoader.deleteWhisper(hidingSpot.whisper);
                                 whisperAmadeusLuna = await testGame.entityLoader.createWhisper([amadeus, luna]);
                             });
 

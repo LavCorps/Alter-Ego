@@ -19,7 +19,7 @@ export default class HideAction extends Action {
      *
      * @param hidingSpot - The hiding spot to hide in.
      */
-    performHide(hidingSpot: HidingSpot): void {
+    async performHide(hidingSpot: HidingSpot): Promise<void> {
         if (this.performed) return;
         super.perform();
 
@@ -29,12 +29,12 @@ export default class HideAction extends Action {
         this.getGame().narrationHandler.narrateHide(this, hidingSpot, this.player, players);
         let successful = false;
         if (hidingSpot.occupants.length + players.size <= hidingSpot.capacity || this.forced) {
-            hidingSpot.addPlayers(players);
             const hiddenStatus = this.getGame().entityFinder.getStatusEffect("hidden");
             for (const player of players) {
                 const hiddenStatusAction = new InflictAction(this.getGame(), undefined, player, player.location, false);
-                hiddenStatusAction.performInflict(hiddenStatus, true, false, true);
+                await hiddenStatusAction.performInflict(hiddenStatus, true, false, true);
             }
+            await hidingSpot.addPlayers(players);
             const occupantsString = this.location.generateOccupantsString(this.location.occupants.filter(occupant => !occupant.isHidden() && !players.has(occupant)));
             this.location.setOccupantsString(occupantsString);
             // If a party is hiding before their positions are synchronized, we must make them stop moving, and synchronize their positions manually.

@@ -524,9 +524,10 @@ export default class Fixture extends RecipeProcessor implements PersistentGameEn
 
     /**
      * Gets the fixture's name preceded by "the".
+     * It will not be preceded by "the" if its name ends in a number.
      */
     getContainingPhrase(): string {
-        return `the ${this.name}`;
+        return this.name.match(/.*\d+$/) ? this.name : `the ${this.name}`;
     }
 
     /**

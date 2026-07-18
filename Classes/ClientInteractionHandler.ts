@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+// SPDX-FileCopyrightText: 2026 Ms. VBLANK <alteregomolly@pm.me>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -22,6 +23,7 @@ import UncraftAction from "../Data/Actions/UncraftAction.ts";
 import UseAction from "../Data/Actions/UseAction.ts";
 import ActivateAction from "../Data/Actions/ActivateAction.ts";
 import DeactivateAction from "../Data/Actions/DeactivateAction.ts";
+import AttemptAction from "../Data/Actions/AttemptAction.ts";
 import InstantiateInventoryItemAction from "../Data/Actions/InstantiateInventoryItemAction.ts";
 import InstantiateRoomItemAction from "../Data/Actions/InstantiateRoomItemAction.ts";
 import DestroyInventoryItemAction from "../Data/Actions/DestroyInventoryItemAction.ts";
@@ -346,7 +348,7 @@ export default class ClientInteractionHandler {
             const parsedArgs = action.parseInteractionArgs(args);
             const validatedArgs = action.validateInteractionArgs(parsedArgs);
             if (validatedArgs.length === 2) {
-                action.performUse(validatedArgs[0], validatedArgs[1]);
+                await action.performUse(validatedArgs[0], validatedArgs[1]);
                 this.#replyOrDeleteActionResponse(action, interaction, reply);
                 this.#logInteraction("UseAction", author, timestamp, validatedArgs);
                 return true;
@@ -375,6 +377,20 @@ export default class ClientInteractionHandler {
                     action.performDeactivate(validatedArgs[0], validatedArgs[1]);
                     this.#replyOrDeleteActionResponse(action, interaction, reply);
                     this.#logInteraction("DeactivateAction", author, timestamp, validatedArgs);
+                    return true;
+                }
+            }
+            catch (error) { throw new Error(error.message); }
+        }
+        if (action instanceof AttemptAction) {
+            const args = interactable.actionDirective.getArgs();
+            const parsedArgs = action.parseInteractionArgs(args);
+            try {
+                const validatedArgs = action.validateInteractionArgs(parsedArgs);
+                if (validatedArgs.length === 6) {
+                    action.performAttempt(validatedArgs[0], validatedArgs[1], validatedArgs[2], validatedArgs[3], validatedArgs[4], validatedArgs[5]);
+                    this.#replyOrDeleteActionResponse(action, interaction, reply);
+                    this.#logInteraction("AttemptAction", author, timestamp, validatedArgs);
                     return true;
                 }
             }

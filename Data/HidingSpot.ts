@@ -63,7 +63,7 @@ export default class HidingSpot extends GameEntity {
     async addPlayers(players: Set<Player> | Player[] | Player): Promise<void> {
         if (!(players instanceof Set) && !(players instanceof Array)) players = new Set([players]);
         if (!(players instanceof Set)) players = new Set(players);
-        if (players.values().every(player => player.canSee())) await this.deleteWhisper();
+        await this.deleteWhisper();
         for (const player of players) {
             this.occupants.push(player);
             player.hidingSpot = this.name;
@@ -86,6 +86,7 @@ export default class HidingSpot extends GameEntity {
             await player.removeFromWhispers(whisperNarration, action, false);
             player.hidingSpot = "";
         }
+        if (this.occupants.length === 0) await this.deleteWhisper();
     }
 
     /**
@@ -106,9 +107,10 @@ export default class HidingSpot extends GameEntity {
 
     /**
      * Gets the fixture's name preceded by "the".
+     * It will not be preceded by "the" if its name ends in a number.
      */
     getContainingPhrase(): string {
-        return `the ${this.name}`;
+        return this.#fixture.getContainingPhrase();
     }
 
     /**
@@ -131,7 +133,12 @@ export default class HidingSpot extends GameEntity {
      * @param viewerHasNoSightBehaviorAttribute - Whether or not to return a vague list indicating the quantity of occupants. Defaults to `false`.
      */
     generateOccupantsString(viewerHasNoSightBehaviorAttribute: boolean = false): string {
-        if (viewerHasNoSightBehaviorAttribute) return this.occupants.length > 1 ? `${String(this.occupants.length)} people` : `someone`;
+        if (viewerHasNoSightBehaviorAttribute)
+            return this.occupants.length > 1
+                ? `${String(this.occupants.length)} people`
+                : this.occupants.length === 1
+                    ? `someone`
+                    : ``;
         return generatePlayerListString(this.occupants);
     }
 

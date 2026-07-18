@@ -18,13 +18,13 @@ export default class UseAction extends Action {
      * @param target - The target the player should use the inventory item on. Defaults to themself.
      * @param customNarration - The custom text of the narration. Optional.
      */
-    performUse(item: InventoryItem, target: Player = this.player, customNarration?: string): void {
+    async performUse(item: InventoryItem, target: Player = this.player, customNarration?: string): Promise<void> {
         if (this.performed) return;
         super.perform();
         this.getGame().narrationHandler.narrateUse(this, item, this.player, target, customNarration);
         this.getGame().logHandler.logUse(item, this.player, target, this.forced);
         const itemIdentifier = item.getIdentifier();
-        this.player.use(item, target);
+        await this.player.use(item, target);
         const targetString = target.name !== this.player.name ? `on ${target.name} ` : ``;
         this.successMessage = `Successfully used ${itemIdentifier} ${targetString}for ${this.player.name}.`;
     }

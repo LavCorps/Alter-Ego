@@ -1,9 +1,10 @@
 // SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+// SPDX-FileCopyrightText: 2026 Ms. VBLANK <alteregomolly@pm.me>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import type Interactable from "../../Classes/Interactables/Interactable.ts";
-import { getSortedItemsString } from "../../Modules/helpers.ts";
+import { getSortedItemsString, round } from "../../Modules/helpers.ts";
 import Action from "../Action.ts";
 import type EquipmentSlot from "../EquipmentSlot.ts";
 import Fixture from "../Fixture.ts";
@@ -30,7 +31,7 @@ export default class TakeAction extends Action {
     performTake(item: RoomItem, handEquipmentSlot: EquipmentSlot, container: RoomItemContainer, inventorySlot: InventorySlot<RoomItem>, notify: boolean = true): void {
         if (this.performed) return;
         super.perform();
-        const successful = this.forced || this.player.carryWeight + item.weight <= this.player.maxCarryWeight;
+        const successful = this.forced || round(this.player.carryWeight + item.weight) <= this.player.maxCarryWeight;
         this.getGame().logHandler.logTake(item, this.player, container, inventorySlot, successful, this.forced);
         if (!successful) {
             this.getGame().narrationHandler.narrateFailedTake(this, item, this.player, notify);

@@ -1,8 +1,10 @@
 // SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+// SPDX-FileCopyrightText: 2026 Ms. VBLANK <alteregomolly@pm.me>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { itemIdentifierMatches } from "../Modules/matchers.ts";
+import { round } from "../Modules/helpers.ts";
 import Description from "./Description.ts";
 import Event from "./Event.ts";
 import type Fixture from "./Fixture.ts";
@@ -258,10 +260,47 @@ export default class Puzzle extends ItemContainer implements PersistentGameEntit
     }
 
     /**
+     * Gets a second-person verb to use to describe how a player attempts this puzzle.
+     * The verb chosen largely depends on the puzzle's name and type.
+     * The default verb is "use".
+     */
+    getAttemptVerb(): string {
+        const names = this.parentFixture ? `${this.name} ${this.parentFixture.name}` : this.name;
+        const nameWords = new Set(names.split(' '));
+        if (nameWords.has("BUTTON")) return "press";
+        if (nameWords.has("SWITCH") || nameWords.has("lever")) return "flip";
+        if (nameWords.has("BOLT") && this.type === "toggle") return "flip";
+        if (nameWords.has("SHOWER") && this.solved) return "turn off";
+        if (nameWords.has("TELEVISION") && this.solved) return "turn off";
+        else return "use";
+    }
+
+    /**
+     * Returns the args for the Attempt ActionDirective for this puzzle.
+     * Intended to be used for puzzles that can be attempted with only the press of a button.
+     * @returns [name, location, type, undefined (item identifier), undefined (item containerName), undefined (item equipmentSlot), undefined (proceduralSelectionsString), "" (password), getAttemptVerb() (command), name (input), "" (targetPlayer displayName)]
+     */
+    getButtonAttemptActionDirectiveArgs(): [string, string, string, string, string, string, string, string, string, string, string] {
+        return [
+            this.name,
+            this.location.id,
+            this.type,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            "",
+            this.getAttemptVerb(),
+            this.name,
+            ""
+        ];
+    }
+
+    /**
      * Returns the args for the InstantiateRoomItem ActionDirective for this puzzle.
      * @returns ["PZ", name, location, preposition, type]
      */
-    getPartialInstantiateActionDirectiveArgs() {
+    getPartialInstantiateActionDirectiveArgs(): [string, string, string, string, string] {
         return ["PZ", this.name, this.location.displayName, this.getPreposition(), this.type];
     }
 
@@ -304,14 +343,14 @@ export default class Puzzle extends ItemContainer implements PersistentGameEntit
     }
 
     /**
-	 * Gets all of the items that should appear in the puzzle's item list.
+     * Gets all of the items that should appear in the puzzle's item list.
      *
-	 * @param itemListName - The name of the item list. Unused.
-	 * @param player - The player the description is being sent to. Unused.
-	 */
-	override getContainedItemsForItemList(itemListName?: string, player?: Player): RoomItem[] {
-		return this.getGame().entityFinder.getRoomItems(undefined, this.location.id, undefined, 'Puzzle', this.name);
-	}
+     * @param itemListName - The name of the item list. Unused.
+     * @param player - The player the description is being sent to. Unused.
+     */
+    override getContainedItemsForItemList(itemListName?: string, player?: Player): RoomItem[] {
+        return this.getGame().entityFinder.getRoomItems(undefined, this.location.id, undefined, 'Puzzle', this.name);
+    }
 
     /**
      * Returns true if this entity contains an item with the given identifier or prefab ID.
@@ -452,9 +491,14 @@ export default class Puzzle extends ItemContainer implements PersistentGameEntit
 
     /**
      * Gets the name of the parent fixture preceded by "the". If no parent fixture exists, returns the puzzle's name preceded by "the" instead.
+     * If the puzzle's name or the name of its parent fixture ends with a number, it will not be preceded by "the".
      */
     getContainingPhrase(): string {
-        return this.parentFixture ? this.parentFixture.getContainingPhrase() : `the ${this.name}`;
+        return this.parentFixture
+            ? this.parentFixture.getContainingPhrase()
+            : this.name.match(/.*\d+$/)
+                ? this.name
+                : `the ${this.name}`;
     }
 
     /**
@@ -519,6 +563,24 @@ export default class Puzzle extends ItemContainer implements PersistentGameEntit
     }
 
     /**
+     * Returns the solution that is satisfied by the given weight. If the weight doesn't satisfy any solutions, returns undefined.
+     * The weight and solutions are rounded by the {@link round} function to the default number of decimal places.
+     *
+     * @param weightString - The weight being used to attempt the puzzle, in the form of a string.
+     */
+    getSolutionSatisfiedByWeight(weightString: string): string {
+        const weight = round(parseFloat(weightString));
+        if (!isNaN(weight)) {
+            for (const solution of this.solutions) {
+                const solutionValue = round(parseFloat(solution));
+                if (isNaN(solutionValue)) continue;
+                if (solutionValue === weight) return solution;
+            }
+        }
+        return undefined;
+    }
+
+    /**
      * Returns the solution that is satisfied by the given item. If the item doesn't satisfy any solutions, returns undefined.
      *
      * @param item - The item being used to attempt the puzzle.
@@ -526,7 +588,7 @@ export default class Puzzle extends ItemContainer implements PersistentGameEntit
     getSolutionSatisfiedByItem(item: ItemInstance): string {
         for (const solution of this.solutions) {
             if ((solution.startsWith("Item:") || solution.startsWith("InventoryItem:") || solution.startsWith("Prefab:"))
-            && item.prefab.id === solution.substring(solution.indexOf(':') + 1).trim()) {
+                && item.prefab.id === solution.substring(solution.indexOf(':') + 1).trim()) {
                 return solution;
             }
         }

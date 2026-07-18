@@ -47,6 +47,7 @@ export const ActionPriority = {
     USE: 30,
     UNEQUIP: 35,
     DROP: 40,
+    ATTEMPT: 41,
     ACTIVATE: 45,
     DEACTIVATE: 46,
     VIEW_PARTY: 50,

@@ -15,6 +15,7 @@ import type Room from '../Data/Room.ts';
 import type Player from '../Data/Player.ts';
 import type CollatedItem from '../Data/CollatedItem.ts';
 import type EquipmentSlot from '../Data/EquipmentSlot.ts';
+import { round } from './helpers.ts';
 
 /**
  * Instantiates a new room item in the specified location and container.
@@ -480,7 +481,7 @@ export function insertRoomItems(location: Room, items: RoomItem[]): void {
             }
             else itemContainer = item.container;
             matchedItem.container = itemContainer;
-            matchedItem.weight = item.weight;
+            matchedItem.weight = round(item.weight);
             matchedItem.inventory = item.inventory;
             // Update container's references to this item.
             if (item.container instanceof RoomItem) {
@@ -568,7 +569,7 @@ export function insertInventoryItems(player: Player, items: InventoryItem[], equ
             const containerRow = matchedItem.container !== null ? matchedItem.container.row : 0;
             matchedItem.container = item.container;
             if (containerRow !== 0 && item.container.row === 0) matchedItem.container.setRow(containerRow);
-            matchedItem.weight = item.weight;
+            matchedItem.weight = round(item.weight);
             matchedItem.inventory = item.inventory;
             // Update container's references to this item.
             if (item.container instanceof InventoryItem) {

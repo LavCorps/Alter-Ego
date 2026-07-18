@@ -47,6 +47,7 @@ export default class EmergeAction extends Action {
             const cureAction = new CureAction(this.getGame(), undefined, player, player.location, true);
             cureAction.performCure(hiddenStatus, true, false, true);
         }
+        this.location?.setOccupantsString();
 
         const emergingPlayerList = generateListString(Array.from(players).map(player => player.name));
         this.getGame().logHandler.logEmerge(hidingSpot, this.player, emergingPlayerList, this.forced);

@@ -119,6 +119,10 @@ describe('StartMoveAction test', () => {
      * Inflicts spd-4, getting Nero to the speed we need him at.
      */
     let crutches: Status;
+    /**
+     * Prevents being inflicted with cold.
+     */
+    let bundledUp: Status;
     let lobbyFirstNarrationMessage: Message<boolean>;
     let lobbyLastNarrationMessage: Message<boolean>;
     let hall3NarrationMessage: Message<boolean>;
@@ -189,6 +193,7 @@ describe('StartMoveAction test', () => {
         concealed = testGame.entityFinder.getStatusEffect("concealed");
         cheerful = testGame.entityFinder.getStatusEffect("cheerful");
         crutches = testGame.entityFinder.getStatusEffect("crutches");
+        bundledUp = testGame.entityFinder.getStatusEffect("bundled up");
         astrid.inflict(fast);
         astrid.inflict(concealed);
         concealedDisplayName = "an individual wearing a MASK";
@@ -196,6 +201,9 @@ describe('StartMoveAction test', () => {
         astrid.displayName = concealedDisplayName;
         asuka.inflict(cheerful);
         nero.inflict(crutches);
+        astrid.inflict(bundledUp);
+        asuka.inflict(bundledUp);
+        nero.inflict(bundledUp);
     });
 
     beforeEach(async () => {
@@ -209,7 +217,8 @@ describe('StartMoveAction test', () => {
         moveSpy = vi.spyOn(MoveAction.prototype, 'performMove');
         await sendMessages();
         clearMessages();
-        vi.useFakeTimers();        asuka.setPos(hall5.pos);
+        vi.useFakeTimers();
+        asuka.setPos(hall5.pos);
         nero.setPos(mainEntrance.pos);
     });
 
@@ -235,6 +244,9 @@ describe('StartMoveAction test', () => {
         astrid.setPronouns(astrid.pronouns, astrid.pronounString);
         asuka.cure(cheerful);
         nero.cure(crutches);
+        astrid.cure(bundledUp);
+        asuka.cure(bundledUp);
+        nero.cure(bundledUp);
     });
 
     test('Setup is correct', () => {

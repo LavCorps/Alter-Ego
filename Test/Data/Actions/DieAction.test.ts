@@ -63,11 +63,11 @@ describe('DieAction test', () => {
         nero.location.addPlayer(luna);
         hidingSpot = testGame.entityFinder.getFixture("RECEPTION DESK", asuka.location.id).hidingSpot;
         const hideAction1 = new HideAction(testGame, undefined, asuka, asuka.location, true);
-        hideAction1.performHide(hidingSpot);
+        await hideAction1.performHide(hidingSpot);
         const hideAction2 = new HideAction(testGame, undefined, nero, nero.location, true);
-        hideAction2.performHide(hidingSpot);
+        await hideAction2.performHide(hidingSpot);
         const hideAction3 = new HideAction(testGame, undefined, luna, luna.location, true);
-        hideAction3.performHide(hidingSpot)
+        await hideAction3.performHide(hidingSpot)
         const followAction1 = new FollowAction(testGame, undefined, astrid, astrid.location, true);
         await followAction1.performFollow(nero);
         const followAction2 = new FollowAction(testGame, undefined, asuka, asuka.location, true);
