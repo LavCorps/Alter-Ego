@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+// SPDX-FileCopyrightText: 2026 LavCorps <lavcorps@protonmail.com>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -166,6 +167,14 @@ export default class Fixture extends RecipeProcessor implements PersistentGameEn
     /** Gets the entity's location. */
     getLocation(): Room {
         return this.location;
+    }
+
+    /**
+     * Returns the args for an ActionDirective that only needs to be able to look up this Fixture.
+     * @returns [name, location]
+     */
+    getGeneralActionDirectiveArgs(): string[] {
+        return [this.name, this.location.id];
     }
 
     /** A keyword or phrase assigned to an fixture's recipe that allows it to carry out recipes that require it. */

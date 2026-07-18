@@ -391,13 +391,13 @@ export default class ClientInteractableManager {
      * @param user - The user these interactables are being created for. Defaults to the given player.
      * @param label - The label to display in the interactable. Defaults to "Hide".
      */
-    createHideActionInteractable(fixture: Fixture, player: Player, user: User = player, label: string = "Hide"): ButtonInteractable[] {
+    createHideActionInteractable(fixture: Fixture, player: Player, user: User = player): ButtonInteractable[] {
         if (!player.canUseCommand("hide")) return [];
         if (fixture.hidingSpotCapacity === 0 || !fixture.hidingSpot) return [];
         if (player.isHidden()) return [];
-        const actionDirective = this.#createActionDirective(HideAction, [fixture.name, fixture.location.id], player, user);
-        const interactableOptions = new InteractableOptions(actionDirective, label);
-        return [this.#createButtonInteractable(interactableOptions, ButtonStyle.Secondary, 0)];
+        const actionDirective = this.#createActionDirective(HideAction, fixture.getGeneralActionDirectiveArgs(), player, user);
+        const interactableOptions = new InteractableOptions(actionDirective, "Hide");
+        return [this.#createButtonInteractable(interactableOptions, ButtonStyle.Secondary, ActionPriority.HIDE)];
     }
 
     /**
@@ -407,13 +407,13 @@ export default class ClientInteractableManager {
      * @param user - The user these interactables are being created for. Defaults to the given player.
      * @param label - The label to display in the interactable. Defaults to "Emerge".
      */
-    createEmergeActionInteractable(fixture: Fixture, player: Player, user: User = player, label: string = "Emerge"): ButtonInteractable[] {
+    createEmergeActionInteractable(fixture: Fixture, player: Player, user: User = player): ButtonInteractable[] {
         if (!player.canUseCommand("hide")) return [];
         if (fixture.hidingSpotCapacity === 0 || !fixture.hidingSpot) return [];
         if (!player.isHidden() || player.hidingSpot !== fixture.name) return [];
-        const actionDirective = this.#createActionDirective(EmergeAction, [fixture.name, fixture.location.id], player, user);
-        const interactableOptions = new InteractableOptions(actionDirective, label);
-        return [this.#createButtonInteractable(interactableOptions, ButtonStyle.Secondary, 0)];
+        const actionDirective = this.#createActionDirective(EmergeAction, fixture.getGeneralActionDirectiveArgs(), player, user);
+        const interactableOptions = new InteractableOptions(actionDirective, "Emerge");
+        return [this.#createButtonInteractable(interactableOptions, ButtonStyle.Secondary, ActionPriority.EMERGE)];
     }
 
     /**
