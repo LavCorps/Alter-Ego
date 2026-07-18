@@ -19,8 +19,9 @@ import InventoryItem from "../Data/InventoryItem.ts";
 import ItemInstance from "../Data/ItemInstance.ts";
 import type Exit from "../Data/Exit.ts";
 import Moderator from "../Data/Moderator.ts";
-import Recipe from "../Data/Recipe.ts";
 import Player from "../Data/Player.ts";
+import type Puzzle from "../Data/Puzzle.ts";
+import Recipe from "../Data/Recipe.ts";
 import RoomItem from "../Data/RoomItem.ts";
 import ActionDirective from "./ActionDirective.ts";
 import QueueMoveAction from "../Data/Actions/QueueMoveAction.ts";
@@ -52,7 +53,6 @@ import ViewAction, { type EntityField } from "../Data/Actions/ViewAction.ts";
 import { removeInteractablesFromMessage } from "../Modules/messageHandler.ts";
 import { ActionPriority } from "../Modules/enums.ts";
 import { capitalizeFirstLetter, getSortedItems } from "../Modules/helpers.ts";
-import type Puzzle from "../Data/Puzzle.ts";
 import HideAction from "../Data/Actions/HideAction.ts";
 import EmergeAction from "../Data/Actions/EmergeAction.ts";
 
@@ -678,14 +678,38 @@ export default class ClientInteractableManager {
      * @param player - The player these interactables are being created for.
      * @param user - The user these interactables are being created for. Defaults to the given player.
      */
-    private createAttemptButtonInteractables(puzzle: Puzzle, player: Player, user: User = player): ButtonInteractable[] {
+    private createSimpleAttemptInteractables(puzzle: Puzzle, player: Player, user: User = player): ButtonInteractable[] {
         if (!player.canUseCommand("use")) return [];
-        const actionDirective = this.#createActionDirective(AttemptAction, puzzle.getButtonAttemptActionDirectiveArgs(), player, user);
-        const name = puzzle.parentFixture ? puzzle.parentFixture.name : puzzle.name;
-        const label = `${capitalizeFirstLetter(puzzle.getAttemptVerb())} ${name}`;
+        const actionDirective = this.#createActionDirective(AttemptAction, puzzle.getAttemptActionDirectiveArgs(), player, user);
+        const label = `${capitalizeFirstLetter(puzzle.getAttemptVerb())} ${puzzle.getDisplayName()}`;
         const interactableOptions = new InteractableOptions(actionDirective, label);
         return [this.#createButtonInteractable(interactableOptions, ButtonStyle.Primary, ActionPriority.ATTEMPT)];
+    }
 
+    /**
+     * Creates String Select Menu Interactables for a puzzle attemptable with an item and adds them to the cache.
+     * @param puzzle - The puzzle that can be attempted.
+     * @param items - The inventory items the puzzle can be attempted with.
+     * @param player - The player these interactables are being created for.
+     * @param user - The user these interactables are being created for. Defaults to the given player.
+     */
+    private createAttemptWithItemInteractables(puzzle: Puzzle, items: InventoryItem[], player: Player, user: User = player): StringSelectMenuInteractable[] {
+        if (!player.canUseCommand("use")) return [];
+        const interactableOptions: InteractableOptions<AttemptAction>[] = [];
+        const puzzleName = puzzle.getDisplayName();
+        const verb = `${capitalizeFirstLetter(puzzle.getAttemptVerb())}`;
+        const preposition = `${puzzle.getAttemptWithItemPreposition()}`;
+        for (const item of items) {
+            const actionDirective = this.#createActionDirective(AttemptAction, puzzle.getAttemptActionDirectiveArgs(item), player, user);
+            const label = `${item.name}`;
+            let description: string;
+            if (preposition === "with")
+                description = `${verb} ${puzzleName} ${preposition} ${item.name}`;
+            else description = `${verb} ${item.name} ${preposition} ${puzzleName}`;
+            interactableOptions.push(new InteractableOptions(actionDirective, description, label, description));
+        }
+        const actionDirective = this.#createActionDirective(AttemptAction, ["AttemptAction Menu"], player, user);
+        return this.#createStringSelectMenuInteractable(actionDirective, interactableOptions, verb, ActionPriority.ATTEMPT);
     }
 
     /**
@@ -1282,10 +1306,29 @@ export default class ClientInteractableManager {
     getAttemptInteractables(puzzle: Puzzle, player: Player, user: User = player): Interactable[] {
         let interactables: Interactable[] = [];
         const matchingFixture = this.#game.entityFinder.getFixture(puzzle.name, puzzle.location.id);
+        const playerHandIDs = new Set(this.#game.entityFinder.getPlayerHands(player).map(hand => hand.id));
+        // The player's held items and stashed items.
+        const inventoryItems = player.getContainedItems().filter(item => item.container !== null || playerHandIDs.has(item.equipmentSlot));
+        // Check if we can make the player select a single item from their inventory to attempt the puzzle with.
+        const itemSolutions = puzzle.solutions.filter(solution => solution.startsWith("Item:") || solution.startsWith("InventoryItem:") || solution.startsWith("Prefab:"));
+        const noMultiItemSolutions = itemSolutions.every(solution => !solution.includes("+"));
+        const puzzleRequiresOneItem = puzzle.requirementsStrings.filter(requirement => requirement.type === "Prefab").length === 1 || itemSolutions.length > 0 && noMultiItemSolutions;
+        const playerCanSelectItem = puzzleRequiresOneItem && inventoryItems.length > 0;
         if (!matchingFixture || matchingFixture.recipeTag === "") {
-            const buttonTypes = new Set(["interact", "toggle", "player", "player toggle", "matrix"]);
-            if (buttonTypes.has(puzzle.type) || puzzle.type.endsWith("probability"))
-                interactables = interactables.concat(this.createAttemptButtonInteractables(puzzle, player, user));
+            const simpleTypes = new Set(["interact", "toggle", "player", "player toggle", "matrix"]);
+            const mixedTypes = new Set(["channels", "option", "media", "key lock"]);
+            if (simpleTypes.has(puzzle.type) || puzzle.type.endsWith("probability")) {
+                if (playerCanSelectItem)
+                    interactables = interactables.concat(this.createAttemptWithItemInteractables(puzzle, inventoryItems, player, user));
+                else interactables = interactables.concat(this.createSimpleAttemptInteractables(puzzle, player, user));
+            }
+            else if (mixedTypes.has(puzzle.type)) {
+                if (playerCanSelectItem && !puzzle.solved && (puzzle.type === "key lock" || puzzle.type === "media"))
+                    interactables = interactables.concat(this.createAttemptWithItemInteractables(puzzle, inventoryItems, player, user));
+                // All of these puzzle types can be attempted plainly if they're solved, regardless of solved state. Provide a button to do so.
+                if (puzzle.solved)
+                    interactables = interactables.concat(this.createSimpleAttemptInteractables(puzzle, player, user));
+            }
         }
         return interactables;
     }
