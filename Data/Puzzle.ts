@@ -273,7 +273,9 @@ export default class Puzzle extends ItemContainer implements PersistentGameEntit
         else if ((this.type === "key lock" || this.type === "combination lock")) return "unlock";
         if (this.type === "media" && this.solved) return "eject";
         else if (this.type === "media") return "insert";
+        if (this.type === "switch" || this.type === "room player") return "set";
         if (this.type === "option" && this.solved) return "clear";
+        else if (this.type === "option") return "set";
         if (nameWords.has("BUTTON")) return "press";
         if (nameWords.has("SWITCH") || nameWords.has("lever")) return "flip";
         if (nameWords.has("BOLT") && this.type === "toggle") return "flip";
@@ -292,6 +294,8 @@ export default class Puzzle extends ItemContainer implements PersistentGameEntit
         else if ((this.type === "key lock" || this.type === "combination lock")) return "with";
         if (this.type === "media" && this.solved) return "from";
         else if (this.type === "media") return "into";
+        if (this.type === "switch" || this.type === "room player") return "to";
+        if (this.type === "option" && !this.solved) return "to";
         return "on";
     }
 
