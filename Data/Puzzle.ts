@@ -1,9 +1,11 @@
 // SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+// SPDX-FileCopyrightText: 2026 Ms. VBLANK <alteregomolly@pm.me>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { parseAndExecuteBotCommands } from "../Modules/commandHandler.ts";
 import { itemIdentifierMatches } from "../Modules/matchers.ts";
+import { round } from "../Modules/helpers.ts";
 import Description from "./Description.ts";
 import Event from "./Event.ts";
 import type Fixture from "./Fixture.ts";
@@ -520,6 +522,24 @@ export default class Puzzle extends ItemContainer implements PersistentGameEntit
         };
         for (const solution of this.solutions) {
             if (itemsMatch(solution)) return solution;
+        }
+        return undefined;
+    }
+
+    /**
+     * Returns the solution that is satisfied by the given weight. If the weight doesn't satisfy any solutions, returns undefined.
+     * The weight and solutions are rounded by the {@link round} function to the default number of decimal places.
+     *
+     * @param weightString - The weight being used to attempt the puzzle, in the form of a string.
+     */
+    getSolutionSatisfiedByWeight(weightString: string): string {
+        const weight = round(parseFloat(weightString));
+        if (!isNaN(weight)) {
+            for (const solution of this.solutions) {
+                const solutionValue = round(parseFloat(solution));
+                if (isNaN(solutionValue)) continue;
+                if (solutionValue === weight) return solution;
+            }
         }
         return undefined;
     }

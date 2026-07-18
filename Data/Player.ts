@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+// SPDX-FileCopyrightText: 2026 Ms. VBLANK <alteregomolly@pm.me>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -9,7 +10,7 @@ import Timer from "../Classes/Timer.ts";
 import { MessageDisplayType, WhisperType } from "../Modules/enums.ts";
 import * as itemManager from "../Modules/itemManager.ts";
 import { itemIdentifierMatches } from "../Modules/matchers.ts";
-import { capitalizeFirstLetter, generateListString, makeCopyable } from "../Modules/helpers.ts";
+import { capitalizeFirstLetter, generateListString, makeCopyable, round } from "../Modules/helpers.ts";
 import type Action from "./Action.ts";
 import CureAction from "./Actions/CureAction.ts";
 import DieAction from "./Actions/DieAction.ts";
@@ -1204,7 +1205,7 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
      * Calculates the player's maximum carry weight in kilograms.
      */
     getMaxCarryWeight(): number {
-        return Math.floor(1.783 * Math.pow(this.strength, 2) - 2 * this.strength + 22);
+        return round(1.783 * Math.pow(this.strength, 2) - 2 * this.strength + 22);
     }
 
     /**
@@ -1266,7 +1267,7 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
 
     override getContainedItemsWeight(): number {
         const containedItems = this.inventory.map(equipmentSlot => equipmentSlot.equippedItem).filter(item => item !== null);
-        return containedItems.reduce((total, item) => total + (!isNaN(item.quantity) ? item.quantity * item.weight : 0), 0);
+        return round(containedItems.reduce((total, item) => total + (!isNaN(item.quantity) ? item.quantity * item.weight : 0), 0));
     }
 
     /**

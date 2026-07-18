@@ -24,7 +24,7 @@ import Gesture from '../Data/Gesture.ts';
 import { default as Flag, type FlagCommandSet } from '../Data/Flag.ts';
 import InflictAction from '../Data/Actions/InflictAction.ts';
 import { getSheetValues } from '../Modules/sheets.js';
-import { convertTimeStringToDurationUnits, parseDuration, validateDuration } from '../Modules/helpers.ts';
+import { round, convertTimeStringToDurationUnits, parseDuration, validateDuration } from '../Modules/helpers.ts';
 import { parsePrefabPossibleNames } from '../Modules/stringDataExtractor.ts';
 import { ChannelType, Collection, type GuildBasedChannel, type GuildMember } from 'discord.js';
 import { Duration } from 'luxon';
@@ -732,7 +732,7 @@ export default class GameEntityLoader extends GameEntityManager {
                     possibleContainingPhrases,
                     sheet[row][columnDiscreet] ? sheet[row][columnDiscreet].trim() === "TRUE" : false,
                     parseInt(sheet[row][columnSize]),
-                    parseInt(sheet[row][columnWeight]),
+                    round(parseFloat(sheet[row][columnWeight])),
                     sheet[row][columnUsable] ? sheet[row][columnUsable].trim() === "TRUE" : false,
                     useVerbs[0] ? useVerbs[0].trim() : "",
                     useVerbs[1] ? useVerbs[1].trim() : "",
@@ -1428,8 +1428,8 @@ export default class GameEntityLoader extends GameEntityManager {
                 return new Error(`Couldn't load puzzle on row ${puzzle.row}. "${puzzle.type}" is not a valid stat probability puzzle type.`);
         }
         for (let solution of puzzle.solutions) {
-            if (puzzle.type === "weight" && isNaN(parseInt(solution)))
-                return new Error(`Couldn't load puzzle on row ${puzzle.row}. The puzzle is a weight-type puzzle, but the solution "${solution}" is not an integer.`);
+            if (puzzle.type === "weight" && isNaN(parseFloat(solution)))
+                return new Error(`Couldn't load puzzle on row ${puzzle.row}. The puzzle is a weight-type puzzle, but the solution "${solution}" is not a number.`);
             if (!solution.startsWith("Item: ") && !solution.startsWith("Prefab: ")) {
                 if (puzzle.type === "media")
                     return new Error(`Couldn't load puzzle on row ${puzzle.row}. The puzzle is a media-type puzzle, but the solution "${solution}" does not have the "Item: " or "Prefab: " prefix.`);

@@ -397,6 +397,8 @@ describe('GameEntityLoader test', () => {
                     expect(descriptionText).not.toContain("<item>");
                     expect(descriptionText).not.toContain("</item>");
                 }
+                const sliceOfBread = testGame.entityFinder.getPrefab("SLICE OF BREAD");
+                expect(sliceOfBread.weight).toBeCloseTo(0.0250, 4);
             });
         });
     });
@@ -582,6 +584,10 @@ describe('GameEntityLoader test', () => {
                 for (const cornDogBox of cornDogBoxes) {
                     expect(cornDogBox.weight).toBe(22);
                 }
+                const breadBags = testGame.entityFinder.getRoomItems("BAG OF BREAD", "kitchen", undefined, "Fixture", "CUPBOARDS");
+                for (const breadBag of breadBags) {
+                    expect(breadBag.weight).toBeCloseTo(0.600, 3);
+                }
             });
         });
     });
@@ -641,7 +647,7 @@ describe('GameEntityLoader test', () => {
                     "Error: Couldn't load puzzle on row 6. \"\" is not a valid puzzle type.",
                     "Error: Couldn't load puzzle on row 7. The puzzle is a probability-type puzzle, but no solutions were given.",
                     "Error: Couldn't load puzzle on row 8. \"invalid probability\" is not a valid stat probability puzzle type.",
-                    "Error: Couldn't load puzzle on row 9. The puzzle is a weight-type puzzle, but the solution \"NaN\" is not an integer.",
+                    "Error: Couldn't load puzzle on row 9. The puzzle is a weight-type puzzle, but the solution \"NaN\" is not a number.",
                     "Error: Couldn't load puzzle on row 10. The puzzle is a media-type puzzle, but the solution \"Invalid: LARGE MONKEY\" does not have the \"Item: \" or \"Prefab: \" prefix.",
                     "Error: Couldn't load puzzle on row 11. The puzzle is a container-type puzzle, but the solution \"Invalid: LARGE MONKEY\" does not have the \"Item: \" or \"Prefab: \" prefix.",
                     "Error: Couldn't load puzzle on row 12. The puzzle is a switch-type puzzle, but it is not solved.",

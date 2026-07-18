@@ -14,7 +14,7 @@ import DieAction from "../Data/Actions/DieAction.ts";
 import NarrateAction from "../Data/Actions/NarrateAction.ts";
 import { MessageDisplayType } from "../Modules/enums.ts";
 import { parseDescription } from "../Modules/parser.ts";
-import { capitalizeFirstLetter, generateListString, generatePlayerListString } from "../Modules/helpers.ts";
+import { capitalizeFirstLetter, generateListString, generatePlayerListString, round } from "../Modules/helpers.ts";
 import { Collection } from "discord.js";
 import type Interactable from "./Interactables/Interactable.ts";
 import type Action from "../Data/Action.ts";
@@ -743,7 +743,7 @@ export default class GameNarrationHandler {
             recipientNotification = this.#game.notificationGenerator.generateReceiveTooHeavyNotification(item.singleContainingPhrase, player.displayName);
             narration = this.#game.notificationGenerator.generateGiveTooHeavyNotification(player, false, item.singleContainingPhrase, recipient)
         }
-        else if (recipient.carryWeight + item.weight > recipient.maxCarryWeight) {
+        else if (round(recipient.carryWeight + item.weight) > recipient.maxCarryWeight) {
             playerNotification = this.#game.notificationGenerator.generateGiveTooMuchWeightNotification(player, true, item.singleContainingPhrase, recipient);
             recipientNotification = this.#game.notificationGenerator.generateReceiveTooMuchWeightNotification(item.singleContainingPhrase, player.displayName);
             narration = this.#game.notificationGenerator.generateGiveTooMuchWeightNotification(player, false, item.singleContainingPhrase, recipient);

@@ -172,10 +172,11 @@ export default class AttemptAction extends Action {
             }
         }
         else if (puzzle.type === "weight") {
-            if (puzzle.solved && !puzzle.solutions.includes(password))
+            const solution = puzzle.getSolutionSatisfiedByWeight(password);
+            if (puzzle.solved && !solution)
                 this.#unsolvePuzzle(puzzle);
-            else if (puzzle.solutions.includes(password))
-                this.#solvePuzzle(puzzle, password, requiredItems, item);
+            else if (solution)
+                this.#solvePuzzle(puzzle, solution, requiredItems, item);
             else
                 this.#failPuzzle(puzzle);
         }
