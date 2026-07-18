@@ -37,6 +37,8 @@ import Moderator from "../Data/Moderator.ts";
 import PaginationInteractable from "./Interactables/PaginationInteractable.ts";
 import { ButtonInteraction, ModalSubmitInteraction, StringSelectMenuInteraction } from "discord.js";
 import type { Interaction, InteractionCallbackResponse } from "discord.js";
+import HideAction from "../Data/Actions/HideAction.ts";
+import EmergeAction from "../Data/Actions/EmergeAction.ts";
 
 /**
  * A set of functions for handling Interactions.
@@ -252,6 +254,28 @@ export default class ClientInteractionHandler {
                 action.performInspect(validatedArgs[0]);
                 this.#replyOrDeleteActionResponse(action, interaction, reply);
                 this.#logInteraction("InspectAction", author, timestamp, validatedArgs);
+                return true;
+            }
+        }
+        if (action instanceof HideAction) {
+            const args = interactable.actionDirective.getArgs();
+            const parsedArgs = action.parseInteractionArgs(args);
+            const validatedArgs = action.validateInteractionArgs(parsedArgs);
+            if (validatedArgs.length === 1) {
+                action.performHide(validatedArgs[0]);
+                this.#replyOrDeleteActionResponse(action, interaction, reply);
+                this.#logInteraction("HideAction", author, timestamp, validatedArgs);
+                return true;
+            }
+        }
+        if (action instanceof EmergeAction) {
+            const args = interactable.actionDirective.getArgs();
+            const parsedArgs = action.parseInteractionArgs(args);
+            const validatedArgs = action.validateInteractionArgs(parsedArgs);
+            if (validatedArgs.length === 1) {
+                action.performEmerge(validatedArgs[0]);
+                this.#replyOrDeleteActionResponse(action, interaction, reply);
+                this.#logInteraction("EmergeAction", author, timestamp, validatedArgs);
                 return true;
             }
         }
