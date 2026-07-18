@@ -76,6 +76,12 @@ export default class EmergeAction extends Action {
     validateInteractionArgs(args: [Fixture]): [HidingSpot] | [] {
         /** 
          * @privateRemarks
+         * If the player is not hidden, then validation fails.
+         * - AC
+         */
+        if (!this.player.isHidden()) return [];
+        /** 
+         * @privateRemarks
          * If we somehow get args that is not a length of 1, then validation fails.
          * - AC
          */
@@ -124,6 +130,12 @@ export default class EmergeAction extends Action {
          * - AC
          */
         if (args[0].getLocation().id !== this.player.location.id) return [];
+        /** 
+         * @privateRemarks
+         * If the player is not hiding in the given fixture, then validation fails.
+         * - AC
+         */
+        if (this.player.hidingSpot !== args[0].name) return [];
         /** 
          * @privateRemarks
          * If, somehow, the hiding spot is falsy (thus likely undefined or null), validation fails.

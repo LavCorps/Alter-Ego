@@ -74,6 +74,12 @@ export default class HideAction extends Action {
     validateInteractionArgs(args: [Fixture]): [HidingSpot] | [] {
         /** 
          * @privateRemarks
+         * If the player is already hidden, then validation fails.
+         * - AC
+         */
+        if (this.player.isHidden()) return [];
+        /** 
+         * @privateRemarks
          * If we somehow get args that is not a length of 1, then validation fails.
          * - AC
          */
