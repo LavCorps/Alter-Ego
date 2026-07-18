@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+// SPDX-FileCopyrightText: 2026 LavCorps <lavcorps@protonmail.com>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -383,6 +384,13 @@ export default class ClientInteractableManager {
         return [this.#createButtonInteractable(interactableOptions, ButtonStyle.Danger, ActionPriority.STOP)];
     }
 
+    /**
+     * Creates a HideAction interactable and adds it to the cache.
+     * @param fixture - The fixture these interactables are being created for.
+     * @param player - The player these interactables are being created for.
+     * @param user - The user these interactables are being created for. Defaults to the given player.
+     * @param label - The label to display in the interactable. Defaults to "Hide".
+     */
     createHideActionInteractable(fixture: Fixture, player: Player, user: User = player, label: string = "Hide"): ButtonInteractable[] {
         if (!player.canUseCommand("hide")) return [];
         if (fixture.hidingSpotCapacity === 0 || !fixture.hidingSpot) return [];
@@ -392,6 +400,13 @@ export default class ClientInteractableManager {
         return [this.#createButtonInteractable(interactableOptions, ButtonStyle.Secondary, 0)];
     }
 
+    /**
+     * Creates an EmergeAction interactable and adds it to the cache.
+     * @param fixture - The fixture these interactables are being created for.
+     * @param player - The player these interactables are being created for.
+     * @param user - The user these interactables are being created for. Defaults to the given player.
+     * @param label - The label to display in the interactable. Defaults to "Emerge".
+     */
     createEmergeActionInteractable(fixture: Fixture, player: Player, user: User = player, label: string = "Emerge"): ButtonInteractable[] {
         if (!player.canUseCommand("hide")) return [];
         if (fixture.hidingSpotCapacity === 0 || !fixture.hidingSpot) return [];
