@@ -74,75 +74,88 @@ export default class EmergeAction extends Action {
      * These should be deleted before merge.
      * - AC
      */
-    validateInteractionArgs(args: [Fixture]): [HidingSpot] | [] {
+    validateInteractionArgs(args: [Fixture]): [HidingSpot] {
+        const errorMessageGenerator = this.getGame().errorMessageGenerator;
         /** 
          * @privateRemarks
          * If the player is not hidden, then validation fails.
          * - AC
          */
-        if (!this.player.isHidden()) return [];
+        if (!this.player.isHidden())
+            throw new Error("TODO");
         /** 
          * @privateRemarks
          * If we somehow get args that is not a length of 1, then validation fails.
          * - AC
          */
-        if (args.length !== 1) return [];
+        if (args.length !== 1)
+            throw new Error(errorMessageGenerator.generateInsufficientArgumentsError());
         /** 
          * @privateRemarks
          * This mirrors InspectAction.validateInteractionArgs, utilizing the new hasBehaviorAttribute style, and respecting the behavior attribute utilized in the hide_player command...
          * - AC
          */
-        if (this.player.hasBehaviorAttribute("disable hide")) return [];
+        const disabledStatusEffects = this.player.getStatusEffectsDisablingCommand("hide");
+        if (disabledStatusEffects.length > 0)
+            throw new Error(errorMessageGenerator.generateCommandDisabledError(disabledStatusEffects[0]));
         /** 
          * @privateRemarks
          * Forbid emerging if the party is not "ready". This may be unnecessary, but mirrors the hide player command.
          * ... Actually, in the case that players form a party while hiding in a fixture, this may be a useful sanity check.
          * - AC
          */
-        if (this.player.party && !this.player.party.positionsSynchronized) return [];
+        if (this.player.party && !this.player.party.positionsSynchronized)
+            throw new Error("TODO");
         /** 
          * @privateRemarks
          * This checks if the given fixture is falsy. Most importantly, this catches undefined.
          * - AC
          */
-        if (!args[0]) return [];
+        if (!args[0])
+            throw new Error("TODO");
         /** 
          * @privateRemarks
          * I believe this is correct. If the fixture is inaccessible, validation fails.
          * - AC
          */
-        if (!args[0].accessible) return [];
+        if (!args[0].accessible)
+            throw new Error("TODO");
         /** 
          * @privateRemarks
          * If a fixture is "locked", it cannot be emerged from. Validation fails.
          * - AC
          */
-        if (args[0].childPuzzle !== null && args[0].childPuzzle.type.endsWith("lock") && !args[0].childPuzzle.solved) return [];
+        if (args[0].childPuzzle !== null && args[0].childPuzzle.type.endsWith("lock") && !args[0].childPuzzle.solved)
+            throw new Error("TODO");
         /** 
          * @privateRemarks
          * ...?
          * This is simply mirroring InspectAction.validateInteractionArgs() - I am not sure what the purpose of it is...
          * - AC
          */
-        if (!args[0].getLocation()) return [];
+        if (!args[0].getLocation())
+            throw new Error(errorMessageGenerator.generatePlayerLocationMismatchError());
         /** 
          * @privateRemarks
          * This check is more obvious. If the player location id does not match the fixture location id, then validation fails.
          * - AC
          */
-        if (args[0].getLocation().id !== this.player.location.id) return [];
+        if (args[0].getLocation().id !== this.player.location.id)
+            throw new Error(errorMessageGenerator.generatePlayerLocationMismatchError());
         /** 
          * @privateRemarks
          * If the player is not hiding in the given fixture, then validation fails.
          * - AC
          */
-        if (this.player.hidingSpot !== args[0].name) return [];
+        if (this.player.hidingSpot !== args[0].name)
+            throw new Error("TODO");
         /** 
          * @privateRemarks
          * If, somehow, the hiding spot is falsy (thus likely undefined or null), validation fails.
          * - AC
          */
-        if (!args[0].hidingSpot) return [];
+        if (!args[0].hidingSpot)
+            throw new Error("TODO");
         /** 
          * @privateRemarks
          * Finally, it is time to return the fixture hiding spot.
