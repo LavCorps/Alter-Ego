@@ -11,6 +11,7 @@ import Event from "./Event.ts";
 import type Fixture from "./Fixture.ts";
 import Flag from "./Flag.ts";
 import type Game from "./Game.ts";
+import type InventoryItem from "./InventoryItem.ts";
 import ItemContainer from "./ItemContainer.ts";
 import type ItemInstance from "./ItemInstance.ts";
 import type Player from "./Player.ts";
@@ -268,32 +269,53 @@ export default class Puzzle extends ItemContainer implements PersistentGameEntit
     getAttemptVerb(): string {
         const names = this.parentFixture ? `${this.name} ${this.parentFixture.name}` : this.name;
         const nameWords = new Set(names.split(' '));
+        if ((this.type === "key lock" || this.type === "combination lock") && this.solved) return "lock";
+        else if ((this.type === "key lock" || this.type === "combination lock")) return "unlock";
+        if (this.type === "media" && this.solved) return "eject";
+        else if (this.type === "media") return "insert";
+        if (this.type === "option" && this.solved) return "clear";
         if (nameWords.has("BUTTON")) return "press";
         if (nameWords.has("SWITCH") || nameWords.has("lever")) return "flip";
         if (nameWords.has("BOLT") && this.type === "toggle") return "flip";
         if (nameWords.has("SHOWER") && this.solved) return "turn off";
         if (nameWords.has("TELEVISION") && this.solved) return "turn off";
-        else return "use";
+        return "use";
+    }
+
+    /**
+     * Gets a preposition to describe how an item is used on this puzzle.
+     * The preposition chosen largely depends on the puzzle's name and type.
+     * The default is "on".
+     */
+    getAttemptWithItemPreposition(): string {
+        if ((this.type === "key lock" || this.type === "combination lock") && this.solved) return "with";
+        else if ((this.type === "key lock" || this.type === "combination lock")) return "with";
+        if (this.type === "media" && this.solved) return "from";
+        else if (this.type === "media") return "into";
+        return "on";
     }
 
     /**
      * Returns the args for the Attempt ActionDirective for this puzzle.
-     * Intended to be used for puzzles that can be attempted with only the press of a button.
-     * @returns [name, location, type, undefined (item identifier), undefined (item containerName), undefined (item equipmentSlot), undefined (proceduralSelectionsString), "" (password), getAttemptVerb() (command), name (input), "" (targetPlayer displayName)]
+     * Intended to be used for puzzles that can be attempted with a simple interaction or with the use of an inventory item.
+     * @param item - The item to attempt the puzzle with. Optional.
+     * @param password - The password to attempt the puzzle with. Optional.
+     * @param targetPlayerDisplayName - The display name of the player to target. Optional.
+     * @returns [name, location, type, item identifier, item containerName, item equipmentSlot, item proceduralSelectionsString, password, getAttemptVerb() (command), name (input), targetPlayer displayName]
      */
-    getButtonAttemptActionDirectiveArgs(): [string, string, string, string, string, string, string, string, string, string, string] {
+    getAttemptActionDirectiveArgs(item?: InventoryItem, password: string = "", targetPlayerDisplayName: string = ""): [string, string, string, string, string, string, string, string, string, string, string] {
         return [
             this.name,
             this.location.id,
             this.type,
-            undefined,
-            undefined,
-            undefined,
-            undefined,
-            "",
+            item?.getIdentifier() ?? undefined,
+            item?.containerName ?? undefined,
+            item?.equipmentSlot ?? undefined,
+            item?.proceduralSelectionsString ?? undefined,
+            password,
             this.getAttemptVerb(),
             this.name,
-            ""
+            targetPlayerDisplayName
         ];
     }
 
@@ -488,6 +510,13 @@ export default class Puzzle extends ItemContainer implements PersistentGameEntit
      */
     override getDescription(): Description {
         return this.alreadySolvedDescription;
+    }
+
+    /**
+     * Gets the name of the parent fixture, if it exists. Otherwise, gets the puzzle's name.
+     */
+    getDisplayName(): string {
+        return this.parentFixture ? this.parentFixture.name : this.name;
     }
 
     /**
