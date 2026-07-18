@@ -261,24 +261,30 @@ export default class ClientInteractionHandler {
         if (action instanceof HideAction) {
             const args = interactable.actionDirective.getArgs();
             const parsedArgs = action.parseInteractionArgs(args);
-            const validatedArgs = action.validateInteractionArgs(parsedArgs);
-            if (validatedArgs.length === 1) {
-                action.performHide(validatedArgs[0]);
-                this.#replyOrDeleteActionResponse(action, interaction, reply);
-                this.#logInteraction("HideAction", author, timestamp, validatedArgs);
-                return true;
+            try {
+                const validatedArgs = action.validateInteractionArgs(parsedArgs);
+                if (validatedArgs.length === 1) {
+                    action.performHide(validatedArgs[0]);
+                    this.#replyOrDeleteActionResponse(action, interaction, reply);
+                    this.#logInteraction("HideAction", author, timestamp, validatedArgs);
+                    return true;
+                }
             }
+            catch (error) { throw new Error(error.message); }
         }
         if (action instanceof EmergeAction) {
             const args = interactable.actionDirective.getArgs();
             const parsedArgs = action.parseInteractionArgs(args);
-            const validatedArgs = action.validateInteractionArgs(parsedArgs);
-            if (validatedArgs.length === 1) {
-                action.performEmerge(validatedArgs[0]);
-                this.#replyOrDeleteActionResponse(action, interaction, reply);
-                this.#logInteraction("EmergeAction", author, timestamp, validatedArgs);
-                return true;
+            try {
+                const validatedArgs = action.validateInteractionArgs(parsedArgs);
+                if (validatedArgs.length === 1) {
+                    action.performEmerge(validatedArgs[0]);
+                    this.#replyOrDeleteActionResponse(action, interaction, reply);
+                    this.#logInteraction("EmergeAction", author, timestamp, validatedArgs);
+                    return true;
+                }
             }
+            catch (error) { throw new Error(error.message); }
         }
         if (action instanceof TakeAction) {
             const args = interactable.actionDirective.getArgs();
