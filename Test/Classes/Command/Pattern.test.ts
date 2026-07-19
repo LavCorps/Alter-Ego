@@ -534,7 +534,7 @@ describe("Pattern file from NG Commands", () => {
                 new Pattern([
                     new Pocket("destination", "destination pocket"),
                     new Constant("of")
-                ], true, true),
+                ], { optional: true, mandatory: true }),
                 new Slot(InventoryItem, "destination"),
             ]);
             for (const constant of pattern.constants)
@@ -570,7 +570,7 @@ describe("Pattern file from NG Commands", () => {
                 new Pattern([
                     new Pocket("destination", "destination pocket"),
                     new Constant("of")
-                ], true, true),
+                ], { optional: true, mandatory: true }),
                 new Slot(InventoryItem, "destination"),
             ]);
             for (const constant of pattern.constants)
@@ -634,7 +634,7 @@ describe("Pattern file from NG Commands", () => {
                 new Pattern([
                     new Pocket("destination", "destination pocket"),
                     new Constant("of")
-                ], true, true),
+                ], { optional: true, mandatory: true }),
                 new Slot(InventoryItem, "destination"),
             ]);
             for (const constant of pattern.constants)
@@ -665,7 +665,7 @@ describe("Pattern file from NG Commands", () => {
                 new Pattern([
                     new Pocket("destination", "destination pocket"),
                     new Constant("of")
-                ], true, true),
+                ], { optional: true, mandatory: true }),
                 new Slot(InventoryItem, "destination"),
             ]);
             for (const constant of pattern.constants)
