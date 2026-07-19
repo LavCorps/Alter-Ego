@@ -24,8 +24,8 @@ import DefaultMap from "../DefaultMap.ts";
 
 /** Interface for ValidatedInvocation constructor args. */
 interface ValidatedInvocationArgs {
-    /** The key-value pairs of slot names to Game Entities. One Game Entity per key. */
-    args?: Collection<string, GameEntity>;
+    /** The key-value pairs of slot names to Game Entities. Multiple Game Entities allowed per key. */
+    args?: Collection<string, GameEntity[]>;
 
     /** The key-value pairs of options to option maps. Each key on the map corresponds to another map, which is keyed for option names to booleans that are true if the option was specified, and false otherwise. */
     opts?: DefaultMap<string, DefaultMap<string, boolean>>;
@@ -74,8 +74,8 @@ abstract class BaseInvocation<M extends boolean, V extends boolean> {
 
 /** Invocation whose arguments have been validated. */
 export class ValidatedInvocation extends BaseInvocation<true, true> {
-    /** The key-value pairs of slot names to Game Entities. One Game Entity per key. */
-    args: Collection<string, GameEntity>;
+    /** The key-value pairs of slot names to Game Entities. Multiple Game Entities allowed per key. */
+    args: Collection<string, GameEntity[]>;
 
     /** The key-value pairs of options to option maps. Each key on the map corresponds to another map, which is keyed for option names to booleans that are true if the option was specified, and false otherwise. */
     opts: DefaultMap<string, DefaultMap<string, boolean>>;
@@ -103,64 +103,124 @@ export class ValidatedInvocation extends BaseInvocation<true, true> {
         return false;
     }
 
+    getRooms(patternSlot: string): Room[] {
+        return this.args.get(patternSlot) as Room[];
+    }
+
     getRoom(patternSlot: string): Room {
-        return this.args.get(patternSlot) as Room;
+        return this.args.get(patternSlot)[0] as Room;
+    }
+
+    getExits(patternSlot: string): Exit[] {
+        return this.args.get(patternSlot) as Exit[];
     }
 
     getExit(patternSlot: string): Exit {
-        return this.args.get(patternSlot) as Exit;
+        return this.args.get(patternSlot)[0] as Exit;
+    }
+
+    getFixtures(patternSlot: string): Fixture[] {
+        return this.args.get(patternSlot) as Fixture[];
     }
 
     getFixture(patternSlot: string): Fixture {
-        return this.args.get(patternSlot) as Fixture;
+        return this.args.get(patternSlot)[0] as Fixture;
+    }
+
+    getPrefabs(patternSlot: string): Prefab[] {
+        return this.args.get(patternSlot) as Prefab[];
     }
 
     getPrefab(patternSlot: string): Prefab {
-        return this.args.get(patternSlot) as Prefab;
+        return this.args.get(patternSlot)[0] as Prefab;
+    }
+
+    getInventorySlots(patternSlot: string): InventorySlot<any>[] {
+        return this.args.get(patternSlot) as InventorySlot<any>[];
     }
 
     getInventorySlot(patternSlot: string): InventorySlot<any> {
-        return this.args.get(patternSlot) as InventorySlot<any>;
+        return this.args.get(patternSlot)[0] as InventorySlot<any>;
+    }
+
+    getRecipes(patternSlot: string): Recipe[] {
+        return this.args.get(patternSlot) as Recipe[];
     }
 
     getRecipe(patternSlot: string): Recipe {
-        return this.args.get(patternSlot) as Recipe;
+        return this.args.get(patternSlot)[0] as Recipe;
+    }
+
+    getRoomItems(patternSlot: string): RoomItem[] {
+        return this.args.get(patternSlot) as RoomItem[];
     }
 
     getRoomItem(patternSlot: string): RoomItem {
-        return this.args.get(patternSlot) as RoomItem;
+        return this.args.get(patternSlot)[0] as RoomItem;
+    }
+
+    getPuzzles(patternSlot: string): Puzzle[] {
+        return this.args.get(patternSlot) as Puzzle[];
     }
 
     getPuzzle(patternSlot: string): Puzzle {
-        return this.args.get(patternSlot) as Puzzle;
+        return this.args.get(patternSlot)[0] as Puzzle;
+    }
+
+    getEvents(patternSlot: string): Event[] {
+        return this.args.get(patternSlot) as Event[];
     }
 
     getEvent(patternSlot: string): Event {
-        return this.args.get(patternSlot) as Event;
+        return this.args.get(patternSlot)[0] as Event;
+    }
+
+    getStatuses(patternSlot: string): Status[] {
+        return this.args.get(patternSlot) as Status[];
     }
 
     getStatus(patternSlot: string): Status {
-        return this.args.get(patternSlot) as Status;
+        return this.args.get(patternSlot)[0] as Status;
+    }
+
+    getPlayers(patternSlot: string): Player[] {
+        return this.args.get(patternSlot) as Player[];
     }
 
     getPlayer(patternSlot: string): Player {
-        return this.args.get(patternSlot) as Player;
+        return this.args.get(patternSlot)[0] as Player;
+    }
+
+    getInventoryItems(patternSlot: string): InventoryItem[] {
+        return this.args.get(patternSlot) as InventoryItem[];
     }
 
     getInventoryItem(patternSlot: string): InventoryItem {
-        return this.args.get(patternSlot) as InventoryItem;
+        return this.args.get(patternSlot)[0] as InventoryItem;
+    }
+
+    getEquipmentSlots(patternSlot: string): EquipmentSlot[] {
+        return this.args.get(patternSlot) as EquipmentSlot[];
     }
 
     getEquipmentSlot(patternSlot: string): EquipmentSlot {
-        return this.args.get(patternSlot) as EquipmentSlot;
+        return this.args.get(patternSlot)[0] as EquipmentSlot;
+    }
+
+    getGestures(patternSlot: string): Gesture[] {
+        return this.args.get(patternSlot) as Gesture[];
     }
 
     getGesture(patternSlot: string): Gesture {
-        return this.args.get(patternSlot) as Gesture;
+        return this.args.get(patternSlot)[0] as Gesture;
+    }
+
+    getFlags(patternSlot: string): Flag[] {
+        return this.args.get(patternSlot) as Flag[];
     }
 
     getFlag(patternSlot: string): Flag {
-        return this.args.get(patternSlot) as Flag;
+        return this.args.get(patternSlot)[0] as Flag;
     }
 }
 
