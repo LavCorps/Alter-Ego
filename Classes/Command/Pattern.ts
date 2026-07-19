@@ -334,6 +334,17 @@ class MatchData {
     }
 }
 
+interface PatternConstructorArgs {
+    /**
+     * Whether the fulfillment of this Pattern is optional or not. This is most useful for optional sub-patterns. Defaults to false.
+     */
+    optional?: boolean;
+    /**
+     * Whether the fulfillment of this Pattern is mandatory or not. This is most useful for optional sub-patterns that must be completely matched once partially matched. Defaults to false.
+     */
+    mandatory?: boolean;
+}
+
 /**
  * Grammar pattern representing a command syntax.
  */
@@ -370,12 +381,12 @@ export class Pattern implements PatternElement {
      * @param optional - Whether the fulfillment of this Pattern is optional or not. This is most useful for optional sub-patterns. Defaults to false.
      * @param mandatory - Whether the fulfillment of this Pattern is mandatory or not. This is most useful for optional sub-patterns that must be completely matched once partially matched. Defaults to false.
      */
-    constructor(grammar: Array<PatternElement> = [], optional: boolean = false, mandatory: boolean = true) {
+    constructor(grammar: Array<PatternElement> = [], args: PatternConstructorArgs = {}) {
         this.grammar = grammar;
-        this.optional = optional;
+        this.optional = args.optional ?? false;
+        this.mandatory = args.mandatory ?? false;
         this.#types = new Set();
         this.#constants = new Set();
-        if (mandatory) this.mandatory = true;
         for (const element of grammar) {
             if (element instanceof Slot)
                 this.types.add(element.type);
