@@ -29,3 +29,23 @@ export default class DefaultMap<K extends any, V extends any> extends Map<K, V> 
         return super.get(key);
     }
 }
+
+/**
+ * Utility function to push a value to an array inside of a DefaultMap.
+ * @param map - The map containing the array.
+ * @param key - The key the array is on.
+ * @param value - The value to push to the array.
+ */
+export function pushToInnerArray<K extends any, V extends any>(map: DefaultMap<K, V[]>, key: K, value: V): void {
+    map.get(key).push(value);
+}
+
+/**
+ * Utility function to concatenate a given array to an array inside of a DefaultMap.
+ * @param map - The map containing the array.
+ * @param key - The key the array is on.
+ * @param values - The values to concatenate with the array in the map.
+ */
+export function concatToInnerArray<K extends any, V extends any>(map: DefaultMap<K, V[]>, key: K, values: V[]): void {
+    map.set(key, map.get(key).concat(values));
+}
