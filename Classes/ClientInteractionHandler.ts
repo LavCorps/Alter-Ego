@@ -264,7 +264,7 @@ export default class ClientInteractionHandler {
             try {
                 const validatedArgs = action.validateInteractionArgs(parsedArgs);
                 if (validatedArgs.length === 1) {
-                    action.performHide(validatedArgs[0]);
+                    await action.performHide(validatedArgs[0]);
                     this.#replyOrDeleteActionResponse(action, interaction, reply);
                     this.#logInteraction("HideAction", author, timestamp, validatedArgs);
                     return true;
@@ -278,7 +278,7 @@ export default class ClientInteractionHandler {
             try {
                 const validatedArgs = action.validateInteractionArgs(parsedArgs);
                 if (validatedArgs.length === 1) {
-                    action.performEmerge(validatedArgs[0]);
+                    await action.performEmerge(validatedArgs[0]);
                     this.#replyOrDeleteActionResponse(action, interaction, reply);
                     this.#logInteraction("EmergeAction", author, timestamp, validatedArgs);
                     return true;

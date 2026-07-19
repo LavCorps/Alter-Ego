@@ -105,7 +105,7 @@ export default class EmergeAction extends Action {
          * - AC
          */
         if (this.player.party && !this.player.party.positionsSynchronized)
-            throw new Error(errorMessageGenerator.generateDesyncError());
+            throw new Error(errorMessageGenerator.generatePartyNotSynchronizedError());
         /** 
          * @privateRemarks
          * This checks if the given fixture is falsy. Most importantly, this catches undefined.
@@ -119,7 +119,7 @@ export default class EmergeAction extends Action {
          * - AC
          */
         if (!args[0].accessible)
-            throw new Error(errorMessageGenerator.generateFixtureAccessError(args[0]))
+            throw new Error(errorMessageGenerator.generateEntityNotFoundError("fixture", args[0].name));
         /** 
          * @privateRemarks
          * If a fixture is "locked", it cannot be emerged from. Validation fails.
@@ -127,14 +127,6 @@ export default class EmergeAction extends Action {
          */
         if (args[0].childPuzzle !== null && args[0].childPuzzle.type.endsWith("lock") && !args[0].childPuzzle.solved)
             throw new Error(errorMessageGenerator.generateFixtureLockedError(args[0]));
-        /** 
-         * @privateRemarks
-         * ...?
-         * This is simply mirroring InspectAction.validateInteractionArgs() - I am not sure what the purpose of it is...
-         * - AC
-         */
-        if (!args[0].getLocation())
-            throw new Error(errorMessageGenerator.generatePlayerLocationMismatchError());
         /** 
          * @privateRemarks
          * This check is more obvious. If the player location id does not match the fixture location id, then validation fails.
@@ -148,7 +140,7 @@ export default class EmergeAction extends Action {
          * - AC
          */
         if (this.player.hidingSpot !== args[0].name)
-            throw new Error(errorMessageGenerator.generatePlayerFixtureMismatchError());
+            throw new Error(errorMessageGenerator.generatePlayerHidingSpotMismatchError());
         /** 
          * @privateRemarks
          * If, somehow, the hiding spot is falsy (thus likely undefined or null), validation fails.

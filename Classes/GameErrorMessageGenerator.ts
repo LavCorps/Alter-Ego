@@ -141,42 +141,45 @@ export default class GameErrorMessageGenerator {
      * Generates an error message indicating that the player is not hidden.
      */
     generateNotHiddenError() {
-        return `${this.youCannotString} **not** hidden.`
+        return `You are not currently hidden.`;
     }
 
     /**
      * Generates an error message indicating that the player is not synchronized with their party.
      */
-    generateDesyncError() {
-        return `You cannot do that because your party is not ready.`
+    generatePartyNotSynchronizedError() {
+        return `You cannot do that because your party is not ready.`;
     }
 
     /**
      * Generates an error message indicating that the fixture is locked.
      */
     generateFixtureLockedError(fixture: Fixture) {
-        return `You cannot do that because ${fixture.name} is locked.`
-    }
-
-    /**
-     * Generates an error message indicating that the fixture is inaccessible.
-     */
-    generateFixtureAccessError(fixture: Fixture) {
-        return `You cannot do that because ${fixture.name} is inaccessible.`
+        return `You cannot do that because ${fixture.name} is locked.`;
     }
 
     /**
      * Generates an error message indicating that the fixture is not a hiding spot.
      */
     generateFixtureNotHidingSpotError(fixture: Fixture) {
-        return `You cannot do that because ${fixture.name} is not a hiding spot.`
+        return `You cannot do that because ${fixture.name} is not a hiding spot.`;
     }
 
     /**
      * Generates an error message indicating that the player cannot perform an action because their hiding spot has changed.
      */
-    generatePlayerFixtureMismatchError() {
+    generatePlayerHidingSpotMismatchError() {
         return `${this.youCannotString} no longer in that hiding spot.`;
+    }
+
+    /**
+     * Generates an error message indicating that the player is not the party leader.
+     * @param player - The player who is not the party leader.
+     * @param context - The context in which the command is being issued.
+     * @param includeLeavePartyDirections - Whether or not to give the player directions on how to leave the party. Only works if context is "Player".
+     */
+    generateAlreadyHiddenError() {
+        return `${this.youCannotString} already hidden. If you want to emerge from your hiding spot, use ${this.getCommandString(`emerge`)}.`;
     }
 
     /**

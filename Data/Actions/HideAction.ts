@@ -93,16 +93,15 @@ export default class HideAction extends Action {
          * This mirrors InspectAction.validateInteractionArgs, utilizing the new hasBehaviorAttribute style, and respecting the behavior attribute utilized in the hide_player command...
          * - AC
          */
-        const disabledStatusEffects = this.player.getStatusEffectsDisablingCommand("hide");
-        if (disabledStatusEffects.length > 0)
-            throw new Error(errorMessageGenerator.generateCommandDisabledError(disabledStatusEffects[0]));
+        if (this.player.hasBehaviorAttribute("disable hide"))
+            throw new Error("TODO");
         /** 
          * @privateRemarks
          * Forbid hiding if the party is not "ready".
          * - AC
          */
         if (this.player.party && !this.player.party.positionsSynchronized)
-            throw new Error(errorMessageGenerator.generateDesyncError());
+            throw new Error(errorMessageGenerator.generatePartyNotSynchronizedError());
         /** 
          * @privateRemarks
          * This checks if the given fixture is falsy. Most importantly, this catches undefined.
@@ -116,7 +115,7 @@ export default class HideAction extends Action {
          * - AC
          */
         if (!args[0].accessible)
-            throw new Error(errorMessageGenerator.generateFixtureAccessError(args[0]))
+            throw new Error(errorMessageGenerator.generateEntityNotFoundError("fixture", args[0].name));
         /** 
          * @privateRemarks
          * If a fixture is "locked", it cannot be hidden in. Validation fails.
@@ -124,14 +123,6 @@ export default class HideAction extends Action {
          */
         if (args[0].childPuzzle !== null && args[0].childPuzzle.type.endsWith("lock") && !args[0].childPuzzle.solved)
             throw new Error(errorMessageGenerator.generateFixtureLockedError(args[0]));
-        /** 
-         * @privateRemarks
-         * ...?
-         * This is simply mirroring InspectAction.validateInteractionArgs() - I am not sure what the purpose of it is...
-         * - AC
-         */
-        if (!args[0].getLocation())
-            throw new Error(errorMessageGenerator.generatePlayerLocationMismatchError());
         /** 
          * @privateRemarks
          * This check is more obvious. If the player location id does not match the fixture location id, then validation fails.
@@ -144,7 +135,7 @@ export default class HideAction extends Action {
          * I am unsure about this one, but we should probably have a "sanity check" against fixtures with a hiding spot capacity of zero.
          * - AC
          */
-        if (args[0].hidingSpotCapacity === 0)
+        if (args[0].hidingSpotCapacity === 0 || !args[0].hidingSpot)
             throw new Error(errorMessageGenerator.generateFixtureNotHidingSpotError(args[0]));
         /** 
          * @privateRemarks
