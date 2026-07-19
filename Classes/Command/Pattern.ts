@@ -17,7 +17,7 @@ import type GameEntity from "../../Data/GameEntity.ts";
 import { Collection } from "discord.js";
 import ItemInstance from "../../Data/ItemInstance.ts";
 import type InventorySlot from "../../Data/InventorySlot.ts";
-import DefaultMap from "../DefaultMap.ts";
+import DefaultMap, { concatToInnerArray, pushToInnerArray } from "../DefaultMap.ts";
 
 /**
  * Base interface representing a pattern element.
@@ -234,7 +234,7 @@ class MatchData {
     errors: string[];
 
     /** Collection of PatternElements to Tokens, representing the tokens that have been successfully matched to pattern elements. */
-    matches: Collection<PatternElement, Token[]>;
+    matches: DefaultMap<PatternElement, Token[]>;
 
     /** Collection of Patterns to booleans, representing whether or not they have begun the process of consuming tokens. */
     hasConsumed: Collection<Pattern, boolean>;
@@ -258,7 +258,7 @@ class MatchData {
 
     constructor(streams: Token[][]) {
         this.errors = [];
-        this.matches = new Collection();
+        this.matches = new DefaultMap(() => []);
         this.hasConsumed = new Collection();
         this.glob = [];
         this.streams = streams;
@@ -343,6 +343,10 @@ interface PatternConstructorArgs {
      * Whether the fulfillment of this Pattern is mandatory or not. This is most useful for optional sub-patterns that must be completely matched once partially matched. Defaults to false.
      */
     mandatory?: boolean;
+    /**
+     * Whether the fulfillment of this pattern can be done repeatedly. If this is true, then the pattern will attempt to match until the token stream is exhausted or the pattern fails to match. Defaults to false.
+     */
+    repeatable?: boolean;
 }
 
 /**
@@ -367,6 +371,11 @@ export class Pattern implements PatternElement {
     readonly mandatory: boolean;
 
     /**
+     * Whether the fulfillment of this pattern can be done repeatedly. If this is true, then the pattern will attempt to match until the token stream is exhausted or the pattern fails to match.
+     */
+    readonly repeatable: boolean;
+
+    /**
      * The types of Game Entities contained within a pattern. Informs Contexts what must be gathered, to prevent gathering unnecessary context.
      */
     #types: Set<Constructor<GameEntity>>;
@@ -385,6 +394,7 @@ export class Pattern implements PatternElement {
         this.grammar = grammar;
         this.optional = args.optional ?? false;
         this.mandatory = args.mandatory ?? false;
+        this.repeatable = args.repeatable ?? false;
         this.#types = new Set();
         this.#constants = new Set();
         for (const element of grammar) {
@@ -495,7 +505,7 @@ export class Pattern implements PatternElement {
             if (element instanceof Constant || element instanceof Multiconstant) {
                 for (const token of data.stream) {
                     if (token instanceof ConstantToken && element.satisfiedBy(token)) {
-                        data.matches.set(element, [token]);
+                        pushToInnerArray(data.matches, element, token);
                         matchedIndices.add(grammarIndex);
                         data.hasConsumed.set(this, true);
                         break;
@@ -508,14 +518,14 @@ export class Pattern implements PatternElement {
                         elementMatches.push(token);
                 }
                 if (elementMatches.length > 0) {
-                    data.matches.set(element, elementMatches);
+                    concatToInnerArray(data.matches, element, elementMatches);
                     matchedIndices.add(grammarIndex);
                     data.hasConsumed.set(this, true);
                 }
             } else if (element instanceof Preposition) {
                 for (const token of data.stream) {
                     if (token instanceof PrepositionToken) {
-                        data.matches.set(element, [token]);
+                        pushToInnerArray(data.matches, element, token);
                         matchedIndices.add(grammarIndex);
                         data.hasConsumed.set(this, true);
                         break;
@@ -540,7 +550,7 @@ export class Pattern implements PatternElement {
             } else if (element instanceof Pocket) {
                 let elementMatches: PocketToken<ItemInstance>[] = data.stream.filter(token => token instanceof PocketToken);
                 if (elementMatches.length > 0) {
-                    data.matches.set(element, elementMatches);
+                    concatToInnerArray(data.matches, element, elementMatches);
                     matchedIndices.add(grammarIndex);
                     data.hasConsumed.set(this, true);
                 }
