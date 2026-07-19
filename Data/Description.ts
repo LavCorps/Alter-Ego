@@ -152,21 +152,17 @@ export default class Description extends GameConstruct {
                     interactables = interactables.concat(interactableManager.getTakeInteractables(container, selectableEntities[1], player));
                     interactables = interactables.concat(interactableManager.getDropInteractables(container, player));
                 }
-                const puzzles = selectableEntities[2];
+                let puzzles = selectableEntities[2];
                 if (container instanceof Fixture) {
                     interactables = interactables.concat(interactableManager.getActivateOrDeactivateInteractables(container, player));
+                    puzzles = puzzles.filter(puzzle => (!puzzle.parentFixture || puzzle.parentFixture.row !== container.row) && puzzle.checkStaticRequirementsMet());
                     if (container.childPuzzle && container.childPuzzle.checkStaticRequirementsMet())
-                        interactables = interactables.concat(interactableManager.getAttemptInteractables(container.childPuzzle, player));
-                    for (const puzzle of puzzles) {
-                        if ((!puzzle.parentFixture/* || puzzle.parentFixture.row !== container.row*/) && puzzle.checkStaticRequirementsMet())
-                            interactables = interactables.concat(interactableManager.getAttemptInteractables(puzzle, player));
-                    }
+                        puzzles.unshift(container.childPuzzle);
+                    interactables = interactables.concat(interactableManager.getAttemptInteractables(puzzles, player));
                 }
                 else if (container instanceof Puzzle) {
-                    for (const puzzle of puzzles) {
-                        if (puzzle.row === container.row && this !== puzzle.incorrectDescription) continue;
-                        interactables = interactables.concat(interactableManager.getAttemptInteractables(puzzle, player));
-                    }
+                    puzzles = puzzles.filter(puzzle => puzzle.row !== container.row || this === puzzle.incorrectDescription);
+                    interactables = interactables.concat(interactableManager.getAttemptInteractables(puzzles, player));
                 }
             }
             else if (container instanceof Player) {

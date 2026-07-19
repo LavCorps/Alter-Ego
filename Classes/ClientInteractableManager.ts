@@ -1333,24 +1333,27 @@ export default class ClientInteractableManager {
     }
 
     /**
-     * Generates an array of attempt interactables for a given puzzle. What kind of interactables are returned depends on the Puzzle's type.
-     * @param puzzle - The puzzle the player can attempt.
+     * Generates an array of attempt interactables for a given list of puzzles. What kind of interactables are returned depends on each Puzzle's type.
+     * @param puzzles - An array of puzzles the player can attempt.
      * @param player - The player who can perform an attempt action.
      * @param user - The user these interactables are being created for. Defaults to the given player.
      */
-    getAttemptInteractables(puzzle: Puzzle, player: Player, user: User = player): Interactable[] {
+    getAttemptInteractables(puzzles: Puzzle[], player: Player, user: User = player): Interactable[] {
         let interactables: Interactable[] = [];
-        if (puzzle.requiresMod) return interactables;
-        const matchingFixture = this.#game.entityFinder.getFixture(puzzle.name, puzzle.location.id);
         const playerHandIDs = new Set(this.#game.entityFinder.getPlayerHands(player).map(hand => hand.id));
         // The player's held items and stashed items.
         const inventoryItems = player.getContainedItems().filter(item => item.container !== null || playerHandIDs.has(item.equipmentSlot));
-        // Check if we can make the player select a single item from their inventory to attempt the puzzle with.
-        const itemSolutions = puzzle.solutions.filter(solution => solution.startsWith("Item:") || solution.startsWith("InventoryItem:") || solution.startsWith("Prefab:"));
-        const noMultiItemSolutions = itemSolutions.every(solution => !solution.includes("+"));
-        const puzzleRequiresOneItem = puzzle.requirementsStrings.filter(requirement => requirement.type === "Prefab").length === 1 || itemSolutions.length > 0 && noMultiItemSolutions;
-        const playerCanSelectItem = puzzleRequiresOneItem && inventoryItems.length > 0;
-        if (!matchingFixture || matchingFixture.recipeTag === "") {
+        // We should only create one string select menu. If more than one is created, we need to get rid of all of them.
+        let deleteStringSelectMenus = false;
+        for (const puzzle of puzzles) {
+            if (puzzle.requiresMod) continue;
+            const matchingFixture = this.#game.entityFinder.getFixture(puzzle.name, puzzle.location.id);
+            if (matchingFixture && matchingFixture.recipeTag !== "") continue;
+            // Check if we can make the player select a single item from their inventory to attempt the puzzle with.
+            const itemSolutions = puzzle.solutions.filter(solution => solution.startsWith("Item:") || solution.startsWith("InventoryItem:") || solution.startsWith("Prefab:"));
+            const noMultiItemSolutions = itemSolutions.every(solution => !solution.includes("+"));
+            const puzzleRequiresOneItem = puzzle.requirementsStrings.filter(requirement => requirement.type === "Prefab").length === 1 || itemSolutions.length > 0 && noMultiItemSolutions;
+            const playerCanSelectItem = puzzleRequiresOneItem && inventoryItems.length > 0;
             if (Puzzle.SimpleInteractTypes.has(puzzle.type) || puzzle.type.endsWith("probability")) {
                 if (playerCanSelectItem)
                     interactables = interactables.concat(this.createAttemptActionWithItemInteractables(puzzle, inventoryItems, player, user));
@@ -1387,6 +1390,16 @@ export default class ClientInteractableManager {
                 if (puzzle.solved)
                     interactables = interactables.concat(this.createSimpleAttemptActionInteractables(puzzle, player, user));
             }
+            // Before we move onto the next puzzle, check if there's more than one string select menu.
+            if (!deleteStringSelectMenus)
+                deleteStringSelectMenus = interactables.filter(interactable => interactable instanceof StringSelectMenuInteractable).length > 1;
+        }
+        if (deleteStringSelectMenus) {
+            interactables = interactables.filter(interactable => {
+                const interactableIsStringSelectMenu = interactable instanceof StringSelectMenuInteractable;
+                if (interactableIsStringSelectMenu) this.#disableInteractable(interactable.customId);
+                return !interactableIsStringSelectMenu;
+            });
         }
         return interactables;
     }
