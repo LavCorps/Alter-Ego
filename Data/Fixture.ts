@@ -169,14 +169,6 @@ export default class Fixture extends RecipeProcessor implements PersistentGameEn
         return this.location;
     }
 
-    /**
-     * Returns the args for an ActionDirective that only needs to be able to look up this Fixture.
-     * @returns [name, location]
-     */
-    getGeneralActionDirectiveArgs(): string[] {
-        return [this.name, this.location.id];
-    }
-
     /** A keyword or phrase assigned to an fixture's recipe that allows it to carry out recipes that require it. */
     get recipeTag(): string {
         return this._recipeTag;
@@ -189,6 +181,14 @@ export default class Fixture extends RecipeProcessor implements PersistentGameEn
     setRecipeTag(tag: string): void {
         this._clearProcess();
         this._recipeTag = tag?.trim();
+    }
+
+    /**
+     * Returns the args for an ActionDirective that only needs to be able to look up this Fixture.
+     * @returns [name, location]
+     */
+    getGeneralActionDirectiveArgs(): string[] {
+        return [this.name, this.location.id];
     }
 
     /**
