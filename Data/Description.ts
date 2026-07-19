@@ -149,10 +149,13 @@ export default class Description extends GameConstruct {
                 interactables = interactables.concat(interactableManager.getDropInteractables(container, player));
                 if (container instanceof Fixture) {
                     interactables = interactables.concat(interactableManager.getActivateOrDeactivateInteractables(container, player));
+                    const puzzles = selectableInteractableGameEntities[2];
                     if (container.childPuzzle)
                         interactables = interactables.concat(interactableManager.getAttemptInteractables(container.childPuzzle, player));
-                    else if (selectableInteractableGameEntities[2].length > 0)
-                        interactables = interactables.concat(interactableManager.getAttemptInteractables(selectableInteractableGameEntities[2][0], player));
+                    else if (puzzles.length > 0) {
+                        if (!puzzles[0].parentFixture)
+                            interactables = interactables.concat(interactableManager.getAttemptInteractables(puzzles[0], player));
+                    }
                 }
             }
             else if (container instanceof Player) {

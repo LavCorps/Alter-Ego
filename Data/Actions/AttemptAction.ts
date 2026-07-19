@@ -279,7 +279,7 @@ export default class AttemptAction extends Action {
      */
     parseInteractionArgs(args: string[]): [Puzzle, ItemInstance, string, string, string, string, Player] {
         const puzzle = this.getGame().entityFinder.getPuzzle(args[0], args[1], args[2]);
-        const item = this.getGame().entityFinder.getInventoryItem(args[3], this.player.name, args[4], args[5], args[6]);
+        const item = this.getGame().entityFinder.getInventoryItem(args[3], this.player.name, args[4], args[5], args[6]) ?? null;
         const targetPlayer = this.getGame().entityFinder.getLivingPlayers(args[7], undefined, this.player.location.id, this.player.hidingSpot)[0];
         return [puzzle, item, args[7], args[8], args[9], args[10], targetPlayer];
     }
@@ -384,6 +384,7 @@ export default class AttemptAction extends Action {
      */
     #reply(messageText: string): void {
         if (this.message) this.getGame().communicationHandler.reply(this.message, messageText);
+        else if (!this.forced) this.getGame().communicationHandler.sendMessageToPlayer(this.player, messageText, false);
     }
 
     /**
