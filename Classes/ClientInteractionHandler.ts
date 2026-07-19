@@ -34,6 +34,7 @@ import ActionDirectiveInteractable from "./Interactables/ActionDirectiveInteract
 import type Game from "../Data/Game.ts";
 import type Interactable from "./Interactables/Interactable.ts";
 import Moderator from "../Data/Moderator.ts";
+import type Puzzle from "../Data/Puzzle.ts";
 import PaginationInteractable from "./Interactables/PaginationInteractable.ts";
 import { ButtonInteraction, ModalSubmitInteraction, StringSelectMenuInteraction } from "discord.js";
 import type { Interaction, InteractionCallbackResponse } from "discord.js";
@@ -384,7 +385,25 @@ export default class ClientInteractionHandler {
         }
         if (action instanceof AttemptAction) {
             const args = interactable.actionDirective.getArgs();
+            let solution: string;
+            if (interaction instanceof ModalSubmitInteraction)
+                solution = interaction.fields.getTextInputValue("Attempt Solution");
+            else if (interactable.respondWithModal) {
+                if (args.length === 11) {
+                    const modal = this.#game.clientContext.interactableManager.createAttemptActionModalInteractable(
+                        args as ReturnType<typeof Puzzle.prototype.getAttemptActionDirectiveArgs>,
+                        interactable,
+                        player,
+                        user
+                    );
+                    await interaction.showModal(modal.component);
+                    return true;
+                }
+                return false;
+            }
             const parsedArgs = action.parseInteractionArgs(args);
+            // If we got a solution from a modal submission, put it in place of the old password, which should have just been a placeholder.
+            if (solution) parsedArgs.splice(2, 1, solution);
             try {
                 const validatedArgs = action.validateInteractionArgs(parsedArgs);
                 if (validatedArgs.length === 6) {
