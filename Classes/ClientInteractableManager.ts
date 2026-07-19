@@ -20,7 +20,7 @@ import ItemInstance from "../Data/ItemInstance.ts";
 import type Exit from "../Data/Exit.ts";
 import Moderator from "../Data/Moderator.ts";
 import Player from "../Data/Player.ts";
-import type Puzzle from "../Data/Puzzle.ts";
+import Puzzle from "../Data/Puzzle.ts";
 import Recipe from "../Data/Recipe.ts";
 import RoomItem from "../Data/RoomItem.ts";
 import ActionDirective from "./ActionDirective.ts";
@@ -1351,16 +1351,12 @@ export default class ClientInteractableManager {
         const puzzleRequiresOneItem = puzzle.requirementsStrings.filter(requirement => requirement.type === "Prefab").length === 1 || itemSolutions.length > 0 && noMultiItemSolutions;
         const playerCanSelectItem = puzzleRequiresOneItem && inventoryItems.length > 0;
         if (!matchingFixture || matchingFixture.recipeTag === "") {
-            const simpleTypes = new Set(["interact", "toggle", "player", "player toggle", "matrix"]);
-            const selectTypes = new Set(["switch", "room player"]);
-            const modalTypes = new Set(["password", "combination lock"]);
-            const mixedTypes = new Set(["channels", "option", "media", "key lock"]);
-            if (simpleTypes.has(puzzle.type) || puzzle.type.endsWith("probability")) {
+            if (Puzzle.SimpleInteractTypes.has(puzzle.type) || puzzle.type.endsWith("probability")) {
                 if (playerCanSelectItem)
                     interactables = interactables.concat(this.createAttemptActionWithItemInteractables(puzzle, inventoryItems, player, user));
                 else interactables = interactables.concat(this.createSimpleAttemptActionInteractables(puzzle, player, user));
             }
-            else if (selectTypes.has(puzzle.type)) {
+            else if (Puzzle.SelectInteractTypes.has(puzzle.type)) {
                 let solutions: string[] = [];
                 if (puzzle.type === "room player")
                     solutions = this.#game.entityFinder.getLivingPlayers(undefined, undefined, player.location.id, player.hidingSpot).map(player => player.name);
@@ -1372,14 +1368,14 @@ export default class ClientInteractableManager {
                     else interactables = interactables.concat(this.createSimpleAttemptActionInteractables(puzzle, player, user, true));
                 }
             }
-            else if (modalTypes.has(puzzle.type)) {
+            else if (Puzzle.TextInputInteractTypes.has(puzzle.type)) {
                 if (!puzzle.solved && playerCanSelectItem)
                     interactables = interactables.concat(this.createAttemptActionWithItemInteractables(puzzle, inventoryItems, player, user, true));
-                else if (!puzzle.solved)
+                else if (!puzzle.solved || puzzle.type === "password")
                     interactables = interactables.concat(this.createSimpleAttemptActionInteractables(puzzle, player, user, true));
                 else interactables = interactables.concat(this.createSimpleAttemptActionInteractables(puzzle, player, user));
             }
-            else if (mixedTypes.has(puzzle.type)) {
+            else if (Puzzle.MixedInteractTypes.has(puzzle.type)) {
                 if (playerCanSelectItem && !puzzle.solved && (puzzle.type === "key lock" || puzzle.type === "media"))
                     interactables = interactables.concat(this.createAttemptActionWithItemInteractables(puzzle, inventoryItems, player, user));
                 if (puzzle.type === "channels" || puzzle.type === "option") {

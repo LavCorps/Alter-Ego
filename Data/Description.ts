@@ -127,11 +127,13 @@ export default class Description extends GameConstruct {
             if (defaultDropFixture) {
                 defaultDropFixtureString = defaultDropFixture.description.parseFor(player, defaultDropFixture);
                 const potentialFloorEntities = Description.getPotentialGameEntities(defaultDropFixtureString);
+                inspectableEntities.push(defaultDropFixture);
                 inspectableEntities = inspectableEntities.concat(this.getGame().entityFinder.getSelectableInteractableGameEntities(potentialFloorEntities, defaultDropFixture, player)[0]);
             }
             defaultDropFixtureString = this.getGame().notificationGenerator.generateDefaultDropFixtureNotification(defaultDropFixtureString, defaultDropFixture, this.getGame().settings.defaultDropFixture);
             potentialGameEntities = potentialGameEntities.concat(Description.getPotentialGameEntities(parsedDescription));
-            inspectableEntities = inspectableEntities.concat(this.getGame().entityFinder.getSelectableInteractableGameEntities(potentialGameEntities, container, player)[0]);
+            const selectableEntities = this.getGame().entityFinder.getSelectableInteractableGameEntities(potentialGameEntities, container, player);
+            inspectableEntities = inspectableEntities.concat(selectableEntities[0]);
             const exits: Exit[] = [];
             for (const potentialGameEntity of potentialGameEntities)
                 if (container.exits.has(potentialGameEntity)) exits.push(container.exits.get(potentialGameEntity));
@@ -141,20 +143,29 @@ export default class Description extends GameConstruct {
         }
         else {
             potentialGameEntities = potentialGameEntities.concat(Description.getPotentialGameEntities(parsedDescription));
-            const selectableInteractableGameEntities = this.getGame().entityFinder.getSelectableInteractableGameEntities(potentialGameEntities, container, player);
-            inspectableEntities = inspectableEntities.concat(selectableInteractableGameEntities[0]);
+            const selectableEntities = this.getGame().entityFinder.getSelectableInteractableGameEntities(potentialGameEntities, container, player);
+            inspectableEntities = inspectableEntities.concat(selectableEntities[0]);
             interactables = interactables.concat(interactableManager.createInspectActionInteractable(inspectableEntities, player));
             if (container instanceof Fixture || container instanceof RoomItem || container instanceof Puzzle) {
-                interactables = interactables.concat(interactableManager.getTakeInteractables(container, selectableInteractableGameEntities[1], player));
-                interactables = interactables.concat(interactableManager.getDropInteractables(container, player));
+                // If the puzzle's unsolved description is being sent, don't sent take or drop interactables.
+                if (!(container instanceof Puzzle) || this !== container.unsolvedDescription) {
+                    interactables = interactables.concat(interactableManager.getTakeInteractables(container, selectableEntities[1], player));
+                    interactables = interactables.concat(interactableManager.getDropInteractables(container, player));
+                }
+                const puzzles = selectableEntities[2];
                 if (container instanceof Fixture) {
                     interactables = interactables.concat(interactableManager.getActivateOrDeactivateInteractables(container, player));
-                    const puzzles = selectableInteractableGameEntities[2];
-                    if (container.childPuzzle)
+                    if (container.childPuzzle && container.childPuzzle.checkStaticRequirementsMet())
                         interactables = interactables.concat(interactableManager.getAttemptInteractables(container.childPuzzle, player));
-                    else if (puzzles.length > 0) {
-                        if (!puzzles[0].parentFixture)
-                            interactables = interactables.concat(interactableManager.getAttemptInteractables(puzzles[0], player));
+                    for (const puzzle of puzzles) {
+                        if ((!puzzle.parentFixture/* || puzzle.parentFixture.row !== container.row*/) && puzzle.checkStaticRequirementsMet())
+                            interactables = interactables.concat(interactableManager.getAttemptInteractables(puzzle, player));
+                    }
+                }
+                else if (container instanceof Puzzle) {
+                    for (const puzzle of puzzles) {
+                        if (puzzle.row === container.row && this !== puzzle.incorrectDescription) continue;
+                        interactables = interactables.concat(interactableManager.getAttemptInteractables(puzzle, player));
                     }
                 }
             }

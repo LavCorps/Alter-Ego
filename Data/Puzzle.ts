@@ -163,6 +163,22 @@ export default class Puzzle extends ItemContainer implements PersistentGameEntit
      * The description of the puzzle when a player attempts to solve it while all of the requirements are not met.
      */
     readonly requirementsNotMetDescription: Description;
+    /**
+     * Puzzle types that players can attempt with no additional input.
+     */
+    static readonly SimpleInteractTypes = new Set(["interact", "toggle", "player", "player toggle", "matrix"]);
+    /**
+     * Puzzle types that players can attempt by supplying one of a small, set number of known options.
+     */
+    static readonly SelectInteractTypes = new Set(["switch", "room player"]);
+    /**
+     * Puzzle types that players can attempt by supplying any string of text.
+     */
+    static readonly TextInputInteractTypes = new Set(["password", "combination lock"]);
+    /**
+     * Puzzle types whose method of interaction varies based on the puzzle's solved state.
+     */
+    static readonly MixedInteractTypes = new Set(["channels", "option", "media", "key lock"]);
 
     /**
      * @param name - The name of the puzzle.
@@ -263,7 +279,7 @@ export default class Puzzle extends ItemContainer implements PersistentGameEntit
 
     /**
      * Gets a second-person verb to use to describe how a player attempts this puzzle.
-     * The verb chosen largely depends on the puzzle's name and type.
+     * The verb chosen largely depends on the puzzle's display name, type, and solved state.
      * The default verb is "use".
      * @param solved - Whether or not to consider the puzzle solved. Defaults to its current solved state.
      */
@@ -275,8 +291,7 @@ export default class Puzzle extends ItemContainer implements PersistentGameEntit
         if (this.type === "switch" || this.type === "room player") return "set";
         if (this.type === "option" && solved) return "clear";
         else if (this.type === "option") return "set";
-        const names = this.parentFixture ? `${this.name} ${this.parentFixture.name}` : this.name;
-        const nameWords = new Set(names.split(' '));
+        const nameWords = new Set(this.getDisplayName().split(' '));
         if (nameWords.has("USERNAME") || nameWords.has("PASSWORD")) return "enter";
         if (nameWords.has("INPUT")) return "enter";
         if (nameWords.has("KEYPAD") || nameWords.has("KEYBOARD")) return "type on";
@@ -290,7 +305,7 @@ export default class Puzzle extends ItemContainer implements PersistentGameEntit
 
     /**
      * Gets a preposition to describe how an item is used on this puzzle.
-     * The preposition chosen largely depends on the puzzle's name and type.
+     * The preposition chosen largely depends on the puzzle's type and solved state.
      * The default is "on".
      * @param solved - Whether or not to consider the puzzle solved. Defaults to its current solved state.
      */
@@ -539,6 +554,19 @@ export default class Puzzle extends ItemContainer implements PersistentGameEntit
             : this.name.match(/.*\d+$/)
                 ? this.name
                 : `the ${this.name}`;
+    }
+
+    /**
+     * Checks if only the puzzle's static requirements are met.
+     * Requirements are considered static only if they're Puzzle or Event requirements.
+     * Flag and Prefab requirements are evaluated dynamically, so those are skipped over in this function.
+     */
+    checkStaticRequirementsMet(): boolean {
+        for (const requirement of this.requirements) {
+            if (requirement instanceof Puzzle && !requirement.solved || requirement instanceof Event && !requirement.ongoing)
+                return false;
+        }
+        return true;
     }
 
     /**
