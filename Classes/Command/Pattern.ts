@@ -479,6 +479,9 @@ export class Pattern implements PatternElement {
     /**
      * Internal matching function for Patterns. Used for recursive pattern matching.
      * @param base - MatchData for the innerMatch to use. This is cloned, and if the pattern is both optional and fails to match, is returned as-is.
+     * @privateRemarks
+     * A new TODO: If this pattern is Repeatable, it should be repeated as many times as there are tokens, or until we fail to match.
+     * - AC
      */
     private innerMatch(base: MatchData): MatchData {
         let data = base.clone();
