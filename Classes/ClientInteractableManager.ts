@@ -1197,13 +1197,13 @@ export default class ClientInteractableManager {
      * Generates an array of unstash interactables based on what the player is currently able to unstash.
      * @param player - The player who can perform an unstash action.
      * @param user - The user these interactables are being created for. Defaults to the given player.
+     * @param freeHand - The player's free hand which can unstash an inventory item. Defaults to their first free hand, if they have one.
      */
-    getUnstashInteractables(player: Player, user: User = player): Interactable[] {
+    getUnstashInteractables(player: Player, user: User = player, freeHand: EquipmentSlot = this.#game.entityFinder.getPlayerFreeHand(player)): Interactable[] {
         let interactables: Interactable[] = [];
         const playerItems = this.#game.entityFinder.getInventoryItems(undefined, player.name);
-        const playerFreeHand = this.#game.entityFinder.getPlayerFreeHand(player);
         const playerContainerItems = playerItems.filter(item => item.inventory.size > 0);
-        if (playerFreeHand && playerContainerItems.length > 0) {
+        if (freeHand && playerContainerItems.length > 0) {
             const stashedItems = playerItems.filter(item => item.container !== null);
             if (stashedItems.length > 0) {
                 interactables = interactables.concat(this.createUnstashActionInteractables(stashedItems, player, user));
@@ -1244,14 +1244,14 @@ export default class ClientInteractableManager {
      * Generates an array of unequip interactables based on what the player is currently able to unequip.
      * @param player - The player who can perform an unequip action.
      * @param user - The user these interactables are being created for. Defaults to the given player.
+     * @param freeHand - The player's free hand which can unequip an inventory item. Defaults to their first free hand, if they have one.
      */
-    getUnequipInteractables(player: Player, user: User = player): Interactable[] {
+    getUnequipInteractables(player: Player, user: User = player, freeHand: EquipmentSlot = this.#game.entityFinder.getPlayerFreeHand(player)): Interactable[] {
         let interactables: Interactable[] = [];
-        const playerFreeHand = this.#game.entityFinder.getPlayerFreeHand(player);
         const handSlotIDs = this.#game.entityFinder.getPlayerHands(player).map(hand => hand.id);
         let unequippableItems = player.inventory.filter(equipmentSlot => !handSlotIDs.includes(equipmentSlot.id) && equipmentSlot.equippedItem !== null).map(equipmentSlot => equipmentSlot.equippedItem!);
         unequippableItems = unequippableItems.filter(item => item.prefab.equippable);
-        if (playerFreeHand && unequippableItems.length > 0) {
+        if (freeHand && unequippableItems.length > 0) {
             interactables = interactables.concat(this.createUnequipActionInteractables(unequippableItems, player, user));
         }
         return interactables;
