@@ -71,6 +71,7 @@ export default class DropAction extends Action {
         interactables = interactables.concat(interactableManager.getTakeInteractables(container, container.getContainedItems(), this.player, this.user));
         if (container instanceof Fixture)
             interactables = interactables.concat(interactableManager.getActivateOrDeactivateInteractables(container, this.player));
+        interactables = interactables.concat(interactableManager.getInventoryInteractables(this.player, this.user));
         return interactables;
     }
 

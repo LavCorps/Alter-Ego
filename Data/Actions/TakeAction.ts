@@ -77,6 +77,7 @@ export default class TakeAction extends Action {
         interactables = interactables.concat(interactableManager.getDropInteractables(container, this.player, this.user));
         if (container instanceof Fixture)
             interactables = interactables.concat(interactableManager.getActivateOrDeactivateInteractables(container, this.player, undefined, this.user));
+        interactables = interactables.concat(interactableManager.getInventoryInteractables(this.player, this.user));
         return interactables;
     }
 

@@ -21,6 +21,7 @@ import UnequipAction from "../Data/Actions/UnequipAction.ts";
 import CraftAction from "../Data/Actions/CraftAction.ts";
 import UncraftAction from "../Data/Actions/UncraftAction.ts";
 import UseAction from "../Data/Actions/UseAction.ts";
+import InventoryAction from "../Data/Actions/InventoryAction.ts";
 import ActivateAction from "../Data/Actions/ActivateAction.ts";
 import DeactivateAction from "../Data/Actions/DeactivateAction.ts";
 import AttemptAction from "../Data/Actions/AttemptAction.ts";
@@ -230,7 +231,7 @@ export default class ClientInteractionHandler {
             catch (error) { throw new Error(error.message); }
         }
         if (action instanceof ViewPartyAction) {
-            if (player.canUseCommand("party")) {
+            if (player.canUseCommand("party") || action.forced) {
                 action.performViewParty();
                 this.#replyOrDeleteActionResponse(action, interaction, reply);
                 this.#logInteraction("ViewPartyAction", author, timestamp, []);
@@ -352,6 +353,14 @@ export default class ClientInteractionHandler {
                 await action.performUse(validatedArgs[0], validatedArgs[1]);
                 this.#replyOrDeleteActionResponse(action, interaction, reply);
                 this.#logInteraction("UseAction", author, timestamp, validatedArgs);
+                return true;
+            }
+        }
+        if (action instanceof InventoryAction) {
+            if (player.canUseCommand("inventory") || action.forced) {
+                action.performInventory();
+                this.#replyOrDeleteActionResponse(action, interaction, reply);
+                this.#logInteraction("InventoryAction", author, timestamp, []);
                 return true;
             }
         }

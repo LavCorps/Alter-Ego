@@ -41,6 +41,7 @@ import UnequipAction from "../Data/Actions/UnequipAction.ts";
 import CraftAction from "../Data/Actions/CraftAction.ts";
 import UncraftAction from "../Data/Actions/UncraftAction.ts";
 import UseAction from "../Data/Actions/UseAction.ts";
+import InventoryAction from "../Data/Actions/InventoryAction.ts";
 import ActivateAction from "../Data/Actions/ActivateAction.ts";
 import DeactivateAction from "../Data/Actions/DeactivateAction.ts";
 import AttemptAction from "../Data/Actions/AttemptAction.ts";
@@ -624,6 +625,18 @@ export default class ClientInteractableManager {
         }
         const actionDirective = this.#createActionDirective(UseAction, ["UseAction Menu"], player, user);
         return this.#createStringSelectMenuInteractable(actionDirective, interactableOptions, "Use", ActionPriority.USE);
+    }
+
+    /**
+     * Creates an InventoryAction interactable and adds it to the cache.
+     * @param player - The player these interactables are being created for.
+     * @param user - The user these interactables are being created for. Defaults to the given player.
+     */
+    private createInventoryActionInteractable(player: Player, user: User = player): ButtonInteractable[] {
+        if (!player.canUseCommand("inventory")) return [];
+        const actionDirective = this.#createActionDirective(InventoryAction, [], player, user);
+        const interactableOptions = new InteractableOptions(actionDirective, `View Inventory`);
+        return [this.#createButtonInteractable(interactableOptions, ButtonStyle.Secondary, ActionPriority.VIEW_INVENTORY)];
     }
 
     /**
@@ -1310,6 +1323,15 @@ export default class ClientInteractableManager {
             interactables = interactables.concat(this.createUseActionInteractables(usableItems, player, user));
         }
         return interactables;
+    }
+
+    /**
+     * Generates an array of inventory interactables for the given player. This will only produce one inventory interactable.
+     * @param player - The player who can perform an inventory action.
+     * @param user - The user these interactables are being created for. Defaults to the given player.
+     */
+    getInventoryInteractables(player: Player, user: User = player): Interactable[] {
+        return this.createInventoryActionInteractable(player, user);
     }
 
     /**
