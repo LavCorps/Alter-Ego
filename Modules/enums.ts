@@ -48,6 +48,8 @@ export const ActionPriority = {
     UNEQUIP: 35,
     DROP: 40,
     ATTEMPT: 41,
+    HIDE: 42,
+    EMERGE: 43,
     ACTIVATE: 45,
     DEACTIVATE: 46,
     VIEW_PARTY: 50,

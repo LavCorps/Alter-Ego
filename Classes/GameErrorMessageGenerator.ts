@@ -138,6 +138,51 @@ export default class GameErrorMessageGenerator {
     }
 
     /**
+     * Generates an error message indicating that the player is not hidden.
+     */
+    generateNotHiddenError() {
+        return `You are not currently hidden.`;
+    }
+
+    /**
+     * Generates an error message indicating that the player is not synchronized with their party.
+     */
+    generatePartyNotSynchronizedError() {
+        return `You cannot do that because your party is not ready.`;
+    }
+
+    /**
+     * Generates an error message indicating that the fixture is locked.
+     */
+    generateFixtureLockedError(fixture: Fixture) {
+        return `You cannot do that because ${fixture.getContainingPhrase()} is locked.`;
+    }
+
+    /**
+     * Generates an error message indicating that the fixture is not a hiding spot.
+     */
+    generateFixtureNotHidingSpotError(fixture: Fixture) {
+        return `You cannot do that because ${fixture.getContainingPhrase()} is not a hiding spot.`;
+    }
+
+    /**
+     * Generates an error message indicating that the player cannot perform an action because their hiding spot has changed.
+     */
+    generatePlayerHidingSpotMismatchError() {
+        return `${this.youCannotString} no longer in that hiding spot.`;
+    }
+
+    /**
+     * Generates an error message indicating that the player is not the party leader.
+     * @param player - The player who is not the party leader.
+     * @param context - The context in which the command is being issued.
+     * @param includeLeavePartyDirections - Whether or not to give the player directions on how to leave the party. Only works if context is "Player".
+     */
+    generateAlreadyHiddenError() {
+        return `${this.youCannotString} already hidden. If you want to emerge from your hiding spot, use ${this.getCommandString(`emerge`)}.`;
+    }
+
+    /**
      * Generates an error message indicating that the player cannot move because their speed is 0.
      * @param player - The player being addressed.
      * @param context - The context in which the command is being issued.

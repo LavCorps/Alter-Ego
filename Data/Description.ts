@@ -1,5 +1,6 @@
 // SPDX-FileCopyrightText: 2019 Alter Ego Contributors
 // SPDX-FileCopyrightText: 2026 Ms. VBLANK <alteregomolly@pm.me>
+// SPDX-FileCopyrightText: 2026 LavCorps <lavcorps@protonmail.com>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -154,6 +155,8 @@ export default class Description extends GameConstruct {
                 }
                 let puzzles = selectableEntities[2];
                 if (container instanceof Fixture) {
+                    interactables = interactables.concat(interactableManager.createHideActionInteractable(container, player));
+                    interactables = interactables.concat(interactableManager.createEmergeActionInteractable(container, player));
                     interactables = interactables.concat(interactableManager.getActivateOrDeactivateInteractables(container, player));
                     puzzles = puzzles.filter(puzzle => (!puzzle.parentFixture || puzzle.parentFixture.row !== container.row) && puzzle.checkStaticRequirementsMet());
                     if (container.childPuzzle && container.childPuzzle.checkStaticRequirementsMet())

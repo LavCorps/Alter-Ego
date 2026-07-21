@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+// SPDX-FileCopyrightText: 2026 LavCorps <lavcorps@protonmail.com>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -54,6 +55,8 @@ import ViewAction, { type EntityField } from "../Data/Actions/ViewAction.ts";
 import { removeInteractablesFromMessage } from "../Modules/messageHandler.ts";
 import { ActionPriority } from "../Modules/enums.ts";
 import { capitalizeFirstLetter, getSortedItems } from "../Modules/helpers.ts";
+import HideAction from "../Data/Actions/HideAction.ts";
+import EmergeAction from "../Data/Actions/EmergeAction.ts";
 
 class InteractableOptions<T extends Action> {
     actionDirective: ActionDirective<T>;
@@ -380,6 +383,38 @@ export default class ClientInteractableManager {
         const actionDirective = this.#createActionDirective(StopAction, [], player, user);
         const interactableOptions = new InteractableOptions(actionDirective, label);
         return [this.#createButtonInteractable(interactableOptions, ButtonStyle.Danger, ActionPriority.STOP)];
+    }
+
+    /**
+     * Creates a HideAction interactable and adds it to the cache.
+     * @param fixture - The fixture these interactables are being created for.
+     * @param player - The player these interactables are being created for.
+     * @param user - The user these interactables are being created for. Defaults to the given player.
+     * @param label - The label to display in the interactable. Defaults to "Hide".
+     */
+    createHideActionInteractable(fixture: Fixture, player: Player, user: User = player): ButtonInteractable[] {
+        if (!player.canUseCommand("hide")) return [];
+        if (fixture.hidingSpotCapacity === 0 || !fixture.hidingSpot) return [];
+        if (player.isHidden()) return [];
+        const actionDirective = this.#createActionDirective(HideAction, fixture.getGeneralActionDirectiveArgs(), player, user);
+        const interactableOptions = new InteractableOptions(actionDirective, "Hide");
+        return [this.#createButtonInteractable(interactableOptions, ButtonStyle.Secondary, ActionPriority.HIDE)];
+    }
+
+    /**
+     * Creates an EmergeAction interactable and adds it to the cache.
+     * @param fixture - The fixture these interactables are being created for.
+     * @param player - The player these interactables are being created for.
+     * @param user - The user these interactables are being created for. Defaults to the given player.
+     * @param label - The label to display in the interactable. Defaults to "Emerge".
+     */
+    createEmergeActionInteractable(fixture: Fixture, player: Player, user: User = player): ButtonInteractable[] {
+        if (!player.canUseCommand("hide")) return [];
+        if (fixture.hidingSpotCapacity === 0 || !fixture.hidingSpot) return [];
+        if (!player.isHidden() || player.hidingSpot !== fixture.name) return [];
+        const actionDirective = this.#createActionDirective(EmergeAction, fixture.getGeneralActionDirectiveArgs(), player, user);
+        const interactableOptions = new InteractableOptions(actionDirective, "Emerge");
+        return [this.#createButtonInteractable(interactableOptions, ButtonStyle.Secondary, ActionPriority.EMERGE)];
     }
 
     /**
