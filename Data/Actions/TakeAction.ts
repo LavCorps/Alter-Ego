@@ -110,7 +110,7 @@ export default class TakeAction extends Action {
         const context = this.forced ? "Moderator" : "Player";
         const freeHand = this.getGame().entityFinder.getPlayerFreeHand(this.player);
         if (!freeHand)
-            throw new Error(errorMessageGenerator.generateNoFreeHandError(this.player, context, "take", true));
+            throw new Error(errorMessageGenerator.generateNoFreeHandError(this.player, "take", context, true));
         const container = item.container;
         let topContainer = item.getTopContainer();
         if (topContainer) {

@@ -2,10 +2,13 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { generateListString, makeCopyable } from "../Modules/helpers.ts";
+import { capitalizeFirstLetter, generateListString, makeCopyable } from "../Modules/helpers.ts";
 import type Fixture from "../Data/Fixture.ts";
 import type Game from "../Data/Game.ts";
 import type GameSettings from "./GameSettings.ts";
+import type InventoryItem from "../Data/InventoryItem.ts";
+import type InventorySlot from "../Data/InventorySlot.ts";
+import type ItemInstance from "../Data/ItemInstance.ts";
 import type Player from "../Data/Player.ts";
 import type Status from "../Data/Status.ts";
 
@@ -57,7 +60,7 @@ export default class GameErrorMessageGenerator {
      * Generates an error message indicating that the provided game entity was invalid.
      * @param entity - The type of entity that was invalid.
      */
-    generateInvalidEntityError(entity: PersistentGameEntityName) {
+    generateInvalidEntityError(entity: PersistentGameEntityName | "ItemContainer") {
         return `Invalid ${entity}.`;
     }
 
@@ -432,11 +435,11 @@ export default class GameErrorMessageGenerator {
     /**
      * Generates an error message indicating that the player does not have a free hand.
      * @param player - The player who does not have a free hand.
-     * @param context - The context in which the command is being issued.
      * @param verb - The verb to describe what they cannot do without a free hand.
+     * @param context - The context in which the command is being issued.
      * @param includeDirections - Whether or not to give the player directions on how to free up a hand. Only works if context is "Player".
      */
-    generateNoFreeHandError(player: Player, context: UserContext, verb: string, includeDirections: boolean) {
+    generateNoFreeHandError(player: Player, verb: string, context: UserContext, includeDirections: boolean) {
         switch (context) {
             case "Player":
                 return `You do not have a free hand to ${verb} an item.`
@@ -445,6 +448,40 @@ export default class GameErrorMessageGenerator {
                     : ``;
             default:
                 return `${player.name} does not have a free hand to ${verb} an item.`;
+        }
+    }
+
+    /**
+     * Generates an error message indicating that the player does not have any such item in either of their hands.
+     * @param player - The player who does not have an item with the given name.
+     * @param itemName - The name of the item the player doesn't have.
+     * @param context - The context in which the command is being issued.
+     * @param includeDirections - Whether or not to give the player directions on how to move an inventory item to their hand. Only works if context is "Player".
+     * @param verb - The verb to describe what they can do with an item after moving it to their hand. Only needed if includeDirections is true.
+     */
+    generateNoHeldItemError(player: Player, itemName: string, context: UserContext, includeDirections: boolean, verb?: string) {
+        switch (context) {
+            case "Player":
+                return `Couldn't find item "${itemName}" in either of your hands.`
+                    + includeDirections ? ` If this item is elsewhere in your inventory, please ${this.getCommandString(`unequip`)} or `
+                        + `${this.getCommandString(`unstash`)} it before trying to ${verb} it.`
+                    : ``;
+            default:
+                return `Couldn't find inventory item "${itemName}" in either of ${player.name}'s hands.`;
+        }
+    }
+
+    /**
+     * Generates a vague error message indicating that an item container cannot contain an item right now.
+     * @param container - The item container which cannot contain an item.
+     * @param context - The context in which the command is being issued.
+     */
+    generateCannotPutItemsInContainerError(container: RoomItemContainer | InventoryItem, context: UserContext) {
+        switch (context) {
+            case "Player":
+                return `${capitalizeFirstLetter(container.getContainingPhrase())} cannot hold items. Contact a moderator if you believe this is a mistake.`;
+            default:
+                return `${capitalizeFirstLetter(container.getEntityID())} cannot hold items.`;
         }
     }
 
@@ -463,6 +500,25 @@ export default class GameErrorMessageGenerator {
             default:
                 predicate = command === "take" ? `taken from` : `put ${fixture.getPreposition()}`;
                 return `Items cannot be ${predicate} ${fixture.getContainingPhrase()} while it is turned on.`;
+        }
+    }
+
+    /**
+     * Generates an error message indicating that an item cannot be placed in an inventory slot because it will not fit.
+     * @param item - The item which will not fit.
+     * @param container - The container the inventory slot belongs to.
+     * @param slot - The inventory slot the item will not fit in.
+     * @param context - The context in which the command is being issued.
+     */
+    generateItemWillNotFitInInventorySlotError(item: ItemInstance, container: ItemInstance, slot: InventorySlot<any>, context: UserContext) {
+        const slotPhrase = container.inventory.size > 1 ? `${slot.id} of ` : ``;
+        const tooLarge = slot.capacityIsSmallerThan(item);
+        const reason = tooLarge ? `it is too large` : `there isn't enough space left`;
+        switch (context) {
+            case "Player":
+                return `${item.name} will not fit ${container.getPreposition()} ${slotPhrase}${container.name} because ${reason}.`;
+            default:
+                return `${item.getIdentifier()} will not fit ${container.getPreposition()} ${slotPhrase}${container.getIdentifier()} because ${reason}.`;
         }
     }
 }

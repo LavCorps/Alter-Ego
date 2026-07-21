@@ -308,13 +308,16 @@ export default class ClientInteractionHandler {
         if (action instanceof DropAction) {
             const args = interactable.actionDirective.getArgs();
             const parsedArgs = action.parseInteractionArgs(args);
-            const validatedArgs = action.validateInteractionArgs(parsedArgs);
-            if (validatedArgs.length === 4) {
-                action.performDrop(validatedArgs[0], validatedArgs[1], validatedArgs[2], validatedArgs[3]);
-                this.#replyOrDeleteActionResponse(action, interaction, reply);
-                this.#logInteraction("DropAction", author, timestamp, validatedArgs);
-                return true;
+            try {
+                const validatedArgs = action.validateInteractionArgs(parsedArgs);
+                if (validatedArgs.length === 4) {
+                    action.performDrop(validatedArgs[0], validatedArgs[1], validatedArgs[2], validatedArgs[3]);
+                    this.#replyOrDeleteActionResponse(action, interaction, reply);
+                    this.#logInteraction("DropAction", author, timestamp, validatedArgs);
+                    return true;
+                }
             }
+            catch (error) { throw new Error(error.message); }
         }
         if (action instanceof StashAction) {
             const args = interactable.actionDirective.getArgs();
