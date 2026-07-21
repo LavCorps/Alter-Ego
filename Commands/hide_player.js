@@ -48,7 +48,7 @@ export async function execute(game, message, command, args, player) {
     if (player.party && !player.party.positionsSynchronized) return game.communicationHandler.reply(message, `You cannot do that because your party is not ready.`);
 
     if (player.status.has("hidden") && command === "emerge") {
-        const fixture = game.entityFinder.getFixtures(player.hidingSpot, player.location.id, true)[0];
+        const fixture = game.entityFinder.getFixture(player.hidingSpot, player.location.id);
         if (fixture !== undefined && ((fixture.childPuzzle !== null && fixture.childPuzzle.type.endsWith("lock") && !fixture.childPuzzle.solved) || !fixture.accessible))
             return game.communicationHandler.reply(message, `You cannot come out of hiding right now.`);
         else {
