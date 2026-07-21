@@ -49,7 +49,7 @@ export async function execute(game, message, command, args, player) {
 
     if (player.status.has("hidden") && command === "emerge") {
         const fixture = game.entityFinder.getFixtures(player.hidingSpot, player.location.id, true)[0];
-        if (fixture !== undefined && (fixture.childPuzzle !== null && fixture.childPuzzle.type.endsWith("lock") && !fixture.childPuzzle.solved))
+        if (fixture !== undefined && ((fixture.childPuzzle !== null && fixture.childPuzzle.type.endsWith("lock") && !fixture.childPuzzle.solved) || !fixture.accessible))
             return game.communicationHandler.reply(message, `You cannot come out of hiding right now.`);
         else {
             const emergeAction = new EmergeAction(game, message, player, player.location, false);

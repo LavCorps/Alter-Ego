@@ -83,14 +83,7 @@ export default class EmergeAction extends Action {
             throw new Error(errorMessageGenerator.generatePartyNotSynchronizedError());
         if (!args[0] || args[0].getEntityType() !== "Fixture")
             throw new Error(errorMessageGenerator.generateInvalidEntityError("Fixture"));
-        /**
-         * @privateRemarks
-         * TODO: We need to figure out what happens when a player attempts to emerge from an inaccessible hiding spot.
-         * - AC
-         */
-        if (!args[0].accessible)
-            throw new Error(errorMessageGenerator.generateEntityNotFoundError("fixture", args[0].name));
-        if (args[0].childPuzzle !== null && args[0].childPuzzle.type.endsWith("lock") && !args[0].childPuzzle.solved)
+        if ((args[0].childPuzzle !== null && args[0].childPuzzle.type.endsWith("lock") && !args[0].childPuzzle.solved) || !args[0].accessible)
             throw new Error(errorMessageGenerator.generateFixtureLockedError(args[0]));
         if (args[0].getLocation().id !== this.player.location.id)
             throw new Error(errorMessageGenerator.generatePlayerLocationMismatchError());
