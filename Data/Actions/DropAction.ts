@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+// SPDX-FileCopyrightText: 2026 Ms. VBLANK <alteregomolly@pm.me>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -31,7 +32,7 @@ export default class DropAction extends Action {
     performDrop(item: InventoryItem, handEquipmentSlot: EquipmentSlot, container: RoomItemContainer, inventorySlot: InventorySlot<RoomItem>, notify: boolean = true): void {
         if (this.performed) return;
         super.perform();
-        const interactables = this.#getInteractables(container);
+        const interactables = this.#getInteractables(container, handEquipmentSlot);
         this.getGame().narrationHandler.narrateDrop(this, item, container, this.player, notify, interactables);
         this.getGame().logHandler.logDrop(item, this.player, container, inventorySlot, this.forced);
         this.player.drop(item, handEquipmentSlot, container, inventorySlot);
@@ -58,11 +59,19 @@ export default class DropAction extends Action {
         this.successMessage = `Successfully dropped ${item.getIdentifier()} ${preposition} ${containerPhrase} for ${this.player.name}.`;
     }
 
-    #getInteractables(container: RoomItemContainer): Interactable[] {
+    #getInteractables(container: RoomItemContainer, handEquipmentSlot: EquipmentSlot): Interactable[] {
         let interactables: Interactable[] = [];
-        if (container instanceof Fixture) {
-            interactables = interactables.concat(this.getGame().clientContext.interactableManager.getActivateOrDeactivateInteractables(container, this.player));
-        }
+        const interactableManager = this.getGame().clientContext.interactableManager;
+        interactables = interactables.concat(interactableManager.getUnstashInteractables(this.player, this.user, handEquipmentSlot));
+        interactables = interactables.concat(interactableManager.getUnequipInteractables(this.player, this.user, handEquipmentSlot));
+        const inspectables: Inspectable[] = [];
+        if (container instanceof Puzzle && container.parentFixture) inspectables.push(container.parentFixture);
+        else if (!(container instanceof Puzzle)) inspectables.push(container);
+        interactables = interactables.concat(interactableManager.createInspectActionInteractable(inspectables, this.player, this.user));
+        interactables = interactables.concat(interactableManager.getTakeInteractables(container, container.getContainedItems(), this.player, this.user));
+        if (container instanceof Fixture)
+            interactables = interactables.concat(interactableManager.getActivateOrDeactivateInteractables(container, this.player));
+        interactables = interactables.concat(interactableManager.getInventoryInteractables(this.player, this.user));
         return interactables;
     }
 

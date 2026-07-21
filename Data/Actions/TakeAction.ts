@@ -8,6 +8,7 @@ import { getSortedItemsString, round } from "../../Modules/helpers.ts";
 import Action from "../Action.ts";
 import type EquipmentSlot from "../EquipmentSlot.ts";
 import Fixture from "../Fixture.ts";
+import type InventoryItem from "../InventoryItem.ts";
 import InventorySlot from "../InventorySlot.ts";
 import Puzzle from "../Puzzle.ts";
 import RoomItem from "../RoomItem.ts";
@@ -38,7 +39,7 @@ export default class TakeAction extends Action {
             return;
         }
         const takenItem = this.player.take(item, handEquipmentSlot, container, inventorySlot);
-        const interactables = this.#getInteractables();
+        const interactables = this.#getInteractables(takenItem, container);
         this.getGame().narrationHandler.narrateTake(this, takenItem, container, this.player, notify, interactables);
         // Container is a weight puzzle.
         if (container instanceof Puzzle && container.type === "weight") {
@@ -62,13 +63,21 @@ export default class TakeAction extends Action {
         this.successMessage = `Successfully took ${item.getIdentifier()} from ${slotPhrase}${container.getEntityID()} for ${this.player.name}.`;
     }
 
-    #getInteractables(): Interactable[] {
-        let interactables = this.getGame().clientContext.interactableManager.getStashInteractables(this.player);
+    #getInteractables(takenItem: InventoryItem, container: RoomItemContainer): Interactable[] {
         const interactableManager = this.getGame().clientContext.interactableManager;
-        interactables = interactables.concat(interactableManager.getCraftInteractables(this.player));
+        let interactables = interactableManager.getStashInteractables(this.player, this.user);
+        interactables = interactables.concat(interactableManager.getCraftInteractables(this.player, this.user));
         interactables = interactables.concat(interactableManager.getUncraftInteractables(this.player, this.user));
-        interactables = interactables.concat(interactableManager.getUseInteractables(this.player));
-        interactables = interactables.concat(interactableManager.getEquipInteractables(this.player));
+        interactables = interactables.concat(interactableManager.getUseInteractables(this.player, this.user));
+        interactables = interactables.concat(interactableManager.getEquipInteractables(this.player, this.user));
+        const inspectables: Inspectable[] = [takenItem];
+        if (container instanceof Puzzle && container.parentFixture) inspectables.push(container.parentFixture);
+        else if (!(container instanceof Puzzle)) inspectables.push(container);
+        interactables = interactables.concat(interactableManager.createInspectActionInteractable(inspectables, this.player, this.user));
+        interactables = interactables.concat(interactableManager.getDropInteractables(container, this.player, this.user));
+        if (container instanceof Fixture)
+            interactables = interactables.concat(interactableManager.getActivateOrDeactivateInteractables(container, this.player, undefined, this.user));
+        interactables = interactables.concat(interactableManager.getInventoryInteractables(this.player, this.user));
         return interactables;
     }
 
