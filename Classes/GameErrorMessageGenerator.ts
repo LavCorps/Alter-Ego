@@ -155,14 +155,14 @@ export default class GameErrorMessageGenerator {
      * Generates an error message indicating that the fixture is locked.
      */
     generateFixtureLockedError(fixture: Fixture) {
-        return `You cannot do that because ${fixture.name} is locked.`;
+        return `You cannot do that because ${fixture.getContainingPhrase()} is locked.`;
     }
 
     /**
      * Generates an error message indicating that the fixture is not a hiding spot.
      */
     generateFixtureNotHidingSpotError(fixture: Fixture) {
-        return `You cannot do that because ${fixture.name} is not a hiding spot.`;
+        return `You cannot do that because ${fixture.getContainingPhrase()} is not a hiding spot.`;
     }
 
     /**
