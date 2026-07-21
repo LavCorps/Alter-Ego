@@ -428,4 +428,41 @@ export default class GameErrorMessageGenerator {
                 return `${fixture.name} is already ${verb}d.`;
         }
     }
+
+    /**
+     * Generates an error message indicating that the player does not have a free hand.
+     * @param player - The player who does not have a free hand.
+     * @param context - The context in which the command is being issued.
+     * @param verb - The verb to describe what they cannot do without a free hand.
+     * @param includeDirections - Whether or not to give the player directions on how to free up a hand. Only works if context is "Player".
+     */
+    generateNoFreeHandError(player: Player, context: UserContext, verb: string, includeDirections: boolean) {
+        switch (context) {
+            case "Player":
+                return `You do not have a free hand to ${verb} an item.`
+                    + includeDirections ? ` To free up a hand, either ${this.getCommandString(`drop`)} an item you're currently holding or `
+                        + `${this.getCommandString(`stash`)} it in one of your equipped items.`
+                    : ``;
+            default:
+                return `${player.name} does not have a free hand to ${verb} an item.`;
+        }
+    }
+
+    /**
+     * Generates an error message indicating that items cannot be taken from/dropped in a fixture while it is activated.
+     * @param fixture - The fixture that is activated.
+     * @param command - The command being issued. Either "take" or "drop".
+     * @param context - The context in which the command is being issued.
+     */
+    generateCannotChangeItemsInActivatedFixtureError(fixture: Fixture, command: "take" | "drop", context: UserContext) {
+        let predicate: string;
+        switch (context) {
+            case "Player":
+                predicate = command === "take" ? `take items from` : `put items ${fixture.getPreposition()}`;
+                return `You cannot ${predicate} ${fixture.getContainingPhrase()} while it is turned on.`;
+            default:
+                predicate = command === "take" ? `taken from` : `put ${fixture.getPreposition()}`;
+                return `Items cannot be ${predicate} ${fixture.getContainingPhrase()} while it is turned on.`;
+        }
+    }
 }

@@ -252,13 +252,16 @@ export default class ClientInteractionHandler {
         if (action instanceof InspectAction) {
             const args = interactable.actionDirective.getArgs();
             const parsedArgs = action.parseInteractionArgs(args);
-            const validatedArgs = action.validateInteractionArgs(parsedArgs);
-            if (validatedArgs.length === 1) {
-                action.performInspect(validatedArgs[0]);
-                this.#replyOrDeleteActionResponse(action, interaction, reply);
-                this.#logInteraction("InspectAction", author, timestamp, validatedArgs);
-                return true;
+            try {
+                const validatedArgs = action.validateInteractionArgs(parsedArgs);
+                if (validatedArgs.length === 1) {
+                    action.performInspect(validatedArgs[0]);
+                    this.#replyOrDeleteActionResponse(action, interaction, reply);
+                    this.#logInteraction("InspectAction", author, timestamp, validatedArgs);
+                    return true;
+                }
             }
+            catch (error) { throw new Error(error.message); }
         }
         if (action instanceof HideAction) {
             const args = interactable.actionDirective.getArgs();
@@ -291,13 +294,16 @@ export default class ClientInteractionHandler {
         if (action instanceof TakeAction) {
             const args = interactable.actionDirective.getArgs();
             const parsedArgs = action.parseInteractionArgs(args);
-            const validatedArgs = action.validateInteractionArgs(parsedArgs);
-            if (validatedArgs.length === 4) {
-                action.performTake(validatedArgs[0], validatedArgs[1], validatedArgs[2], validatedArgs[3]);
-                this.#replyOrDeleteActionResponse(action, interaction, reply);
-                this.#logInteraction("TakeAction", author, timestamp, validatedArgs);
-                return true;
+            try {
+                const validatedArgs = action.validateInteractionArgs(parsedArgs);
+                if (validatedArgs.length === 4) {
+                    action.performTake(validatedArgs[0], validatedArgs[1], validatedArgs[2], validatedArgs[3]);
+                    this.#replyOrDeleteActionResponse(action, interaction, reply);
+                    this.#logInteraction("TakeAction", author, timestamp, validatedArgs);
+                    return true;
+                }
             }
+            catch (error) { throw new Error(error.message); }
         }
         if (action instanceof DropAction) {
             const args = interactable.actionDirective.getArgs();

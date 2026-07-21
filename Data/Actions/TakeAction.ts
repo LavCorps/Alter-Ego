@@ -96,22 +96,31 @@ export default class TakeAction extends Action {
      *
      * @param args - The args after being parsed.
      */
-    validateInteractionArgs(args: [RoomItem]): [RoomItem, EquipmentSlot, Puzzle | Fixture | RoomItem, InventorySlot<RoomItem>] | [] {
-        if (args.length !== 1) return [];
-        if (!args[0] || !(args[0] instanceof RoomItem)) return [];
+    validateInteractionArgs(args: [RoomItem]): [RoomItem, EquipmentSlot, Puzzle | Fixture | RoomItem, InventorySlot<RoomItem>] {
+        const errorMessageGenerator = this.getGame().errorMessageGenerator;
+        if (args.length !== 1) throw new Error(errorMessageGenerator.generateInsufficientArgumentsError());
+        if (!args[0] || !(args[0] instanceof RoomItem)) throw new Error(errorMessageGenerator.generateInvalidEntityError("RoomItem"));
         const item = args[0];
         const disabledStatusEffects = this.player.getStatusEffectsDisablingCommand("take");
-        if (disabledStatusEffects.length > 0) return [];
-        if (item.getLocation().id !== this.player.location.id) return [];
-        if (!item.accessible || item.quantity === 0) return [];
+        if (disabledStatusEffects.length > 0)
+            throw new Error(errorMessageGenerator.generateCommandDisabledError(disabledStatusEffects[0]));
+        if (item.getLocation().id !== this.player.location.id) throw new Error(errorMessageGenerator.generatePlayerLocationMismatchError());
+        if (!item.container || !item.accessible || item.quantity === 0)
+            throw new Error(errorMessageGenerator.generateEntityNotFoundError("room item", item.name));
+        const context = this.forced ? "Moderator" : "Player";
         const freeHand = this.getGame().entityFinder.getPlayerFreeHand(this.player);
-        if (!freeHand) return [];
+        if (!freeHand)
+            throw new Error(errorMessageGenerator.generateNoFreeHandError(this.player, context, "take", true));
         const container = item.container;
-        if (!container) return [];
-        const topContainer = item.getTopContainer();
-        if (topContainer !== null) {
-            if (topContainer instanceof Fixture && topContainer.isProcessingItems()) return [];
-            if (topContainer instanceof Puzzle && (topContainer.parentFixture === null || this.player.isHidden() && topContainer.name !== this.player.hidingSpot)) return [];
+        let topContainer = item.getTopContainer();
+        if (topContainer) {
+            if (topContainer instanceof Puzzle)
+                topContainer = topContainer.parentFixture;
+            const hiddenStatusEffects = this.player.getBehaviorAttributeStatusEffects("hidden");
+            if (hiddenStatusEffects.length > 0 && this.player.hidingSpot !== topContainer.name)
+                throw new Error(errorMessageGenerator.generateCommandDisabledError(hiddenStatusEffects[0]));
+            if (topContainer.isProcessingItems())
+                throw new Error(errorMessageGenerator.generateCannotChangeItemsInActivatedFixtureError(topContainer, "take", context));
         }
         const inventorySlot = container instanceof RoomItem ? container.inventory.get(item.slot) : undefined;
         return [item, freeHand, container, inventorySlot];
