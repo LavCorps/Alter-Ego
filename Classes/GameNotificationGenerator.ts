@@ -297,7 +297,7 @@ export default class GameNotificationGenerator {
         }
         else {
             playerDisplayNames = [playerDisplayName].concat(otherDisplayNames);
-            playerDisplayNames.sort();
+            playerDisplayNames.sort((a, b) => a.localeCompare(b));
         }
         const subject = generateListString(playerDisplayNames);
         const verb = secondPerson || otherDisplayNames.length > 0 ? `stop` : `stops`;
@@ -374,7 +374,7 @@ export default class GameNotificationGenerator {
                 : secondPerson && followers.length > 1
                     ? `They`
                     : `who`;
-            const pluralizeVerb = followers.length > 1 || followers.length === 1 && followers[0].pronouns.plural;
+            const pluralizeVerb = followers.length > 1 || secondPerson && followers.length === 1 && followers[0].pronouns.plural;
             const verb2 = pluralizeVerb ? `start` : `starts`;
             const object = secondPerson ? `you` : player.pronouns.obj;
             addendum = `${punctuation} ${subject2} ${verb2} approaching ${object}`;
@@ -486,12 +486,37 @@ export default class GameNotificationGenerator {
      * Generates a notification indicating the player cannot move to an exit because it is locked.
      * @param player - The player referred to in this notification.
      * @param secondPerson - Whether or not the player should be referred to in second person.
+     * @param allPlayers - All players stopping with the player being addressed, including the player being addressed.
      * @param doorPhrase - The door phrase of the locked exit.
      */
-    generateExitLockedNotification(player: Player, secondPerson: boolean, doorPhrase: string) {
-        const subject = secondPerson ? `You` : capitalizeFirstLetter(player.displayName);
-        const verb = secondPerson ? `try` : `tries`;
-        return `${subject} ${verb} to open ${doorPhrase}, but it seems to be locked.`;
+    generateExitLockedNotification(player: Player, secondPerson: boolean, allPlayers: Set<Player>, doorPhrase: string) {
+        const actingPlayer = !player.party || player.party.hasLeader(player) ? player : player.party.leader;
+        const addressPlayerInSecondPerson = secondPerson && actingPlayer.name === player.name;
+        const subject = addressPlayerInSecondPerson ? `you` : player.party?.getMemberDisplayName(actingPlayer) ?? actingPlayer.displayName;
+        const verb = addressPlayerInSecondPerson ? `try` : `tries`;
+        let [_, playerDisplayNames, otherDisplayNames] = this.getPlayerDisplayNames(actingPlayer, allPlayers);
+        let listedDisplayNames: string[] = [];
+        if (allPlayers.size > 1 && secondPerson) {
+            if (!addressPlayerInSecondPerson) listedDisplayNames.push(`you`);
+            if (allPlayers.values().every(otherPlayer => otherPlayer.party?.hasMember(player) && otherPlayer.party?.positionsSynchronized)) {
+                otherDisplayNames = [...playerDisplayNames]
+                    .filter(([other]) => other.name !== player.name && other.name !== actingPlayer.name)
+                    .map(([_, displayName]) => displayName);
+                listedDisplayNames = listedDisplayNames.concat(otherDisplayNames);
+            }
+        }
+        else if (allPlayers.size > 1) {
+            listedDisplayNames = otherDisplayNames;
+            listedDisplayNames.sort((a, b) => a.localeCompare(b));
+        }
+        let appendString = ``;
+        if (listedDisplayNames.length > 0) {
+            const subject = generateListString(listedDisplayNames);
+            const verb = subject === `you` || listedDisplayNames.length > 1 ? `stop` : `stops`;
+            const obj = addressPlayerInSecondPerson ? `you` : actingPlayer.pronouns.obj;
+            appendString = ` ${capitalizeFirstLetter(subject)} ${verb} behind ${obj}.`;
+        }
+        return `${capitalizeFirstLetter(subject)} ${verb} to open ${doorPhrase}, but it seems to be locked.${appendString}`;
     }
 
     /**
@@ -768,31 +793,64 @@ export default class GameNotificationGenerator {
 
     /**
      * Generates a notification indicating the player can't hide in the hiding spot because it's already full.
+     * @param player - The player referred to in this notification.
+     * @param allPlayers - The set of all players who are hiding together, including the player being addressed.
+     * @param secondPerson - Whether or not the player should be referred to in second person.
      * @param hidingSpotPhrase - The phrase of the hiding spot the players are hiding in.
-     * @param hiddenPlayersList - A list of hidden players.
+     * @param hiddenPlayersList - A list of hidden players. Only necessary if secondPerson is true.
      */
-    generateHidingSpotFullNotification(hidingSpotPhrase: string, hiddenPlayersList: string) {
-        return `You attempt to hide in the ${hidingSpotPhrase}, but you find ${hiddenPlayersList} already there! There doesn't seem to be enough room for you.`;
+    generateHidingSpotFullNotification(player: Player, allPlayers: Set<Player>, secondPerson: boolean, hidingSpotPhrase: string, hiddenPlayersList?: string) {
+        let subject = secondPerson ? `you` : player.displayName;
+        let verb = secondPerson ? `attempt` : `attempts`;
+        let object = secondPerson ? `you` : player.pronouns.obj;
+        if (allPlayers.size > 1) {
+            const [_, __, otherDisplayNames] = this.getPlayerDisplayNames(player, allPlayers);
+            const playerDisplayNames = [subject].concat(otherDisplayNames);
+            const playerList = generateListString(playerDisplayNames);
+            if (secondPerson) object = playerList;
+            else {
+                subject = playerList;
+                verb = `attempt`;
+                object = `them`;
+            }
+        }
+        let hiddenPlayersString = secondPerson && hiddenPlayersList !== `` ? `you find ${hiddenPlayersList} already there! There` : `there`;
+        return `${capitalizeFirstLetter(subject)} ${verb} to hide in ${hidingSpotPhrase}, but ${hiddenPlayersString} doesn't seem to be enough room for ${object}.`;
     }
 
     /**
      * Generates a notification indicating the player found other players while attempting to hide.
      * @param hidingSpotPhrase - The phrase of the hiding spot the players are hiding in.
      * @param hiddenPlayersList - A list of hidden players.
+     * @param player - The player referred to in this notification.
+     * @param allPlayers - The set of all players who are hiding together, including the player being addressed.
      */
-    generateHidingSpotOccupiedNotification(hidingSpotPhrase: string, hiddenPlayersList: string) {
-        return `When you hide in the ${hidingSpotPhrase}, you find ${hiddenPlayersList} already there!`;
+    generateHidingSpotOccupiedNotification(hidingSpotPhrase: string, hiddenPlayersList: string, player: Player, allPlayers: Set<Player>) {
+        let subject = `you`;
+        if (allPlayers.size > 1) {
+            const [_, __, otherDisplayNames] = this.getPlayerDisplayNames(player, allPlayers);
+            const playerDisplayNames = [`you`].concat(otherDisplayNames);
+            subject = generateListString(playerDisplayNames);
+        }
+        return `When ${subject} hide in ${hidingSpotPhrase}, you find ${hiddenPlayersList} already there!`;
     }
 
     /**
      * Generates a notification indicating someone found the player while hiding.
      * @param player - The player referred to in this notification.
      * @param findingPlayer - The player that hid, who found the player in the process.
+     * @param allPlayers - The set of all players who are hiding together.
      */
-    generateFoundInOccupiedHidingSpotNotification(player: Player, findingPlayer: Player) {
-        const foundNotification = player.canSee() ? `You're found by ${findingPlayer.displayName}` : `Someone finds you`;
-        const findingPlayerSbj = player.canSee() ? findingPlayer.pronouns.Sbj : `They`;
-        const verb = player.canSee() || !findingPlayer.pronouns.plural ? `hides` : `hide`;
+    generateFoundInOccupiedHidingSpotNotification(player: Player, findingPlayer: Player, allPlayers: Set<Player>) {
+        const [playerDisplayName, _, otherDisplayNames] = this.getPlayerDisplayNames(findingPlayer, allPlayers);
+        const findingPlayersList = generateListString([playerDisplayName].concat(otherDisplayNames));
+        const foundNotification = player.canSee()
+            ? `You're found by ${findingPlayersList}`
+            : allPlayers.size > 1
+                ? `Several people find you`
+                : `Someone finds you`;
+        const findingPlayerSbj = allPlayers.size === 1 && player.canSee() ? findingPlayer.pronouns.Sbj : `They`;
+        const verb = allPlayers.size === 1 && player.canSee() && !findingPlayer.pronouns.plural ? `hides` : `hide`;
         return `${foundNotification}! ${findingPlayerSbj} ${verb} with you.`;
     }
 
@@ -800,12 +858,38 @@ export default class GameNotificationGenerator {
      * Generates a notification indicating someone found the player while attempting to hide, but they couldn't hide because the hiding spot was full.
      * @param player - The player referred to in this notification.
      * @param findingPlayer - The player attempting to hide, who found the player in the process.
+     * @param allPlayers - The set of all players who are hiding together.
      */
-    generateFoundInFullHidingSpotNotification(player: Player, findingPlayer: Player) {
-        const foundNotification = player.canSee() ? `You're found by ${findingPlayer.displayName}` : `Someone finds you`;
-        const findingPlayerSbj = player.canSee() ? findingPlayer.pronouns.Sbj : `They`;
-        const verb = player.canSee() || !findingPlayer.pronouns.plural ? `tries` : `try`;
+    generateFoundInFullHidingSpotNotification(player: Player, findingPlayer: Player, allPlayers: Set<Player>) {
+        const [playerDisplayName, _, otherDisplayNames] = this.getPlayerDisplayNames(findingPlayer, allPlayers);
+        const findingPlayersList = generateListString([playerDisplayName].concat(otherDisplayNames));
+        const foundNotification = player.canSee()
+            ? `You're found by ${findingPlayersList}`
+            : allPlayers.size > 1
+                ? `Several people find you`
+                : `Someone finds you`;
+        const findingPlayerSbj = allPlayers.size === 1 && player.canSee() ? findingPlayer.pronouns.Sbj : `They`;
+        const verb = allPlayers.size === 1 && player.canSee() && !findingPlayer.pronouns.plural ? `tries` : `try`;
         return `${foundNotification}! ${findingPlayerSbj} ${verb} to hide with you, but there isn't enough room.`;
+    }
+
+    /**
+     * Generates a notification indicating that a player emerged from a hiding spot that remains occupied.
+     * @param player - The player referred to in this notification.
+     * @param emergingPlayer - The player who emerged from hiding.
+     * @param allPlayers - The set of all players who emerged from hiding, including the emerging player.
+     * @param hidingSpotPhrase - The phrase of the hiding spot the player is coming out from.
+     */
+    generateEmergeFromOccupiedHidingSpotNotification(player: Player, emergingPlayer: Player, allPlayers: Set<Player>, hidingSpotPhrase: string) {
+        const [playerDisplayName, _, otherDisplayNames] = this.getPlayerDisplayNames(emergingPlayer, allPlayers);
+        const findingPlayersList = generateListString([playerDisplayName].concat(otherDisplayNames));
+        const subject = player.canSee()
+            ? `${findingPlayersList}`
+            : allPlayers.size > 1
+                ? `Several people`
+                : `Someone`;
+        const verb = allPlayers.size === 1 ? `comes out` : `come out`;
+        return `${capitalizeFirstLetter(subject)} ${verb} of ${hidingSpotPhrase}.`;
     }
 
     /**
@@ -887,25 +971,37 @@ export default class GameNotificationGenerator {
     /**
      * Generates a notification indicating the player hid in a fixture.
      * @param player - The player referred to in this notification.
+     * @param allPlayers - The set of all players who are hiding together, including the player being addressed.
      * @param secondPerson - Whether or not the player should be referred to in second person.
      * @param hidingSpotPhrase - The phrase of the hiding spot the player is hiding in.
      */
-    generateHideNotification(player: Player, secondPerson: boolean, hidingSpotPhrase: string) {
-        const subject = secondPerson ? `You` : capitalizeFirstLetter(player.displayName);
-        const verb = secondPerson ? `hide` : `hides`;
-        return `${subject} ${verb} in ${hidingSpotPhrase}.`;
+    generateHideNotification(player: Player, allPlayers: Set<Player>, secondPerson: boolean, hidingSpotPhrase: string) {
+        let subject = secondPerson ? `you` : player.displayName;
+        if (allPlayers.size > 1) {
+            const [_, __, otherDisplayNames] = this.getPlayerDisplayNames(player, allPlayers);
+            const playerDisplayNames = [subject].concat(otherDisplayNames);
+            subject = generateListString(playerDisplayNames);
+        }
+        const verb = subject === `you` || allPlayers.size > 1 ? `hide` : `hides`;
+        return `${capitalizeFirstLetter(subject)} ${verb} in ${hidingSpotPhrase}.`;
     }
 
     /**
      * Generates a notification indicating the player came out of a hiding spot.
      * @param player - The player referred to in this notification.
+     * @param allPlayers - The set of all players who are emerging together, including the player being addressed.
      * @param secondPerson - Whether or not the player should be referred to in second person.
      * @param hidingSpotPhrase - The phrase of the hiding spot the player is coming out from.
      */
-    generateUnhideNotification(player: Player, secondPerson: boolean, hidingSpotPhrase: string) {
-        const subject = secondPerson ? `You` : capitalizeFirstLetter(player.displayName);
-        const verb = secondPerson ? `come out` : `comes out`;
-        return `${subject} ${verb} of ${hidingSpotPhrase}.`;
+    generateEmergeNotification(player: Player, allPlayers: Set<Player>, secondPerson: boolean, hidingSpotPhrase: string) {
+        let subject = secondPerson ? `you` : player.displayName;
+        if (allPlayers.size > 1) {
+            const [_, __, otherDisplayNames] = this.getPlayerDisplayNames(player, allPlayers);
+            const playerDisplayNames = [subject].concat(otherDisplayNames);
+            subject = generateListString(playerDisplayNames);
+        }
+        const verb = subject === `you` || allPlayers.size > 1 ? `come out` : `comes out`;
+        return `${capitalizeFirstLetter(subject)} ${verb} of ${hidingSpotPhrase}.`;
     }
 
     /**

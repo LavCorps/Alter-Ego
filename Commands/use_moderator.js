@@ -50,8 +50,8 @@ export async function execute(game, message, command, args, moderator) {
     if (sentMessageInLatchChannel && args.length < 1)
         return game.communicationHandler.reply(message, `You need to specify an item. Usage:\n${usage(game.settings)}`);
 
-    let player = game.entityFinder.getLivingPlayer(args[0].replace(/'s/g, ""));
-    if (player && (moderator.getLatch() === null || moderator.getLatch().name.toLowerCase() !== args[0].toLowerCase().replace(/'s/g, "")))
+    let player = game.entityFinder.getLivingPlayer(args[0]?.replace(/'s/g, ""));
+    if (player && !moderator.latchedPlayerHasName(args[0]))
         args.splice(0, 1);
     if (!player && sentMessageInLatchChannel)
         player = moderator.getLatch();
@@ -101,6 +101,6 @@ export async function execute(game, message, command, args, moderator) {
     if (!item.usableOn(target)) return game.communicationHandler.reply(message, `${item.getIdentifier()} currently has no effect on ${target.name}.`);
     // Use the player's item.
     const action = new UseAction(game, message, player, player.location, true);
-    action.performUse(item, target, announcement);
+    await action.performUse(item, target, announcement);
     action.sendSuccessMessageToCommandChannel();
 }

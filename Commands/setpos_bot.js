@@ -56,7 +56,7 @@ export async function execute(game, command, args, player, callee) {
     else if (args[0].toLowerCase() === "room" && callee !== null && callee instanceof Puzzle)
         players = callee.location.occupants;
     else if (args[0].toLowerCase() === "all") {
-        players = game.entityFinder.getLivingPlayers(null, false).filter(player => !game.guildContext.hasFreeMovementRole(player.member));
+        players = game.entityFinder.getLivingPlayers(null, false).filter(player => !player.canMoveFreely());
     }
     else {
         player = game.entityFinder.getLivingPlayer(args[0]);

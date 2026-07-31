@@ -17,7 +17,7 @@ const acceptableDeviation = 200;
  * @param player - The player who caused these procedurals to be evaluated, if applicable.
  */
 function generateActual(text: string, proceduralSelections: Map<string, string>, player?: Player) {
-    const description = new Description(text, game.entityFinder.getPrefab('SIGN IN SHEET'), game);
+    const description = new Description(text, testGame.entityFinder.getPrefab('SIGN IN SHEET'), testGame);
     for (let i = 0; i < 10000; i++) {
         const proceduralSelectionsCopy = new Map(proceduralSelections);
         const generatedText = generateProceduralOutput(description, proceduralSelectionsCopy, player);
@@ -47,8 +47,8 @@ describe('test_parser_generateProceduralOutput', () => {
     let qm: Player;
 
     beforeAll(async () => {
-        await game.entityLoader.loadAll();
-        qm = game.entityFinder.getLivingPlayer("???");
+        await testGame.entityLoader.loadAll();
+        qm = testGame.entityFinder.getLivingPlayer("???");
     });
 
     afterEach(() => {

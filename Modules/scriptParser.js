@@ -58,6 +58,7 @@ export const SCRIPT_SCOPE_OPTIONS = {
         findInventoryItems: finder.findInventoryItems,
         findGestures: finder.findGestures,
         findFlags: finder.findFlags,
+        round: helpers.round,
         divide: helpers.divide,
         clamp: helpers.clamp,
         getRandomNumber: helpers.getRandomNumber,

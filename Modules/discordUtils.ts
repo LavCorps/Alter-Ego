@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+// SPDX-FileCopyrightText: 2026 Ms. VBLANK <alteregomolly@pm.me>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -7,7 +8,7 @@ import StringSelectMenuInteractable from '../Classes/Interactables/StringSelectM
 import type Game from '../Data/Game.ts';
 import type Player from '../Data/Player.ts';
 import type Room from '../Data/Room.ts';
-import { InteractableType, MessageDisplayType } from './enums.js';
+import { InteractableType, MessageDisplayType } from './enums.ts';
 import { capitalizeFirstLetter, makeCopyable } from './helpers.ts';
 import {
     ActionRowBuilder,
@@ -22,11 +23,14 @@ import {
     SeparatorBuilder,
     SeparatorSpacingSize,
     type MessageCreateOptions,
+    type MessageEditOptions,
     MessageFlags,
     MediaGalleryBuilder,
     MediaGalleryItemBuilder,
     StringSelectMenuBuilder,
-    type WebhookMessageCreateOptions
+    type WebhookMessageCreateOptions,
+    type Message,
+    ComponentType
 } from 'discord.js';
 
 type Flags = BitFieldResolvable<"SuppressEmbeds" | "SuppressNotifications" | "IsComponentsV2", MessageFlags.SuppressEmbeds | MessageFlags.SuppressNotifications | MessageFlags.IsComponentsV2>
@@ -50,6 +54,33 @@ export function generateMessageDisplayCreateOptions(messageDisplayType: MessageD
         files: files,
         embeds: messageDisplayType === MessageDisplayType.PLAIN_TEXT ? embeds : []
     };
+}
+
+/**
+ * Generates the message create options for a narration or notification.
+ * @param messageDisplayType - The display type of the message to send.
+ * @param game - The game the message is for.
+ * @param messageText - The text content of the message.
+ * @param player - The player the message is about. Optional.
+ * @param files - An array of file URLs to send. Optional.
+ * @param interactables - An array of interactables. Optional.
+ * @param embeds - An array of embeds. Optional.
+ */
+export function generateMessageDisplayEditOptions(messageDisplayType: MessageDisplayType, game: Game, messageText: string, player?: Player, files: string[] = [], interactables: Interactable[] = [], embeds: (Embed | EmbedBuilder)[] = []): MessageEditOptions {
+    return {
+        content: messageDisplayType === MessageDisplayType.PLAIN_TEXT ? messageText : '',
+        components: messageDisplayType === MessageDisplayType.PLAIN_TEXT ? generateActionRows(interactables) : createNarrateComponents(messageDisplayType, game, messageText, player, [], interactables),
+        files: files,
+        embeds: messageDisplayType === MessageDisplayType.PLAIN_TEXT ? embeds : []
+    };
+}
+
+/**
+ * Returns the message without any of its ActionRow components.
+ * @param message - The message to remove ActionRow components from.
+ */
+export function generateMessageEditOptionsWithoutActionRows(message: Message): MessageEditOptions {
+    return { components: message.components.filter(component => component.type !== ComponentType.ActionRow) }
 }
 
 /**

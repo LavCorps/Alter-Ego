@@ -172,33 +172,33 @@ describe('messageHandler test', () => {
     let receiver: Status;
 
     beforeAll(async () => {
-        await game.entityLoader.loadAll();
-        kyra = game.entityFinder.getLivingPlayer("Kyra");
-        vivian = game.entityFinder.getLivingPlayer("Vivian");
-        astrid = game.entityFinder.getLivingPlayer("Astrid");
-        nero = game.entityFinder.getLivingPlayer("Nero");
-        asuka = game.entityFinder.getLivingPlayer("Asuka");
-        luna = game.entityFinder.getLivingPlayer("Luna");
-        kiara = game.entityFinder.getLivingPlayer("Kiara");
-        amadeus = game.entityFinder.getLivingPlayer("Amadeus");
-        qm = game.entityFinder.getLivingPlayer("???");
-        breakRoom = game.entityFinder.getRoom("break-room");
-        gmOffice = game.entityFinder.getRoom("general-managers-office");
-        f1h1 = game.entityFinder.getRoom("floor-1-hall-1");
-        f1h2 = game.entityFinder.getRoom("floor-1-hall-2");
-        lobby = game.entityFinder.getRoom("lobby");
-        commandCenter = game.entityFinder.getRoom("command-center");
-        courtyard = game.entityFinder.getRoom("courtyard");
+        await testGame.entityLoader.loadAll();
+        kyra = testGame.entityFinder.getLivingPlayer("Kyra");
+        vivian = testGame.entityFinder.getLivingPlayer("Vivian");
+        astrid = testGame.entityFinder.getLivingPlayer("Astrid");
+        nero = testGame.entityFinder.getLivingPlayer("Nero");
+        asuka = testGame.entityFinder.getLivingPlayer("Asuka");
+        luna = testGame.entityFinder.getLivingPlayer("Luna");
+        kiara = testGame.entityFinder.getLivingPlayer("Kiara");
+        amadeus = testGame.entityFinder.getLivingPlayer("Amadeus");
+        qm = testGame.entityFinder.getLivingPlayer("???");
+        breakRoom = testGame.entityFinder.getRoom("break-room");
+        gmOffice = testGame.entityFinder.getRoom("general-managers-office");
+        f1h1 = testGame.entityFinder.getRoom("floor-1-hall-1");
+        f1h2 = testGame.entityFinder.getRoom("floor-1-hall-2");
+        lobby = testGame.entityFinder.getRoom("lobby");
+        commandCenter = testGame.entityFinder.getRoom("command-center");
+        courtyard = testGame.entityFinder.getRoom("courtyard");
         players = [kyra, vivian, astrid, nero, asuka, luna, kiara, amadeus];
         rooms = [breakRoom, gmOffice, f1h1, f1h2, lobby, commandCenter, courtyard];
-        asleep = game.entityFinder.getStatusEffect("asleep");
-        blind = game.entityFinder.getStatusEffect("blind");
-        concealed = game.entityFinder.getStatusEffect("concealed");
-        deaf = game.entityFinder.getStatusEffect("deaf");
-        hidden = game.entityFinder.getStatusEffect("hidden");
-        mute = game.entityFinder.getStatusEffect("mute");
-        acuteHearing = game.entityFinder.getStatusEffect("hearing");
-        receiver = game.entityFinder.getStatusEffect("walkie talkie");
+        asleep = testGame.entityFinder.getStatusEffect("asleep");
+        blind = testGame.entityFinder.getStatusEffect("blind");
+        concealed = testGame.entityFinder.getStatusEffect("concealed");
+        deaf = testGame.entityFinder.getStatusEffect("deaf");
+        hidden = testGame.entityFinder.getStatusEffect("hidden");
+        mute = testGame.entityFinder.getStatusEffect("mute");
+        acuteHearing = testGame.entityFinder.getStatusEffect("hearing");
+        receiver = testGame.entityFinder.getStatusEffect("walkie talkie");
     });
 
     describe('processIncomingMessage tests', () => {
@@ -216,21 +216,21 @@ describe('messageHandler test', () => {
             test('forwarded messages in room channels are deleted', async () => {
                 const message = discord.createPlayerMessage(asuka, "", asuka.location.channel, MessageFlags.HasSnapshot);
                 const deleteMessageSpy = vi.spyOn(message, 'delete');
-                messageHandler.processIncomingMessage(game, message);
-                await messageHandler.sendQueuedMessages(game);
+                messageHandler.processIncomingMessage(testGame, message);
+                await messageHandler.sendQueuedMessages(testGame);
                 expect(asuka.member.user.dmChannel.messages.cache).toHaveSize(1);
                 expect(asuka.member.user.dmChannel.messages.cache.first().content).toBe(`You cannot forward messages to game channels.`);
-                expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
+                expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
                 expect(deleteMessageSpy).toHaveBeenCalledTimes(1);
             });
 
             test('forwarded messages in OOC channels are not deleted', async () => {
-                const message = discord.createPlayerMessage(asuka, "", game.guildContext.generalChannel, MessageFlags.HasSnapshot);
+                const message = discord.createPlayerMessage(asuka, "", testGame.guildContext.generalChannel, MessageFlags.HasSnapshot);
                 const deleteMessageSpy = vi.spyOn(message, 'delete');
-                messageHandler.processIncomingMessage(game, message);
-                await messageHandler.sendQueuedMessages(game);
+                messageHandler.processIncomingMessage(testGame, message);
+                await messageHandler.sendQueuedMessages(testGame);
                 expect(asuka.member.user.dmChannel.messages.cache).toHaveSize(0);
-                expect(game.communicationHandler.getDialogSpectateMirrors(message)).toBeUndefined();
+                expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toBeUndefined();
                 expect(deleteMessageSpy).toHaveBeenCalledTimes(0);
             });
 
@@ -238,11 +238,11 @@ describe('messageHandler test', () => {
                 asuka.inflict(mute);
                 const message = discord.createPlayerMessage(asuka, "Hi.");
                 const deleteMessageSpy = vi.spyOn(message, 'delete');
-                messageHandler.processIncomingMessage(game, message);
-                await messageHandler.sendQueuedMessages(game);
+                messageHandler.processIncomingMessage(testGame, message);
+                await messageHandler.sendQueuedMessages(testGame);
                 expect(asuka.notificationChannel.messages.cache).toHaveSize(1);
                 expect(asuka.notificationChannel.messages.cache.first().content).toBe(`You are **${mute.id}**, so you cannot speak.`);
-                expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
+                expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
                 expect(deleteMessageSpy).toHaveBeenCalledTimes(1);
                 asuka.cure(mute);
             });
@@ -251,11 +251,11 @@ describe('messageHandler test', () => {
                 asuka.inflict(mute);
                 const message = discord.createPlayerMessage(asuka, "( Hi.");
                 const deleteMessageSpy = vi.spyOn(message, 'delete');
-                messageHandler.processIncomingMessage(game, message);
-                await messageHandler.sendQueuedMessages(game);
+                messageHandler.processIncomingMessage(testGame, message);
+                await messageHandler.sendQueuedMessages(testGame);
                 expect(asuka.notificationChannel.messages.cache).toHaveSize(1);
                 expect(asuka.notificationChannel.messages.cache.first().content).toBe(`You are **${mute.id}**, so you cannot speak.`);
-                expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
+                expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
                 expect(deleteMessageSpy).toHaveBeenCalledTimes(1);
                 asuka.cure(mute);
             });
@@ -273,13 +273,13 @@ describe('messageHandler test', () => {
             });
 
             test('announcement message by living player', async () => {
-                const message = discord.createPlayerMessage(kyra, "Good morning, everyone.", game.guildContext.announcementChannel);
+                const message = discord.createPlayerMessage(kyra, "Good morning, everyone.", testGame.guildContext.announcementChannel);
                 const announceActionSpy = vi.spyOn(AnnounceAction.prototype, 'performAnnounce');
-                messageHandler.processIncomingMessage(game, message);
-                await messageHandler.sendQueuedMessages(game);
+                messageHandler.processIncomingMessage(testGame, message);
+                await messageHandler.sendQueuedMessages(testGame);
                 expect(dialogConstructorSpy).toHaveBeenCalledTimes(1);
                 expect(announceActionSpy).toHaveBeenCalledTimes(1);
-                expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(players.length);
+                expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(players.length);
                 for (const player of players) {
                     expect(player.spectateChannel.messages.cache).toHaveSize(1);
                     const spectateMessage = player.spectateChannel.messages.cache.first();
@@ -289,23 +289,23 @@ describe('messageHandler test', () => {
             });
 
             test('announcement OOC message by living player is not communicated to spectate channels', async () => {
-                const message = discord.createPlayerMessage(kyra, "( Good morning, everyone.", game.guildContext.announcementChannel);
+                const message = discord.createPlayerMessage(kyra, "( Good morning, everyone.", testGame.guildContext.announcementChannel);
                 const announceActionSpy = vi.spyOn(AnnounceAction.prototype, 'performAnnounce');
-                messageHandler.processIncomingMessage(game, message);
-                await messageHandler.sendQueuedMessages(game);
+                messageHandler.processIncomingMessage(testGame, message);
+                await messageHandler.sendQueuedMessages(testGame);
                 expect(dialogConstructorSpy).toHaveBeenCalledTimes(1);
                 expect(announceActionSpy).toHaveBeenCalledTimes(1);
-                expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
+                expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
             });
 
             test('announcement message by dead player', async () => {
-                const evad = game.entityFinder.getDeadPlayer("Evad");
-                const message = discord.createPlayerMessage(evad, "Good morning, y'all.", game.guildContext.announcementChannel);
+                const evad = testGame.entityFinder.getDeadPlayer("Evad");
+                const message = discord.createPlayerMessage(evad, "Good morning, y'all.", testGame.guildContext.announcementChannel);
                 const announceActionSpy = vi.spyOn(AnnounceAction.prototype, 'performAnnounce');
-                messageHandler.processIncomingMessage(game, message);
+                messageHandler.processIncomingMessage(testGame, message);
                 expect(dialogConstructorSpy).not.toHaveBeenCalled();
                 expect(announceActionSpy).not.toHaveBeenCalled();
-                expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
+                expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
             });
 
             test('announcement message by non-player', async () => {
@@ -314,13 +314,13 @@ describe('messageHandler test', () => {
                     content: "Good morning, everyone.",
                     member: member,
                     author: member.user,
-                    channel: game.guildContext.announcementChannel
+                    channel: testGame.guildContext.announcementChannel
                 });
                 const announceActionSpy = vi.spyOn(AnnounceAction.prototype, 'performAnnounce');
-                messageHandler.processIncomingMessage(game, message);
+                messageHandler.processIncomingMessage(testGame, message);
                 expect(dialogConstructorSpy).not.toHaveBeenCalled();
                 expect(announceActionSpy).not.toHaveBeenCalled();
-                expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
+                expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
             });
         });
 
@@ -347,8 +347,8 @@ describe('messageHandler test', () => {
 
             const sendPlayerMessage = async (player: Player, messageText: string, channel?: TextChannel, flags: number = 0) => {
                 message = discord.createPlayerMessage(player, messageText, channel, flags);
-                messageHandler.processIncomingMessage(game, message);
-                await messageHandler.sendQueuedMessages(game);
+                messageHandler.processIncomingMessage(testGame, message);
+                await messageHandler.sendQueuedMessages(testGame);
                 kyraSpectateMessage = kyra.spectateChannel.messages.cache.first();
                 vivianSpectateMessage = vivian.spectateChannel.messages.cache.first();
                 astridSpectateMessage = astrid.spectateChannel.messages.cache.first();
@@ -390,7 +390,7 @@ describe('messageHandler test', () => {
                 asuka.location.removePlayer(asuka);
                 courtyard.addPlayer(asuka);
 
-                const mask = game.entityFinder.getPrefab("PLAGUE DOCTOR MASK");
+                const mask = testGame.entityFinder.getPrefab("PLAGUE DOCTOR MASK");
                 instantiateInventoryItem(mask, kyra, "FACE", null, "", 1, NaN, new Map());
                 kyra.inflict(concealed);
                 kyra.displayName = "an individual wearing a PLAGUE DOCTOR MASK";
@@ -506,7 +506,7 @@ describe('messageHandler test', () => {
                     test('standard dialog is communicated to spectate channels', async () => {
                         await sendPlayerMessage(luna, "Oh, hello!");
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
                         for (const occupant of luna.location.occupants) {
                             expect(occupant.notificationChannel.messages.cache).toHaveSize(0);
                             expect(occupant.spectateChannel.messages.cache).toHaveSize(1);
@@ -518,36 +518,36 @@ describe('messageHandler test', () => {
 
                     test('display name of speaker does not match her name', async () => {
                         luna.displayName = "an individual wearing a MASK";
-                        luna.displayIcon = game.settings.defaultConcealedIconURL;
+                        luna.displayIcon = testGame.settings.defaultConcealedIconURL;
 
                         await sendPlayerMessage(luna, "Oh, hello!");
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
 
                         expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                         expect(luna.spectateChannel.messages.cache).toHaveSize(1);
                         expect(lunaSpectateMessage).toBeWebhookMessage();
-                        expect(lunaSpectateMessage).toBeMessageWith("An individual wearing a MASK (Luna)", game.settings.defaultConcealedIconURL, "Oh, hello!");
+                        expect(lunaSpectateMessage).toBeMessageWith("An individual wearing a MASK (Luna)", testGame.settings.defaultConcealedIconURL, "Oh, hello!");
 
                         expect(asuka.notificationChannel.messages.cache).toHaveSize(0);
                         expect(asuka.spectateChannel.messages.cache).toHaveSize(1);
                         expect(asukaSpectateMessage).toBeWebhookMessage();
-                        expect(asukaSpectateMessage).toBeMessageWith("An individual wearing a MASK", game.settings.defaultConcealedIconURL, "Oh, hello!");
+                        expect(asukaSpectateMessage).toBeMessageWith("An individual wearing a MASK", testGame.settings.defaultConcealedIconURL, "Oh, hello!");
 
                         luna.displayName = luna.name;
                         luna.displayIcon = null;
                     });
 
                     test('players are hidden together', async () => {
-                        const hidingSpot = game.entityFinder.getFixture("SHED", "courtyard").hidingSpot;
-                        hidingSpot.addPlayer(luna);
-                        hidingSpot.addPlayer(asuka);
+                        const hidingSpot = testGame.entityFinder.getFixture("SHED", "courtyard").hidingSpot;
+                        hidingSpot.addPlayers(luna);
+                        hidingSpot.addPlayers(asuka);
                         luna.inflict(hidden);
                         asuka.inflict(hidden);
 
                         await sendPlayerMessage(luna, "Oh, hello!");
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
 
                         expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                         expect(luna.spectateChannel.messages.cache).toHaveSize(1);
@@ -560,38 +560,38 @@ describe('messageHandler test', () => {
                         expect(asukaSpectateMessage).toBeWebhookMessage();
                         expect(asukaSpectateMessage).toBeMessageWith("Luna", luna.member.avatarURL(), "Oh, hello!");
 
-                        await hidingSpot.removePlayer(luna);
-                        await hidingSpot.removePlayer(asuka);
+                        await hidingSpot.removePlayers(luna);
+                        await hidingSpot.removePlayers(asuka);
                         luna.cure(hidden);
                         asuka.cure(hidden);
                     });
 
                     test('players are hidden together and display name of speaker does not match her name', async () => {
-                        const hidingSpot = game.entityFinder.getFixture("SHED", "courtyard").hidingSpot;
-                        hidingSpot.addPlayer(luna);
-                        hidingSpot.addPlayer(asuka);
+                        const hidingSpot = testGame.entityFinder.getFixture("SHED", "courtyard").hidingSpot;
+                        hidingSpot.addPlayers(luna);
+                        hidingSpot.addPlayers(asuka);
                         luna.inflict(hidden);
                         asuka.inflict(hidden);
                         luna.displayName = "an individual wearing a MASK";
-                        luna.displayIcon = game.settings.defaultConcealedIconURL;
+                        luna.displayIcon = testGame.settings.defaultConcealedIconURL;
 
                         await sendPlayerMessage(luna, "Oh, hello!");
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
 
                         expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                         expect(luna.spectateChannel.messages.cache).toHaveSize(1);
                         expect(lunaSpectateMessage).toBeWebhookMessage();
-                        expect(lunaSpectateMessage).toBeMessageWith("An individual wearing a MASK (Luna)", game.settings.defaultConcealedIconURL, "Oh, hello!");
+                        expect(lunaSpectateMessage).toBeMessageWith("An individual wearing a MASK (Luna)", testGame.settings.defaultConcealedIconURL, "Oh, hello!");
 
                         expect(asuka.notificationChannel.messages.cache).toHaveSize(1);
                         expect(asukaNotificationMessage.content).toBe(`An individual wearing a MASK says "Oh, hello!"`);
                         expect(asuka.spectateChannel.messages.cache).toHaveSize(1);
                         expect(asukaSpectateMessage).toBeWebhookMessage();
-                        expect(asukaSpectateMessage).toBeMessageWith("An individual wearing a MASK", game.settings.defaultConcealedIconURL, "Oh, hello!");
+                        expect(asukaSpectateMessage).toBeMessageWith("An individual wearing a MASK", testGame.settings.defaultConcealedIconURL, "Oh, hello!");
 
-                        await hidingSpot.removePlayer(luna);
-                        await hidingSpot.removePlayer(asuka);
+                        await hidingSpot.removePlayers(luna);
+                        await hidingSpot.removePlayers(asuka);
                         luna.cure(hidden);
                         asuka.cure(hidden);
                         luna.displayName = luna.name;
@@ -603,7 +603,7 @@ describe('messageHandler test', () => {
 
                         await sendPlayerMessage(luna, "Oh, hello!");
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
 
                         expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                         expect(luna.spectateChannel.messages.cache).toHaveSize(1);
@@ -621,7 +621,7 @@ describe('messageHandler test', () => {
 
                         await sendPlayerMessage(luna, "Oh, hello!");
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
 
                         expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                         expect(luna.spectateChannel.messages.cache).toHaveSize(1);
@@ -640,7 +640,7 @@ describe('messageHandler test', () => {
 
                             await sendPlayerMessage(luna, "Oh, hello!");
                             expect(performSaySpy).toHaveBeenCalledTimes(1);
-                            expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
+                            expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
 
                             expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                             expect(luna.spectateChannel.messages.cache).toHaveSize(1);
@@ -660,7 +660,7 @@ describe('messageHandler test', () => {
 
                             await sendPlayerMessage(luna, "Oh, hello!");
                             expect(performSaySpy).toHaveBeenCalledTimes(1);
-                            expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
+                            expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
 
                             expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                             expect(luna.spectateChannel.messages.cache).toHaveSize(1);
@@ -681,7 +681,7 @@ describe('messageHandler test', () => {
 
                             await sendPlayerMessage(luna, "Oh, hello!");
                             expect(performSaySpy).toHaveBeenCalledTimes(1);
-                            expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
+                            expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
 
                             expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                             expect(luna.spectateChannel.messages.cache).toHaveSize(1);
@@ -704,7 +704,7 @@ describe('messageHandler test', () => {
 
                             await sendPlayerMessage(luna, "Oh, hello!");
                             expect(performSaySpy).toHaveBeenCalledTimes(1);
-                            expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
+                            expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
 
                             expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                             expect(luna.spectateChannel.messages.cache).toHaveSize(1);
@@ -726,7 +726,7 @@ describe('messageHandler test', () => {
 
                             await sendPlayerMessage(luna, "Oh, hello!");
                             expect(performSaySpy).toHaveBeenCalledTimes(1);
-                            expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
+                            expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
 
                             expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                             expect(luna.spectateChannel.messages.cache).toHaveSize(1);
@@ -737,7 +737,7 @@ describe('messageHandler test', () => {
                             expect(asukaNotificationMessage.content).toBe(`Someone in the room with a gentle voice says "Oh, hello!"`);
                             expect(asuka.spectateChannel.messages.cache).toHaveSize(1);
                             expect(asukaSpectateMessage).toBeWebhookMessage();
-                            expect(asukaSpectateMessage).toBeMessageWith("Someone in the room with a gentle voice", game.settings.hiddenIconURL, "Oh, hello!");
+                            expect(asukaSpectateMessage).toBeMessageWith("Someone in the room with a gentle voice", testGame.settings.hiddenIconURL, "Oh, hello!");
 
                             luna.cure(hidden);
                             asuka.cure(concealed);
@@ -749,7 +749,7 @@ describe('messageHandler test', () => {
                     test('OOC dialog is not communicated to spectate channels', async () => {
                         await sendPlayerMessage(luna, "-# ( Oh, hello!");
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
                         for (const occupant of luna.location.occupants) {
                             expect(occupant.notificationChannel.messages.cache).toHaveSize(0);
                             expect(occupant.spectateChannel.messages.cache).toHaveSize(0);
@@ -758,11 +758,11 @@ describe('messageHandler test', () => {
 
                     test('display name of speaker does not match her name', async () => {
                         luna.displayName = "an individual wearing a MASK";
-                        luna.displayIcon = game.settings.defaultConcealedIconURL;
+                        luna.displayIcon = testGame.settings.defaultConcealedIconURL;
 
                         await sendPlayerMessage(luna, "( Oh, hello!");
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
 
                         expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                         expect(luna.spectateChannel.messages.cache).toHaveSize(0);
@@ -775,15 +775,15 @@ describe('messageHandler test', () => {
                     });
 
                     test('players are hidden together', async () => {
-                        const hidingSpot = game.entityFinder.getFixture("SHED", "courtyard").hidingSpot;
-                        hidingSpot.addPlayer(luna);
-                        hidingSpot.addPlayer(asuka);
+                        const hidingSpot = testGame.entityFinder.getFixture("SHED", "courtyard").hidingSpot;
+                        hidingSpot.addPlayers(luna);
+                        hidingSpot.addPlayers(asuka);
                         luna.inflict(hidden);
                         asuka.inflict(hidden);
 
                         await sendPlayerMessage(luna, "( Oh, hello!");
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
 
                         expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                         expect(luna.spectateChannel.messages.cache).toHaveSize(0);
@@ -792,24 +792,24 @@ describe('messageHandler test', () => {
                         expect(asukaNotificationMessage.content).toBe(`Luna says "( Oh, hello!"`);
                         expect(asuka.spectateChannel.messages.cache).toHaveSize(0);
 
-                        await hidingSpot.removePlayer(luna);
-                        await hidingSpot.removePlayer(asuka);
+                        await hidingSpot.removePlayers(luna);
+                        await hidingSpot.removePlayers(asuka);
                         luna.cure(hidden);
                         asuka.cure(hidden);
                     });
 
                     test('players are hidden together and display name of speaker does not match her name', async () => {
-                        const hidingSpot = game.entityFinder.getFixture("SHED", "courtyard").hidingSpot;
-                        hidingSpot.addPlayer(luna);
-                        hidingSpot.addPlayer(asuka);
+                        const hidingSpot = testGame.entityFinder.getFixture("SHED", "courtyard").hidingSpot;
+                        hidingSpot.addPlayers(luna);
+                        hidingSpot.addPlayers(asuka);
                         luna.inflict(hidden);
                         asuka.inflict(hidden);
                         luna.displayName = "an individual wearing a MASK";
-                        luna.displayIcon = game.settings.defaultConcealedIconURL;
+                        luna.displayIcon = testGame.settings.defaultConcealedIconURL;
 
                         await sendPlayerMessage(luna, "( Oh, hello!");
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
 
                         expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                         expect(luna.spectateChannel.messages.cache).toHaveSize(0);
@@ -818,8 +818,8 @@ describe('messageHandler test', () => {
                         expect(asukaNotificationMessage.content).toBe(`An individual wearing a MASK says "( Oh, hello!"`);
                         expect(asuka.spectateChannel.messages.cache).toHaveSize(0);
 
-                        await hidingSpot.removePlayer(luna);
-                        await hidingSpot.removePlayer(asuka);
+                        await hidingSpot.removePlayers(luna);
+                        await hidingSpot.removePlayers(asuka);
                         luna.cure(hidden);
                         asuka.cure(hidden);
                         luna.displayName = luna.name;
@@ -831,7 +831,7 @@ describe('messageHandler test', () => {
 
                         await sendPlayerMessage(luna, "( Oh, hello!");
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
 
                         expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                         expect(luna.spectateChannel.messages.cache).toHaveSize(0);
@@ -847,7 +847,7 @@ describe('messageHandler test', () => {
 
                         await sendPlayerMessage(luna, "( Oh, hello!");
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
 
                         expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                         expect(luna.spectateChannel.messages.cache).toHaveSize(0);
@@ -864,7 +864,7 @@ describe('messageHandler test', () => {
 
                             await sendPlayerMessage(luna, "( Oh, hello!");
                             expect(performSaySpy).toHaveBeenCalledTimes(1);
-                            expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
+                            expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
 
                             expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                             expect(luna.spectateChannel.messages.cache).toHaveSize(0);
@@ -880,7 +880,7 @@ describe('messageHandler test', () => {
 
                             await sendPlayerMessage(luna, "( Oh, hello!");
                             expect(performSaySpy).toHaveBeenCalledTimes(1);
-                            expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
+                            expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
 
                             expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                             expect(luna.spectateChannel.messages.cache).toHaveSize(0);
@@ -898,7 +898,7 @@ describe('messageHandler test', () => {
 
                             await sendPlayerMessage(luna, "( Oh, hello!");
                             expect(performSaySpy).toHaveBeenCalledTimes(1);
-                            expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
+                            expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
 
                             expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                             expect(luna.spectateChannel.messages.cache).toHaveSize(0);
@@ -918,7 +918,7 @@ describe('messageHandler test', () => {
 
                             await sendPlayerMessage(luna, "( Oh, hello!");
                             expect(performSaySpy).toHaveBeenCalledTimes(1);
-                            expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
+                            expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
 
                             expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                             expect(luna.spectateChannel.messages.cache).toHaveSize(0);
@@ -936,7 +936,7 @@ describe('messageHandler test', () => {
 
                             await sendPlayerMessage(luna, "( Oh, hello!");
                             expect(performSaySpy).toHaveBeenCalledTimes(1);
-                            expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
+                            expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
 
                             expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                             expect(luna.spectateChannel.messages.cache).toHaveSize(0);
@@ -972,7 +972,7 @@ describe('messageHandler test', () => {
                     test('standard dialog is communicated to spectate channels', async () => {
                         await sendPlayerMessage(kiara, "Bonjour!");
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
                         for (const occupant of kiara.location.occupants) {;
                             expect(occupant.notificationChannel.messages.cache).toHaveSize(0);
                             expect(occupant.spectateChannel.messages.cache).toHaveSize(1);
@@ -984,37 +984,37 @@ describe('messageHandler test', () => {
 
                     test('display name of speaker does not match her name', async () => {
                         kiara.displayName = "an individual wearing a MASK";
-                        kiara.displayIcon = game.settings.defaultConcealedIconURL;
+                        kiara.displayIcon = testGame.settings.defaultConcealedIconURL;
 
                         await sendPlayerMessage(kiara, "Bonjour!");
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
 
                         expect(kiara.notificationChannel.messages.cache).toHaveSize(0);
                         expect(kiara.spectateChannel.messages.cache).toHaveSize(1);
                         expect(kiaraSpectateMessage).toBeWebhookMessage();
-                        expect(kiaraSpectateMessage).toBeMessageWith("An individual wearing a MASK (Kiara)", game.settings.defaultConcealedIconURL, "Bonjour!");
+                        expect(kiaraSpectateMessage).toBeMessageWith("An individual wearing a MASK (Kiara)", testGame.settings.defaultConcealedIconURL, "Bonjour!");
 
                         expect(astrid.notificationChannel.messages.cache).toHaveSize(1);
                         expect(astridNotificationMessage.content).toBe(`An individual wearing a MASK, with a pretty voice you recognize as Kiara's, says "Bonjour!"`);
                         expect(astrid.spectateChannel.messages.cache).toHaveSize(1);
                         expect(astridSpectateMessage).toBeWebhookMessage();
-                        expect(astridSpectateMessage).toBeMessageWith("An individual wearing a MASK (Kiara)", game.settings.defaultConcealedIconURL, "Bonjour!");
+                        expect(astridSpectateMessage).toBeMessageWith("An individual wearing a MASK (Kiara)", testGame.settings.defaultConcealedIconURL, "Bonjour!");
 
                         kiara.displayName = kiara.name;
                         kiara.displayIcon = null;
                     });
 
                     test('players are hidden together', async () => {
-                        const hidingSpot = game.entityFinder.getFixture("SHED", "courtyard").hidingSpot;
-                        hidingSpot.addPlayer(kiara);
-                        hidingSpot.addPlayer(astrid);
+                        const hidingSpot = testGame.entityFinder.getFixture("SHED", "courtyard").hidingSpot;
+                        hidingSpot.addPlayers(kiara);
+                        hidingSpot.addPlayers(astrid);
                         kiara.inflict(hidden);
                         astrid.inflict(hidden);
 
                         await sendPlayerMessage(kiara, "Bonjour!");
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
 
                         expect(kiara.notificationChannel.messages.cache).toHaveSize(0);
                         expect(kiara.spectateChannel.messages.cache).toHaveSize(1);
@@ -1027,38 +1027,38 @@ describe('messageHandler test', () => {
                         expect(astridSpectateMessage).toBeWebhookMessage();
                         expect(astridSpectateMessage).toBeMessageWith("Kiara", kiara.member.avatarURL(), "Bonjour!");
 
-                        await hidingSpot.removePlayer(kiara);
-                        await hidingSpot.removePlayer(astrid);
+                        await hidingSpot.removePlayers(kiara);
+                        await hidingSpot.removePlayers(astrid);
                         kiara.cure(hidden);
                         astrid.cure(hidden);
                     });
 
                     test('players are hidden together and display name of speaker does not match her name', async () => {
-                        const hidingSpot = game.entityFinder.getFixture("SHED", "courtyard").hidingSpot;
-                        hidingSpot.addPlayer(kiara);
-                        hidingSpot.addPlayer(astrid);
+                        const hidingSpot = testGame.entityFinder.getFixture("SHED", "courtyard").hidingSpot;
+                        hidingSpot.addPlayers(kiara);
+                        hidingSpot.addPlayers(astrid);
                         kiara.inflict(hidden);
                         astrid.inflict(hidden);
                         kiara.displayName = "an individual wearing a MASK";
-                        kiara.displayIcon = game.settings.defaultConcealedIconURL;
+                        kiara.displayIcon = testGame.settings.defaultConcealedIconURL;
 
                         await sendPlayerMessage(kiara, "Bonjour!");
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
 
                         expect(kiara.notificationChannel.messages.cache).toHaveSize(0);
                         expect(kiara.spectateChannel.messages.cache).toHaveSize(1);
                         expect(kiaraSpectateMessage).toBeWebhookMessage();
-                        expect(kiaraSpectateMessage).toBeMessageWith("An individual wearing a MASK (Kiara)", game.settings.defaultConcealedIconURL, "Bonjour!");
+                        expect(kiaraSpectateMessage).toBeMessageWith("An individual wearing a MASK (Kiara)", testGame.settings.defaultConcealedIconURL, "Bonjour!");
 
                         expect(astrid.notificationChannel.messages.cache).toHaveSize(1);
                         expect(astridNotificationMessage.content).toBe(`An individual wearing a MASK, with a pretty voice you recognize as Kiara's, says "Bonjour!"`);
                         expect(astrid.spectateChannel.messages.cache).toHaveSize(1);
                         expect(astridSpectateMessage).toBeWebhookMessage();
-                        expect(astridSpectateMessage).toBeMessageWith("An individual wearing a MASK (Kiara)", game.settings.defaultConcealedIconURL, "Bonjour!");
+                        expect(astridSpectateMessage).toBeMessageWith("An individual wearing a MASK (Kiara)", testGame.settings.defaultConcealedIconURL, "Bonjour!");
 
-                        await hidingSpot.removePlayer(kiara);
-                        await hidingSpot.removePlayer(astrid);
+                        await hidingSpot.removePlayers(kiara);
+                        await hidingSpot.removePlayers(astrid);
                         kiara.cure(hidden);
                         astrid.cure(hidden);
                         kiara.displayName = kiara.name;
@@ -1070,7 +1070,7 @@ describe('messageHandler test', () => {
 
                         await sendPlayerMessage(kiara, "Bonjour!");
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
 
                         expect(kiara.notificationChannel.messages.cache).toHaveSize(0);
                         expect(kiara.spectateChannel.messages.cache).toHaveSize(1);
@@ -1088,7 +1088,7 @@ describe('messageHandler test', () => {
 
                         await sendPlayerMessage(kiara, "Bonjour!");
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
 
                         expect(kiara.notificationChannel.messages.cache).toHaveSize(0);
                         expect(kiara.spectateChannel.messages.cache).toHaveSize(1);
@@ -1107,7 +1107,7 @@ describe('messageHandler test', () => {
 
                             await sendPlayerMessage(kiara, "Bonjour!");
                             expect(performSaySpy).toHaveBeenCalledTimes(1);
-                            expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
+                            expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
 
                             expect(kiara.notificationChannel.messages.cache).toHaveSize(0);
                             expect(kiara.spectateChannel.messages.cache).toHaveSize(1);
@@ -1127,7 +1127,7 @@ describe('messageHandler test', () => {
 
                             await sendPlayerMessage(kiara, "Bonjour!");
                             expect(performSaySpy).toHaveBeenCalledTimes(1);
-                            expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
+                            expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
 
                             expect(kiara.notificationChannel.messages.cache).toHaveSize(0);
                             expect(kiara.spectateChannel.messages.cache).toHaveSize(1);
@@ -1148,7 +1148,7 @@ describe('messageHandler test', () => {
 
                             await sendPlayerMessage(kiara, "Bonjour!");
                             expect(performSaySpy).toHaveBeenCalledTimes(1);
-                            expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
+                            expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
 
                             expect(kiara.notificationChannel.messages.cache).toHaveSize(0);
                             expect(kiara.spectateChannel.messages.cache).toHaveSize(1);
@@ -1171,7 +1171,7 @@ describe('messageHandler test', () => {
 
                             await sendPlayerMessage(kiara, "Bonjour!");
                             expect(performSaySpy).toHaveBeenCalledTimes(1);
-                            expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
+                            expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
 
                             expect(kiara.notificationChannel.messages.cache).toHaveSize(0);
                             expect(kiara.spectateChannel.messages.cache).toHaveSize(1);
@@ -1193,7 +1193,7 @@ describe('messageHandler test', () => {
 
                             await sendPlayerMessage(kiara, "Bonjour!");
                             expect(performSaySpy).toHaveBeenCalledTimes(1);
-                            expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
+                            expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
 
                             expect(kiara.notificationChannel.messages.cache).toHaveSize(0);
                             expect(kiara.spectateChannel.messages.cache).toHaveSize(1);
@@ -1204,7 +1204,7 @@ describe('messageHandler test', () => {
                             expect(astridNotificationMessage.content).toBe(`Kiara says "Bonjour!"`);
                             expect(astrid.spectateChannel.messages.cache).toHaveSize(1);
                             expect(astridSpectateMessage).toBeWebhookMessage();
-                            expect(astridSpectateMessage).toBeMessageWith("Kiara", game.settings.hiddenIconURL, "Bonjour!");
+                            expect(astridSpectateMessage).toBeMessageWith("Kiara", testGame.settings.hiddenIconURL, "Bonjour!");
 
                             kiara.cure(hidden);
                             astrid.cure(concealed);
@@ -1233,7 +1233,7 @@ describe('messageHandler test', () => {
                     test('OOC dialog is not communicated to spectate channels', async () => {
                         await sendPlayerMessage(kiara, "*( Bonjour!*");
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
                         for (const occupant of kiara.location.occupants) {;
                             expect(occupant.notificationChannel.messages.cache).toHaveSize(0);
                             expect(occupant.spectateChannel.messages.cache).toHaveSize(0);
@@ -1242,11 +1242,11 @@ describe('messageHandler test', () => {
 
                     test('display name of speaker does not match her name', async () => {
                         kiara.displayName = "an individual wearing a MASK";
-                        kiara.displayIcon = game.settings.defaultConcealedIconURL;
+                        kiara.displayIcon = testGame.settings.defaultConcealedIconURL;
 
                         await sendPlayerMessage(kiara, "( Bonjour!");
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
 
                         expect(kiara.notificationChannel.messages.cache).toHaveSize(0);
                         expect(kiara.spectateChannel.messages.cache).toHaveSize(0);
@@ -1259,15 +1259,15 @@ describe('messageHandler test', () => {
                     });
 
                     test('players are hidden together', async () => {
-                        const hidingSpot = game.entityFinder.getFixture("SHED", "courtyard").hidingSpot;
-                        hidingSpot.addPlayer(kiara);
-                        hidingSpot.addPlayer(astrid);
+                        const hidingSpot = testGame.entityFinder.getFixture("SHED", "courtyard").hidingSpot;
+                        hidingSpot.addPlayers(kiara);
+                        hidingSpot.addPlayers(astrid);
                         kiara.inflict(hidden);
                         astrid.inflict(hidden);
 
                         await sendPlayerMessage(kiara, "( Bonjour!");
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
 
                         expect(kiara.notificationChannel.messages.cache).toHaveSize(0);
                         expect(kiara.spectateChannel.messages.cache).toHaveSize(0);
@@ -1276,24 +1276,24 @@ describe('messageHandler test', () => {
                         expect(astridNotificationMessage.content).toBe(`Kiara says "( Bonjour!"`);
                         expect(astrid.spectateChannel.messages.cache).toHaveSize(0);
 
-                        await hidingSpot.removePlayer(kiara);
-                        await hidingSpot.removePlayer(astrid);
+                        await hidingSpot.removePlayers(kiara);
+                        await hidingSpot.removePlayers(astrid);
                         kiara.cure(hidden);
                         astrid.cure(hidden);
                     });
 
                     test('players are hidden together and display name of speaker does not match her name', async () => {
-                        const hidingSpot = game.entityFinder.getFixture("SHED", "courtyard").hidingSpot;
-                        hidingSpot.addPlayer(kiara);
-                        hidingSpot.addPlayer(astrid);
+                        const hidingSpot = testGame.entityFinder.getFixture("SHED", "courtyard").hidingSpot;
+                        hidingSpot.addPlayers(kiara);
+                        hidingSpot.addPlayers(astrid);
                         kiara.inflict(hidden);
                         astrid.inflict(hidden);
                         kiara.displayName = "an individual wearing a MASK";
-                        kiara.displayIcon = game.settings.defaultConcealedIconURL;
+                        kiara.displayIcon = testGame.settings.defaultConcealedIconURL;
 
                         await sendPlayerMessage(kiara, "( Bonjour!");
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
 
                         expect(kiara.notificationChannel.messages.cache).toHaveSize(0);
                         expect(kiara.spectateChannel.messages.cache).toHaveSize(0);
@@ -1302,8 +1302,8 @@ describe('messageHandler test', () => {
                         expect(astridNotificationMessage.content).toBe(`An individual wearing a MASK says "( Bonjour!"`);
                         expect(astrid.spectateChannel.messages.cache).toHaveSize(0);
 
-                        await hidingSpot.removePlayer(kiara);
-                        await hidingSpot.removePlayer(astrid);
+                        await hidingSpot.removePlayers(kiara);
+                        await hidingSpot.removePlayers(astrid);
                         kiara.cure(hidden);
                         astrid.cure(hidden);
                         kiara.displayName = kiara.name;
@@ -1315,7 +1315,7 @@ describe('messageHandler test', () => {
 
                         await sendPlayerMessage(kiara, "( Bonjour!");
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
 
                         expect(kiara.notificationChannel.messages.cache).toHaveSize(0);
                         expect(kiara.spectateChannel.messages.cache).toHaveSize(0);
@@ -1331,7 +1331,7 @@ describe('messageHandler test', () => {
 
                         await sendPlayerMessage(kiara, "( Bonjour!");
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
 
                         expect(kiara.notificationChannel.messages.cache).toHaveSize(0);
                         expect(kiara.spectateChannel.messages.cache).toHaveSize(0);
@@ -1348,7 +1348,7 @@ describe('messageHandler test', () => {
 
                             await sendPlayerMessage(kiara, "( Bonjour!");
                             expect(performSaySpy).toHaveBeenCalledTimes(1);
-                            expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
+                            expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
 
                             expect(kiara.notificationChannel.messages.cache).toHaveSize(0);
                             expect(kiara.spectateChannel.messages.cache).toHaveSize(0);
@@ -1364,7 +1364,7 @@ describe('messageHandler test', () => {
 
                             await sendPlayerMessage(kiara, "( Bonjour!");
                             expect(performSaySpy).toHaveBeenCalledTimes(1);
-                            expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
+                            expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
 
                             expect(kiara.notificationChannel.messages.cache).toHaveSize(0);
                             expect(kiara.spectateChannel.messages.cache).toHaveSize(0);
@@ -1382,7 +1382,7 @@ describe('messageHandler test', () => {
 
                             await sendPlayerMessage(kiara, "( Bonjour!");
                             expect(performSaySpy).toHaveBeenCalledTimes(1);
-                            expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
+                            expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
 
                             expect(kiara.notificationChannel.messages.cache).toHaveSize(0);
                             expect(kiara.spectateChannel.messages.cache).toHaveSize(0);
@@ -1402,7 +1402,7 @@ describe('messageHandler test', () => {
 
                             await sendPlayerMessage(kiara, "( Bonjour!");
                             expect(performSaySpy).toHaveBeenCalledTimes(1);
-                            expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
+                            expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
 
                             expect(kiara.notificationChannel.messages.cache).toHaveSize(0);
                             expect(kiara.spectateChannel.messages.cache).toHaveSize(0);
@@ -1420,7 +1420,7 @@ describe('messageHandler test', () => {
 
                             await sendPlayerMessage(kiara, "( Bonjour!");
                             expect(performSaySpy).toHaveBeenCalledTimes(1);
-                            expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
+                            expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
 
                             expect(kiara.notificationChannel.messages.cache).toHaveSize(0);
                             expect(kiara.spectateChannel.messages.cache).toHaveSize(0);
@@ -1446,7 +1446,7 @@ describe('messageHandler test', () => {
                         courtyard.addPlayer(luna);
                         courtyard.addPlayer(astrid);
                         courtyard.addPlayer(kiara);
-                        whisperLunaKiara = await game.entityLoader.createWhisper([luna, kiara]);
+                        whisperLunaKiara = await testGame.entityLoader.createWhisper([luna, kiara]);
                     });
 
                     afterAll(() => {
@@ -1464,7 +1464,7 @@ describe('messageHandler test', () => {
                         test('standard whisper is communicated to spectate channels and notification channel', async () => {
                             await sendPlayerMessage(luna, "Hello!", whisperLunaKiara.channel);
                             expect(performSaySpy).toHaveBeenCalledTimes(1);
-                            expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(3);
+                            expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(3);
 
                             expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                             expect(luna.spectateChannel.messages.cache).toHaveSize(1);
@@ -1486,7 +1486,7 @@ describe('messageHandler test', () => {
                         test('OOC whisper is not communicated to spectate channels or notification channel', async () => {
                             await sendPlayerMessage(luna, "# ( Hello!", whisperLunaKiara.channel);
                             expect(performSaySpy).toHaveBeenCalledTimes(1);
-                            expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
+                            expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
 
                             expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                             expect(luna.spectateChannel.messages.cache).toHaveSize(0);
@@ -1500,42 +1500,42 @@ describe('messageHandler test', () => {
 
                         test('display name of speaker does not match her name', async () => {
                             luna.displayName = "an individual wearing a MASK";
-                            luna.displayIcon = game.settings.defaultConcealedIconURL;
+                            luna.displayIcon = testGame.settings.defaultConcealedIconURL;
 
                             await sendPlayerMessage(luna, "Hello!", whisperLunaKiara.channel);
                             expect(performSaySpy).toHaveBeenCalledTimes(1);
-                            expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(3);
+                            expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(3);
 
                             expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                             expect(luna.spectateChannel.messages.cache).toHaveSize(1);
                             expect(lunaSpectateMessage).toBeWebhookMessage();
-                            expect(lunaSpectateMessage).toBeMessageWith("An individual wearing a MASK (Luna)", game.settings.defaultConcealedIconURL, "-# *(Whispered to Kiara):*\nHello!");
+                            expect(lunaSpectateMessage).toBeMessageWith("An individual wearing a MASK (Luna)", testGame.settings.defaultConcealedIconURL, "-# *(Whispered to Kiara):*\nHello!");
 
                             expect(kiara.notificationChannel.messages.cache).toHaveSize(0);
                             expect(kiara.spectateChannel.messages.cache).toHaveSize(1);
                             expect(kiaraSpectateMessage).toBeWebhookMessage();
-                            expect(kiaraSpectateMessage).toBeMessageWith("An individual wearing a MASK", game.settings.defaultConcealedIconURL, "-# *(Whispered to Kiara):*\nHello!");
+                            expect(kiaraSpectateMessage).toBeMessageWith("An individual wearing a MASK", testGame.settings.defaultConcealedIconURL, "-# *(Whispered to Kiara):*\nHello!");
 
                             expect(astrid.notificationChannel.messages.cache).toHaveSize(1);
                             expect(astridNotificationMessage.content).toBe(`You overhear an individual wearing a MASK whisper "Hello!" to Kiara.`);
                             expect(astrid.spectateChannel.messages.cache).toHaveSize(1);
                             expect(astridSpectateMessage).toBeWebhookMessage();
-                            expect(astridSpectateMessage).toBeMessageWith("An individual wearing a MASK", game.settings.defaultConcealedIconURL, "-# *(Whispered to Kiara):*\nHello!");
+                            expect(astridSpectateMessage).toBeMessageWith("An individual wearing a MASK", testGame.settings.defaultConcealedIconURL, "-# *(Whispered to Kiara):*\nHello!");
 
                             luna.displayName = luna.name;
                             luna.displayIcon = null;
                         });
 
                         test('acute hearing player cannot see whispering players because they are hidden', async () => {
-                            const hidingSpot = game.entityFinder.getFixture("SHED", "courtyard").hidingSpot;
-                            await hidingSpot.addPlayer(luna);
-                            await hidingSpot.addPlayer(kiara);
+                            const hidingSpot = testGame.entityFinder.getFixture("SHED", "courtyard").hidingSpot;
+                            await hidingSpot.addPlayers(luna);
+                            await hidingSpot.addPlayers(kiara);
                             luna.inflict(hidden);
                             kiara.inflict(hidden);
 
                             await sendPlayerMessage(luna, "Hello!", hidingSpot.whisper.channel);
                             expect(performSaySpy).toHaveBeenCalledTimes(1);
-                            expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(3);
+                            expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(3);
                             expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                             expect(luna.spectateChannel.messages.cache).toHaveSize(1);
                             expect(lunaSpectateMessage).toBeWebhookMessage();
@@ -1550,24 +1550,23 @@ describe('messageHandler test', () => {
                             expect(astridNotificationMessage.content).toBe(`You overhear someone in the room with a gentle voice whisper "Hello!"`);
                             expect(astrid.spectateChannel.messages.cache).toHaveSize(1);
                             expect(astridSpectateMessage).toBeWebhookMessage();
-                            expect(astridSpectateMessage).toBeMessageWith("Someone in the room with a gentle voice", game.settings.hiddenIconURL, "-# *(Whispered):*\nHello!");
+                            expect(astridSpectateMessage).toBeMessageWith("Someone in the room with a gentle voice", testGame.settings.hiddenIconURL, "-# *(Whispered):*\nHello!");
 
-                            await hidingSpot.removePlayer(luna);
-                            await hidingSpot.removePlayer(kiara);
+                            await hidingSpot.removePlayers(luna);
+                            await hidingSpot.removePlayers(kiara);
                             luna.cure(hidden);
                             kiara.cure(hidden);
-                            await game.entityLoader.deleteWhisper(hidingSpot.whisper);
-                            whisperLunaKiara = await game.entityLoader.createWhisper([luna, kiara]);
+                            whisperLunaKiara = await testGame.entityLoader.createWhisper([luna, kiara]);
                         });
 
                         test('acute hearing player cannot see whispering player because she is hidden', async () => {
-                            const hidingSpot = game.entityFinder.getFixture("SHED", "courtyard").hidingSpot;
-                            await hidingSpot.addPlayer(luna);
+                            const hidingSpot = testGame.entityFinder.getFixture("SHED", "courtyard").hidingSpot;
+                            await hidingSpot.addPlayers(luna);
                             luna.inflict(hidden);
 
                             await sendPlayerMessage(luna, "Hello!", hidingSpot.whisper.channel);
                             expect(performSaySpy).toHaveBeenCalledTimes(1);
-                            expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
+                            expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
                             expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                             expect(luna.spectateChannel.messages.cache).toHaveSize(1);
                             expect(lunaSpectateMessage).toBeWebhookMessage();
@@ -1580,12 +1579,11 @@ describe('messageHandler test', () => {
                             expect(astridNotificationMessage.content).toBe(`You overhear someone in the room with a gentle voice whisper "Hello!"`);
                             expect(astrid.spectateChannel.messages.cache).toHaveSize(1);
                             expect(astridSpectateMessage).toBeWebhookMessage();
-                            expect(astridSpectateMessage).toBeMessageWith("Someone in the room with a gentle voice", game.settings.hiddenIconURL, "-# *(Whispered):*\nHello!");
+                            expect(astridSpectateMessage).toBeMessageWith("Someone in the room with a gentle voice", testGame.settings.hiddenIconURL, "-# *(Whispered):*\nHello!");
 
-                            await hidingSpot.removePlayer(luna);
+                            await hidingSpot.removePlayers(luna);
                             luna.cure(hidden);
-                            await game.entityLoader.deleteWhisper(hidingSpot.whisper);
-                            whisperLunaKiara = await game.entityLoader.createWhisper([luna, kiara]);
+                            whisperLunaKiara = await testGame.entityLoader.createWhisper([luna, kiara]);
                         });
 
                         test('`no hearing` behavior attribute overrides `acute hearing`', async () => {
@@ -1593,7 +1591,7 @@ describe('messageHandler test', () => {
 
                             await sendPlayerMessage(luna, "Hello!", whisperLunaKiara.channel);
                             expect(performSaySpy).toHaveBeenCalledTimes(1);
-                            expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
+                            expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
                             expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                             expect(luna.spectateChannel.messages.cache).toHaveSize(1);
                             expect(lunaSpectateMessage).toBeWebhookMessage();
@@ -1615,7 +1613,7 @@ describe('messageHandler test', () => {
 
                             await sendPlayerMessage(luna, "Hello!", whisperLunaKiara.channel);
                             expect(performSaySpy).toHaveBeenCalledTimes(1);
-                            expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
+                            expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
                             expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                             expect(luna.spectateChannel.messages.cache).toHaveSize(1);
                             expect(lunaSpectateMessage).toBeWebhookMessage();
@@ -1637,7 +1635,7 @@ describe('messageHandler test', () => {
 
                             await sendPlayerMessage(luna, "Hello!", whisperLunaKiara.channel);
                             expect(performSaySpy).toHaveBeenCalledTimes(1);
-                            expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(3);
+                            expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(3);
                             expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                             expect(luna.spectateChannel.messages.cache).toHaveSize(1);
                             expect(lunaSpectateMessage).toBeWebhookMessage();
@@ -1663,7 +1661,7 @@ describe('messageHandler test', () => {
 
                                 await sendPlayerMessage(luna, "Hello!", whisperLunaKiara.channel);
                                 expect(performSaySpy).toHaveBeenCalledTimes(1);
-                                expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
+                                expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
                                 expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                                 expect(luna.spectateChannel.messages.cache).toHaveSize(1);
                                 expect(lunaSpectateMessage).toBeWebhookMessage();
@@ -1688,7 +1686,7 @@ describe('messageHandler test', () => {
 
                                 await sendPlayerMessage(luna, "Hello!", whisperLunaKiara.channel);
                                 expect(performSaySpy).toHaveBeenCalledTimes(1);
-                                expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
+                                expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
                                 expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                                 expect(luna.spectateChannel.messages.cache).toHaveSize(1);
                                 expect(lunaSpectateMessage).toBeWebhookMessage();
@@ -1713,7 +1711,7 @@ describe('messageHandler test', () => {
 
                                 await sendPlayerMessage(luna, "Hello!", whisperLunaKiara.channel);
                                 expect(performSaySpy).toHaveBeenCalledTimes(1);
-                                expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
+                                expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
                                 expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                                 expect(luna.spectateChannel.messages.cache).toHaveSize(1);
                                 expect(lunaSpectateMessage).toBeWebhookMessage();
@@ -1740,7 +1738,7 @@ describe('messageHandler test', () => {
                         test('standard whisper is communicated to spectate channels and notification channel', async () => {
                             await sendPlayerMessage(kiara, "Hello!", whisperLunaKiara.channel);
                             expect(performSaySpy).toHaveBeenCalledTimes(1);
-                            expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(3);
+                            expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(3);
 
                             expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                             expect(luna.spectateChannel.messages.cache).toHaveSize(1);
@@ -1761,42 +1759,42 @@ describe('messageHandler test', () => {
 
                         test('display name of speaker does not match her name', async () => {
                             kiara.displayName = "an individual wearing a MASK";
-                            kiara.displayIcon = game.settings.defaultConcealedIconURL;
+                            kiara.displayIcon = testGame.settings.defaultConcealedIconURL;
 
                             await sendPlayerMessage(kiara, "Hello!", whisperLunaKiara.channel);
                             expect(performSaySpy).toHaveBeenCalledTimes(1);
-                            expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(3);
+                            expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(3);
 
                             expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                             expect(luna.spectateChannel.messages.cache).toHaveSize(1);
                             expect(lunaSpectateMessage).toBeWebhookMessage();
-                            expect(lunaSpectateMessage).toBeMessageWith("An individual wearing a MASK", game.settings.defaultConcealedIconURL, "-# *(Whispered to Luna):*\nHello!");
+                            expect(lunaSpectateMessage).toBeMessageWith("An individual wearing a MASK", testGame.settings.defaultConcealedIconURL, "-# *(Whispered to Luna):*\nHello!");
 
                             expect(kiara.notificationChannel.messages.cache).toHaveSize(0);
                             expect(kiara.spectateChannel.messages.cache).toHaveSize(1);
                             expect(kiaraSpectateMessage).toBeWebhookMessage();
-                            expect(kiaraSpectateMessage).toBeMessageWith("An individual wearing a MASK (Kiara)", game.settings.defaultConcealedIconURL, "-# *(Whispered to Luna):*\nHello!");
+                            expect(kiaraSpectateMessage).toBeMessageWith("An individual wearing a MASK (Kiara)", testGame.settings.defaultConcealedIconURL, "-# *(Whispered to Luna):*\nHello!");
 
                             expect(astrid.notificationChannel.messages.cache).toHaveSize(1);
                             expect(astridNotificationMessage.content).toBe(`You overhear an individual wearing a MASK, with a pretty voice you recognize as Kiara's, whisper "Hello!" to Luna.`);
                             expect(astrid.spectateChannel.messages.cache).toHaveSize(1);
                             expect(astridSpectateMessage).toBeWebhookMessage();
-                            expect(astridSpectateMessage).toBeMessageWith("An individual wearing a MASK (Kiara)", game.settings.defaultConcealedIconURL, "-# *(Whispered to Luna):*\nHello!");
+                            expect(astridSpectateMessage).toBeMessageWith("An individual wearing a MASK (Kiara)", testGame.settings.defaultConcealedIconURL, "-# *(Whispered to Luna):*\nHello!");
 
                             kiara.displayName = kiara.name;
                             kiara.displayIcon = null;
                         });
 
                         test('acute hearing player cannot see whispering players because they are hidden', async () => {
-                            const hidingSpot = game.entityFinder.getFixture("SHED", "courtyard").hidingSpot;
-                            await hidingSpot.addPlayer(luna);
-                            await hidingSpot.addPlayer(kiara);
+                            const hidingSpot = testGame.entityFinder.getFixture("SHED", "courtyard").hidingSpot;
+                            await hidingSpot.addPlayers(luna);
+                            await hidingSpot.addPlayers(kiara);
                             luna.inflict(hidden);
                             kiara.inflict(hidden);
 
                             await sendPlayerMessage(kiara, "Hello!", hidingSpot.whisper.channel);
                             expect(performSaySpy).toHaveBeenCalledTimes(1);
-                            expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(3);
+                            expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(3);
                             expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                             expect(luna.spectateChannel.messages.cache).toHaveSize(1);
                             expect(lunaSpectateMessage).toBeWebhookMessage();
@@ -1811,24 +1809,23 @@ describe('messageHandler test', () => {
                             expect(astridNotificationMessage.content).toBe(`You overhear Kiara whisper "Hello!"`);
                             expect(astrid.spectateChannel.messages.cache).toHaveSize(1);
                             expect(astridSpectateMessage).toBeWebhookMessage();
-                            expect(astridSpectateMessage).toBeMessageWith("Kiara", game.settings.hiddenIconURL, "-# *(Whispered):*\nHello!");
+                            expect(astridSpectateMessage).toBeMessageWith("Kiara", testGame.settings.hiddenIconURL, "-# *(Whispered):*\nHello!");
 
-                            await hidingSpot.removePlayer(luna);
-                            await hidingSpot.removePlayer(kiara);
+                            await hidingSpot.removePlayers(luna);
+                            await hidingSpot.removePlayers(kiara);
                             luna.cure(hidden);
                             kiara.cure(hidden);
-                            await game.entityLoader.deleteWhisper(hidingSpot.whisper);
-                            whisperLunaKiara = await game.entityLoader.createWhisper([luna, kiara]);
+                            whisperLunaKiara = await testGame.entityLoader.createWhisper([luna, kiara]);
                         });
 
                         test('acute hearing player cannot see whispering player because she is hidden', async () => {
-                            const hidingSpot = game.entityFinder.getFixture("SHED", "courtyard").hidingSpot;
-                            await hidingSpot.addPlayer(kiara);
+                            const hidingSpot = testGame.entityFinder.getFixture("SHED", "courtyard").hidingSpot;
+                            await hidingSpot.addPlayers(kiara);
                             kiara.inflict(hidden);
 
                             await sendPlayerMessage(kiara, "Hello!", hidingSpot.whisper.channel);
                             expect(performSaySpy).toHaveBeenCalledTimes(1);
-                            expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
+                            expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
                             expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                             expect(luna.spectateChannel.messages.cache).toHaveSize(0);
 
@@ -1841,12 +1838,11 @@ describe('messageHandler test', () => {
                             expect(astridNotificationMessage.content).toBe(`You overhear Kiara whisper "Hello!"`);
                             expect(astrid.spectateChannel.messages.cache).toHaveSize(1);
                             expect(astridSpectateMessage).toBeWebhookMessage();
-                            expect(astridSpectateMessage).toBeMessageWith("Kiara", game.settings.hiddenIconURL, "-# *(Whispered):*\nHello!");
+                            expect(astridSpectateMessage).toBeMessageWith("Kiara", testGame.settings.hiddenIconURL, "-# *(Whispered):*\nHello!");
 
-                            await hidingSpot.removePlayer(kiara);
+                            await hidingSpot.removePlayers(kiara);
                             kiara.cure(hidden);
-                            await game.entityLoader.deleteWhisper(hidingSpot.whisper);
-                            whisperLunaKiara = await game.entityLoader.createWhisper([luna, kiara]);
+                            whisperLunaKiara = await testGame.entityLoader.createWhisper([luna, kiara]);
                         });
 
                         test('`no hearing` behavior attribute overrides `acute hearing`', async () => {
@@ -1854,7 +1850,7 @@ describe('messageHandler test', () => {
 
                             await sendPlayerMessage(kiara, "Hello!", whisperLunaKiara.channel);
                             expect(performSaySpy).toHaveBeenCalledTimes(1);
-                            expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
+                            expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
                             expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                             expect(luna.spectateChannel.messages.cache).toHaveSize(1);
                             expect(lunaSpectateMessage).toBeWebhookMessage();
@@ -1876,7 +1872,7 @@ describe('messageHandler test', () => {
 
                             await sendPlayerMessage(kiara, "Hello!", whisperLunaKiara.channel);
                             expect(performSaySpy).toHaveBeenCalledTimes(1);
-                            expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
+                            expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
                             expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                             expect(luna.spectateChannel.messages.cache).toHaveSize(1);
                             expect(lunaSpectateMessage).toBeWebhookMessage();
@@ -1898,7 +1894,7 @@ describe('messageHandler test', () => {
 
                             await sendPlayerMessage(kiara, "Hello!", whisperLunaKiara.channel);
                             expect(performSaySpy).toHaveBeenCalledTimes(1);
-                            expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(3);
+                            expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(3);
                             expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                             expect(luna.spectateChannel.messages.cache).toHaveSize(1);
                             expect(lunaSpectateMessage).toBeWebhookMessage();
@@ -1924,7 +1920,7 @@ describe('messageHandler test', () => {
 
                                 await sendPlayerMessage(kiara, "Hello!", whisperLunaKiara.channel);
                                 expect(performSaySpy).toHaveBeenCalledTimes(1);
-                                expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
+                                expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
                                 expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                                 expect(luna.spectateChannel.messages.cache).toHaveSize(1);
                                 expect(lunaSpectateMessage).toBeWebhookMessage();
@@ -1948,7 +1944,7 @@ describe('messageHandler test', () => {
 
                                 await sendPlayerMessage(kiara, "Hello!", whisperLunaKiara.channel);
                                 expect(performSaySpy).toHaveBeenCalledTimes(1);
-                                expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
+                                expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
                                 expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                                 expect(luna.spectateChannel.messages.cache).toHaveSize(1);
                                 expect(lunaSpectateMessage).toBeWebhookMessage();
@@ -1973,7 +1969,7 @@ describe('messageHandler test', () => {
 
                                 await sendPlayerMessage(kiara, "Hello!", whisperLunaKiara.channel);
                                 expect(performSaySpy).toHaveBeenCalledTimes(1);
-                                expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
+                                expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
                                 expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                                 expect(luna.spectateChannel.messages.cache).toHaveSize(1);
                                 expect(lunaSpectateMessage).toBeWebhookMessage();
@@ -2005,7 +2001,7 @@ describe('messageHandler test', () => {
                     luna.location.removePlayer(luna);
                     lobby.addPlayer(amadeus);
                     lobby.addPlayer(luna);
-                    whisperAmadeusLuna = await game.entityLoader.createWhisper([amadeus, luna]);
+                    whisperAmadeusLuna = await testGame.entityLoader.createWhisper([amadeus, luna]);
                 });
 
                 afterAll(() => {
@@ -2018,7 +2014,7 @@ describe('messageHandler test', () => {
                     test('whispered dialog is communicated to spectate channels', async () => {
                         await sendPlayerMessage(amadeus, "Hello.", whisperAmadeusLuna.channel);
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
                         for (const occupant of amadeus.location.occupants) {
                             expect(occupant.notificationChannel.messages.cache).toHaveSize(0);
                             expect(occupant.spectateChannel.messages.cache).toHaveSize(1);
@@ -2030,36 +2026,36 @@ describe('messageHandler test', () => {
 
                     test('display name of speaker does not match its name', async () => {
                         amadeus.displayName = "an individual wearing a MASK";
-                        amadeus.displayIcon = game.settings.defaultConcealedIconURL;
+                        amadeus.displayIcon = testGame.settings.defaultConcealedIconURL;
 
                         await sendPlayerMessage(amadeus, "Hello.", whisperAmadeusLuna.channel);
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
 
                         expect(amadeus.notificationChannel.messages.cache).toHaveSize(0);
                         expect(amadeus.spectateChannel.messages.cache).toHaveSize(1);
                         expect(amadeusSpectateMessage).toBeWebhookMessage();
-                        expect(amadeusSpectateMessage).toBeMessageWith("An individual wearing a MASK (Amadeus)", game.settings.defaultConcealedIconURL, "-# *(Whispered to Luna):*\nHello.");
+                        expect(amadeusSpectateMessage).toBeMessageWith("An individual wearing a MASK (Amadeus)", testGame.settings.defaultConcealedIconURL, "-# *(Whispered to Luna):*\nHello.");
 
                         expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                         expect(luna.spectateChannel.messages.cache).toHaveSize(1);
                         expect(lunaSpectateMessage).toBeWebhookMessage();
-                        expect(lunaSpectateMessage).toBeMessageWith("An individual wearing a MASK", game.settings.defaultConcealedIconURL, "-# *(Whispered to Luna):*\nHello.");
+                        expect(lunaSpectateMessage).toBeMessageWith("An individual wearing a MASK", testGame.settings.defaultConcealedIconURL, "-# *(Whispered to Luna):*\nHello.");
 
                         amadeus.displayName = amadeus.name;
                         amadeus.displayIcon = null;
                     });
 
                     test('players are hidden together', async () => {
-                        const hidingSpot = game.entityFinder.getFixture("RECEPTION DESK", "lobby").hidingSpot;
-                        await hidingSpot.addPlayer(amadeus);
-                        await hidingSpot.addPlayer(luna);
+                        const hidingSpot = testGame.entityFinder.getFixture("RECEPTION DESK", "lobby").hidingSpot;
+                        await hidingSpot.addPlayers(amadeus);
+                        await hidingSpot.addPlayers(luna);
                         amadeus.inflict(hidden);
                         luna.inflict(hidden);
 
                         await sendPlayerMessage(amadeus, "Hello.", hidingSpot.whisper.channel);
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
 
                         expect(amadeus.notificationChannel.messages.cache).toHaveSize(0);
                         expect(amadeus.spectateChannel.messages.cache).toHaveSize(1);
@@ -2071,22 +2067,21 @@ describe('messageHandler test', () => {
                         expect(lunaSpectateMessage).toBeWebhookMessage();
                         expect(lunaSpectateMessage).toBeMessageWith("Amadeus", amadeus.member.avatarURL(), "-# *(Whispered to Luna in the RECEPTION DESK):*\nHello.");
 
-                        await hidingSpot.removePlayer(amadeus);
-                        await hidingSpot.removePlayer(luna);
+                        await hidingSpot.removePlayers(amadeus);
+                        await hidingSpot.removePlayers(luna);
                         amadeus.cure(hidden);
                         luna.cure(hidden);
-                        await game.entityLoader.deleteWhisper(hidingSpot.whisper);
-                        whisperAmadeusLuna = await game.entityLoader.createWhisper([amadeus, luna]);
+                        whisperAmadeusLuna = await testGame.entityLoader.createWhisper([amadeus, luna]);
                     });
 
                     test('player is hidden alone', async () => {
-                        const hidingSpot = game.entityFinder.getFixture("RECEPTION DESK", "lobby").hidingSpot;
-                        await hidingSpot.addPlayer(amadeus);
+                        const hidingSpot = testGame.entityFinder.getFixture("RECEPTION DESK", "lobby").hidingSpot;
+                        await hidingSpot.addPlayers(amadeus);
                         amadeus.inflict(hidden);
 
                         await sendPlayerMessage(amadeus, "Hello.", hidingSpot.whisper.channel);
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
 
                         expect(amadeus.notificationChannel.messages.cache).toHaveSize(0);
                         expect(amadeus.spectateChannel.messages.cache).toHaveSize(1);
@@ -2096,43 +2091,41 @@ describe('messageHandler test', () => {
                         expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                         expect(luna.spectateChannel.messages.cache).toHaveSize(0);
 
-                        await hidingSpot.removePlayer(amadeus);
+                        await hidingSpot.removePlayers(amadeus);
                         amadeus.cure(hidden);
-                        await game.entityLoader.deleteWhisper(hidingSpot.whisper);
-                        whisperAmadeusLuna = await game.entityLoader.createWhisper([amadeus, luna]);
+                        whisperAmadeusLuna = await testGame.entityLoader.createWhisper([amadeus, luna]);
                     });
 
                     test('players are hidden together and display name of speaker does not match its name', async () => {
-                        const hidingSpot = game.entityFinder.getFixture("RECEPTION DESK", "lobby").hidingSpot;
-                        await hidingSpot.addPlayer(amadeus);
-                        await hidingSpot.addPlayer(luna);
+                        const hidingSpot = testGame.entityFinder.getFixture("RECEPTION DESK", "lobby").hidingSpot;
+                        await hidingSpot.addPlayers(amadeus);
+                        await hidingSpot.addPlayers(luna);
                         amadeus.inflict(hidden);
                         luna.inflict(hidden);
                         amadeus.displayName = "an individual wearing a MASK";
-                        amadeus.displayIcon = game.settings.defaultConcealedIconURL;
+                        amadeus.displayIcon = testGame.settings.defaultConcealedIconURL;
 
                         await sendPlayerMessage(amadeus, "Hello.", hidingSpot.whisper.channel);
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
 
                         expect(amadeus.notificationChannel.messages.cache).toHaveSize(0);
                         expect(amadeus.spectateChannel.messages.cache).toHaveSize(1);
                         expect(amadeusSpectateMessage).toBeWebhookMessage();
-                        expect(amadeusSpectateMessage).toBeMessageWith("An individual wearing a MASK (Amadeus)", game.settings.defaultConcealedIconURL, "-# *(Whispered to Luna in the RECEPTION DESK):*\nHello.");
+                        expect(amadeusSpectateMessage).toBeMessageWith("An individual wearing a MASK (Amadeus)", testGame.settings.defaultConcealedIconURL, "-# *(Whispered to Luna in the RECEPTION DESK):*\nHello.");
 
                         expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                         expect(luna.spectateChannel.messages.cache).toHaveSize(1);
                         expect(lunaSpectateMessage).toBeWebhookMessage();
-                        expect(lunaSpectateMessage).toBeMessageWith("An individual wearing a MASK", game.settings.defaultConcealedIconURL, "-# *(Whispered to Luna in the RECEPTION DESK):*\nHello.");
+                        expect(lunaSpectateMessage).toBeMessageWith("An individual wearing a MASK", testGame.settings.defaultConcealedIconURL, "-# *(Whispered to Luna in the RECEPTION DESK):*\nHello.");
 
-                        await hidingSpot.removePlayer(amadeus);
-                        await hidingSpot.removePlayer(luna);
+                        await hidingSpot.removePlayers(amadeus);
+                        await hidingSpot.removePlayers(luna);
                         amadeus.cure(hidden);
                         luna.cure(hidden);
                         amadeus.displayName = amadeus.name;
                         amadeus.displayIcon = null;
-                        await game.entityLoader.deleteWhisper(hidingSpot.whisper);
-                        whisperAmadeusLuna = await game.entityLoader.createWhisper([amadeus, luna]);
+                        whisperAmadeusLuna = await testGame.entityLoader.createWhisper([amadeus, luna]);
                     });
 
                     test('whispered dialog is not communicated to `no hearing` player', async () => {
@@ -2140,7 +2133,7 @@ describe('messageHandler test', () => {
 
                         await sendPlayerMessage(amadeus, "Hello.", whisperAmadeusLuna.channel);
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
 
                         expect(amadeus.notificationChannel.messages.cache).toHaveSize(0);
                         expect(amadeus.spectateChannel.messages.cache).toHaveSize(1);
@@ -2158,7 +2151,7 @@ describe('messageHandler test', () => {
 
                         await sendPlayerMessage(amadeus, "Hello.", whisperAmadeusLuna.channel);
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
 
                         expect(amadeus.notificationChannel.messages.cache).toHaveSize(0);
                         expect(amadeus.spectateChannel.messages.cache).toHaveSize(1);
@@ -2178,7 +2171,7 @@ describe('messageHandler test', () => {
 
                                 await sendPlayerMessage(amadeus, "Hello.", whisperAmadeusLuna.channel);
                                 expect(performSaySpy).toHaveBeenCalledTimes(1);
-                                expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
+                                expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
 
                                 expect(amadeus.notificationChannel.messages.cache).toHaveSize(0);
                                 expect(amadeus.spectateChannel.messages.cache).toHaveSize(1);
@@ -2198,7 +2191,7 @@ describe('messageHandler test', () => {
 
                                 await sendPlayerMessage(amadeus, "Hello.", whisperAmadeusLuna.channel);
                                 expect(performSaySpy).toHaveBeenCalledTimes(1);
-                                expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
+                                expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
 
                                 expect(amadeus.notificationChannel.messages.cache).toHaveSize(0);
                                 expect(amadeus.spectateChannel.messages.cache).toHaveSize(1);
@@ -2219,7 +2212,7 @@ describe('messageHandler test', () => {
 
                                 await sendPlayerMessage(amadeus, "Hello.", whisperAmadeusLuna.channel);
                                 expect(performSaySpy).toHaveBeenCalledTimes(1);
-                                expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
+                                expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
 
                                 expect(amadeus.notificationChannel.messages.cache).toHaveSize(0);
                                 expect(amadeus.spectateChannel.messages.cache).toHaveSize(1);
@@ -2240,20 +2233,19 @@ describe('messageHandler test', () => {
                             let hidingSpot: HidingSpot;
 
                             beforeAll(async () => {
-                                hidingSpot = game.entityFinder.getFixture("RECEPTION DESK", "lobby").hidingSpot;
-                                await hidingSpot.addPlayer(amadeus);
-                                await hidingSpot.addPlayer(luna);
+                                hidingSpot = testGame.entityFinder.getFixture("RECEPTION DESK", "lobby").hidingSpot;
+                                await hidingSpot.addPlayers(amadeus);
+                                await hidingSpot.addPlayers(luna);
                                 amadeus.inflict(hidden);
                                 luna.inflict(hidden);
                             });
 
                             afterAll(async () => {
-                                await hidingSpot.removePlayer(amadeus);
-                                await hidingSpot.removePlayer(luna);
+                                await hidingSpot.removePlayers(amadeus);
+                                await hidingSpot.removePlayers(luna);
                                 amadeus.cure(hidden);
                                 luna.cure(hidden);
-                                await game.entityLoader.deleteWhisper(hidingSpot.whisper);
-                                whisperAmadeusLuna = await game.entityLoader.createWhisper([amadeus, luna]);
+                                whisperAmadeusLuna = await testGame.entityLoader.createWhisper([amadeus, luna]);
                             });
 
                             test('players are hidden together and amadeus is mimicking luna', async () => {
@@ -2261,7 +2253,7 @@ describe('messageHandler test', () => {
 
                                 await sendPlayerMessage(amadeus, "Hello.", hidingSpot.whisper.channel);
                                 expect(performSaySpy).toHaveBeenCalledTimes(1);
-                                expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
+                                expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
 
                                 expect(amadeus.notificationChannel.messages.cache).toHaveSize(0);
                                 expect(amadeus.spectateChannel.messages.cache).toHaveSize(1);
@@ -2281,7 +2273,7 @@ describe('messageHandler test', () => {
 
                                 await sendPlayerMessage(amadeus, "Hello.", hidingSpot.whisper.channel);
                                 expect(performSaySpy).toHaveBeenCalledTimes(1);
-                                expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
+                                expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
 
                                 expect(amadeus.notificationChannel.messages.cache).toHaveSize(0);
                                 expect(amadeus.spectateChannel.messages.cache).toHaveSize(1);
@@ -2302,7 +2294,7 @@ describe('messageHandler test', () => {
 
                                 await sendPlayerMessage(amadeus, "Hello.", hidingSpot.whisper.channel);
                                 expect(performSaySpy).toHaveBeenCalledTimes(1);
-                                expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
+                                expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
 
                                 expect(amadeus.notificationChannel.messages.cache).toHaveSize(0);
                                 expect(amadeus.spectateChannel.messages.cache).toHaveSize(1);
@@ -2325,7 +2317,7 @@ describe('messageHandler test', () => {
                     test('OOC whispered dialog is not communicated to spectate channels', async () => {
                         await sendPlayerMessage(amadeus, "||( Hello.||", whisperAmadeusLuna.channel);
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
                         for (const occupant of amadeus.location.occupants) {
                             expect(occupant.notificationChannel.messages.cache).toHaveSize(0);
                             expect(occupant.spectateChannel.messages.cache).toHaveSize(0);
@@ -2339,7 +2331,7 @@ describe('messageHandler test', () => {
 
                                 await sendPlayerMessage(amadeus, "( Hello.", whisperAmadeusLuna.channel);
                                 expect(performSaySpy).toHaveBeenCalledTimes(1);
-                                expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
+                                expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
 
                                 expect(amadeus.notificationChannel.messages.cache).toHaveSize(0);
                                 expect(amadeus.spectateChannel.messages.cache).toHaveSize(0);
@@ -2355,7 +2347,7 @@ describe('messageHandler test', () => {
 
                                 await sendPlayerMessage(amadeus, "( Hello.", whisperAmadeusLuna.channel);
                                 expect(performSaySpy).toHaveBeenCalledTimes(1);
-                                expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
+                                expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
 
                                 expect(amadeus.notificationChannel.messages.cache).toHaveSize(0);
                                 expect(amadeus.spectateChannel.messages.cache).toHaveSize(0);
@@ -2373,7 +2365,7 @@ describe('messageHandler test', () => {
 
                                 await sendPlayerMessage(amadeus, "( Hello.", whisperAmadeusLuna.channel);
                                 expect(performSaySpy).toHaveBeenCalledTimes(1);
-                                expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
+                                expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
 
                                 expect(amadeus.notificationChannel.messages.cache).toHaveSize(0);
                                 expect(amadeus.spectateChannel.messages.cache).toHaveSize(0);
@@ -2391,20 +2383,19 @@ describe('messageHandler test', () => {
                             let hidingSpot: HidingSpot;
 
                             beforeAll(async () => {
-                                hidingSpot = game.entityFinder.getFixture("RECEPTION DESK", "lobby").hidingSpot;
-                                await hidingSpot.addPlayer(amadeus);
-                                await hidingSpot.addPlayer(luna);
+                                hidingSpot = testGame.entityFinder.getFixture("RECEPTION DESK", "lobby").hidingSpot;
+                                await hidingSpot.addPlayers(amadeus);
+                                await hidingSpot.addPlayers(luna);
                                 amadeus.inflict(hidden);
                                 luna.inflict(hidden);
                             });
 
                             afterAll(async () => {
-                                await hidingSpot.removePlayer(amadeus);
-                                await hidingSpot.removePlayer(luna);
+                                await hidingSpot.removePlayers(amadeus);
+                                await hidingSpot.removePlayers(luna);
                                 amadeus.cure(hidden);
                                 luna.cure(hidden);
-                                await game.entityLoader.deleteWhisper(hidingSpot.whisper);
-                                whisperAmadeusLuna = await game.entityLoader.createWhisper([amadeus, luna]);
+                                whisperAmadeusLuna = await testGame.entityLoader.createWhisper([amadeus, luna]);
                             });
 
                             test('players are hidden together and amadeus is mimicking luna', async () => {
@@ -2412,7 +2403,7 @@ describe('messageHandler test', () => {
 
                                 await sendPlayerMessage(amadeus, "( Hello.", hidingSpot.whisper.channel);
                                 expect(performSaySpy).toHaveBeenCalledTimes(1);
-                                expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
+                                expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
 
                                 expect(amadeus.notificationChannel.messages.cache).toHaveSize(0);
                                 expect(amadeus.spectateChannel.messages.cache).toHaveSize(0);
@@ -2428,7 +2419,7 @@ describe('messageHandler test', () => {
 
                                 await sendPlayerMessage(amadeus, "( Hello.", hidingSpot.whisper.channel);
                                 expect(performSaySpy).toHaveBeenCalledTimes(1);
-                                expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
+                                expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
 
                                 expect(amadeus.notificationChannel.messages.cache).toHaveSize(0);
                                 expect(amadeus.spectateChannel.messages.cache).toHaveSize(0);
@@ -2446,7 +2437,7 @@ describe('messageHandler test', () => {
 
                                 await sendPlayerMessage(amadeus, "( Hello.", hidingSpot.whisper.channel);
                                 expect(performSaySpy).toHaveBeenCalledTimes(1);
-                                expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
+                                expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
 
                                 expect(amadeus.notificationChannel.messages.cache).toHaveSize(0);
                                 expect(amadeus.spectateChannel.messages.cache).toHaveSize(0);
@@ -2466,7 +2457,7 @@ describe('messageHandler test', () => {
                     test('whispered dialog is communicated to spectate channels', async () => {
                         await sendPlayerMessage(luna, "Oh, hello!", whisperAmadeusLuna.channel);
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
                         for (const occupant of amadeus.location.occupants) {
                             expect(occupant.notificationChannel.messages.cache).toHaveSize(0);
                             expect(occupant.spectateChannel.messages.cache).toHaveSize(1);
@@ -2478,37 +2469,37 @@ describe('messageHandler test', () => {
 
                     test('display name of speaker does not match her name', async () => {
                         luna.displayName = "an individual wearing a MASK";
-                        luna.displayIcon = game.settings.defaultConcealedIconURL;
+                        luna.displayIcon = testGame.settings.defaultConcealedIconURL;
 
                         await sendPlayerMessage(luna, "Oh, hello!", whisperAmadeusLuna.channel);
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
 
                         expect(amadeus.notificationChannel.messages.cache).toHaveSize(1);
                         expect(amadeusNotificationMessage.content).toBe(`An individual wearing a MASK, with a gentle voice you recognize as Luna's, whispers "Oh, hello!"`);
                         expect(amadeus.spectateChannel.messages.cache).toHaveSize(1);
                         expect(amadeusSpectateMessage).toBeWebhookMessage();
-                        expect(amadeusSpectateMessage).toBeMessageWith("An individual wearing a MASK (Luna)", game.settings.defaultConcealedIconURL, "-# *(Whispered to Amadeus):*\nOh, hello!");
+                        expect(amadeusSpectateMessage).toBeMessageWith("An individual wearing a MASK (Luna)", testGame.settings.defaultConcealedIconURL, "-# *(Whispered to Amadeus):*\nOh, hello!");
 
                         expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                         expect(luna.spectateChannel.messages.cache).toHaveSize(1);
                         expect(lunaSpectateMessage).toBeWebhookMessage();
-                        expect(lunaSpectateMessage).toBeMessageWith("An individual wearing a MASK (Luna)", game.settings.defaultConcealedIconURL, "-# *(Whispered to Amadeus):*\nOh, hello!");
+                        expect(lunaSpectateMessage).toBeMessageWith("An individual wearing a MASK (Luna)", testGame.settings.defaultConcealedIconURL, "-# *(Whispered to Amadeus):*\nOh, hello!");
 
                         luna.displayName = luna.name;
                         luna.displayIcon = null;
                     });
 
                     test('players are hidden together', async () => {
-                        const hidingSpot = game.entityFinder.getFixture("RECEPTION DESK", "lobby").hidingSpot;
-                        await hidingSpot.addPlayer(amadeus);
-                        await hidingSpot.addPlayer(luna);
+                        const hidingSpot = testGame.entityFinder.getFixture("RECEPTION DESK", "lobby").hidingSpot;
+                        await hidingSpot.addPlayers(amadeus);
+                        await hidingSpot.addPlayers(luna);
                         amadeus.inflict(hidden);
                         luna.inflict(hidden);
 
                         await sendPlayerMessage(luna, "Oh, hello!", hidingSpot.whisper.channel);
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
 
                         expect(amadeus.notificationChannel.messages.cache).toHaveSize(0);
                         expect(amadeus.spectateChannel.messages.cache).toHaveSize(1);
@@ -2520,22 +2511,21 @@ describe('messageHandler test', () => {
                         expect(lunaSpectateMessage).toBeWebhookMessage();
                         expect(lunaSpectateMessage).toBeMessageWith("Luna", luna.member.avatarURL(), "-# *(Whispered to Amadeus in the RECEPTION DESK):*\nOh, hello!");
 
-                        await hidingSpot.removePlayer(amadeus);
-                        await hidingSpot.removePlayer(luna);
+                        await hidingSpot.removePlayers(amadeus);
+                        await hidingSpot.removePlayers(luna);
                         amadeus.cure(hidden);
                         luna.cure(hidden);
-                        await game.entityLoader.deleteWhisper(hidingSpot.whisper);
-                        whisperAmadeusLuna = await game.entityLoader.createWhisper([amadeus, luna]);
+                        whisperAmadeusLuna = await testGame.entityLoader.createWhisper([amadeus, luna]);
                     });
 
                     test('player is hidden alone', async () => {
-                        const hidingSpot = game.entityFinder.getFixture("RECEPTION DESK", "lobby").hidingSpot;
-                        await hidingSpot.addPlayer(luna);
+                        const hidingSpot = testGame.entityFinder.getFixture("RECEPTION DESK", "lobby").hidingSpot;
+                        await hidingSpot.addPlayers(luna);
                         luna.inflict(hidden);
 
                         await sendPlayerMessage(luna, "Oh, hello!", hidingSpot.whisper.channel);
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
 
                         expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                         expect(luna.spectateChannel.messages.cache).toHaveSize(1);
@@ -2545,44 +2535,42 @@ describe('messageHandler test', () => {
                         expect(amadeus.notificationChannel.messages.cache).toHaveSize(0);
                         expect(amadeus.spectateChannel.messages.cache).toHaveSize(0);
 
-                        await hidingSpot.removePlayer(luna);
+                        await hidingSpot.removePlayers(luna);
                         luna.cure(hidden);
-                        await game.entityLoader.deleteWhisper(hidingSpot.whisper);
-                        whisperAmadeusLuna = await game.entityLoader.createWhisper([amadeus, luna]);
+                        whisperAmadeusLuna = await testGame.entityLoader.createWhisper([amadeus, luna]);
                     });
 
                     test('players are hidden together and display name of speaker does not match her name', async () => {
-                        const hidingSpot = game.entityFinder.getFixture("RECEPTION DESK", "lobby").hidingSpot;
-                        await hidingSpot.addPlayer(amadeus);
-                        await hidingSpot.addPlayer(luna);
+                        const hidingSpot = testGame.entityFinder.getFixture("RECEPTION DESK", "lobby").hidingSpot;
+                        await hidingSpot.addPlayers(amadeus);
+                        await hidingSpot.addPlayers(luna);
                         amadeus.inflict(hidden);
                         luna.inflict(hidden);
                         luna.displayName = "an individual wearing a MASK";
-                        luna.displayIcon = game.settings.defaultConcealedIconURL;
+                        luna.displayIcon = testGame.settings.defaultConcealedIconURL;
 
                         await sendPlayerMessage(luna, "Oh, hello!", hidingSpot.whisper.channel);
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
 
                         expect(amadeus.notificationChannel.messages.cache).toHaveSize(1);
                         expect(amadeusNotificationMessage.content).toBe(`An individual wearing a MASK, with a gentle voice you recognize as Luna's, whispers "Oh, hello!" in the RECEPTION DESK.`);
                         expect(amadeus.spectateChannel.messages.cache).toHaveSize(1);
                         expect(amadeusSpectateMessage).toBeWebhookMessage();
-                        expect(amadeusSpectateMessage).toBeMessageWith("An individual wearing a MASK (Luna)", game.settings.defaultConcealedIconURL, "-# *(Whispered to Amadeus in the RECEPTION DESK):*\nOh, hello!");
+                        expect(amadeusSpectateMessage).toBeMessageWith("An individual wearing a MASK (Luna)", testGame.settings.defaultConcealedIconURL, "-# *(Whispered to Amadeus in the RECEPTION DESK):*\nOh, hello!");
 
                         expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                         expect(luna.spectateChannel.messages.cache).toHaveSize(1);
                         expect(lunaSpectateMessage).toBeWebhookMessage();
-                        expect(lunaSpectateMessage).toBeMessageWith("An individual wearing a MASK (Luna)", game.settings.defaultConcealedIconURL, "-# *(Whispered to Amadeus in the RECEPTION DESK):*\nOh, hello!");
+                        expect(lunaSpectateMessage).toBeMessageWith("An individual wearing a MASK (Luna)", testGame.settings.defaultConcealedIconURL, "-# *(Whispered to Amadeus in the RECEPTION DESK):*\nOh, hello!");
 
-                        await hidingSpot.removePlayer(amadeus);
-                        await hidingSpot.removePlayer(luna);
+                        await hidingSpot.removePlayers(amadeus);
+                        await hidingSpot.removePlayers(luna);
                         amadeus.cure(hidden);
                         luna.cure(hidden);
                         luna.displayName = luna.name;
                         luna.displayIcon = null;
-                        await game.entityLoader.deleteWhisper(hidingSpot.whisper);
-                        whisperAmadeusLuna = await game.entityLoader.createWhisper([amadeus, luna]);
+                        whisperAmadeusLuna = await testGame.entityLoader.createWhisper([amadeus, luna]);
                     });
 
                     test('whispered dialog is not communicated to `no hearing` player', async () => {
@@ -2590,7 +2578,7 @@ describe('messageHandler test', () => {
 
                         await sendPlayerMessage(luna, "Oh, hello!", whisperAmadeusLuna.channel);
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
 
                         expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                         expect(luna.spectateChannel.messages.cache).toHaveSize(1);
@@ -2608,7 +2596,7 @@ describe('messageHandler test', () => {
 
                         await sendPlayerMessage(luna, "Oh, hello!", whisperAmadeusLuna.channel);
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
 
                         expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                         expect(luna.spectateChannel.messages.cache).toHaveSize(1);
@@ -2628,7 +2616,7 @@ describe('messageHandler test', () => {
 
                                 await sendPlayerMessage(luna, "Oh, hello!", whisperAmadeusLuna.channel);
                                 expect(performSaySpy).toHaveBeenCalledTimes(1);
-                                expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
+                                expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
 
                                 expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                                 expect(luna.spectateChannel.messages.cache).toHaveSize(1);
@@ -2648,7 +2636,7 @@ describe('messageHandler test', () => {
 
                                 await sendPlayerMessage(luna, "Oh, hello!", whisperAmadeusLuna.channel);
                                 expect(performSaySpy).toHaveBeenCalledTimes(1);
-                                expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
+                                expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
 
                                 expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                                 expect(luna.spectateChannel.messages.cache).toHaveSize(1);
@@ -2669,7 +2657,7 @@ describe('messageHandler test', () => {
 
                                 await sendPlayerMessage(luna, "Oh, hello!", whisperAmadeusLuna.channel);
                                 expect(performSaySpy).toHaveBeenCalledTimes(1);
-                                expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
+                                expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
 
                                 expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                                 expect(luna.spectateChannel.messages.cache).toHaveSize(1);
@@ -2690,20 +2678,19 @@ describe('messageHandler test', () => {
                             let hidingSpot: HidingSpot;
 
                             beforeAll(async () => {
-                                hidingSpot = game.entityFinder.getFixture("RECEPTION DESK", "lobby").hidingSpot;
-                                await hidingSpot.addPlayer(amadeus);
-                                await hidingSpot.addPlayer(luna);
+                                hidingSpot = testGame.entityFinder.getFixture("RECEPTION DESK", "lobby").hidingSpot;
+                                await hidingSpot.addPlayers(amadeus);
+                                await hidingSpot.addPlayers(luna);
                                 amadeus.inflict(hidden);
                                 luna.inflict(hidden);
                             });
 
                             afterAll(async () => {
-                                await hidingSpot.removePlayer(amadeus);
-                                await hidingSpot.removePlayer(luna);
+                                await hidingSpot.removePlayers(amadeus);
+                                await hidingSpot.removePlayers(luna);
                                 amadeus.cure(hidden);
                                 luna.cure(hidden);
-                                await game.entityLoader.deleteWhisper(hidingSpot.whisper);
-                                whisperAmadeusLuna = await game.entityLoader.createWhisper([amadeus, luna]);
+                                whisperAmadeusLuna = await testGame.entityLoader.createWhisper([amadeus, luna]);
                             });
 
                             test('players are hidden together and luna is mimicking amadeus', async () => {
@@ -2711,7 +2698,7 @@ describe('messageHandler test', () => {
 
                                 await sendPlayerMessage(luna, "Oh, hello!", hidingSpot.whisper.channel);
                                 expect(performSaySpy).toHaveBeenCalledTimes(1);
-                                expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
+                                expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
 
                                 expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                                 expect(luna.spectateChannel.messages.cache).toHaveSize(1);
@@ -2731,7 +2718,7 @@ describe('messageHandler test', () => {
 
                                 await sendPlayerMessage(luna, "Oh, hello!", hidingSpot.whisper.channel);
                                 expect(performSaySpy).toHaveBeenCalledTimes(1);
-                                expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
+                                expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
 
                                 expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                                 expect(luna.spectateChannel.messages.cache).toHaveSize(1);
@@ -2752,7 +2739,7 @@ describe('messageHandler test', () => {
 
                                 await sendPlayerMessage(luna, "Oh, hello!", hidingSpot.whisper.channel);
                                 expect(performSaySpy).toHaveBeenCalledTimes(1);
-                                expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
+                                expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
 
                                 expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                                 expect(luna.spectateChannel.messages.cache).toHaveSize(1);
@@ -2775,7 +2762,7 @@ describe('messageHandler test', () => {
                     test('OOC whispered dialog is not communicated to spectate channels', async () => {
                         await sendPlayerMessage(luna, "~~( Oh, hello!~~", whisperAmadeusLuna.channel);
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
                         for (const occupant of amadeus.location.occupants) {
                             expect(occupant.notificationChannel.messages.cache).toHaveSize(0);
                             expect(occupant.spectateChannel.messages.cache).toHaveSize(0);
@@ -2784,11 +2771,11 @@ describe('messageHandler test', () => {
 
                     test('display name of speaker does not match her name', async () => {
                         luna.displayName = "an individual wearing a MASK";
-                        luna.displayIcon = game.settings.defaultConcealedIconURL;
+                        luna.displayIcon = testGame.settings.defaultConcealedIconURL;
 
                         await sendPlayerMessage(luna, "( Oh, hello!", whisperAmadeusLuna.channel);
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
 
                         expect(amadeus.notificationChannel.messages.cache).toHaveSize(0);
                         expect(amadeus.spectateChannel.messages.cache).toHaveSize(0);
@@ -2801,17 +2788,17 @@ describe('messageHandler test', () => {
                     });
 
                     test('players are hidden together and display name of speaker does not match her name', async () => {
-                        const hidingSpot = game.entityFinder.getFixture("RECEPTION DESK", "lobby").hidingSpot;
-                        await hidingSpot.addPlayer(amadeus);
-                        await hidingSpot.addPlayer(luna);
+                        const hidingSpot = testGame.entityFinder.getFixture("RECEPTION DESK", "lobby").hidingSpot;
+                        await hidingSpot.addPlayers(amadeus);
+                        await hidingSpot.addPlayers(luna);
                         amadeus.inflict(hidden);
                         luna.inflict(hidden);
                         luna.displayName = "an individual wearing a MASK";
-                        luna.displayIcon = game.settings.defaultConcealedIconURL;
+                        luna.displayIcon = testGame.settings.defaultConcealedIconURL;
 
                         await sendPlayerMessage(luna, "( Oh, hello!", hidingSpot.whisper.channel);
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
 
                         expect(amadeus.notificationChannel.messages.cache).toHaveSize(0);
                         expect(amadeus.spectateChannel.messages.cache).toHaveSize(0);
@@ -2819,14 +2806,13 @@ describe('messageHandler test', () => {
                         expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                         expect(luna.spectateChannel.messages.cache).toHaveSize(0);
 
-                        await hidingSpot.removePlayer(amadeus);
-                        await hidingSpot.removePlayer(luna);
+                        await hidingSpot.removePlayers(amadeus);
+                        await hidingSpot.removePlayers(luna);
                         amadeus.cure(hidden);
                         luna.cure(hidden);
                         luna.displayName = luna.name;
                         luna.displayIcon = null;
-                        await game.entityLoader.deleteWhisper(hidingSpot.whisper);
-                        whisperAmadeusLuna = await game.entityLoader.createWhisper([amadeus, luna]);
+                        whisperAmadeusLuna = await testGame.entityLoader.createWhisper([amadeus, luna]);
                     });
 
                     describe('player notification takes priority', async () => {
@@ -2836,7 +2822,7 @@ describe('messageHandler test', () => {
 
                                 await sendPlayerMessage(luna, "( Oh, hello!", whisperAmadeusLuna.channel);
                                 expect(performSaySpy).toHaveBeenCalledTimes(1);
-                                expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
+                                expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
 
                                 expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                                 expect(luna.spectateChannel.messages.cache).toHaveSize(0);
@@ -2852,7 +2838,7 @@ describe('messageHandler test', () => {
 
                                 await sendPlayerMessage(luna, "( Oh, hello!", whisperAmadeusLuna.channel);
                                 expect(performSaySpy).toHaveBeenCalledTimes(1);
-                                expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
+                                expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
 
                                 expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                                 expect(luna.spectateChannel.messages.cache).toHaveSize(0);
@@ -2870,7 +2856,7 @@ describe('messageHandler test', () => {
 
                                 await sendPlayerMessage(luna, "( Oh, hello!", whisperAmadeusLuna.channel);
                                 expect(performSaySpy).toHaveBeenCalledTimes(1);
-                                expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
+                                expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
 
                                 expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                                 expect(luna.spectateChannel.messages.cache).toHaveSize(0);
@@ -2888,20 +2874,19 @@ describe('messageHandler test', () => {
                             let hidingSpot: HidingSpot;
 
                             beforeAll(async () => {
-                                hidingSpot = game.entityFinder.getFixture("RECEPTION DESK", "lobby").hidingSpot;
-                                await hidingSpot.addPlayer(amadeus);
-                                await hidingSpot.addPlayer(luna);
+                                hidingSpot = testGame.entityFinder.getFixture("RECEPTION DESK", "lobby").hidingSpot;
+                                await hidingSpot.addPlayers(amadeus);
+                                await hidingSpot.addPlayers(luna);
                                 amadeus.inflict(hidden);
                                 luna.inflict(hidden);
                             });
 
                             afterAll(async () => {
-                                await hidingSpot.removePlayer(amadeus);
-                                await hidingSpot.removePlayer(luna);
+                                await hidingSpot.removePlayers(amadeus);
+                                await hidingSpot.removePlayers(luna);
                                 amadeus.cure(hidden);
                                 luna.cure(hidden);
-                                await game.entityLoader.deleteWhisper(hidingSpot.whisper);
-                                whisperAmadeusLuna = await game.entityLoader.createWhisper([amadeus, luna]);
+                                whisperAmadeusLuna = await testGame.entityLoader.createWhisper([amadeus, luna]);
                             });
 
                             test('players are hidden together and luna is mimicking amadeus', async () => {
@@ -2909,7 +2894,7 @@ describe('messageHandler test', () => {
 
                                 await sendPlayerMessage(luna, "( Oh, hello!", hidingSpot.whisper.channel);
                                 expect(performSaySpy).toHaveBeenCalledTimes(1);
-                                expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
+                                expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
 
                                 expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                                 expect(luna.spectateChannel.messages.cache).toHaveSize(0);
@@ -2925,7 +2910,7 @@ describe('messageHandler test', () => {
 
                                 await sendPlayerMessage(luna, "( Oh, hello!", hidingSpot.whisper.channel);
                                 expect(performSaySpy).toHaveBeenCalledTimes(1);
-                                expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
+                                expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
 
                                 expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                                 expect(luna.spectateChannel.messages.cache).toHaveSize(0);
@@ -2943,7 +2928,7 @@ describe('messageHandler test', () => {
 
                                 await sendPlayerMessage(luna, "( Oh, hello!", hidingSpot.whisper.channel);
                                 expect(performSaySpy).toHaveBeenCalledTimes(1);
-                                expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
+                                expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(0);
 
                                 expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                                 expect(luna.spectateChannel.messages.cache).toHaveSize(0);
@@ -2987,7 +2972,7 @@ describe('messageHandler test', () => {
                         expect(lobby.occupants).toHaveLength(0);
                         await sendPlayerMessage(astrid, "# HELLO?");
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
                         for (const neighboringRoom of neighboringRooms) {
                             expect(neighboringRoom.channel.messages.cache).toHaveSize(1);
                             expect(neighboringRoom.channel.messages.cache.first().content).toBe(`Someone in a nearby room with a peppy voice shouts "HELLO?"`);
@@ -3032,11 +3017,11 @@ describe('messageHandler test', () => {
 
                     test('display name of speaker does not match her name', async () => {
                         astrid.displayName = "an individual wearing a MASK";
-                        astrid.displayIcon = game.settings.defaultConcealedIconURL;
+                        astrid.displayIcon = testGame.settings.defaultConcealedIconURL;
 
                         await sendPlayerMessage(astrid, "## HELLO?");
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
                         for (const neighboringRoom of neighboringRooms) {
                             expect(neighboringRoom.channel.messages.cache).toHaveSize(1);
                             expect(neighboringRoom.channel.messages.cache.first().content).toBe(`Someone in a nearby room with a peppy voice shouts "HELLO?"`);
@@ -3082,7 +3067,7 @@ describe('messageHandler test', () => {
 
                         await sendPlayerMessage(astrid, "### HELLO?");
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
                         for (const neighboringRoom of neighboringRooms) {
                             expect(neighboringRoom.channel.messages.cache).toHaveSize(1);
                             expect(neighboringRoom.channel.messages.cache.first().content).toBe(`Someone in a nearby room with a peppy voice shouts "HELLO?"`);
@@ -3128,7 +3113,7 @@ describe('messageHandler test', () => {
 
                         await sendPlayerMessage(astrid, "HELLO?");
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
                         for (const neighboringRoom of neighboringRooms) {
                             expect(neighboringRoom.channel.messages.cache).toHaveSize(1);
                             expect(neighboringRoom.channel.messages.cache.first().content).toBe(`Someone in a nearby room with a peppy voice shouts "HELLO?"`);
@@ -3171,7 +3156,7 @@ describe('messageHandler test', () => {
 
                         await sendPlayerMessage(astrid, "# Hello?");
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
                         for (const neighboringRoom of neighboringRooms) {
                             expect(neighboringRoom.channel.messages.cache).toHaveSize(1);
                             expect(neighboringRoom.channel.messages.cache.first().content).toBe(`Someone in a nearby room with a peppy voice shouts "Hello?"`);
@@ -3213,7 +3198,7 @@ describe('messageHandler test', () => {
 
                         await sendPlayerMessage(astrid, "HELLO?");
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
                         for (const neighboringRoom of neighboringRooms) {
                             expect(neighboringRoom.channel.messages.cache).toHaveSize(1);
                             expect(neighboringRoom.channel.messages.cache.first().content).toBe(`Someone in a nearby room with a confident voice shouts "HELLO?"`);
@@ -3268,7 +3253,7 @@ describe('messageHandler test', () => {
                     test('`acute hearing` players in neighboring rooms are notified of dialog', async () => {
                         await sendPlayerMessage(astrid, "Hello!");
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
                         for (const neighboringRoom of neighboringRooms)
                             expect(neighboringRoom.channel.messages.cache).toHaveSize(0);
                         for (const excludedAudioMonitoringRoom of excludedAudioMonitoringRooms)
@@ -3298,11 +3283,11 @@ describe('messageHandler test', () => {
 
                     test('display name of speaker does not match her name', async () => {
                         astrid.displayName = "an individual wearing a MASK";
-                        astrid.displayIcon = game.settings.defaultConcealedIconURL;
+                        astrid.displayIcon = testGame.settings.defaultConcealedIconURL;
 
                         await sendPlayerMessage(astrid, "Hello!");
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
                         for (const neighboringRoom of neighboringRooms)
                             expect(neighboringRoom.channel.messages.cache).toHaveSize(0);
                         for (const excludedAudioMonitoringRoom of excludedAudioMonitoringRooms)
@@ -3338,7 +3323,7 @@ describe('messageHandler test', () => {
 
                         await sendPlayerMessage(astrid, "Hello!");
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
                         for (const neighboringRoom of neighboringRooms)
                             expect(neighboringRoom.channel.messages.cache).toHaveSize(0);
                         for (const excludedAudioMonitoringRoom of excludedAudioMonitoringRooms)
@@ -3373,7 +3358,7 @@ describe('messageHandler test', () => {
 
                         await sendPlayerMessage(astrid, "Hello!");
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
                         for (const neighboringRoom of neighboringRooms)
                             expect(neighboringRoom.channel.messages.cache).toHaveSize(0);
                         for (const excludedAudioMonitoringRoom of excludedAudioMonitoringRooms)
@@ -3406,7 +3391,7 @@ describe('messageHandler test', () => {
 
                         await sendPlayerMessage(astrid, "Hello!");
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
                         for (const neighboringRoom of neighboringRooms)
                             expect(neighboringRoom.channel.messages.cache).toHaveSize(0);
                         for (const excludedAudioMonitoringRoom of excludedAudioMonitoringRooms)
@@ -3439,7 +3424,7 @@ describe('messageHandler test', () => {
 
                         await sendPlayerMessage(astrid, "Hello!");
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
                         for (const neighboringRoom of neighboringRooms)
                             expect(neighboringRoom.channel.messages.cache).toHaveSize(0);
                         for (const excludedAudioMonitoringRoom of excludedAudioMonitoringRooms)
@@ -3488,7 +3473,7 @@ describe('messageHandler test', () => {
                     test('dialog is narrated in audio monitoring rooms and communicated to spectate channels', async () => {
                         await sendPlayerMessage(amadeus, "Hello.");
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(5);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(5);
                         expect(amadeus.notificationChannel.messages.cache).toHaveSize(0);
                         expect(kyra.notificationChannel.messages.cache).toHaveSize(1);
                         for (const occupant of amadeus.location.occupants) {
@@ -3532,7 +3517,7 @@ describe('messageHandler test', () => {
                     test('dialog shouted in neighboring audiovideo surveilled room is mirrored only once', async () => {
                         await sendPlayerMessage(kiara, "HELLO?");
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(7);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(7);
                         expect(amadeus.notificationChannel.messages.cache).toHaveSize(0);
                         expect(kyra.notificationChannel.messages.cache).toHaveSize(1);
                         expect(luna.notificationChannel.messages.cache).toHaveSize(0);
@@ -3572,7 +3557,7 @@ describe('messageHandler test', () => {
                     test('display name of speaker does not match her name', async () => {
                         await sendPlayerMessage(kyra, "Hello.");
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(5);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(5);
                         expect(amadeus.notificationChannel.messages.cache).toHaveSize(0);
                         expect(kyra.notificationChannel.messages.cache).toHaveSize(0);
                         for (const occupant of kyra.location.occupants) {
@@ -3615,13 +3600,13 @@ describe('messageHandler test', () => {
                     });
 
                     test('speaker is hidden', async () => {
-                        const hidingSpot = game.entityFinder.getFixture("COFFIN", "command-center").hidingSpot;
-                        hidingSpot.addPlayer(kyra);
+                        const hidingSpot = testGame.entityFinder.getFixture("COFFIN", "command-center").hidingSpot;
+                        hidingSpot.addPlayers(kyra);
                         kyra.inflict(hidden);
 
                         await sendPlayerMessage(kyra, "Hello.");
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(5);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(5);
                         expect(amadeus.notificationChannel.messages.cache).toHaveSize(0);
                         expect(kyra.notificationChannel.messages.cache).toHaveSize(0);
                         for (const occupant of kyra.location.occupants) {
@@ -3629,7 +3614,7 @@ describe('messageHandler test', () => {
                             const spectateMessage = occupant.spectateChannel.messages.cache.first();
                             expect(spectateMessage).toBeWebhookMessage();
                         }
-                        expect(amadeusSpectateMessage).toBeMessageWith("Someone in the room with a deep modulated voice", game.settings.hiddenIconURL, "Hello.");
+                        expect(amadeusSpectateMessage).toBeMessageWith("Someone in the room with a deep modulated voice", testGame.settings.hiddenIconURL, "Hello.");
                         expect(kyraSpectateMessage).toBeMessageWith("An individual wearing a PLAGUE DOCTOR MASK (Kyra)", plagueDoctorMaskIconURL, "Hello.");
                         for (const audioVideoMonitoringRoom of audioVideoMonitoringRooms) {
                             if (audioVideoMonitoringRoom.id === kyra.location.id) {
@@ -3639,13 +3624,13 @@ describe('messageHandler test', () => {
                             expect(audioVideoMonitoringRoom.channel.messages.cache).toHaveSize(1);
                             const roomNarrationMessage = audioVideoMonitoringRoom.channel.messages.cache.first();
                             expect(roomNarrationMessage).toBeWebhookMessage();
-                            expect(roomNarrationMessage).toBeMessageWith('[Surveillance feed] Someone in the room with a deep modulated voice', game.settings.hiddenIconURL, 'Hello.');
+                            expect(roomNarrationMessage).toBeMessageWith('[Surveillance feed] Someone in the room with a deep modulated voice', testGame.settings.hiddenIconURL, 'Hello.');
                             for (const occupant of audioVideoMonitoringRoom.occupants) {
                                 expect(occupant.notificationChannel.messages.cache).toHaveSize(0);
                                 expect(occupant.spectateChannel.messages.cache).toHaveSize(1);
                                 const spectateMessage = occupant.spectateChannel.messages.cache.first();
                                 expect(spectateMessage).toBeWebhookMessage();
-                                expect(spectateMessage).toBeMessageWith('[Surveillance feed] Someone in the room with a deep modulated voice', game.settings.hiddenIconURL, 'Hello.');
+                                expect(spectateMessage).toBeMessageWith('[Surveillance feed] Someone in the room with a deep modulated voice', testGame.settings.hiddenIconURL, 'Hello.');
                             }
                         }
                         for (const onlyAudioMonitoringRoom of onlyAudioMonitoringRooms) {
@@ -3662,7 +3647,7 @@ describe('messageHandler test', () => {
                             }
                         }
 
-                        await hidingSpot.removePlayer(kyra);
+                        await hidingSpot.removePlayers(kyra);
                         kyra.cure(hidden);
                     });
 
@@ -3671,7 +3656,7 @@ describe('messageHandler test', () => {
 
                         await sendPlayerMessage(amadeus, "Hello.");
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(4);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(4);
 
                         expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                         expect(luna.spectateChannel.messages.cache).toHaveSize(1);
@@ -3689,7 +3674,7 @@ describe('messageHandler test', () => {
 
                         await sendPlayerMessage(amadeus, "Hello.");
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(4);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(4);
 
                         expect(luna.notificationChannel.messages.cache).toHaveSize(0);
                         expect(luna.spectateChannel.messages.cache).toHaveSize(1);
@@ -3720,7 +3705,7 @@ describe('messageHandler test', () => {
 
                             await sendPlayerMessage(amadeus, "Hello.");
                             expect(performSaySpy).toHaveBeenCalledTimes(1);
-                            expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(4);
+                            expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(4);
                             expect(amadeus.notificationChannel.messages.cache).toHaveSize(0);
                             expect(kyra.notificationChannel.messages.cache).toHaveSize(1);
                             for (const occupant of amadeus.location.occupants) {
@@ -3775,7 +3760,7 @@ describe('messageHandler test', () => {
 
                             await sendPlayerMessage(amadeus, "Hello.");
                             expect(performSaySpy).toHaveBeenCalledTimes(1);
-                            expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(4);
+                            expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(4);
                             expect(amadeus.notificationChannel.messages.cache).toHaveSize(0);
                             expect(kyra.notificationChannel.messages.cache).toHaveSize(1);
                             for (const occupant of amadeus.location.occupants) {
@@ -3831,7 +3816,7 @@ describe('messageHandler test', () => {
 
                             await sendPlayerMessage(amadeus, "Hello.");
                             expect(performSaySpy).toHaveBeenCalledTimes(1);
-                            expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(4);
+                            expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(4);
                             expect(amadeus.notificationChannel.messages.cache).toHaveSize(0);
                             expect(kyra.notificationChannel.messages.cache).toHaveSize(1);
                             for (const occupant of amadeus.location.occupants) {
@@ -3888,7 +3873,7 @@ describe('messageHandler test', () => {
 
                             await sendPlayerMessage(vivian, "HELLO?");
                             expect(performSaySpy).toHaveBeenCalledTimes(1);
-                            expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(5);
+                            expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(5);
                             for (const occupant of vivian.location.occupants) {
                                 expect(occupant.notificationChannel.messages.cache).toHaveSize(0);
                                 expect(occupant.spectateChannel.messages.cache).toHaveSize(1);
@@ -3937,7 +3922,7 @@ describe('messageHandler test', () => {
                         test('kyra has `hear room` behavior attribute', async () => {
                             await sendPlayerMessage(luna, "Hello.");
                             expect(performSaySpy).toHaveBeenCalledTimes(1);
-                            expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(5);
+                            expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(5);
                             for (const occupant of luna.location.occupants) {
                                 expect(occupant.notificationChannel.messages.cache).toHaveSize(0);
                                 expect(occupant.spectateChannel.messages.cache).toHaveSize(1);
@@ -3993,7 +3978,7 @@ describe('messageHandler test', () => {
                     test('dialog is narrated in audio monitoring rooms and communicated to spectate channels', async () => {
                         await sendPlayerMessage(nero, "Hello.");
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
                         for (const occupant of nero.location.occupants) {
                             expect(occupant.notificationChannel.messages.cache).toHaveSize(0);
                             expect(occupant.spectateChannel.messages.cache).toHaveSize(1);
@@ -4028,7 +4013,7 @@ describe('messageHandler test', () => {
 
                         await sendPlayerMessage(kiara, "HELLO?");
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
                         for (const occupant of kiara.location.occupants) {
                             expect(occupant.notificationChannel.messages.cache).toHaveSize(0);
                             expect(occupant.spectateChannel.messages.cache).toHaveSize(1);
@@ -4067,7 +4052,7 @@ describe('messageHandler test', () => {
 
                         await sendPlayerMessage(nero, "Hello.");
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
                         for (const occupant of nero.location.occupants) {
                             expect(occupant.notificationChannel.messages.cache).toHaveSize(0);
                             expect(occupant.spectateChannel.messages.cache).toHaveSize(1);
@@ -4100,13 +4085,13 @@ describe('messageHandler test', () => {
                     });
 
                     test('speaker is hidden', async () => {
-                        const hidingSpot = game.entityFinder.getFixture("LUNCH TABLES", "break-room").hidingSpot;
-                        hidingSpot.addPlayer(nero);
+                        const hidingSpot = testGame.entityFinder.getFixture("LUNCH TABLES", "break-room").hidingSpot;
+                        hidingSpot.addPlayers(nero);
                         nero.inflict(hidden);
 
                         await sendPlayerMessage(nero, "Hello.");
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
                         for (const occupant of nero.location.occupants) {
                             expect(occupant.notificationChannel.messages.cache).toHaveSize(0);
                             expect(occupant.spectateChannel.messages.cache).toHaveSize(1);
@@ -4135,7 +4120,7 @@ describe('messageHandler test', () => {
                             }
                         }
 
-                        await hidingSpot.removePlayer(nero);
+                        await hidingSpot.removePlayers(nero);
                         nero.cure(hidden);
                     });
 
@@ -4157,7 +4142,7 @@ describe('messageHandler test', () => {
 
                             await sendPlayerMessage(nero, "Hello.");
                             expect(performSaySpy).toHaveBeenCalledTimes(1);
-                            expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
+                            expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
                             for (const occupant of nero.location.occupants) {
                                 expect(occupant.notificationChannel.messages.cache).toHaveSize(0);
                                 expect(occupant.spectateChannel.messages.cache).toHaveSize(1);
@@ -4209,8 +4194,8 @@ describe('messageHandler test', () => {
                     receiverRooms = [breakRoom, gmOffice];
                     audioVideoMonitoringRooms = [commandCenter];
                     onlyAudioMonitoringRooms = [lobby, breakRoom];
-                    desk = game.entityFinder.getFixture("DESK", "general-managers-office").hidingSpot;
-                    desk.removePlayer(qm);
+                    desk = testGame.entityFinder.getFixture("DESK", "general-managers-office").hidingSpot;
+                    desk.removePlayers(qm);
                     qm.cure(hidden);
                     luna.location.removePlayer(luna);
                     gmOffice.addPlayer(luna);
@@ -4218,7 +4203,7 @@ describe('messageHandler test', () => {
 
                 afterAll(() => {
                     lobby.tags.add('video monitoring');
-                    desk.addPlayer(qm);
+                    desk.addPlayers(qm);
                     qm.inflict(hidden);
                     gmOffice.removePlayer(luna);
                     lobby.addPlayer(luna);
@@ -4227,7 +4212,7 @@ describe('messageHandler test', () => {
                 test('dialog is narrated in rooms with receivers and communicated to spectate channels', async () => {
                     await sendPlayerMessage(nero, "Hello.");
                     expect(performSaySpy).toHaveBeenCalledTimes(1);
-                    expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
+                    expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
                     for (const occupant of nero.location.occupants) {
                         expect(occupant.notificationChannel.messages.cache).toHaveSize(0);
                         expect(occupant.spectateChannel.messages.cache).toHaveSize(1);
@@ -4280,13 +4265,13 @@ describe('messageHandler test', () => {
                 });
 
                 test('transmitted dialog is narrated in audio/video monitoring rooms and communicated to spectate channels', async () => {
-                    const walkieTalkie = game.entityFinder.getPrefab("WALKIE TALKIE");
+                    const walkieTalkie = testGame.entityFinder.getPrefab("WALKIE TALKIE");
                     const receiverItem = instantiateInventoryItem(walkieTalkie, luna, "FACE", null, "", 1, NaN, new Map());
                     luna.inflict(receiver);
 
                     await sendPlayerMessage(luna, "Hello.");
                     expect(performSaySpy).toHaveBeenCalledTimes(1);
-                    expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
+                    expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(2);
                     for (const occupant of luna.location.occupants) {
                         if (occupant.isNPC) continue;
                         expect(occupant.notificationChannel.messages.cache).toHaveSize(0);
@@ -4343,13 +4328,13 @@ describe('messageHandler test', () => {
                 });
 
                 test('dialog is only narrated in room once when occupants include multiple receivers', async () => {
-                    const walkieTalkie = game.entityFinder.getPrefab("WALKIE TALKIE");
+                    const walkieTalkie = testGame.entityFinder.getPrefab("WALKIE TALKIE");
                     const receiverItem = instantiateInventoryItem(walkieTalkie, vivian, "FACE", null, "", 1, NaN, new Map());
                     vivian.inflict(receiver);
 
                     await sendPlayerMessage(nero, "Hello.");
                     expect(performSaySpy).toHaveBeenCalledTimes(1);
-                    expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
+                    expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
                     for (const occupant of nero.location.occupants) {
                         expect(occupant.notificationChannel.messages.cache).toHaveSize(0);
                         expect(occupant.spectateChannel.messages.cache).toHaveSize(1);
@@ -4389,7 +4374,7 @@ describe('messageHandler test', () => {
 
                     await sendPlayerMessage(nero, "Hello.");
                     expect(performSaySpy).toHaveBeenCalledTimes(1);
-                    expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
+                    expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
                     for (const occupant of nero.location.occupants) {
                         expect(occupant.notificationChannel.messages.cache).toHaveSize(0);
                         expect(occupant.spectateChannel.messages.cache).toHaveSize(1);
@@ -4424,13 +4409,13 @@ describe('messageHandler test', () => {
                 });
 
                 test('speaker is hidden', async () => {
-                    const hidingSpot = game.entityFinder.getFixture("LUNCH TABLES", "break-room").hidingSpot;
-                    hidingSpot.addPlayer(nero);
+                    const hidingSpot = testGame.entityFinder.getFixture("LUNCH TABLES", "break-room").hidingSpot;
+                    hidingSpot.addPlayers(nero);
                     nero.inflict(hidden);
 
                     await sendPlayerMessage(nero, "Hello.");
                     expect(performSaySpy).toHaveBeenCalledTimes(1);
-                    expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
+                    expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
                     for (const occupant of nero.location.occupants) {
                         expect(occupant.notificationChannel.messages.cache).toHaveSize(0);
                         expect(occupant.spectateChannel.messages.cache).toHaveSize(1);
@@ -4461,7 +4446,7 @@ describe('messageHandler test', () => {
                         }
                     }
 
-                    await hidingSpot.removePlayer(nero);
+                    await hidingSpot.removePlayers(nero);
                     nero.cure(hidden);
                 });
 
@@ -4471,7 +4456,7 @@ describe('messageHandler test', () => {
 
                         await sendPlayerMessage(nero, "Hello.");
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
                         for (const occupant of nero.location.occupants) {
                             expect(occupant.notificationChannel.messages.cache).toHaveSize(0);
                             expect(occupant.spectateChannel.messages.cache).toHaveSize(1);
@@ -4510,7 +4495,7 @@ describe('messageHandler test', () => {
 
                         await sendPlayerMessage(nero, "Hello.");
                         expect(performSaySpy).toHaveBeenCalledTimes(1);
-                        expect(game.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
+                        expect(testGame.communicationHandler.getDialogSpectateMirrors(message)).toHaveLength(1);
                         for (const occupant of nero.location.occupants) {
                             expect(occupant.notificationChannel.messages.cache).toHaveSize(0);
                             expect(occupant.spectateChannel.messages.cache).toHaveSize(1);

@@ -1,10 +1,11 @@
 // SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+// SPDX-FileCopyrightText: 2026 LavCorps <lavcorps@protonmail.com>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { Duration } from "luxon";
 import Timer from "../Classes/Timer.ts";
-import { MessageDisplayType } from "../Modules/enums.js";
+import { MessageDisplayType } from "../Modules/enums.ts";
 import { getChildItems, combineProceduralSelections } from "../Modules/itemManager.ts";
 import DeactivateAction from "./Actions/DeactivateAction.ts";
 import InstantiateRoomItemAction from "./Actions/InstantiateRoomItemAction.ts";
@@ -180,6 +181,14 @@ export default class Fixture extends RecipeProcessor implements PersistentGameEn
     setRecipeTag(tag: string): void {
         this._clearProcess();
         this._recipeTag = tag?.trim();
+    }
+
+    /**
+     * Returns the args for an ActionDirective that only needs to be able to look up this Fixture.
+     * @returns [name, location]
+     */
+    getGeneralActionDirectiveArgs(): string[] {
+        return [this.name, this.location.id];
     }
 
     /**
@@ -524,9 +533,10 @@ export default class Fixture extends RecipeProcessor implements PersistentGameEn
 
     /**
      * Gets the fixture's name preceded by "the".
+     * It will not be preceded by "the" if its name ends in a number.
      */
     getContainingPhrase(): string {
-        return `the ${this.name}`;
+        return this.name.match(/.*\d+$/) ? this.name : `the ${this.name}`;
     }
 
     /**

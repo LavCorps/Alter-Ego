@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { MessageDisplayType } from "../../Modules/enums.js";
+import { MessageDisplayType } from "../../Modules/enums.ts";
 import Action from "../Action.ts";
 import type Fixture from "../Fixture.ts";
 import type Interactable from "../../Classes/Interactables/Interactable.ts";

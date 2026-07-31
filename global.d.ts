@@ -1,8 +1,9 @@
 // SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+// SPDX-FileCopyrightText: 2026 LavCorps <lavcorps@protonmail.com>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import type { ButtonInteraction, GuildMember, Message, ModalSubmitInteraction, OmitPartialGroupDMChannel, StringSelectMenuInteraction } from "discord.js";
+import type { ButtonInteraction, GuildMember, Message, ModalSubmitInteraction, OmitPartialGroupDMChannel, Snowflake, StringSelectMenuInteraction } from "discord.js";
 import type GameSettings from "./Classes/GameSettings.ts";
 import type Event from "./Data/Event.ts";
 import type Exit from "./Data/Exit.js";
@@ -21,6 +22,9 @@ import type Moderator from "./Data/Moderator.ts";
 export { };
 
 declare global {
+    /** Utility type that indicates that something is to be a value of T. Used for enums. */
+    type valueof<T> = T[keyof T];
+
     /**
      * Represents a user of the bot in a game context.
      */
@@ -33,6 +37,16 @@ declare global {
         displayName: string;
         /** An image URL that will be used as an avatar when the user's messages are mirrored in a webhook. */
         displayIcon: string;
+    }
+
+    /**
+     * A message that we've sent, with the channel ID and message ID so that it can be retrieved later.
+     */
+    interface SentMessage {
+        /** The ID of the channel the message is in. */
+        channelId: Snowflake;
+        /** The ID of the message. */
+        messageId: Snowflake;
     }
 
 	/**
@@ -261,4 +275,7 @@ declare global {
 		getOwnPropertyDescriptor: (targetObject: Node, propKey: string | symbol) => TypedPropertyDescriptor<any>;
 		getPrototypeOf: (targetObject: Node) => object;
 	};
+
+	/** Convenience alias for the constructor of T. */
+    type Constructor<T extends any> = { new(...args: any[]): T }
 }

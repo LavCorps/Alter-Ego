@@ -134,7 +134,7 @@ is used. It is also performed when:
   [duplicated Status](status.md#duplicated-status-id)---the original Status is cured before the duplicated Status is
   inflicted,
 - A Player is inflicted with a Status that [cures](status.md#cures-strings) one or more Status Effects,
-- A Player performs an [Unhide Action](#unhide-action)---the "hidden" Status is cured,
+- A Player performs an [Emerge Action](#emerge-action)---the "hidden" Status is cured,
 - A Player is inflicted with a Status with a [next stage](status.md#next-stage-id)---the next stage is cured before it
   it is inflicted (if it already exists), or
 - A Player performs a [Use Action](#use-action) with an Inventory Item that
@@ -193,6 +193,14 @@ A **Drop Action** removes an Inventory Item from one of the Player's [hands](equ
 [Room Item](room_item.md), and puts it in the specified [container](room_item.md#container). It is performed when
 the [drop](../commands/player_commands.md#drop) [command](../commands/moderator_commands.md#drop) is used.
 It can also be performed with [interactables](../interactables.md).
+
+### Emerge Action
+
+> [!NOTE]
+> Prior to Alter Ego version 2.1, this was called an **Unhide Action**.
+
+An **Emerge Action** removes a Player from their [Hiding Spot](hiding_spot.md). It is performed when the emerge alias
+of the [hide](../commands/player_commands.md#hide) [command](../commands/moderator_commands.md#hide) is used.
 
 ### End Action
 
@@ -519,11 +527,6 @@ An **Unequip Action** removes an Inventory Item from one of the Player's [Equipm
 puts it in one of their hands. It is performed when the [unequip](../commands/player_commands.md#unequip)
 [command](../commands/moderator_commands.md#unequip) is used.
 It can also be performed with [interactables](../interactables.md).
-
-### Unhide Action
-
-An **Unhide Action** removes a Player from their [Hiding Spot](hiding_spot.md). It is performed when the unhide alias
-of the [hide](../commands/player_commands.md#hide) [command](../commands/moderator_commands.md#hide) is used.
 
 ### Unlock Action
 

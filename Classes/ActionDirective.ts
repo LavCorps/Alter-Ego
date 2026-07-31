@@ -16,7 +16,7 @@ export default class ActionDirective<T extends Action = Action> {
     /**
      * The action this directive should create.
      */
-    readonly action: { new(...args: any[]): T };
+    readonly action: Constructor<T>;
     /**
      * The player the action should be constructed with by default.
      */
@@ -39,7 +39,7 @@ export default class ActionDirective<T extends Action = Action> {
      * @throws {TypeError} If the provided action is not a subclass of Action.
      */
     constructor(action: T, player: Player, args: any[], user: User) {
-        this.action = action.constructor as { new(...args: any[]): T };
+        this.action = action.constructor as Constructor<T>;
         this.#player = player;
         this.#args = args;
         this.customId = this.#generateCustomId(user);

@@ -1,21 +1,26 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+// SPDX-FileCopyrightText: 2026 Ms. VBLANK <alteregomolly@pm.me>
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import type { ComponentBuilder, ModalBuilder, StringSelectMenuOptionBuilder } from "discord.js";
-import type { InteractableType } from "../../Modules/enums.js";
+import type { InteractableType } from "../../Modules/enums.ts";
 
 /**
  * Represents an interactive message component.
  */
 export default abstract class Interactable {
-	/**
-	 * The type of interactive message component to create.
+    /**
+     * The type of interactive message component to create.
      */
     readonly type: InteractableType;
-	/**
-	 * The customId of the component.
-	 */
+    /**
+     * The customId of the component.
+     */
     readonly customId: string;
-	/**
-	 * The priority level of the interactable. This determines how high up it will appear in a list of interactable components.
-	 */
+    /**
+     * The priority level of the interactable. This determines how high up it will appear in a list of interactable components.
+     */
     readonly priority: number;
     /**
      * Whether to respond to an interaction with a modal.
@@ -25,23 +30,23 @@ export default abstract class Interactable {
     /**
      * The modal component created from this interactable.
      */
-    abstract readonly component: ComponentBuilder|StringSelectMenuOptionBuilder|ModalBuilder;
+    abstract readonly component: ComponentBuilder | StringSelectMenuOptionBuilder | ModalBuilder;
 
-	/**
-	 * @param type - The type of interactive message component to create.
-	 * @param customId - The custom ID for this interactable.
-	 * @param priority - The priority level of the interactable. This determines how high up it will appear in a list of interactable components.
+    /**
+     * @param type - The type of interactive message component to create.
+     * @param customId - The custom ID for this interactable.
+     * @param priority - The priority level of the interactable. This determines how high up it will appear in a list of interactable components.
      * @param respondWithModal - Whether to respond to an interaction with a modal. Defaults to false.
-	 */
+     */
     protected constructor(type: InteractableType, customId: string, priority: number, respondWithModal = false) {
-		this.type = type;
-		this.customId = customId;
-		this.priority = priority;
+        this.type = type;
+        this.customId = customId;
+        this.priority = priority;
         this.respondWithModal = respondWithModal;
-	}
+    }
 
-	/**
-	 * Sets the interactable as disabled.
-	 */
-	abstract disable(): void;
+    /**
+     * Sets the interactable as disabled.
+     */
+    abstract disable(): void;
 }

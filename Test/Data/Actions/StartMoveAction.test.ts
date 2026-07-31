@@ -119,6 +119,10 @@ describe('StartMoveAction test', () => {
      * Inflicts spd-4, getting Nero to the speed we need him at.
      */
     let crutches: Status;
+    /**
+     * Prevents being inflicted with cold.
+     */
+    let bundledUp: Status;
     let lobbyFirstNarrationMessage: Message<boolean>;
     let lobbyLastNarrationMessage: Message<boolean>;
     let hall3NarrationMessage: Message<boolean>;
@@ -143,6 +147,7 @@ describe('StartMoveAction test', () => {
     const clearMessages = () => {
         lobby.channel.messages.cache.clear();
         hall3.dest.channel.messages.cache.clear();
+        testGame.entityFinder.getRoom('locker-room').channel.messages.cache.clear();
         hall5.dest.channel.messages.cache.clear();
         meatballRoom.channel.messages.cache.clear();
         cave9.channel.messages.cache.clear();
@@ -153,7 +158,7 @@ describe('StartMoveAction test', () => {
     };
 
     const sendMessages = async () => {
-        await sendQueuedMessages(game);
+        await sendQueuedMessages(testGame);
         lobbyFirstNarrationMessage = lobby.channel.messages.cache.first();
         lobbyLastNarrationMessage = lobby.channel.messages.cache.last();
         hall3NarrationMessage = hall3.dest.channel.messages.cache.first();
@@ -170,24 +175,25 @@ describe('StartMoveAction test', () => {
     }
 
     beforeAll(async () => {
-        if (!game.inProgress) await game.entityLoader.loadAll();
-        astrid = game.entityFinder.getLivingPlayer("Astrid");
-        asuka = game.entityFinder.getLivingPlayer("Asuka");
-        nero = game.entityFinder.getLivingPlayer("Nero");
-        lobby = game.entityFinder.getRoom("lobby");
-        mainEntrance = game.entityFinder.getExit(astrid.location, "MAIN ENTRANCE");
-        hall3 = game.entityFinder.getExit(astrid.location, "HALL 3");
-        hall5 = game.entityFinder.getExit(astrid.location, "HALL 5");
-        meatballRoom = game.entityFinder.getRoom("meatball-room");
-        meatballBeginning = game.entityFinder.getExit(meatballRoom, "BEGINNING");
-        meatballEnd = game.entityFinder.getExit(meatballRoom, "END");
-        cave9 = game.entityFinder.getRoom("cave-9");
-        cave9Door = game.entityFinder.getExit(cave9, "DOOR");
-        courtyard = game.entityFinder.getRoom("courtyard");
-        fast = game.entityFinder.getStatusEffect("fast");
-        concealed = game.entityFinder.getStatusEffect("concealed");
-        cheerful = game.entityFinder.getStatusEffect("cheerful");
-        crutches = game.entityFinder.getStatusEffect("crutches");
+        if (!testGame.inProgress) await testGame.entityLoader.loadAll();
+        astrid = testGame.entityFinder.getLivingPlayer("Astrid");
+        asuka = testGame.entityFinder.getLivingPlayer("Asuka");
+        nero = testGame.entityFinder.getLivingPlayer("Nero");
+        lobby = testGame.entityFinder.getRoom("lobby");
+        mainEntrance = testGame.entityFinder.getExit(astrid.location, "MAIN ENTRANCE");
+        hall3 = testGame.entityFinder.getExit(astrid.location, "HALL 3");
+        hall5 = testGame.entityFinder.getExit(astrid.location, "HALL 5");
+        meatballRoom = testGame.entityFinder.getRoom("meatball-room");
+        meatballBeginning = testGame.entityFinder.getExit(meatballRoom, "BEGINNING");
+        meatballEnd = testGame.entityFinder.getExit(meatballRoom, "END");
+        cave9 = testGame.entityFinder.getRoom("cave-9");
+        cave9Door = testGame.entityFinder.getExit(cave9, "DOOR");
+        courtyard = testGame.entityFinder.getRoom("courtyard");
+        fast = testGame.entityFinder.getStatusEffect("fast");
+        concealed = testGame.entityFinder.getStatusEffect("concealed");
+        cheerful = testGame.entityFinder.getStatusEffect("cheerful");
+        crutches = testGame.entityFinder.getStatusEffect("crutches");
+        bundledUp = testGame.entityFinder.getStatusEffect("bundled up");
         astrid.inflict(fast);
         astrid.inflict(concealed);
         concealedDisplayName = "an individual wearing a MASK";
@@ -195,6 +201,9 @@ describe('StartMoveAction test', () => {
         astrid.displayName = concealedDisplayName;
         asuka.inflict(cheerful);
         nero.inflict(crutches);
+        astrid.inflict(bundledUp);
+        asuka.inflict(bundledUp);
+        nero.inflict(bundledUp);
     });
 
     beforeEach(async () => {
@@ -206,14 +215,17 @@ describe('StartMoveAction test', () => {
         queueMoveSpy = vi.spyOn(QueueMoveAction.prototype, 'performQueueMove');
         movePlayersSpy = vi.spyOn(GameMovementHandler.prototype, 'movePlayers');
         moveSpy = vi.spyOn(MoveAction.prototype, 'performMove');
+        const doSendProgressIndicatorMock = vi.spyOn(GameMovementHandler.prototype as any, 'doSendProgressIndicator');
+        doSendProgressIndicatorMock.mockImplementation(() => false);
         await sendMessages();
         clearMessages();
-        vi.useFakeTimers();        asuka.setPos(hall5.pos);
+        vi.useFakeTimers();
+        asuka.setPos(hall5.pos);
         nero.setPos(mainEntrance.pos);
     });
 
     afterEach(async () => {
-        const action = new StopAction(game, undefined, astrid, astrid.location, false);
+        const action = new StopAction(testGame, undefined, astrid, astrid.location, false);
         await action.performStop(false, undefined, true, new Set([astrid, asuka, nero]));
         for (const player of [astrid, asuka, nero]) {
             player.location.removePlayer(player);
@@ -234,6 +246,9 @@ describe('StartMoveAction test', () => {
         astrid.setPronouns(astrid.pronouns, astrid.pronounString);
         asuka.cure(cheerful);
         nero.cure(crutches);
+        astrid.cure(bundledUp);
+        asuka.cure(bundledUp);
+        nero.cure(bundledUp);
     });
 
     test('Setup is correct', () => {
@@ -253,7 +268,7 @@ describe('StartMoveAction test', () => {
 
     describe('one player starts moving with no party', () => {
         test('player moves to the destination room (walking)', async () => {
-            const startMoveAction = new StartMoveAction(game, undefined, astrid, astrid.location, false);
+            const startMoveAction = new StartMoveAction(testGame, undefined, astrid, astrid.location, false);
             await startMoveAction.performStartMove(false, hall5);
             expect(calculateMoveTimeSpy).toHaveBeenCalledOnce();
             const calculatedTime = 3852.926;
@@ -318,7 +333,7 @@ describe('StartMoveAction test', () => {
 
         test('player moves to the destination room (walking) (with next move in queue)', async () => {
             astrid.moveQueue = ["HALL 5", "LOVE SUITE"];
-            const startMoveAction = new StartMoveAction(game, undefined, astrid, astrid.location, false);
+            const startMoveAction = new StartMoveAction(testGame, undefined, astrid, astrid.location, false);
             await startMoveAction.performStartMove(false, hall5);
             expect(calculateMoveTimeSpy).toHaveBeenCalledOnce();
             const calculatedTime = 3852.926;
@@ -365,7 +380,7 @@ describe('StartMoveAction test', () => {
             meatballRoom.addPlayer(nero);
             nero.setPos(meatballBeginning.pos);
             nero.moveQueue = ["END", "NEXT ROOM"];
-            const startMoveAction = new StartMoveAction(game, undefined, nero, nero.location, false);
+            const startMoveAction = new StartMoveAction(testGame, undefined, nero, nero.location, false);
             await startMoveAction.performStartMove(true, meatballEnd);
             expect(calculateMoveTimeSpy).toHaveBeenCalledOnce();
             const calculatedTime = 424339.472;
@@ -419,7 +434,7 @@ describe('StartMoveAction test', () => {
             expect(nero.pos).toStrictEqual({ x: 425, y: 0, z: 2641 });
             expect(nero.stamina).toBeCloseTo(0, 3);
             expect(nero.hasStatus("weary")).toBe(true);
-            nero.cure(game.entityFinder.getStatusEffect("weary"));
+            nero.cure(testGame.entityFinder.getStatusEffect("weary"));
             expect(nero.moveQueue).toHaveLength(0);
             clearMessages();
             await sendMessages();
@@ -432,9 +447,9 @@ describe('StartMoveAction test', () => {
         });
 
         test('no stamina decrease behavior attribute prevents stamina loss', async () => {
-            const noStaminaDecrease = game.entityFinder.getStatusEffect("meatball stamina");
+            const noStaminaDecrease = testGame.entityFinder.getStatusEffect("meatball stamina");
             astrid.inflict(noStaminaDecrease);
-            const startMoveAction = new StartMoveAction(game, undefined, astrid, astrid.location, false);
+            const startMoveAction = new StartMoveAction(testGame, undefined, astrid, astrid.location, false);
             await startMoveAction.performStartMove(false, hall5);
             expect(astrid.isMoving).toBe(true);
             expect(astrid.isRunning).toBe(false);
@@ -469,7 +484,7 @@ describe('StartMoveAction test', () => {
         test('exit is locked', async () => {
             hall5.lock();
             astrid.moveQueue = ["HALL 5", "LOVE SUITE"];
-            const startMoveAction = new StartMoveAction(game, undefined, astrid, astrid.location, false);
+            const startMoveAction = new StartMoveAction(testGame, undefined, astrid, astrid.location, false);
             await startMoveAction.performStartMove(false, hall5);
             expect(narrateStartMoveSpy).toHaveBeenCalledOnce();
             expect(movePlayersSpy).toHaveBeenCalledOnce();
@@ -499,9 +514,9 @@ describe('StartMoveAction test', () => {
         test('exit has restricted exit puzzle that the player can pass', async () => {
             astrid.location.removePlayer(astrid);
             cave9.addPlayer(astrid);
-            const cave9Puzzle = game.entityFinder.getPuzzle("DOOR", "cave-9", "restricted exit");
+            const cave9Puzzle = testGame.entityFinder.getPuzzle("DOOR", "cave-9", "restricted exit");
             cave9Puzzle.setAccessible();
-            const startMoveAction = new StartMoveAction(game, undefined, astrid, astrid.location, false);
+            const startMoveAction = new StartMoveAction(testGame, undefined, astrid, astrid.location, false);
             await startMoveAction.performStartMove(false, cave9Door);
             expect(narrateStartMoveSpy).toHaveBeenCalledOnce();
             expect(movePlayersSpy).toHaveBeenCalledOnce();
@@ -530,9 +545,9 @@ describe('StartMoveAction test', () => {
         test('exit has restricted exit puzzle that the player cannot pass', async () => {
             nero.location.removePlayer(nero);
             cave9.addPlayer(nero);
-            const cave9Puzzle = game.entityFinder.getPuzzle("DOOR", "cave-9", "restricted exit");
+            const cave9Puzzle = testGame.entityFinder.getPuzzle("DOOR", "cave-9", "restricted exit");
             cave9Puzzle.setAccessible();
-            const startMoveAction = new StartMoveAction(game, undefined, nero, nero.location, false);
+            const startMoveAction = new StartMoveAction(testGame, undefined, nero, nero.location, false);
             await startMoveAction.performStartMove(false, cave9Door);
             expect(narrateStartMoveSpy).toHaveBeenCalledOnce();
             expect(movePlayersSpy).toHaveBeenCalledOnce();
@@ -567,12 +582,12 @@ describe('StartMoveAction test', () => {
             meatballRoom.addPlayer(nero);
             asuka.setPos(meatballBeginning.pos);
             nero.setPos(meatballBeginning.pos);
-            const followAction = new FollowAction(game, undefined, asuka, asuka.location, false);
+            const followAction = new FollowAction(testGame, undefined, asuka, asuka.location, false);
             await followAction.performFollow(nero);
             await sendMessages();
             clearMessages();
 
-            const startMoveAction = new StartMoveAction(game, undefined, nero, nero.location, false);
+            const startMoveAction = new StartMoveAction(testGame, undefined, nero, nero.location, false);
             await startMoveAction.performStartMove(true, meatballEnd);
             expect(calculateMoveTimeSpy).toHaveBeenCalledTimes(2);
             const calculatedTime = 424339.472;
@@ -638,7 +653,7 @@ describe('StartMoveAction test', () => {
             expect(nero.pos).toStrictEqual({ x: 425, y: 0, z: 2641 });
             expect(nero.stamina).toBeCloseTo(0, 3);
             expect(nero.hasStatus("weary")).toBe(true);
-            nero.cure(game.entityFinder.getStatusEffect("weary"));
+            nero.cure(testGame.entityFinder.getStatusEffect("weary"));
             expect(nero.moveQueue).toHaveLength(0);
             expect(asuka.remainingTime).toBeCloseTo(0, 3);
             expect(asuka.isMoving).toBe(false);
@@ -669,12 +684,12 @@ describe('StartMoveAction test', () => {
             meatballRoom.addPlayer(nero);
             asuka.setPos(meatballBeginning.pos);
             nero.setPos(meatballBeginning.pos);
-            const followAction = new FollowAction(game, undefined, nero, nero.location, false);
+            const followAction = new FollowAction(testGame, undefined, nero, nero.location, false);
             await followAction.performFollow(asuka);
             await sendMessages();
             clearMessages();
 
-            const startMoveAction = new StartMoveAction(game, undefined, asuka, asuka.location, false);
+            const startMoveAction = new StartMoveAction(testGame, undefined, asuka, asuka.location, false);
             await startMoveAction.performStartMove(true, meatballEnd);
             expect(calculateMoveTimeSpy).toHaveBeenCalledTimes(2);
             const asukaCalculatedTime = 151645.207;
@@ -741,7 +756,7 @@ describe('StartMoveAction test', () => {
             expect(nero.pos).toStrictEqual({ x: 425, y: 0, z: 2641 });
             expect(nero.stamina).toBeCloseTo(0, 3);
             expect(nero.hasStatus("weary")).toBe(true);
-            nero.cure(game.entityFinder.getStatusEffect("weary"));
+            nero.cure(testGame.entityFinder.getStatusEffect("weary"));
             expect(nero.moveQueue).toHaveLength(0);
             expect(asuka.remainingTime).toBeGreaterThan(0);
             expect(asuka.isMoving).toBe(true);
@@ -767,12 +782,12 @@ describe('StartMoveAction test', () => {
         });
 
         test('follower is closer to exit than moving player', async () => {
-            const followAction = new FollowAction(game, undefined, asuka, asuka.location, false);
+            const followAction = new FollowAction(testGame, undefined, asuka, asuka.location, false);
             await followAction.performFollow(astrid);
             await sendMessages();
             clearMessages();
 
-            const startMoveAction = new StartMoveAction(game, undefined, astrid, astrid.location, false);
+            const startMoveAction = new StartMoveAction(testGame, undefined, astrid, astrid.location, false);
             await startMoveAction.performStartMove(false, hall5);
             expect(calculateMoveTimeSpy).toHaveBeenCalledTimes(2);
             const asukaCalculatedTime = 0;
@@ -856,12 +871,12 @@ describe('StartMoveAction test', () => {
         });
 
         test('exit locks before single follower reaches it', async () => {
-            const followAction = new FollowAction(game, undefined, nero, nero.location, false);
+            const followAction = new FollowAction(testGame, undefined, nero, nero.location, false);
             await followAction.performFollow(astrid);
             await sendMessages();
             clearMessages();
 
-            const startMoveAction = new StartMoveAction(game, undefined, astrid, astrid.location, false);
+            const startMoveAction = new StartMoveAction(testGame, undefined, astrid, astrid.location, false);
             await startMoveAction.performStartMove(false, hall5);
             expect(calculateMoveTimeSpy).toHaveBeenCalledTimes(2);
             const astridCalculatedTime = 3852.926;
@@ -953,15 +968,15 @@ describe('StartMoveAction test', () => {
         });
 
         test('exit locks before both followers reach it', async () => {
-            const followAction1 = new FollowAction(game, undefined, nero, nero.location, false);
+            const followAction1 = new FollowAction(testGame, undefined, nero, nero.location, false);
             await followAction1.performFollow(astrid);
-            const followAction2 = new FollowAction(game, undefined, asuka, asuka.location, false);
+            const followAction2 = new FollowAction(testGame, undefined, asuka, asuka.location, false);
             await followAction2.performFollow(astrid);
 
             await sendMessages();
             clearMessages();
 
-            const startMoveAction = new StartMoveAction(game, undefined, astrid, astrid.location, false);
+            const startMoveAction = new StartMoveAction(testGame, undefined, astrid, astrid.location, false);
             await startMoveAction.performStartMove(false, hall3);
             expect(calculateMoveTimeSpy).toHaveBeenCalledTimes(3);
             const astridCalculatedTime = 3838.957;
@@ -1077,14 +1092,14 @@ describe('StartMoveAction test', () => {
             cave9.addPlayer(nero);
             astrid.location.removePlayer(astrid);
             cave9.addPlayer(astrid);
-            const cave9Puzzle = game.entityFinder.getPuzzle("DOOR", "cave-9", "restricted exit");
+            const cave9Puzzle = testGame.entityFinder.getPuzzle("DOOR", "cave-9", "restricted exit");
             cave9Puzzle.setAccessible();
-            const followAction = new FollowAction(game, undefined, astrid, astrid.location, false);
+            const followAction = new FollowAction(testGame, undefined, astrid, astrid.location, false);
             await followAction.performFollow(nero);
             await sendMessages();
             clearMessages();
 
-            const startMoveAction = new StartMoveAction(game, undefined, nero, nero.location, false);
+            const startMoveAction = new StartMoveAction(testGame, undefined, nero, nero.location, false);
             await startMoveAction.performStartMove(false, cave9Door);
             expect(calculateMoveTimeSpy).toHaveBeenCalledTimes(2);
             const calculatedTime = 8523.792;
@@ -1155,11 +1170,11 @@ describe('StartMoveAction test', () => {
         let generateRoomOccupantsNotificationSpy: Mock<typeof GameNotificationGenerator.prototype.generateRoomOccupantsNotification>;
 
         beforeEach(async () => {
-            const followAction1 = new FollowAction(game, undefined, asuka, asuka.location, false);
+            const followAction1 = new FollowAction(testGame, undefined, asuka, asuka.location, false);
             await followAction1.performFollow(astrid);
-            const followAction2 = new FollowAction(game, undefined, nero, nero.location, false);
+            const followAction2 = new FollowAction(testGame, undefined, nero, nero.location, false);
             await followAction2.performFollow(astrid);
-            const leadAction = new LeadAction(game, undefined, astrid, astrid.location, false);
+            const leadAction = new LeadAction(testGame, undefined, astrid, astrid.location, false);
             await leadAction.performLead([asuka, nero]);
             await vi.advanceTimersByTimeAsync(7800);
             await sendMessages();
@@ -1169,12 +1184,12 @@ describe('StartMoveAction test', () => {
         });
 
         afterEach(async () => {
-            const disbandAction = new DisbandPartyAction(game, undefined, astrid, astrid.location, false);
+            const disbandAction = new DisbandPartyAction(testGame, undefined, astrid, astrid.location, false);
             await disbandAction.performDisbandParty(true);
         });
 
         test('party member positions are always the same with 1 follower', async () => {
-            const dismissAction = new DismissAction(game, undefined, astrid, astrid.location, false);
+            const dismissAction = new DismissAction(testGame, undefined, astrid, astrid.location, false);
             await dismissAction.performDismissAction([asuka], true);
             await sendMessages();
             clearMessages();
@@ -1183,7 +1198,7 @@ describe('StartMoveAction test', () => {
             for (const member of party.members.values())
                 expect(member.positionMatches(party.leader));
 
-            const startMoveAction = new StartMoveAction(game, undefined, astrid, astrid.location, false);
+            const startMoveAction = new StartMoveAction(testGame, undefined, astrid, astrid.location, false);
             await startMoveAction.performStartMove(false, mainEntrance);
             expect(calculateMoveTimeSpy).toHaveBeenCalledOnce();
             const calculatedTime = 4045.566;
@@ -1288,7 +1303,7 @@ describe('StartMoveAction test', () => {
             for (const member of party.members.values())
                 expect(member.positionMatches(party.leader));
 
-            const startMoveAction = new StartMoveAction(game, undefined, astrid, astrid.location, false);
+            const startMoveAction = new StartMoveAction(testGame, undefined, astrid, astrid.location, false);
             await startMoveAction.performStartMove(false, mainEntrance);
             expect(calculateMoveTimeSpy).toHaveBeenCalledOnce();
             const calculatedTime = 4045.566;
@@ -1399,7 +1414,7 @@ describe('StartMoveAction test', () => {
                 expect(member.positionMatches(party.leader));
 
             astrid.moveQueue = ["HALL 3", "LOCKER ROOM"];
-            const startMoveAction = new StartMoveAction(game, undefined, astrid, astrid.location, false);
+            const startMoveAction = new StartMoveAction(testGame, undefined, astrid, astrid.location, false);
             await startMoveAction.performStartMove(false, hall3);
             expect(calculateMoveTimeSpy).toHaveBeenCalledOnce();
             let calculatedTime = 11427.364;
@@ -1600,7 +1615,7 @@ describe('StartMoveAction test', () => {
                 expect(member.positionMatches(party.leader));
 
             astrid.moveQueue = ["HALL 3", "LOCKER ROOM"];
-            const startMoveAction = new StartMoveAction(game, undefined, astrid, astrid.location, false);
+            const startMoveAction = new StartMoveAction(testGame, undefined, astrid, astrid.location, false);
             await startMoveAction.performStartMove(false, hall3);
             expect(calculateMoveTimeSpy).toHaveBeenCalledOnce();
             let partyCalculatedTime = 11427.364;
@@ -1629,7 +1644,7 @@ describe('StartMoveAction test', () => {
             expect(asukaFirstNotificationMessage.content).toBe(`> -# Following an individual wearing a MASK, you start walking toward HALL 3 with Nero while carrying a POT.`);
             expect(neroFirstNotificationMessage.content).toBe(`> -# Following an individual wearing a MASK, you start walking toward HALL 3 with Asuka.`);
 
-            const dismissAction = new DismissAction(game, undefined, astrid, astrid.location, false);
+            const dismissAction = new DismissAction(testGame, undefined, astrid, astrid.location, false);
             await dismissAction.performDismissAction([nero]);
             expect(astrid.party.hasFollower(nero)).toBe(false);
             expect(nero.isFollowing(astrid)).toBe(true);
@@ -1786,23 +1801,338 @@ describe('StartMoveAction test', () => {
         });
 
         test('party leader runs out of stamina', async () => {
+            const party = astrid.party;
+            for (const member of party.members.values())
+                expect(member.positionMatches(party.leader));
 
+            astrid.stamina = 0.001;
+            const startMoveAction = new StartMoveAction(testGame, undefined, astrid, astrid.location, false);
+            await startMoveAction.performStartMove(false, mainEntrance);
+            expect(calculateMoveTimeSpy).toHaveBeenCalledOnce();
+            const calculatedTime = 4045.566;
+            expect(calculateMoveTimeSpy.mock.results[0].value).toBeCloseTo(calculatedTime, 3);
+            expect(narrateStartMoveSpy).toHaveBeenCalledOnce();
+            expect(movePlayersSpy).toHaveBeenCalledOnce();
+            expect(doAfterDelaySpy).not.toHaveBeenCalled();
+            expect(queueMoveSpy).not.toHaveBeenCalled();
+            for (const member of party.members.values()) {
+                expect(member.remainingTime).toBeCloseTo(calculatedTime, 3);
+                expect(member.isMoving).toBe(true);
+                expect(member.isRunning).toBe(false);
+                expect(member.moveTimer).not.toBeNull();
+                expect(member.currentMovingSpeed).toEqual(1);
+            }
+
+            await sendMessages();
+            expect(lobby.channel.messages.cache).toHaveSize(1);
+            expect(astrid.notificationChannel.messages.cache).toHaveSize(1);
+            expect(asuka.notificationChannel.messages.cache).toHaveSize(1);
+            expect(nero.notificationChannel.messages.cache).toHaveSize(1);
+            let lobbyNarration = `An individual wearing a MASK starts walking toward the MAIN ENTRANCE with Asuka and Nero. `
+                + `An individual wearing a MASK carries an APPLE and an unpeeled ORANGE; Asuka carries a POT.`;
+            expect(lobbyFirstNarrationMessage.content).toBe(`> -# ${lobbyNarration}`);
+            expect(astridFirstNotificationMessage.content).toBe(`> -# You start walking toward the MAIN ENTRANCE with Asuka and Nero while carrying an APPLE and an unpeeled ORANGE.`);
+            expect(asukaFirstNotificationMessage.content).toBe(`> -# Following an individual wearing a MASK, you start walking toward the MAIN ENTRANCE with Nero while carrying a POT.`);
+            expect(neroFirstNotificationMessage.content).toBe(`> -# Following an individual wearing a MASK, you start walking toward the MAIN ENTRANCE with Asuka.`);
+
+            /**
+             * Fast forward one tick. We can expect Astrid's stamina to have depleted by half.
+             */
+            let elapsedTime = 100;
+            await vi.advanceTimersByTimeAsync(elapsedTime);
+            expect(narrateReachedHalfStaminaSpy).toHaveBeenCalledOnce();
+            expect(astrid.stamina).toBeGreaterThan(0);
+            expect(astrid.hasStatus("weary")).toBe(false);
+            expect(moveSpy).not.toHaveBeenCalled();
+
+            clearMessages();
+            await sendMessages();
+            expect(lobby.channel.messages.cache).toHaveSize(1);
+            expect(astrid.notificationChannel.messages.cache).toHaveSize(1);
+            expect(asuka.notificationChannel.messages.cache).toHaveSize(0);
+            expect(nero.notificationChannel.messages.cache).toHaveSize(0);
+            expect(lobbyFirstNarrationMessage.content).toBe(`> -# An individual wearing a MASK's breathing is getting heavy. It seems like they're starting to get tired.`);
+            expect(astridFirstNotificationMessage.content).toBe(`Your breathing is getting heavy. You might want to stop moving and rest soon.`);
+
+            /**
+             * Fast forward two more ticks.
+             */
+            await vi.advanceTimersByTimeAsync(2 * elapsedTime);
+            expect(movePlayersSpy).toHaveBeenCalledOnce();
+            expect(narrateReachedHalfStaminaSpy).toHaveBeenCalledOnce();
+            expect(moveSpy).not.toHaveBeenCalled();
+            expect(astrid.stamina).toBeCloseTo(0, 3);
+            expect(asuka.stamina).toBeGreaterThan(0);
+            expect(nero.stamina).toBeGreaterThan(0);
+            expect(astrid.hasStatus("weary")).toBe(true);
+            expect(asuka.hasStatus("weary")).toBe(false);
+            expect(nero.hasStatus("weary")).toBe(false);
+            expect(astrid.isLeading(asuka)).toBe(true);
+            expect(astrid.isLeading(nero)).toBe(true);
+            expect(asuka.isFollowing(astrid)).toBe(true);
+            expect(nero.isFollowing(astrid)).toBe(true);
+            for (const member of party.members.values()) {
+                expect(member.remainingTime).toBeCloseTo(0, 3);
+                expect(member.isMoving).toBe(false);
+                expect(member.isRunning).toBe(false);
+                expect(member.moveTimer).toBeNull();
+                expect(member.currentMovingSpeed).toEqual(0);
+                expect(member.pos).toStrictEqual(astrid.pos);
+                expect(member.party).toStrictEqual(party);
+            }
+
+            clearMessages();
+            await sendMessages();
+            expect(lobby.channel.messages.cache).toHaveSize(2);
+            expect(astrid.notificationChannel.messages.cache).toHaveSize(2);
+            expect(asuka.notificationChannel.messages.cache).toHaveSize(1);
+            expect(nero.notificationChannel.messages.cache).toHaveSize(1);
+            expect(lobbyFirstNarrationMessage.content).toBe(`> -# An individual wearing a MASK stops moving. They seem weary.`);
+            expect(lobbyLastNarrationMessage.content).toBe(`> -# Asuka and Nero stop moving.`);
+            expect(astridFirstNotificationMessage.content).toBe(`After to moving to this room, you have become **weary**. You need to take a short break before moving to another room.`);
+            expect(astridLastNotificationMessage.content).toBe(`> -# Asuka and Nero stop moving.`);
+            expect(asukaFirstNotificationMessage.content).toBe(`> -# You and Nero stop moving.`);
+            expect(neroFirstNotificationMessage.content).toBe(`> -# You and Asuka stop moving.`);
+            astrid.cure(testGame.entityFinder.getStatusEffect("weary"));
         });
 
         test('party follower runs out of stamina', async () => {
+            const party = astrid.party;
+            for (const member of party.members.values())
+                expect(member.positionMatches(party.leader));
 
+            nero.stamina = 0.001;
+            const startMoveAction = new StartMoveAction(testGame, undefined, astrid, astrid.location, false);
+            await startMoveAction.performStartMove(false, mainEntrance);
+            expect(calculateMoveTimeSpy).toHaveBeenCalledOnce();
+            const calculatedTime = 4045.566;
+            expect(calculateMoveTimeSpy.mock.results[0].value).toBeCloseTo(calculatedTime, 3);
+            expect(narrateStartMoveSpy).toHaveBeenCalledOnce();
+            expect(movePlayersSpy).toHaveBeenCalledOnce();
+            expect(doAfterDelaySpy).not.toHaveBeenCalled();
+            expect(queueMoveSpy).not.toHaveBeenCalled();
+            for (const member of party.members.values()) {
+                expect(member.remainingTime).toBeCloseTo(calculatedTime, 3);
+                expect(member.isMoving).toBe(true);
+                expect(member.isRunning).toBe(false);
+                expect(member.moveTimer).not.toBeNull();
+                expect(member.currentMovingSpeed).toEqual(1);
+            }
+
+            await sendMessages();
+            expect(lobby.channel.messages.cache).toHaveSize(1);
+            expect(astrid.notificationChannel.messages.cache).toHaveSize(1);
+            expect(asuka.notificationChannel.messages.cache).toHaveSize(1);
+            expect(nero.notificationChannel.messages.cache).toHaveSize(1);
+            let lobbyNarration = `An individual wearing a MASK starts walking toward the MAIN ENTRANCE with Asuka and Nero. `
+                + `An individual wearing a MASK carries an APPLE and an unpeeled ORANGE; Asuka carries a POT.`;
+            expect(lobbyFirstNarrationMessage.content).toBe(`> -# ${lobbyNarration}`);
+            expect(astridFirstNotificationMessage.content).toBe(`> -# You start walking toward the MAIN ENTRANCE with Asuka and Nero while carrying an APPLE and an unpeeled ORANGE.`);
+            expect(asukaFirstNotificationMessage.content).toBe(`> -# Following an individual wearing a MASK, you start walking toward the MAIN ENTRANCE with Nero while carrying a POT.`);
+            expect(neroFirstNotificationMessage.content).toBe(`> -# Following an individual wearing a MASK, you start walking toward the MAIN ENTRANCE with Asuka.`);
+
+            /**
+             * Fast forward one tick. We can expect Nero's stamina to have depleted by half.
+             */
+            let elapsedTime = 100;
+            await vi.advanceTimersByTimeAsync(elapsedTime);
+            expect(narrateReachedHalfStaminaSpy).toHaveBeenCalledOnce();
+            expect(nero.stamina).toBeGreaterThan(0);
+            expect(nero.hasStatus("weary")).toBe(false);
+            expect(moveSpy).not.toHaveBeenCalled();
+
+            clearMessages();
+            await sendMessages();
+            expect(lobby.channel.messages.cache).toHaveSize(1);
+            expect(astrid.notificationChannel.messages.cache).toHaveSize(1);
+            expect(asuka.notificationChannel.messages.cache).toHaveSize(0);
+            expect(nero.notificationChannel.messages.cache).toHaveSize(1);
+            expect(lobbyFirstNarrationMessage.content).toBe(`> -# Nero's breathing is getting heavy. It seems like he's starting to get tired.`);
+            expect(astridFirstNotificationMessage.content).toBe(`> -# Nero's breathing is getting heavy. It seems like he's starting to get tired.`);
+            expect(neroFirstNotificationMessage.content).toBe(`Your breathing is getting heavy. You might want to stop moving and rest soon.`);
+
+            /**
+             * Fast forward two more ticks.
+             */
+            await vi.advanceTimersByTimeAsync(2 * elapsedTime);
+            expect(movePlayersSpy).toHaveBeenCalledOnce();
+            expect(narrateReachedHalfStaminaSpy).toHaveBeenCalledOnce();
+            expect(moveSpy).not.toHaveBeenCalled();
+            expect(astrid.stamina).toBeGreaterThan(0);
+            expect(asuka.stamina).toBeGreaterThan(0);
+            expect(nero.stamina).toBeCloseTo(0, 3);
+            expect(astrid.hasStatus("weary")).toBe(false);
+            expect(asuka.hasStatus("weary")).toBe(false);
+            expect(nero.hasStatus("weary")).toBe(true);
+            expect(astrid.isLeading(asuka)).toBe(true);
+            expect(astrid.isLeading(nero)).toBe(true);
+            expect(asuka.isFollowing(astrid)).toBe(true);
+            expect(nero.isFollowing(astrid)).toBe(true);
+            for (const member of party.members.values()) {
+                expect(member.remainingTime).toBeCloseTo(0, 3);
+                expect(member.isMoving).toBe(false);
+                expect(member.isRunning).toBe(false);
+                expect(member.moveTimer).toBeNull();
+                expect(member.currentMovingSpeed).toEqual(0);
+                expect(member.pos).toStrictEqual(astrid.pos);
+                expect(member.party).toStrictEqual(party);
+            }
+
+            clearMessages();
+            await sendMessages();
+            expect(lobby.channel.messages.cache).toHaveSize(2);
+            expect(astrid.notificationChannel.messages.cache).toHaveSize(2);
+            expect(asuka.notificationChannel.messages.cache).toHaveSize(1);
+            expect(nero.notificationChannel.messages.cache).toHaveSize(1);
+            expect(lobbyFirstNarrationMessage.content).toBe(`> -# Nero stops moving. He seems weary.`);
+            expect(lobbyLastNarrationMessage.content).toBe(`> -# An individual wearing a MASK and Asuka stop moving.`);
+            expect(astridFirstNotificationMessage.content).toBe(`> -# Nero stops moving. He seems weary.`);
+            expect(astridLastNotificationMessage.content).toBe(`> -# You and Asuka stop moving.`);
+            expect(asukaFirstNotificationMessage.content).toBe(`> -# You and an individual wearing a MASK stop moving.`);
+            expect(neroFirstNotificationMessage.content).toBe(`After to moving to this room, you have become **weary**. You need to take a short break before moving to another room.`);
+            nero.cure(testGame.entityFinder.getStatusEffect("weary"));
         });
 
-        test('exit has restricted exit puzzle that only the leader can pass', async () => {
+        describe('party restricted exit tests', () => {
+            beforeEach(async () => {
+                nero.location.removePlayer(nero);
+                cave9.addPlayer(nero);
+                astrid.location.removePlayer(astrid);
+                cave9.addPlayer(astrid);
+                asuka.location.removePlayer(asuka);
+                cave9.addPlayer(asuka);
+                const cave9Puzzle = testGame.entityFinder.getPuzzle("DOOR", "cave-9", "restricted exit");
+                cave9Puzzle.setAccessible();
+                await sendMessages();
+                clearMessages();
+            });
 
-        });
+            afterEach(() => {
+                const cave9Puzzle = testGame.entityFinder.getPuzzle("DOOR", "cave-9", "restricted exit");
+                cave9Puzzle.setInaccessible();
+            });
 
-        test('exit has restricted exit puzzle that the leader and one follower can pass', async () => {
+            test('exit has restricted exit puzzle that only the leader can pass', async () => {
+                const party = astrid.party;
+                const dismissAction = new DismissAction(testGame, undefined, astrid, astrid.location, false);
+                await dismissAction.performDismissAction([asuka], true);
+                expect(astrid.party.hasFollower(asuka)).toBe(false);
+                expect(asuka.isFollowing(astrid)).toBe(false);
+                await sendMessages();
+                clearMessages();
 
-        });
+                for (const member of party.members.values())
+                    expect(member.positionMatches(party.leader));
 
-        test('exit has restricted exit puzzle that only a follower can pass', async () => {
+                const startMoveAction = new StartMoveAction(testGame, undefined, astrid, astrid.location, false);
+                await startMoveAction.performStartMove(false, cave9Door);
+                expect(calculateMoveTimeSpy).toHaveBeenCalledOnce();
+                const calculatedTime = 8523.792;
+                expect(calculateMoveTimeSpy.mock.results[0].value).toBeCloseTo(calculatedTime, 3);
+                expect(narrateStartMoveSpy).toHaveBeenCalledOnce();
+                expect(movePlayersSpy).toHaveBeenCalledOnce();
+                expect(doAfterDelaySpy).not.toHaveBeenCalled();
+                expect(queueMoveSpy).not.toHaveBeenCalled();
+                for (const member of party.members.values()) {
+                    expect(member.remainingTime).toBeCloseTo(calculatedTime, 3);
+                    expect(member.isMoving).toBe(true);
+                    expect(member.isRunning).toBe(false);
+                    expect(member.moveTimer).not.toBeNull();
+                    expect(member.currentMovingSpeed).toEqual(1);
+                }
 
+                await sendMessages();
+
+                /**
+                 * Fast forward to the end of the move.
+                 */
+                await vi.advanceTimersByTimeAsync(8600);
+                expect(movePlayersSpy).toHaveBeenCalledOnce();
+                expect(narrateReachedHalfStaminaSpy).not.toHaveBeenCalled();
+                expect(moveSpy).not.toHaveBeenCalled();
+                expect(astrid.isLeading(asuka)).toBe(false);
+                expect(astrid.isLeading(nero)).toBe(true);
+                expect(asuka.isFollowing(astrid)).toBe(false);
+                expect(nero.isFollowing(astrid)).toBe(true);
+                for (const member of party.members.values()) {
+                    expect(member.remainingTime).toBeCloseTo(0, 3);
+                    expect(member.isMoving).toBe(false);
+                    expect(member.isRunning).toBe(false);
+                    expect(member.moveTimer).toBeNull();
+                    expect(member.currentMovingSpeed).toEqual(0);
+                    expect(member.pos).toStrictEqual(cave9Door.pos);
+                    expect(member.hasStatus("weary")).toBe(false);
+                    expect(member.party).toStrictEqual(party);
+                }
+
+                clearMessages();
+                await sendMessages();
+                expect(cave9.channel.messages.cache).toHaveSize(1);
+                expect(astrid.notificationChannel.messages.cache).toHaveSize(1);
+                expect(asuka.notificationChannel.messages.cache).toHaveSize(0);
+                expect(nero.notificationChannel.messages.cache).toHaveSize(1);
+                expect(cave9NarrationMessage.content).toBe(`> -# An individual wearing a MASK tries to open the DOOR, but it seems to be locked. Nero stops behind them.`);
+                expect(astridFirstNotificationMessage.content).toBe(`You try to open the DOOR, but it seems to be locked. Nero stops behind you.`);
+                expect(neroFirstNotificationMessage.content).toBe(`An individual wearing a MASK tries to open the DOOR, but it seems to be locked. You stop behind them.`);
+            });
+
+            test('exit has restricted exit puzzle that the leader and one follower can pass', async () => {
+                const party = astrid.party;
+                for (const member of party.members.values())
+                    expect(member.positionMatches(party.leader));
+
+                const startMoveAction = new StartMoveAction(testGame, undefined, astrid, astrid.location, false);
+                await startMoveAction.performStartMove(false, cave9Door);
+                expect(calculateMoveTimeSpy).toHaveBeenCalledOnce();
+                const calculatedTime = 8523.792;
+                expect(calculateMoveTimeSpy.mock.results[0].value).toBeCloseTo(calculatedTime, 3);
+                expect(narrateStartMoveSpy).toHaveBeenCalledOnce();
+                expect(movePlayersSpy).toHaveBeenCalledOnce();
+                expect(doAfterDelaySpy).not.toHaveBeenCalled();
+                expect(queueMoveSpy).not.toHaveBeenCalled();
+                for (const member of party.members.values()) {
+                    expect(member.remainingTime).toBeCloseTo(calculatedTime, 3);
+                    expect(member.isMoving).toBe(true);
+                    expect(member.isRunning).toBe(false);
+                    expect(member.moveTimer).not.toBeNull();
+                    expect(member.currentMovingSpeed).toEqual(1);
+                }
+
+                await sendMessages();
+
+                /**
+                 * Fast forward to the end of the move.
+                 */
+                await vi.advanceTimersByTimeAsync(8600);
+                expect(movePlayersSpy).toHaveBeenCalledOnce();
+                expect(narrateReachedHalfStaminaSpy).not.toHaveBeenCalled();
+                expect(moveSpy).not.toHaveBeenCalled();
+                expect(astrid.isLeading(asuka)).toBe(true);
+                expect(astrid.isLeading(nero)).toBe(true);
+                expect(asuka.isFollowing(astrid)).toBe(true);
+                expect(nero.isFollowing(astrid)).toBe(true);
+                for (const member of party.members.values()) {
+                    expect(member.remainingTime).toBeCloseTo(0, 3);
+                    expect(member.isMoving).toBe(false);
+                    expect(member.isRunning).toBe(false);
+                    expect(member.moveTimer).toBeNull();
+                    expect(member.currentMovingSpeed).toEqual(0);
+                    expect(member.pos).toStrictEqual(cave9Door.pos);
+                    expect(member.hasStatus("weary")).toBe(false);
+                    expect(member.party).toStrictEqual(party);
+                }
+
+                clearMessages();
+                await sendMessages();
+                expect(cave9.channel.messages.cache).toHaveSize(1);
+                expect(astrid.notificationChannel.messages.cache).toHaveSize(1);
+                expect(asuka.notificationChannel.messages.cache).toHaveSize(1);
+                expect(nero.notificationChannel.messages.cache).toHaveSize(1);
+                expect(cave9NarrationMessage.content).toBe(`> -# An individual wearing a MASK tries to open the DOOR, but it seems to be locked. Asuka and Nero stop behind them.`);
+                expect(astridFirstNotificationMessage.content).toBe(`You try to open the DOOR, but it seems to be locked. Asuka and Nero stop behind you.`);
+                expect(asukaFirstNotificationMessage.content).toBe(`An individual wearing a MASK tries to open the DOOR, but it seems to be locked. You and Nero stop behind them.`);
+                expect(neroFirstNotificationMessage.content).toBe(`An individual wearing a MASK tries to open the DOOR, but it seems to be locked. You and Asuka stop behind them.`);
+            });
         });
     });
 });

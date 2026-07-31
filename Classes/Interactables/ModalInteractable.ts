@@ -2,7 +2,7 @@ import ActionDirectiveInteractable from "./ActionDirectiveInteractable.ts";
 import type ModalComponentInteractable from "./ModalComponentInteractable.ts";
 import type ActionDirective from "../ActionDirective.ts";
 import { ModalBuilder, TextDisplayBuilder } from "discord.js";
-import { InteractableType } from "../../Modules/enums.js";
+import { InteractableType } from "../../Modules/enums.ts";
 
 /**
  * Represents a modal message component.

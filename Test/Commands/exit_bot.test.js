@@ -9,7 +9,7 @@ import { createMockMessage } from "../__mocks__/libs/discord.js";
 
 describe('exit_bot command', () => {
     afterEach(async () => {
-        clearQueue(game);
+        clearQueue(testGame);
         vi.resetAllMocks();
     });
 

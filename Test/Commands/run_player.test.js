@@ -9,7 +9,7 @@ import { createMockMessage } from "../__mocks__/libs/discord.js";
 
 describe('run_player command', () => {
     afterEach(async () => {
-        clearQueue(game);
+        clearQueue(testGame);
         vi.resetAllMocks();
     });
 

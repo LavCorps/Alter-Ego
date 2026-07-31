@@ -7,7 +7,7 @@ import type Game from "./Game.ts";
 import GameConstruct from "./GameConstruct.ts";
 import type Player from "./Player.ts";
 import Whisper from "./Whisper.ts";
-import { WhisperType } from "../Modules/enums.js";
+import { WhisperType } from "../Modules/enums.ts";
 import { generateListString } from "../Modules/helpers.ts";
 import { Collection } from "discord.js";
 
@@ -85,6 +85,23 @@ export default class Party extends GameConstruct {
     }
 
     /**
+     * Forcibly reassigns the party to all of its members.
+     * This should only be called after reloading player data.
+     * This makes all followers start following the leader, and makes the leader lead all of the party's followers.
+     * It also sets the positions of all followers to that of the leader, and marks the party as having synchronized positions.
+     */
+    forciblyAssignToMembers(): void {
+        for (const member of this.members.values())
+            member.joinParty(this);
+        for (const follower of this.followers.values()) {
+            follower.startFollowing(this.leader);
+            this.leader.startLeading(follower);
+            follower.setPos(this.leader.pos);
+        }
+        this.positionsSynchronized = true;
+    }
+
+    /**
      * Returns true if the party has the given player as a member.
      * @param player - The player to check for membership in the party.
      */
@@ -135,18 +152,22 @@ export default class Party extends GameConstruct {
     }
 
     /**
-     * Removes a follower from the party.
-     * @param player - The follower to remove from the party.
+     * Removes one or more followers from the party.
+     * @param players - The followers to remove from the party.
      * @param action - The action that caused the player to be removed.
      * @param leaveNarration - The narration to send to the party whisper channel when the player leaves. Optional.
      */
-    async removeFollower(player: Player, action?: Action, leaveNarration: string = ""): Promise<void> {
-        player.leaveParty();
-        this.followers.delete(player.name);
-        this.members.delete(player.name);
-        this.#memberDisplayNames.delete(player.name);
+    async removeFollowers(players: Set<Player> | Player[] | Player, action?: Action, leaveNarration: string = ""): Promise<void> {
+        if (!(players instanceof Set) && !(players instanceof Array)) players = new Set([players]);
+        if (!(players instanceof Set)) players = new Set(players);
+        for (const player of players) {
+            player.leaveParty();
+            this.followers.delete(player.name);
+            this.members.delete(player.name);
+            this.#memberDisplayNames.delete(player.name);
+        }
         const whisperNarration = action ? leaveNarration : "";
-        await this.whisper.removePlayer(player, whisperNarration, action);
+        await this.whisper.removePlayers(players, whisperNarration, action);
         this.getGame().entityLoader.updatePartyId(this, this.whisper.id);
         if (this.followers.size === 0) {
             await this.disband();
@@ -157,8 +178,7 @@ export default class Party extends GameConstruct {
      * Removes all members from the whisper and sets it to null.
      */
     async deleteWhisper(): Promise<void> {
-        for (const player of this.members.values())
-            await this.whisper.removePlayer(player, "");
+        await this.whisper.removePlayers(this.getMemberSet());
         this.whisper = null;
     }
 
@@ -223,14 +243,16 @@ export default class Party extends GameConstruct {
     }
 
     /**
-     * Gets all of the members of the party as a set. The leader will always be the first player in the set.
+     * Gets all of the members of the party as a set. The leader will always be the first player in the set, unless they are excluded.
+     * @param excludedPlayer - A player to exclude from the set.
      */
-    getMemberSet(): Set<Player> {
+    getMemberSet(excludedPlayer?: Player): Set<Player> {
         const set: Set<Player> = new Set();
         set.add(this.leader);
         const sortedFollowers = this.followers.sorted((a, b) => this.getMemberDisplayName(a).localeCompare(this.getMemberDisplayName(b)));
         for (const follower of sortedFollowers.values())
             set.add(follower);
+        if (excludedPlayer && set.has(excludedPlayer)) set.delete(excludedPlayer);
         return set;
     }
 

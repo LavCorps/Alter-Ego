@@ -7,7 +7,7 @@ import type Exit from "../../Data/Exit.ts";
 
 describe('Player test', () => {
 	beforeAll(async () => {
-		if (!game.inProgress) await game.entityLoader.loadAll();
+		if (!testGame.inProgress) await testGame.entityLoader.loadAll();
 	});
 
     describe('Movement speed', () => {
@@ -240,7 +240,7 @@ describe('Player test', () => {
         ];
 
         beforeAll(() => {
-            player = game.entityFinder.getPlayer("Kyra");
+            player = testGame.entityFinder.getPlayer("Kyra");
             exit = player.location.exits.at(0);
             originalExitPos = exit.pos;
         });
@@ -272,7 +272,7 @@ describe('Player test', () => {
 
         test.for(timeData)('calculateMoveTime for speed %i, x distance %i, y distance %i = %f (walking) and %f (running)',
         ([speed, xDist, yDist, expectedWalkingTime, expectedRunningTime]) => {
-            game.settings.pixelsPerMeter = 25;
+            testGame.settings.pixelsPerMeter = 25;
             player.carryWeight = 1;
             exit.pos.x = xDist;
             exit.pos.y = yDist;
@@ -286,13 +286,13 @@ describe('Player test', () => {
 
 	describe('Crafting', () => {
 		afterEach(async () => {
-			await game.entityLoader.loadInventoryItems(false);
+			await testGame.entityLoader.loadInventoryItems(false);
 		});
 
 		test('Hand-crafting 1', () => {
-			const player = game.entityFinder.getPlayer('Astrid');
-			const appleSlot = game.entityFinder.getPlayerHandHoldingItem(player, 'APPLE');
-			const orangeSlot = game.entityFinder.getPlayerHandHoldingItem(player, 'ORANGE');
+			const player = testGame.entityFinder.getPlayer('Astrid');
+			const appleSlot = testGame.entityFinder.getPlayerHandHoldingItem(player, 'APPLE');
+			const orangeSlot = testGame.entityFinder.getPlayerHandHoldingItem(player, 'ORANGE');
 			expect(appleSlot).not.toBeUndefined();
 			expect(orangeSlot).not.toBeUndefined();
 			expect(appleSlot.equippedItem).not.toBeUndefined();
@@ -301,10 +301,10 @@ describe('Player test', () => {
 			expect(orangeSlot.equippedItem.uses).toBe(1);
 			expect(appleSlot.equippedItem.quantity).toBe(1);
 			expect(orangeSlot.equippedItem.quantity).toBe(1);
-			const recipe = game.entityFinder.getRecipes('crafting', '', 'apple, orange', 'apple orange smoothie')[0];
+			const recipe = testGame.entityFinder.getRecipes('crafting', '', 'apple, orange', 'apple orange smoothie')[0];
 			expect(recipe).not.toBeUndefined();
 			player.craft(recipe);
-			const smoothieSlot = game.entityFinder.getPlayerHandHoldingItem(player, 'APPLE ORANGE SMOOTHIE');
+			const smoothieSlot = testGame.entityFinder.getPlayerHandHoldingItem(player, 'APPLE ORANGE SMOOTHIE');
 			expect(smoothieSlot).not.toBeUndefined();
 			expect(smoothieSlot.equippedItem).not.toBeUndefined();
 			expect(smoothieSlot.equippedItem.uses).toBe(2);
@@ -312,9 +312,9 @@ describe('Player test', () => {
 		});
 
 		test('Hand-crafting 2', () => {
-			const player = game.entityFinder.getPlayer('Asuka');
-			let potSlot = game.entityFinder.getPlayerHandHoldingItem(player, 'POT');
-			const eggSlot = game.entityFinder.getPlayerHandHoldingItem(player, 'RAW EGG');
+			const player = testGame.entityFinder.getPlayer('Asuka');
+			let potSlot = testGame.entityFinder.getPlayerHandHoldingItem(player, 'POT');
+			const eggSlot = testGame.entityFinder.getPlayerHandHoldingItem(player, 'RAW EGG');
 			expect(potSlot).not.toBeUndefined();
 			expect(eggSlot).not.toBeUndefined();
 			expect(potSlot.equippedItem).not.toBeUndefined();
@@ -323,24 +323,24 @@ describe('Player test', () => {
 			expect(eggSlot.equippedItem.uses).toBe(1);
 			expect(potSlot.equippedItem.quantity).toBe(1);
 			expect(eggSlot.equippedItem.quantity).toBe(1);
-			const recipe = game.entityFinder.getRecipes('crafting', '', 'pot, raw egg', 'pot')[0];
+			const recipe = testGame.entityFinder.getRecipes('crafting', '', 'pot, raw egg', 'pot')[0];
 			expect(recipe).not.toBeUndefined();
 			player.craft(recipe);
-			potSlot = game.entityFinder.getPlayerHandHoldingItem(player, 'POT');
+			potSlot = testGame.entityFinder.getPlayerHandHoldingItem(player, 'POT');
 			expect(potSlot).not.toBeUndefined();
 			expect(potSlot.equippedItem).not.toBeUndefined();
 			expect(potSlot.equippedItem.uses).toBe(NaN);
 			expect(potSlot.equippedItem.quantity).toBe(1);
-			const eggItem = game.entityFinder.getInventoryItem("RAW EGG", "Asuka", `${potSlot.equippedItem.getIdentifier()}/POT`);
+			const eggItem = testGame.entityFinder.getInventoryItem("RAW EGG", "Asuka", `${potSlot.equippedItem.getIdentifier()}/POT`);
 			expect(eggItem).not.toBeUndefined();
 			expect(eggItem.uses).toBe(1);
 			expect(eggItem.quantity).toBe(1);
 		});
 
 		test('Hand-crafting 3', () => {
-			const player = game.entityFinder.getPlayer('Luna');
-			let potSlot = game.entityFinder.getPlayerHandHoldingItem(player, 'POT');
-			const orangeJuiceSlot = game.entityFinder.getPlayerHandHoldingItem(player, 'ORANGE JUICE');
+			const player = testGame.entityFinder.getPlayer('Luna');
+			let potSlot = testGame.entityFinder.getPlayerHandHoldingItem(player, 'POT');
+			const orangeJuiceSlot = testGame.entityFinder.getPlayerHandHoldingItem(player, 'ORANGE JUICE');
 			expect(potSlot).not.toBeUndefined();
 			expect(orangeJuiceSlot).not.toBeUndefined();
 			expect(potSlot.equippedItem).not.toBeUndefined();
@@ -349,24 +349,24 @@ describe('Player test', () => {
 			expect(orangeJuiceSlot.equippedItem.uses).toBe(4);
 			expect(potSlot.equippedItem.quantity).toBe(1);
 			expect(orangeJuiceSlot.equippedItem.quantity).toBe(1);
-			const recipe = game.entityFinder.getRecipes('crafting', '', 'pot, orange juice', 'pot')[0];
+			const recipe = testGame.entityFinder.getRecipes('crafting', '', 'pot, orange juice', 'pot')[0];
 			expect(recipe).not.toBeUndefined();
 			player.craft(recipe);
-			potSlot = game.entityFinder.getPlayerHandHoldingItem(player, 'POT');
+			potSlot = testGame.entityFinder.getPlayerHandHoldingItem(player, 'POT');
 			expect(potSlot).not.toBeUndefined();
 			expect(potSlot.equippedItem).not.toBeUndefined();
 			expect(potSlot.equippedItem.uses).toBe(NaN);
 			expect(potSlot.equippedItem.quantity).toBe(1);
-			const orangeJuiceItem = game.entityFinder.getInventoryItem("ORANGE JUICE", "Luna", `${potSlot.equippedItem.getIdentifier()}/POT`);
+			const orangeJuiceItem = testGame.entityFinder.getInventoryItem("ORANGE JUICE", "Luna", `${potSlot.equippedItem.getIdentifier()}/POT`);
 			expect(orangeJuiceItem).not.toBeUndefined();
 			expect(orangeJuiceItem.uses).toBe(4);
 			expect(orangeJuiceItem.quantity).toBe(1);
 		});
 
 		test('Hand-crafting 4', () => {
-			const player = game.entityFinder.getPlayer('Kiara');
-			let tamponSlot = game.entityFinder.getPlayerHandHoldingItem(player, 'TAMPON');
-			const orangeJuiceSlot = game.entityFinder.getPlayerHandHoldingItem(player, 'ORANGE JUICE');
+			const player = testGame.entityFinder.getPlayer('Kiara');
+			let tamponSlot = testGame.entityFinder.getPlayerHandHoldingItem(player, 'TAMPON');
+			const orangeJuiceSlot = testGame.entityFinder.getPlayerHandHoldingItem(player, 'ORANGE JUICE');
 			expect(tamponSlot).not.toBeUndefined();
 			expect(orangeJuiceSlot).not.toBeUndefined();
 			expect(tamponSlot.equippedItem).not.toBeUndefined();
@@ -375,15 +375,15 @@ describe('Player test', () => {
 			expect(orangeJuiceSlot.equippedItem.uses).toBe(4);
 			expect(tamponSlot.equippedItem.quantity).toBe(1);
 			expect(orangeJuiceSlot.equippedItem.quantity).toBe(1);
-			const recipe = game.entityFinder.getRecipes('crafting', '', 'tampon, orange juice', 'tampon, milk')[0];
+			const recipe = testGame.entityFinder.getRecipes('crafting', '', 'tampon, orange juice', 'tampon, milk')[0];
 			expect(recipe).not.toBeUndefined();
 			player.craft(recipe);
-			tamponSlot = game.entityFinder.getPlayerHandHoldingItem(player, 'TAMPON');
+			tamponSlot = testGame.entityFinder.getPlayerHandHoldingItem(player, 'TAMPON');
 			expect(tamponSlot).not.toBeUndefined();
 			expect(tamponSlot.equippedItem).not.toBeUndefined();
 			expect(tamponSlot.equippedItem.uses).toBe(NaN);
 			expect(tamponSlot.equippedItem.quantity).toBe(1);
-			const milkSlot = game.entityFinder.getPlayerHandHoldingItem(player, 'MILK');
+			const milkSlot = testGame.entityFinder.getPlayerHandHoldingItem(player, 'MILK');
 			expect(milkSlot).not.toBeUndefined();
 			expect(milkSlot.equippedItem).not.toBeUndefined();
 			expect(milkSlot.equippedItem.uses).toBe(4);
@@ -393,9 +393,9 @@ describe('Player test', () => {
 
     describe('Procedural selection preservation', () => {
         test('Procedural selections are preserved during crafting and uncrafting', () => {
-            const player = game.entityFinder.getPlayer('???');
-            let rightHand = game.entityFinder.getPlayerHandHoldingItem(player, 'FIRED CLAY POT 91');
-            let leftHand = game.entityFinder.getPlayerHandHoldingItem(player, 'GLAZE');
+            const player = testGame.entityFinder.getPlayer('???');
+            let rightHand = testGame.entityFinder.getPlayerHandHoldingItem(player, 'FIRED CLAY POT 91');
+            let leftHand = testGame.entityFinder.getPlayerHandHoldingItem(player, 'GLAZE');
             expect(rightHand).not.toBeUndefined();
             expect(leftHand).not.toBeUndefined();
             expect(rightHand.equippedItem).not.toBeUndefined();
@@ -404,7 +404,7 @@ describe('Player test', () => {
             expect(leftHand.equippedItem.uses).toBe(NaN);
             expect(rightHand.equippedItem.quantity).toBe(1);
             expect(leftHand.equippedItem.quantity).toBe(1);
-            const recipe = game.entityFinder.getRecipes('crafting', '', 'FIRED CLAY POT, GLAZE', 'GLAZED CLAY POT')[0];
+            const recipe = testGame.entityFinder.getRecipes('crafting', '', 'FIRED CLAY POT, GLAZE', 'GLAZED CLAY POT')[0];
             expect(recipe).not.toBeUndefined();
             {
                 player.craft(recipe);

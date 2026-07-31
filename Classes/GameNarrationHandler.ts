@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+// SPDX-FileCopyrightText: 2026 LavCorps <lavcorps@protonmail.com>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -11,9 +12,9 @@ import Room from "../Data/Room.ts";
 import RoomItem from "../Data/RoomItem.ts";
 import DieAction from "../Data/Actions/DieAction.ts";
 import NarrateAction from "../Data/Actions/NarrateAction.ts";
-import { MessageDisplayType } from "../Modules/enums.js";
+import { MessageDisplayType } from "../Modules/enums.ts";
 import { parseDescription } from "../Modules/parser.ts";
-import { capitalizeFirstLetter, generateListString, generatePlayerListString } from "../Modules/helpers.ts";
+import { capitalizeFirstLetter, generateListString, generatePlayerListString, round } from "../Modules/helpers.ts";
 import { Collection } from "discord.js";
 import type Interactable from "./Interactables/Interactable.ts";
 import type Action from "../Data/Action.ts";
@@ -252,11 +253,11 @@ export default class GameNarrationHandler {
      */
     narrateStop(action: Action, player: Player, stoppingPlayers: Set<Player>, exitLocked: boolean, exit?: Exit, stopFollowing = false, interactables: Interactable[] = []) {
         const messageType = MessageDisplayType.MINOR;
-        const narration = exitLocked ? this.#game.notificationGenerator.generateExitLockedNotification(player, false, exit.getDoorPhrase())
+        const narration = exitLocked ? this.#game.notificationGenerator.generateExitLockedNotification(player, false, stoppingPlayers, exit.getDoorPhrase())
             : player.followedPlayer && stopFollowing ? this.#game.notificationGenerator.generateStopFollowingNotification(player, false, stoppingPlayers, player.followedPlayerDisplayName)
                 : this.#game.notificationGenerator.generateStopNotification(player, false, stoppingPlayers);
         for (const stoppingPlayer of stoppingPlayers) {
-            const notification = exitLocked ? this.#game.notificationGenerator.generateExitLockedNotification(stoppingPlayer, true, exit.getDoorPhrase())
+            const notification = exitLocked ? this.#game.notificationGenerator.generateExitLockedNotification(stoppingPlayer, true, stoppingPlayers, exit.getDoorPhrase())
                 : stoppingPlayer.followedPlayer && stopFollowing ? this.#game.notificationGenerator.generateStopFollowingNotification(stoppingPlayer, true, stoppingPlayers, stoppingPlayer.followedPlayerDisplayName)
                     : this.#game.notificationGenerator.generateStopNotification(stoppingPlayer, true, stoppingPlayers);
             this.sendNotification(stoppingPlayer, action, notification, exitLocked ? MessageDisplayType.WARNING : messageType, undefined, undefined, interactables);
@@ -273,15 +274,16 @@ export default class GameNarrationHandler {
      * @param action - The action that initiated this narration.
      * @param player - The player performing the follow action.
      * @param target - The player being followed.
-     * @param interactables - An array of interactables to send to the player alongside their notification. Optional.
+     * @param followerInteractables - An array of interactables to send to the follower alongside their notification. Optional.
+     * @param leaderInteractables - An array of interactables to send to the followed player alongside their notification. Optional.
      */
-    narrateFollow(action: Action, player: Player, target: Player, interactables: Interactable[] = []) {
+    narrateFollow(action: Action, player: Player, target: Player, followerInteractables: Interactable[] = [], leaderInteractables: Interactable[] = []) {
         const messageType = MessageDisplayType.MINOR;
         const playerNotification = this.#game.notificationGenerator.generateFollowNotification(player, true, target.displayName);
         const targetNotification = this.#game.notificationGenerator.generateBeingFollowedNotification(player.displayName);
         const narration = this.#game.notificationGenerator.generateFollowNotification(player, false, target.displayName);
-        this.sendNotification(player, action, playerNotification, MessageDisplayType.STANDARD);
-        this.sendNotification(target, action, targetNotification, MessageDisplayType.WARNING, true, undefined, interactables);
+        this.sendNotification(player, action, playerNotification, MessageDisplayType.STANDARD, true, undefined, followerInteractables);
+        this.sendNotification(target, action, targetNotification, MessageDisplayType.WARNING, true, undefined, leaderInteractables);
         this.#sendNarration(messageType, action, player, narration);
     }
 
@@ -303,19 +305,21 @@ export default class GameNarrationHandler {
      * @param leader - The player performing the lead action.
      * @param ledPlayers - The players being led.
      * @param partySynchronized - Whether or not the party members' positions are all synchronized.
-     * @param interactables - An array of interactables to send to the leader alongside their notification. Optional.
+     * @param leaderInteractables - An array of interactables to send to the leader alongside their notification. Optional.
+     * @param followerInteractables - A map of arrays of interactables, where the key for each entry is the name of the player to send them to. Optional.
      */
-    narrateLead(action: Action, leader: Player, ledPlayers: Player[], partySynchronized: boolean, interactables: Interactable[] = []) {
+    narrateLead(action: Action, leader: Player, ledPlayers: Player[], partySynchronized: boolean, leaderInteractables: Interactable[] = [], followerInteractables: Map<string, Interactable[]> = new Map()) {
         const messageType = MessageDisplayType.MINOR;
         const partyHasOtherFollowers = leader.party ? leader.party.followers.size !== ledPlayers.length : false;
         const leaderNotification = this.#game.notificationGenerator.generateLeadNotification(leader, true, ledPlayers, partySynchronized, partyHasOtherFollowers);
-        this.sendNotification(leader, action, leaderNotification, MessageDisplayType.STANDARD, undefined, undefined, interactables);
+        this.sendNotification(leader, action, leaderNotification, MessageDisplayType.STANDARD, undefined, undefined, leaderInteractables);
         for (const ledPlayer of ledPlayers) {
             const tailoredFollowers = ["you"].concat(ledPlayers.filter(player => player.name !== ledPlayer.name).map(player => player.displayName));
             const tailoredFollowerListString = generateListString(tailoredFollowers);
             const ledPlayerSynchronized = partySynchronized || ledPlayer.positionMatches(leader);
             const ledPlayerNotification = this.#game.notificationGenerator.generateBeingLedNotification(leader, tailoredFollowerListString, ledPlayerSynchronized);
-            this.sendNotification(ledPlayer, action, ledPlayerNotification, MessageDisplayType.STANDARD);
+            const interactables = followerInteractables.get(ledPlayer.name) ?? [];
+            this.sendNotification(ledPlayer, action, ledPlayerNotification, MessageDisplayType.STANDARD, undefined, undefined, interactables);
         }
         const narration = this.#game.notificationGenerator.generateLeadNotification(leader, false, ledPlayers, partySynchronized, partyHasOtherFollowers);
         this.#sendNarration(messageType, action, leader, narration);
@@ -351,18 +355,20 @@ export default class GameNarrationHandler {
      * @param action - The action that initiated this narration.
      * @param leader - The player who was leading.
      * @param removedLedPlayers - The players who are no longer being led.
-     * @param interactables - An array of interactables to send to the leader alongside their notification. Optional.
+     * @param leaderInteractables - An array of interactables to send to the leader alongside their notification. Optional.
+     * @param followerInteractables - A map of arrays of interactables, where the key for each entry is the name of the player to send them to. Optional.
      */
-    narrateDismiss(action: Action, leader: Player, removedLedPlayers: Player[], interactables: Interactable[] = []) {
+    narrateDismiss(action: Action, leader: Player, removedLedPlayers: Player[], leaderInteractables: Interactable[] = [], followerInteractables: Map<string, Interactable[]> = new Map()) {
         const messageType = MessageDisplayType.MINOR;
         const followerListString = generatePlayerListString(removedLedPlayers);
         const leaderNotification = this.#game.notificationGenerator.generateDismissNotification(leader, true, followerListString);
-        this.sendNotification(leader, action, leaderNotification, MessageDisplayType.STANDARD, undefined, undefined, interactables);
+        this.sendNotification(leader, action, leaderNotification, MessageDisplayType.STANDARD, undefined, undefined, leaderInteractables);
         for (const removedLedPlayer of removedLedPlayers) {
             const tailoredFollowers = removedLedPlayers.filter(player => player.name !== removedLedPlayer.name).map(player => player.displayName).concat("you");
             const tailoredFollowerListString = generateListString(tailoredFollowers);
             const removedLedPlayerNotification = this.#game.notificationGenerator.generateNoLongerBeingLedNotification(leader.displayName, tailoredFollowerListString);
-            this.sendNotification(removedLedPlayer, action, removedLedPlayerNotification, MessageDisplayType.STANDARD);
+            const interactables = followerInteractables.get(removedLedPlayer.name) ?? [];
+            this.sendNotification(removedLedPlayer, action, removedLedPlayerNotification, MessageDisplayType.STANDARD, undefined, undefined, interactables);
         }
         const narration = this.#game.notificationGenerator.generateDismissNotification(leader, false, followerListString);
         this.#sendNarration(messageType, action, leader, narration);
@@ -377,9 +383,10 @@ export default class GameNarrationHandler {
      * @param customNarration - A custom narration to send instead of the default narration. Optional.
      * @param customLeaderNotification - A custom notification to send to the leader instead of the default notification. Optional.
      * @param customFollowerNotification - A custom notification to send to the followers instead of the default notification. Optional.
-     * @param interactables - An array of interactables to send to the leader alongside their notification. Optional.
+     * @param leaderInteractables - An array of interactables to send to the leader alongside their notification. Optional.
+     * @param followerInteractables - A map of arrays of interactables, where the key for each entry is the name of the player to send them to. Optional.
      */
-    narrateDisbandParty(action: Action, leader: Player, followers: Player[], stopFollowing: boolean = false, customNarration?: string, customLeaderNotification?: string, customFollowerNotification?: string, interactables: Interactable[] = []) {
+    narrateDisbandParty(action: Action, leader: Player, followers: Player[], stopFollowing: boolean = false, customNarration?: string, customLeaderNotification?: string, customFollowerNotification?: string, leaderInteractables: Interactable[] = [], followerInteractables: Map<string, Interactable[]> = new Map()) {
         const narrationMessageType = action instanceof DieAction ? MessageDisplayType.ALERT : MessageDisplayType.MINOR;
         const notificationMessageType = action instanceof DieAction ? MessageDisplayType.ALERT : MessageDisplayType.STANDARD;
         const followerListString = generatePlayerListString(followers);
@@ -387,14 +394,16 @@ export default class GameNarrationHandler {
         let narration = customNarration;
         if (leaderNotification === undefined)
             leaderNotification = this.#game.notificationGenerator.generateDisbandPartyNotification(leader, true, stopFollowing, followerListString);
-        if (leaderNotification) this.sendNotification(leader, action, leaderNotification, notificationMessageType, undefined, undefined, interactables);
+        if (leaderNotification) this.sendNotification(leader, action, leaderNotification, notificationMessageType, undefined, undefined, leaderInteractables);
 
         let followerNotification = customFollowerNotification;
         if (followerNotification === undefined)
             followerNotification = this.#game.notificationGenerator.generatePartyDisbandedNotification(leader, stopFollowing);
         if (followerNotification) {
-            for (const follower of followers)
-                this.sendNotification(follower, action, followerNotification, notificationMessageType);
+            for (const follower of followers) {
+                const interactables = followerInteractables.get(follower.name) ?? [];
+                this.sendNotification(follower, action, followerNotification, notificationMessageType, undefined, undefined, interactables);
+            }
         }
         if (narration === undefined)
             narration = this.#game.notificationGenerator.generateDisbandPartyNotification(leader, false, stopFollowing, followerListString);
@@ -410,7 +419,8 @@ export default class GameNarrationHandler {
     narrateInspect(action: Action, target: Inspectable, player: Player) {
         let notification = "";
         let narration = "";
-        let messageType = MessageDisplayType.MINOR;
+        let notificationMessageType: MessageDisplayType = MessageDisplayType.MINOR;
+        let narrationMessageType: MessageDisplayType = MessageDisplayType.MINOR;
         if (target instanceof Room) {
             notification = this.#game.notificationGenerator.generateInspectRoomNotification(player, true);
             narration = this.#game.notificationGenerator.generateInspectRoomNotification(player, false);
@@ -428,8 +438,10 @@ export default class GameNarrationHandler {
                     this.sendNotification(occupant, action, notification, MessageDisplayType.WARNING);
                 }
                 const hiddenPlayersList = target.hidingSpot.generateOccupantsString(!player.canSee());
-                if (hiddenPlayersList)
+                if (hiddenPlayersList) {
                     notification += `\n${this.#game.notificationGenerator.generateFoundHiddenPlayersNotification(hiddenPlayersList, target.hidingSpot.getContainingPhrase())}`;
+                    notificationMessageType = MessageDisplayType.STANDARD;
+                }
             }
         }
         else if (target instanceof RoomItem) {
@@ -438,7 +450,7 @@ export default class GameNarrationHandler {
             notification = this.#game.notificationGenerator.generateInspectRoomItemNotification(player, true, target.singleContainingPhrase, preposition, containerPhrase);
             if (!target.prefab.discreet) {
                 narration = this.#game.notificationGenerator.generateInspectRoomItemNotification(player, false, target.singleContainingPhrase, preposition, containerPhrase);
-                messageType = MessageDisplayType.STANDARD;
+                narrationMessageType = MessageDisplayType.STANDARD;
             }
         }
         else if (target instanceof InventoryItem && target.player.name === player.name) {
@@ -455,12 +467,12 @@ export default class GameNarrationHandler {
                     narration = this.#game.notificationGenerator.generateInspectPlayersOwnStashedInventoryItemNotification(player, false, target.singleContainingPhrase);
             }
             if (!target.prefab.discreet)
-                messageType = MessageDisplayType.STANDARD;
+                narrationMessageType = MessageDisplayType.STANDARD;
         }
         else if (target instanceof InventoryItem && target.player.name !== player.name)
             notification = this.#game.notificationGenerator.generateInspectOtherPlayersInventoryItemNotification(player, true, target.player, target.name);
-        if (notification !== "") this.sendNotification(player, action, notification, MessageDisplayType.MINOR);
-        if (narration !== "") this.#sendNarration(messageType, action, player, narration);
+        if (notification !== "") this.sendNotification(player, action, notification, notificationMessageType);
+        if (narration !== "") this.#sendNarration(narrationMessageType, action, player, narration);
     }
 
     /**
@@ -495,42 +507,65 @@ export default class GameNarrationHandler {
      * @param action - The action that initiated this narration.
      * @param hidingSpot - The hiding spot the player is hiding in.
      * @param player - The player performing the hide action.
-     * @param interactables - An array of interactables to send to the player alongside their notification. Optional.
+     * @param hidingPlayers - A set of all players who are hiding, including the player performing the action.
+     * @param hidingPlayerInteractables - A map of arrays of interactables, where the key for each entry is the name of the player to send them to. Optional.
      */
-    narrateHide(action: Action, hidingSpot: HidingSpot, player: Player, interactables: Interactable[] = []) {
+    narrateHide(action: Action, hidingSpot: HidingSpot, player: Player, hidingPlayers: Set<Player>, hidingPlayerInteractables: Map<string, Interactable[]> = new Map()) {
         const messageType = MessageDisplayType.STANDARD;
         const hidingSpotPhrase = hidingSpot.getContainingPhrase();
-        let playerNotification = "";
-        const narration = this.#game.notificationGenerator.generateHideNotification(player, false, hidingSpotPhrase);
-        const hiddenPlayersList = hidingSpot.generateOccupantsString(!player.canSee());
-        if (hidingSpot.occupants.length + 1 > hidingSpot.capacity && !action.forced)
-            playerNotification = this.#game.notificationGenerator.generateHidingSpotFullNotification(hidingSpotPhrase, hiddenPlayersList);
-        else {
-            if (hidingSpot.occupants.length > 0) playerNotification = this.#game.notificationGenerator.generateHidingSpotOccupiedNotification(hidingSpotPhrase, hiddenPlayersList);
-            else playerNotification = this.#game.notificationGenerator.generateHideNotification(player, true, hidingSpotPhrase);
+        const hidingSpotFull = hidingSpot.occupants.length + hidingPlayers.size > hidingSpot.capacity && !action.forced;
+        const narration = hidingSpotFull
+            ? this.#game.notificationGenerator.generateHidingSpotFullNotification(player, hidingPlayers, false, hidingSpotPhrase)
+            : this.#game.notificationGenerator.generateHideNotification(player, hidingPlayers, false, hidingSpotPhrase);
+        for (const hidingPlayer of hidingPlayers) {
+            let playerNotification = "";
+            const hiddenPlayersList = hidingSpot.generateOccupantsString(!hidingPlayer.canSee());
+            if (hidingSpotFull)
+                playerNotification = this.#game.notificationGenerator.generateHidingSpotFullNotification(hidingPlayer, hidingPlayers, true, hidingSpotPhrase, hiddenPlayersList);
+            else {
+                if (hidingSpot.occupants.length > 0)
+                    playerNotification = this.#game.notificationGenerator.generateHidingSpotOccupiedNotification(hidingSpotPhrase, hiddenPlayersList, hidingPlayer, hidingPlayers);
+                else playerNotification = this.#game.notificationGenerator.generateHideNotification(hidingPlayer, hidingPlayers, true, hidingSpotPhrase);
+            }
+            const interactables = hidingPlayerInteractables.get(hidingPlayer.name) ?? [];
+            this.sendNotification(hidingPlayer, action, playerNotification, messageType, undefined, undefined, interactables);
         }
-        this.sendNotification(player, action, playerNotification, messageType, undefined, undefined, interactables);
-        this.#sendNarration(messageType, action, player, narration);
         for (const occupant of hidingSpot.occupants) {
-            const occupantNotification = hidingSpot.occupants.length + 1 > hidingSpot.capacity && !action.forced ? this.#game.notificationGenerator.generateFoundInFullHidingSpotNotification(occupant, player)
-            : this.#game.notificationGenerator.generateFoundInOccupiedHidingSpotNotification(occupant, player);
+            const occupantNotification = hidingSpotFull
+                ? this.#game.notificationGenerator.generateFoundInFullHidingSpotNotification(occupant, player, hidingPlayers)
+                : this.#game.notificationGenerator.generateFoundInOccupiedHidingSpotNotification(occupant, player, hidingPlayers);
             this.sendNotification(occupant, action, occupantNotification, messageType);
         }
+        this.#sendNarration(messageType, action, player, narration);
     }
 
     /**
-     * Narrates an unhide action.
+     * Narrates an emerge action.
      * @param action - The action that initiated this narration.
      * @param hidingSpot - The hiding spot the player is coming out from.
-     * @param player - The player performing the unhide action.
-     * @param interactables - An array of interactables to send to the player alongside their notification. Optional.
+     * @param player - The player performing the emerge action.
+     * @param emergingPlayers - A set of all players who are emerging, including the player performing the action.
+     * @param emergingPlayerInteractables - A map of arrays of interactables, where the key for each entry is the name of the player to send them to. Optional.
      */
-    narrateUnhide(action: Action, hidingSpot: HidingSpot, player: Player, interactables: Interactable[] = []) {
+    narrateEmerge(action: Action, hidingSpot: HidingSpot, player: Player, emergingPlayers: Set<Player>, emergingPlayerInteractables: Map<string, Interactable[]> = new Map()) {
         const messageType = MessageDisplayType.STANDARD;
         const hidingSpotPhrase = hidingSpot ? hidingSpot.getContainingPhrase() : "hiding";
-        const notification = this.#game.notificationGenerator.generateUnhideNotification(player, true, hidingSpotPhrase);
-        const narration = this.#game.notificationGenerator.generateUnhideNotification(player, false, hidingSpotPhrase);
-        this.sendNotification(player, action, notification, messageType, undefined, undefined, interactables);
+        const narration = this.#game.notificationGenerator.generateEmergeNotification(player, emergingPlayers, false, hidingSpotPhrase);
+        for (const emergingPlayer of emergingPlayers) {
+            const notification = this.#game.notificationGenerator.generateEmergeNotification(emergingPlayer, emergingPlayers, true, hidingSpotPhrase);
+            const interactables = emergingPlayerInteractables.get(emergingPlayer.name) ?? [];
+            this.sendNotification(emergingPlayer, action, notification, messageType, undefined, undefined, interactables);
+        }
+        if (hidingSpot) {
+            // Send a notification to players who can't see the whisper channel.
+            for (const occupant of hidingSpot.occupants) {
+                if (emergingPlayers.has(occupant)) continue;
+                // If the only reason this player has the `no channel` behavior attribute is because they're hidden, skip over them.
+                if (occupant.getBehaviorAttributeStatusEffects("no channel").length === 1) continue;
+                const occupantNotification = this.#game.notificationGenerator.generateEmergeFromOccupiedHidingSpotNotification(occupant, player, emergingPlayers, hidingSpotPhrase);
+                this.sendNotification(occupant, action, occupantNotification, messageType);
+            }
+        }
         this.#sendNarration(messageType, action, player, narration);
     }
 
@@ -542,7 +577,7 @@ export default class GameNarrationHandler {
      */
     narrateInflict(action: Action, status: Status, player: Player) {
         let narration = "";
-        let messageType = MessageDisplayType.STANDARD;
+        let messageType: MessageDisplayType = MessageDisplayType.STANDARD;
         if (status.id === "asleep") narration = this.#game.notificationGenerator.generateFallAsleepNotification(player.displayName);
         else if (status.id === "blacked out") {
             narration = this.#game.notificationGenerator.generateBlackOutNotification(player.displayName);
@@ -564,7 +599,7 @@ export default class GameNarrationHandler {
      */
     narrateCure(action: Action, status: Status, player: Player, item?: InventoryItem) {
         let narration = "";
-        let messageType = MessageDisplayType.STANDARD;
+        let messageType: MessageDisplayType = MessageDisplayType.STANDARD;
         if (status.behaviorAttributes.has("concealed")) {
             const maskName = item ? item.name : "MASK";
             narration = this.#game.notificationGenerator.generateConcealedCuredNotification(maskName, player.displayName);
@@ -711,7 +746,7 @@ export default class GameNarrationHandler {
             recipientNotification = this.#game.notificationGenerator.generateReceiveTooHeavyNotification(item.singleContainingPhrase, player.displayName);
             narration = this.#game.notificationGenerator.generateGiveTooHeavyNotification(player, false, item.singleContainingPhrase, recipient)
         }
-        else if (recipient.carryWeight + item.weight > recipient.maxCarryWeight) {
+        else if (round(recipient.carryWeight + item.weight) > recipient.maxCarryWeight) {
             playerNotification = this.#game.notificationGenerator.generateGiveTooMuchWeightNotification(player, true, item.singleContainingPhrase, recipient);
             recipientNotification = this.#game.notificationGenerator.generateReceiveTooMuchWeightNotification(item.singleContainingPhrase, player.displayName);
             narration = this.#game.notificationGenerator.generateGiveTooMuchWeightNotification(player, false, item.singleContainingPhrase, recipient);
@@ -927,7 +962,7 @@ export default class GameNarrationHandler {
      * @param interactables - An array of interactables to send to the player alongside their notification. Optional.
      */
     narrateActivate(action: Action, fixture: Fixture, player?: Player, recipeInitiatedDescriptionSent: boolean = false, customNarration: string = "", interactables: Interactable[] = []) {
-        let messageType = MessageDisplayType.STANDARD;
+        let messageType: MessageDisplayType = MessageDisplayType.STANDARD;
         const fixturePhrase = fixture.getContainingPhrase();
         let notification = customNarration;
         let narration = customNarration;

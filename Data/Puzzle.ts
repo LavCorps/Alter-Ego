@@ -1,14 +1,17 @@
 // SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+// SPDX-FileCopyrightText: 2026 Ms. VBLANK <alteregomolly@pm.me>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 import { parseAndExecuteBotCommands } from "../Modules/commandHandler.ts";
 import { itemIdentifierMatches } from "../Modules/matchers.ts";
+import { round } from "../Modules/helpers.ts";
 import Description from "./Description.ts";
 import Event from "./Event.ts";
 import type Fixture from "./Fixture.ts";
 import Flag from "./Flag.ts";
 import type Game from "./Game.ts";
+import type InventoryItem from "./InventoryItem.ts";
 import ItemContainer from "./ItemContainer.ts";
 import type ItemInstance from "./ItemInstance.ts";
 import type Player from "./Player.ts";
@@ -160,6 +163,22 @@ export default class Puzzle extends ItemContainer implements PersistentGameEntit
      * The description of the puzzle when a player attempts to solve it while all of the requirements are not met.
      */
     readonly requirementsNotMetDescription: Description;
+    /**
+     * Puzzle types that players can attempt with no additional input.
+     */
+    static readonly SimpleInteractTypes = new Set(["interact", "toggle", "player", "player toggle", "matrix"]);
+    /**
+     * Puzzle types that players can attempt by supplying one of a small, set number of known options.
+     */
+    static readonly SelectInteractTypes = new Set(["switch", "room player"]);
+    /**
+     * Puzzle types that players can attempt by supplying any string of text.
+     */
+    static readonly TextInputInteractTypes = new Set(["password", "combination lock"]);
+    /**
+     * Puzzle types whose method of interaction varies based on the puzzle's solved state.
+     */
+    static readonly MixedInteractTypes = new Set(["channels", "option", "media", "key lock"]);
 
     /**
      * @param name - The name of the puzzle.
@@ -259,10 +278,77 @@ export default class Puzzle extends ItemContainer implements PersistentGameEntit
     }
 
     /**
+     * Gets a second-person verb to use to describe how a player attempts this puzzle.
+     * The verb chosen largely depends on the puzzle's display name, type, and solved state.
+     * The default verb is "use".
+     * @param solved - Whether or not to consider the puzzle solved. Defaults to its current solved state.
+     */
+    getAttemptVerb(solved = this.solved): string {
+        if ((this.type === "key lock" || this.type === "combination lock") && solved) return "lock";
+        else if ((this.type === "key lock" || this.type === "combination lock")) return "unlock";
+        if (this.type === "media" && solved) return "eject";
+        else if (this.type === "media") return "insert";
+        if (this.type === "switch" || this.type === "room player") return "set";
+        if (this.type === "option" && solved) return "clear";
+        else if (this.type === "option") return "set";
+        const nameWords = new Set(this.getDisplayName().split(' '));
+        if (nameWords.has("USERNAME") || nameWords.has("PASSWORD")) return "enter";
+        if (nameWords.has("INPUT")) return "enter";
+        if (nameWords.has("KEYPAD") || nameWords.has("KEYBOARD")) return "type on";
+        if (nameWords.has("BUTTON")) return "press";
+        if (nameWords.has("SWITCH") || nameWords.has("lever")) return "flip";
+        if (nameWords.has("BOLT") && this.type === "toggle") return "flip";
+        if (nameWords.has("SHOWER") && solved) return "turn off";
+        if (nameWords.has("TELEVISION") && solved) return "turn off";
+        return "use";
+    }
+
+    /**
+     * Gets a preposition to describe how an item is used on this puzzle.
+     * The preposition chosen largely depends on the puzzle's type and solved state.
+     * The default is "on".
+     * @param solved - Whether or not to consider the puzzle solved. Defaults to its current solved state.
+     */
+    getAttemptWithItemPreposition(solved = this.solved): string {
+        if ((this.type === "key lock" || this.type === "combination lock") && solved) return "with";
+        else if ((this.type === "key lock" || this.type === "combination lock")) return "with";
+        if (this.type === "media" && solved) return "from";
+        else if (this.type === "media") return "into";
+        if (this.type === "switch" || this.type === "room player") return "to";
+        if (this.type === "option" && !solved) return "to";
+        return "on";
+    }
+
+    /**
+     * Returns the args for the Attempt ActionDirective for this puzzle.
+     * Intended to be used for puzzles that can be attempted with a simple interaction or with the use of an inventory item.
+     * @param solved - Whether or not to consider the puzzle solved. Used to generate the command. Optional.
+     * @param item - The item to attempt the puzzle with. Optional.
+     * @param password - The password to attempt the puzzle with. Optional.
+     * @param targetPlayerDisplayName - The display name of the player to target. Optional.
+     * @returns [name, location, type, item identifier, item containerName, item equipmentSlot, item proceduralSelectionsString, password, getAttemptVerb() (command), name (input), targetPlayer displayName]
+     */
+    getAttemptActionDirectiveArgs(solved?: boolean, item?: InventoryItem, password: string = "", targetPlayerDisplayName: string = ""): [string, string, string, string, string, string, string, string, string, string, string] {
+        return [
+            this.name,
+            this.location.id,
+            this.type,
+            item?.getIdentifier() ?? undefined,
+            item?.containerName ?? undefined,
+            item?.equipmentSlot ?? undefined,
+            item?.proceduralSelectionsString ?? undefined,
+            password,
+            this.getAttemptVerb(solved),
+            this.name,
+            targetPlayerDisplayName
+        ];
+    }
+
+    /**
      * Returns the args for the InstantiateRoomItem ActionDirective for this puzzle.
      * @returns ["PZ", name, location, preposition, type]
      */
-    getPartialInstantiateActionDirectiveArgs() {
+    getPartialInstantiateActionDirectiveArgs(): [string, string, string, string, string] {
         return ["PZ", this.name, this.location.displayName, this.getPreposition(), this.type];
     }
 
@@ -305,14 +391,14 @@ export default class Puzzle extends ItemContainer implements PersistentGameEntit
     }
 
     /**
-	 * Gets all of the items that should appear in the puzzle's item list.
+     * Gets all of the items that should appear in the puzzle's item list.
      *
-	 * @param itemListName - The name of the item list. Unused.
-	 * @param player - The player the description is being sent to. Unused.
-	 */
-	override getContainedItemsForItemList(itemListName?: string, player?: Player): RoomItem[] {
-		return this.getGame().entityFinder.getRoomItems(undefined, this.location.id, undefined, 'Puzzle', this.name);
-	}
+     * @param itemListName - The name of the item list. Unused.
+     * @param player - The player the description is being sent to. Unused.
+     */
+    override getContainedItemsForItemList(itemListName?: string, player?: Player): RoomItem[] {
+        return this.getGame().entityFinder.getRoomItems(undefined, this.location.id, undefined, 'Puzzle', this.name);
+    }
 
     /**
      * Returns true if this entity contains an item with the given identifier or prefab ID.
@@ -452,10 +538,35 @@ export default class Puzzle extends ItemContainer implements PersistentGameEntit
     }
 
     /**
+     * Gets the name of the parent fixture, if it exists. Otherwise, gets the puzzle's name.
+     */
+    getDisplayName(): string {
+        return this.parentFixture ? this.parentFixture.name : this.name;
+    }
+
+    /**
      * Gets the name of the parent fixture preceded by "the". If no parent fixture exists, returns the puzzle's name preceded by "the" instead.
+     * If the puzzle's name or the name of its parent fixture ends with a number, it will not be preceded by "the".
      */
     getContainingPhrase(): string {
-        return this.parentFixture ? this.parentFixture.getContainingPhrase() : `the ${this.name}`;
+        return this.parentFixture
+            ? this.parentFixture.getContainingPhrase()
+            : this.name.match(/.*\d+$/)
+                ? this.name
+                : `the ${this.name}`;
+    }
+
+    /**
+     * Checks if only the puzzle's static requirements are met.
+     * Requirements are considered static only if they're Puzzle or Event requirements.
+     * Flag and Prefab requirements are evaluated dynamically, so those are skipped over in this function.
+     */
+    checkStaticRequirementsMet(): boolean {
+        for (const requirement of this.requirements) {
+            if (requirement instanceof Puzzle && !requirement.solved || requirement instanceof Event && !requirement.ongoing)
+                return false;
+        }
+        return true;
     }
 
     /**
@@ -520,6 +631,24 @@ export default class Puzzle extends ItemContainer implements PersistentGameEntit
     }
 
     /**
+     * Returns the solution that is satisfied by the given weight. If the weight doesn't satisfy any solutions, returns undefined.
+     * The weight and solutions are rounded by the {@link round} function to the default number of decimal places.
+     *
+     * @param weightString - The weight being used to attempt the puzzle, in the form of a string.
+     */
+    getSolutionSatisfiedByWeight(weightString: string): string {
+        const weight = round(parseFloat(weightString));
+        if (!isNaN(weight)) {
+            for (const solution of this.solutions) {
+                const solutionValue = round(parseFloat(solution));
+                if (isNaN(solutionValue)) continue;
+                if (solutionValue === weight) return solution;
+            }
+        }
+        return undefined;
+    }
+
+    /**
      * Returns the solution that is satisfied by the given item. If the item doesn't satisfy any solutions, returns undefined.
      *
      * @param item - The item being used to attempt the puzzle.
@@ -527,7 +656,7 @@ export default class Puzzle extends ItemContainer implements PersistentGameEntit
     getSolutionSatisfiedByItem(item: ItemInstance): string {
         for (const solution of this.solutions) {
             if ((solution.startsWith("Item:") || solution.startsWith("InventoryItem:") || solution.startsWith("Prefab:"))
-            && item.prefab.id === solution.substring(solution.indexOf(':') + 1).trim()) {
+                && item.prefab.id === solution.substring(solution.indexOf(':') + 1).trim()) {
                 return solution;
             }
         }

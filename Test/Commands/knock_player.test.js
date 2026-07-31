@@ -10,33 +10,33 @@ import { createMockMessage } from '../__mocks__/libs/discord.js';
 
 describe('knock_player command', () => {
     beforeAll(async () => {
-        if (!game.inProgress) await game.entityLoader.loadAll();
+        if (!testGame.inProgress) await testGame.entityLoader.loadAll();
     });
 
     afterEach(async () => {
-        clearQueue(game);
+        clearQueue(testGame);
         vi.resetAllMocks();
     });
 
     const knock_player = new PlayerCommand(config, usage, execute);
 
     test('with valid exit', async () => {
-        const player = game.entityFinder.getPlayer("Kyra");
-        const room = game.entityFinder.getRoom("suite-9");
-        const exit = game.entityFinder.getExit(room, "DOOR");
+        const player = testGame.entityFinder.getPlayer("Kyra");
+        const room = testGame.entityFinder.getRoom("suite-9");
+        const exit = testGame.entityFinder.getExit(room, "DOOR");
         const spy = vi.spyOn(KnockAction.prototype, "performKnock");
         // @ts-ignore
-        await knock_player.execute(game, createMockMessage(), "knock", ["door"], player);
+        await knock_player.execute(testGame, createMockMessage(), "knock", ["door"], player);
         expect(spy).toBeInvokedWith(exit);
     });
     test('with invalid exit', async () => {
-        const player = game.entityFinder.getPlayer("Kyra");
+        const player = testGame.entityFinder.getPlayer("Kyra");
         const spy = vi.spyOn(KnockAction.prototype, "performKnock");
         const message = createMockMessage();
         const author = message.author;
         // @ts-ignore
-        await knock_player.execute(game, message, "knock", ["invalid"], player);
-        await sendQueuedMessages(game);
+        await knock_player.execute(testGame, message, "knock", ["invalid"], player);
+        await sendQueuedMessages(testGame);
         expect(spy).not.toHaveBeenCalled();
         expect(author.send).toBeInvokedWith(`Couldn't find exit "INVALID" in the room.`);
     });

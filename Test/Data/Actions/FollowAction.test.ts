@@ -47,14 +47,14 @@ describe('FollowAction test', () => {
     let crutches: Status;
 
     beforeAll(async () => {
-        if (!game.inProgress) await game.entityLoader.loadAll();
-        astrid = game.entityFinder.getLivingPlayer("Astrid");
-        asuka = game.entityFinder.getLivingPlayer("Asuka");
-        nero = game.entityFinder.getLivingPlayer("Nero");
-        fast = game.entityFinder.getStatusEffect("fast");
-        concealed = game.entityFinder.getStatusEffect("concealed");
-        cheerful = game.entityFinder.getStatusEffect("cheerful");
-        crutches = game.entityFinder.getStatusEffect("crutches");
+        if (!testGame.inProgress) await testGame.entityLoader.loadAll();
+        astrid = testGame.entityFinder.getLivingPlayer("Astrid");
+        asuka = testGame.entityFinder.getLivingPlayer("Asuka");
+        nero = testGame.entityFinder.getLivingPlayer("Nero");
+        fast = testGame.entityFinder.getStatusEffect("fast");
+        concealed = testGame.entityFinder.getStatusEffect("concealed");
+        cheerful = testGame.entityFinder.getStatusEffect("cheerful");
+        crutches = testGame.entityFinder.getStatusEffect("crutches");
         astrid.inflict(fast);
         astrid.inflict(concealed);
         concealedDisplayName = "an individual wearing a MASK";
@@ -82,12 +82,12 @@ describe('FollowAction test', () => {
 
     describe('FollowAction.performFollow tests', () => {
         afterEach(async () => {
-            const action = new StopAction(game, undefined, astrid, astrid.location, false);
+            const action = new StopAction(testGame, undefined, astrid, astrid.location, false);
             await action.performStop(false, undefined, true, new Set([astrid, asuka, nero]));
         });
 
         test('stationary player follows stationary player', async () => {
-            const action = new FollowAction(game, undefined, asuka, asuka.location, false);
+            const action = new FollowAction(testGame, undefined, asuka, asuka.location, false);
             await action.performFollow(astrid);
             expect(asuka.followedPlayerDisplayName).toBe(concealedDisplayName);
             expect(asuka.party).toBeNull();
@@ -101,11 +101,11 @@ describe('FollowAction test', () => {
         });
 
         test('stationary player follows different stationary player', async () => {
-            const action1 = new FollowAction(game, undefined, asuka, asuka.location, false);
+            const action1 = new FollowAction(testGame, undefined, asuka, asuka.location, false);
             await action1.performFollow(astrid);
             expect(asuka.isFollowing(astrid)).toBe(true);
 
-            const action2 = new FollowAction(game, undefined, asuka, asuka.location, false);
+            const action2 = new FollowAction(testGame, undefined, asuka, asuka.location, false);
             await action2.performFollow(nero);
             expect(asuka.followedPlayerDisplayName).toBe(nero.name);
             expect(asuka.followedPlayer).toStrictEqual(nero);
@@ -114,12 +114,12 @@ describe('FollowAction test', () => {
         });
 
         test('slow stationary player follows fast moving player at slowest speed', async () => {
-            const queueMoveAction = new QueueMoveAction(game, undefined, astrid, astrid.location, false);
+            const queueMoveAction = new QueueMoveAction(testGame, undefined, astrid, astrid.location, false);
             const destination = "HALL 5";
             astrid.moveQueue = [destination];
             await queueMoveAction.performQueueMove(false, destination);
 
-            const followAction = new FollowAction(game, undefined, asuka, asuka.location, false);
+            const followAction = new FollowAction(testGame, undefined, asuka, asuka.location, false);
             await followAction.performFollow(astrid);
             expect(asuka.followedPlayerDisplayName).toBe(concealedDisplayName);
             expect(asuka.party).toBeNull();
@@ -134,12 +134,12 @@ describe('FollowAction test', () => {
         });
 
         test('fast stationary player follows slow moving player at slowest speed', async () => {
-            const queueMoveAction = new QueueMoveAction(game, undefined, asuka, asuka.location, false);
+            const queueMoveAction = new QueueMoveAction(testGame, undefined, asuka, asuka.location, false);
             const destination = "HALL 5";
             asuka.moveQueue = [destination];
             await queueMoveAction.performQueueMove(false, destination);
 
-            const followAction = new FollowAction(game, undefined, astrid, astrid.location, false);
+            const followAction = new FollowAction(testGame, undefined, astrid, astrid.location, false);
             await followAction.performFollow(asuka);
             expect(astrid.followedPlayerDisplayName).toBe(asuka.name);
             expect(astrid.party).toBeNull();
@@ -154,12 +154,12 @@ describe('FollowAction test', () => {
         });
 
         test('slow stationary player follows fast running player at slowest speed', async () => {
-            const queueMoveAction = new QueueMoveAction(game, undefined, astrid, astrid.location, false);
+            const queueMoveAction = new QueueMoveAction(testGame, undefined, astrid, astrid.location, false);
             const destination = "HALL 5";
             astrid.moveQueue = [destination];
             await queueMoveAction.performQueueMove(true, destination);
 
-            const followAction = new FollowAction(game, undefined, asuka, asuka.location, false);
+            const followAction = new FollowAction(testGame, undefined, asuka, asuka.location, false);
             await followAction.performFollow(astrid);
             expect(asuka.followedPlayerDisplayName).toBe(concealedDisplayName);
             expect(asuka.party).toBeNull();
@@ -174,12 +174,12 @@ describe('FollowAction test', () => {
         });
 
         test('fast stationary player follows slow running player at slowest speed', async () => {
-            const queueMoveAction = new QueueMoveAction(game, undefined, asuka, asuka.location, false);
+            const queueMoveAction = new QueueMoveAction(testGame, undefined, asuka, asuka.location, false);
             const destination = "HALL 5";
             asuka.moveQueue = [destination];
             await queueMoveAction.performQueueMove(true, destination);
 
-            const followAction = new FollowAction(game, undefined, astrid, astrid.location, false);
+            const followAction = new FollowAction(testGame, undefined, astrid, astrid.location, false);
             await followAction.performFollow(asuka);
             expect(astrid.followedPlayerDisplayName).toBe(asuka.name);
             expect(astrid.party).toBeNull();
@@ -194,17 +194,17 @@ describe('FollowAction test', () => {
         });
 
         test('moving player follows moving player', async() => {
-            const queueMoveAction1 = new QueueMoveAction(game, undefined, astrid, astrid.location, false);
+            const queueMoveAction1 = new QueueMoveAction(testGame, undefined, astrid, astrid.location, false);
             const destination1 = "HALL 5";
             astrid.moveQueue = [destination1];
             await queueMoveAction1.performQueueMove(false, destination1);
 
-            const queueMoveAction2 = new QueueMoveAction(game, undefined, asuka, asuka.location, false);
+            const queueMoveAction2 = new QueueMoveAction(testGame, undefined, asuka, asuka.location, false);
             const destination2 = "HALL 3";
             asuka.moveQueue = [destination2];
             await queueMoveAction2.performQueueMove(false, destination2);
 
-            const followAction = new FollowAction(game, undefined, asuka, asuka.location, false);
+            const followAction = new FollowAction(testGame, undefined, asuka, asuka.location, false);
             await followAction.performFollow(astrid);
             expect(asuka.followedPlayerDisplayName).toBe(concealedDisplayName);
             expect(asuka.party).toBeNull();
@@ -219,17 +219,17 @@ describe('FollowAction test', () => {
         });
 
         test('player following moving player follows different moving player', async() => {
-            const queueMoveAction1 = new QueueMoveAction(game, undefined, astrid, astrid.location, false);
+            const queueMoveAction1 = new QueueMoveAction(testGame, undefined, astrid, astrid.location, false);
             const destination1 = "HALL 5";
             astrid.moveQueue = [destination1];
             await queueMoveAction1.performQueueMove(false, destination1);
 
-            const queueMoveAction2 = new QueueMoveAction(game, undefined, nero, nero.location, false);
+            const queueMoveAction2 = new QueueMoveAction(testGame, undefined, nero, nero.location, false);
             const destination2 = "HALL 3";
             nero.moveQueue = [destination2];
             await queueMoveAction2.performQueueMove(false, destination2);
 
-            const followAction1 = new FollowAction(game, undefined, asuka, asuka.location, false);
+            const followAction1 = new FollowAction(testGame, undefined, asuka, asuka.location, false);
             await followAction1.performFollow(nero);
             expect(asuka.followedPlayerDisplayName).toBe(nero.name);
             expect(asuka.party).toBeNull();
@@ -242,7 +242,7 @@ describe('FollowAction test', () => {
             expect(asuka.followedPlayer).toStrictEqual(nero);
             expect(asuka.isFollowing(nero)).toBe(true);
 
-            const followAction2 = new FollowAction(game, undefined, asuka, asuka.location, false);
+            const followAction2 = new FollowAction(testGame, undefined, asuka, asuka.location, false);
             await followAction2.performFollow(astrid);
             expect(asuka.followedPlayerDisplayName).toBe(concealedDisplayName);
             expect(asuka.party).toBeNull();

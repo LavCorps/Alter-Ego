@@ -1,5 +1,10 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+// SPDX-FileCopyrightText: 2026 Ms. VBLANK <alteregomolly@pm.me>
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import Interactable from "./Interactable.ts";
-import type { InteractableType } from "../../Modules/enums.js";
+import type { InteractableType } from "../../Modules/enums.ts";
 import { LabelBuilder } from "discord.js";
 
 export default abstract class ModalComponentInteractable extends Interactable {
@@ -12,8 +17,8 @@ export default abstract class ModalComponentInteractable extends Interactable {
      */
     readonly description: string;
     /**
-	 * The component created from this interactable.
-	 */
+     * The component created from this interactable.
+     */
     readonly component: LabelBuilder;
     static readonly LABEL_CHARACTER_LIMIT = 45;
     static readonly DESCRIPTION_CHARACTER_LIMIT = 100;

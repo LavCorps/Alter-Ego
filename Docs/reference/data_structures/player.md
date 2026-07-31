@@ -374,22 +374,22 @@ formula, where \\(x\\) is the Player's strength stat, is:
 
 \\[ W_{max} = 1.783x^2 - 2x + 22 \\]
 
-The result is rounded down to the nearest whole number.
+The result is rounded to three decimal places.
 
 In effect, each strength stat value corresponds with a predetermined max carry weight, as shown in this chart:
 
 | Strength Value | Max Carry Weight (kg) | Max Carry Weight (lb) |
 |----------------|-----------------------|-----------------------|
-| 1              | 21                    | 46                    |
-| 2              | 25                    | 55                    |
-| 3              | 32                    | 70                    |
-| 4              | 42                    | 92                    |
-| 5              | 56                    | 123                   |
-| 6              | 74                    | 163                   |
-| 7              | 95                    | 209                   |
-| 8              | 120                   | 264                   |
-| 9              | 148                   | 326                   |
-| 10             | 180                   | 396                   |
+| 1              | 21.783                | 48.023                |
+| 2              | 25.132                | 55.407                |
+| 3              | 32.047                | 70.652                |
+| 4              | 42.528                | 93.758                |
+| 5              | 56.575                | 124.727               |
+| 6              | 74.188                | 163.557               |
+| 7              | 95.367                | 210.248               |
+| 8              | 120.112               | 264.802               |
+| 9              | 148.423               | 327.217               |
+| 10             | 180.300               | 397.493               |
 
 The strength stat also has special behavior in Die rolls. If a Die is rolled using this Player's strength stat,
 the [defender's](die.md#defender) [dexterity](player.md#dexterity) [roll modifier](die.md#stat-roll-modifier)

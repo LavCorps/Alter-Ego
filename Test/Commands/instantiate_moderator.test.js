@@ -11,15 +11,15 @@ import { createMockModerator } from '../__mocks__/utility.ts';
 
 describe('instantiate_moderator command', () => {
     beforeAll(async () => {
-        if (!game.inProgress) await game.entityLoader.loadAll();
+        if (!testGame.inProgress) await testGame.entityLoader.loadAll();
         // @ts-expect-error
         moderator = createMockModerator();
     });
 
     afterEach(async () => {
-        await game.entityLoader.loadInventoryItems(false);
-        await game.entityLoader.loadRoomItems(false);
-        clearQueue(game);
+        await testGame.entityLoader.loadInventoryItems(false);
+        await testGame.entityLoader.loadRoomItems(false);
+        clearQueue(testGame);
         vi.resetAllMocks();
     });
 
@@ -29,8 +29,8 @@ describe('instantiate_moderator command', () => {
     let moderator;
 
     test('valid item into player hand', async () => {
-        const player = game.entityFinder.getPlayer("Kyra");
-        const prefab = game.entityFinder.getPrefab("mug of coffee");
+        const player = testGame.entityFinder.getPlayer("Kyra");
+        const prefab = testGame.entityFinder.getPrefab("mug of coffee");
         /** @type {InstantiateInventoryItemAction} */
         let context;
         const original = InstantiateInventoryItemAction.prototype.performInstantiateInventoryItem;
@@ -40,7 +40,7 @@ describe('instantiate_moderator command', () => {
             return original.apply(this, args);
         });
         // @ts-ignore
-        await instantiate_moderator.execute(game, createMockMessage(), "create", ["mug", "of", "coffee", "in", "kyra's", "left", "hand"], moderator)
+        await instantiate_moderator.execute(testGame, createMockMessage(), "create", ["mug", "of", "coffee", "in", "kyra's", "left", "hand"], moderator)
         expect(spy).toBeInvokedWith(prefab, "LEFT HAND", null, "", 1, expect.any(Map));
         expect(context).not.toBeUndefined();
         expect(context.player.name).toBe(player.name);

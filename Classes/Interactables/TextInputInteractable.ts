@@ -1,6 +1,11 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+// SPDX-FileCopyrightText: 2026 Ms. VBLANK <alteregomolly@pm.me>
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import ModalComponentInteractable from "./ModalComponentInteractable.ts";
 import { TextInputBuilder, TextInputStyle } from "discord.js";
-import { InteractableType } from "../../Modules/enums.js";
+import { InteractableType } from "../../Modules/enums.ts";
 
 export default class TextInputInteractable extends ModalComponentInteractable {
     /**
@@ -59,7 +64,7 @@ export default class TextInputInteractable extends ModalComponentInteractable {
     }
 
     /**
-	 * Sets the interactable as disabled.
-	 */
-    disable() {}
+     * Sets the interactable as disabled.
+     */
+    disable() { }
 }

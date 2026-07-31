@@ -1,3 +1,8 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+// SPDX-FileCopyrightText: 2026 Ms. VBLANK <alteregomolly@pm.me>
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import Action from "../Action.ts";
 import Die from "../Die.ts";
 import type ItemInstance from "../ItemInstance.ts";
@@ -143,7 +148,7 @@ export default class AttemptAction extends Action {
                 this.#narrateAndLogAlreadySolvedPuzzle(puzzle);
             else {
                 const stat = Player.abbreviateStatName(puzzle.type.substring(0, puzzle.type.indexOf(" probability")));
-                const dieRoll = new Die(this.player.getGame(), stat, this.player);
+                const dieRoll = this.getGame().rollDie(stat, this.player);
                 // Get the ratio of the result as part of the maximum roll, each relative to the minimum roll.
                 const ratio = (dieRoll.result - dieRoll.min) / (dieRoll.max - dieRoll.min);
                 // Clamp the result so that it can be used to choose an item in the array of solutions.
@@ -172,10 +177,11 @@ export default class AttemptAction extends Action {
             }
         }
         else if (puzzle.type === "weight") {
-            if (puzzle.solved && !puzzle.solutions.includes(password))
+            const solution = puzzle.getSolutionSatisfiedByWeight(password);
+            if (puzzle.solved && !solution)
                 this.#unsolvePuzzle(puzzle);
-            else if (puzzle.solutions.includes(password))
-                this.#solvePuzzle(puzzle, password, requiredItems, item);
+            else if (solution)
+                this.#solvePuzzle(puzzle, solution, requiredItems, item);
             else
                 this.#failPuzzle(puzzle);
         }
@@ -267,6 +273,45 @@ export default class AttemptAction extends Action {
     }
 
     /**
+     * Finds the required entities to call performAttempt.
+     *
+     * @param args - The args as strings.
+     */
+    parseInteractionArgs(args: string[]): [Puzzle, ItemInstance, string, string, string, string, Player] {
+        const puzzle = this.getGame().entityFinder.getPuzzle(args[0], args[1], args[2]);
+        const item = this.getGame().entityFinder.getInventoryItem(args[3], this.player.name, args[4], args[5], args[6]) ?? null;
+        const targetPlayer = this.getGame().entityFinder.getLivingPlayers(args[7], null, this.player.location.id, this.player.hidingSpot)[0];
+        return [puzzle, item, args[7], args[8], args[9], args[10], targetPlayer];
+    }
+
+    /**
+     * Validates the parsed args. The results can be passed directly into performAttempt.
+     *
+     * @param args - The args after being parsed.
+     */
+    validateInteractionArgs(args: [Puzzle, ItemInstance, string, string, string, string, Player]): [Puzzle, ItemInstance, string, string, string, Player] {
+        const errorMessageGenerator = this.getGame().errorMessageGenerator;
+        if (args.length !== 7) throw new Error(errorMessageGenerator.generateInsufficientArgumentsError());
+        if (!args[0] || args[0].getEntityType() !== "Puzzle") throw new Error(errorMessageGenerator.generateInvalidEntityError("Puzzle"));
+        const puzzle = args[0];
+        if (puzzle.location.id !== this.player.location.id) throw new Error(errorMessageGenerator.generatePlayerLocationMismatchError());
+        if (args[6] && args[6].getEntityType() === "Player" && args[6].location?.id !== this.player.location.id)
+            throw new Error(errorMessageGenerator.generatePlayerNotFoundInRoomError(args[5]))
+        const disabledStatusEffects = this.player.getStatusEffectsDisablingCommand("use");
+        if (disabledStatusEffects.length > 0)
+            throw new Error(errorMessageGenerator.generateCommandDisabledError(disabledStatusEffects[0]));
+        const hiddenStatusEffects = this.player.getBehaviorAttributeStatusEffects("hidden");
+        if (hiddenStatusEffects.length > 0 && puzzle.parentFixture && this.player.hidingSpot !== puzzle.parentFixture.name)
+            throw new Error(errorMessageGenerator.generateCommandDisabledError(hiddenStatusEffects[0]));
+        const item = args[1];
+        const password = args[2];
+        const command = args[3];
+        const input = args[4];
+        const targetPlayer = args[6];
+        return [puzzle, item, password, command, input, targetPlayer];
+    }
+
+    /**
      * Checks if the player has an item listed as one of the puzzle's solutions.
      *
      * @param puzzle - The puzzle to check.
@@ -339,6 +384,7 @@ export default class AttemptAction extends Action {
      */
     #reply(messageText: string): void {
         if (this.message) this.getGame().communicationHandler.reply(this.message, messageText);
+        else if (!this.forced) this.getGame().communicationHandler.sendMessageToPlayer(this.player, messageText, false);
     }
 
     /**

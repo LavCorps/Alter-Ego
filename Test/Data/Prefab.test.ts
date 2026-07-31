@@ -4,12 +4,12 @@
 
 describe('Prefab test', () => {
     beforeAll(async () => {
-        if (game.prefabs.size === 0) await game.entityLoader.loadPrefabs(false);
+        if (testGame.prefabs.size === 0) await testGame.entityLoader.loadPrefabs(false);
     });
 
     describe('proceduralOptions test', () => {
         test('CAPSULE proceduralOptions', () => {
-            const entity = game.entityFinder.getPrefab("CAPSULE");
+            const entity = testGame.entityFinder.getPrefab("CAPSULE");
             const expected = new Map<string, Set<string>>([
                 ["color", new Set<string>(["red", "blue", "green", "black", "white"])],
                 ["species", new Set<string>(["lavazard", "loamander", "tortide"])],
@@ -19,7 +19,7 @@ describe('Prefab test', () => {
         });
 
         test('DEPLETED CAPSULE proceduralOptions', () => {
-            const entity = game.entityFinder.getPrefab("DEPLETED CAPSULE");
+            const entity = testGame.entityFinder.getPrefab("DEPLETED CAPSULE");
             const expected = new Map<string, Set<string>>([
                 ["species", new Set<string>(["lavazard", "loamander", "tortide"])],
                 ["finish", new Set<string>(["glass", "metal", "standard"])]
@@ -28,7 +28,7 @@ describe('Prefab test', () => {
         });
 
         test('WET CLAY POT proceduralOptions', () => {
-            const entity = game.entityFinder.getPrefab("WET CLAY POT");
+            const entity = testGame.entityFinder.getPrefab("WET CLAY POT");
             const expected = new Map<string, Set<string>>([
                 ["base color", new Set<string>(["red", "white"])],
                 ["quality", new Set<string>(["terrible", "poor", "decent", "excellent"])]
@@ -37,7 +37,7 @@ describe('Prefab test', () => {
         });
 
         test('FIRED CLAY POT proceduralOptions', () => {
-            const entity = game.entityFinder.getPrefab("FIRED CLAY POT");
+            const entity = testGame.entityFinder.getPrefab("FIRED CLAY POT");
             const expected = new Map<string, Set<string>>([
                 ["base color", new Set<string>(["red", "white"])],
                 ["quality", new Set<string>(["default", "terrible", "poor", "decent", "excellent"])]
@@ -46,7 +46,7 @@ describe('Prefab test', () => {
         });
 
         test('GLAZED CLAY POT proceduralOptions', () => {
-            const entity = game.entityFinder.getPrefab("GLAZED CLAY POT");
+            const entity = testGame.entityFinder.getPrefab("GLAZED CLAY POT");
             const expected = new Map<string, Set<string>>([
                 ["base color", new Set<string>(["obscured", "red", "white"])],
                 ["quality", new Set<string>(["default", "terrible", "poor", "decent", "excellent"])],
@@ -59,7 +59,7 @@ describe('Prefab test', () => {
         });
 
         test('FIRED GLAZED CLAY POT proceduralOptions', () => {
-            const entity = game.entityFinder.getPrefab("FIRED GLAZED CLAY POT");
+            const entity = testGame.entityFinder.getPrefab("FIRED GLAZED CLAY POT");
             const expected = new Map<string, Set<string>>([
                 ["base color", new Set<string>(["obscured", "red", "white"])],
                 ["quality", new Set<string>(["default", "terrible", "poor", "decent", "excellent"])],
@@ -72,7 +72,7 @@ describe('Prefab test', () => {
         });
 
         test('GLAZE proceduralOptions', () => {
-            const entity = game.entityFinder.getPrefab("GLAZE");
+            const entity = testGame.entityFinder.getPrefab("GLAZE");
             const expected = new Map<string, Set<string>>([
                 ["glaze color", new Set<string>(["clear", "red", "orange", "brown", "yellow", "green", "teal", "light blue", "indigo", "violet", "pink", "white", "gray", "black"])],
                 ["secondary glaze color", new Set<string>(["clear", "red", "orange", "brown", "yellow", "green", "teal", "light blue", "indigo", "violet", "pink", "white", "gray", "black"])],

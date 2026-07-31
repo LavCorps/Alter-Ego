@@ -10,7 +10,7 @@ import { createMockModerator } from "../__mocks__/utility.ts";
 
 describe("living_moderator command", () => {
     beforeAll(async () => {
-        if (!game.inProgress) await game.entityLoader.loadAll();
+        if (!testGame.inProgress) await testGame.entityLoader.loadAll();
         // @ts-expect-error
         moderator = createMockModerator();
     });
@@ -22,11 +22,11 @@ describe("living_moderator command", () => {
 
     test("living_moderator execution", async () => {
         // @ts-ignore
-        await living_moderator.execute(game, createMockMessage(), "living", [], moderator);
-        sendQueuedMessages(game);
+        await living_moderator.execute(testGame, createMockMessage(), "living", [], moderator);
+        sendQueuedMessages(testGame);
         /** @type {import('vitest').Mock} */
         // @ts-ignore
-        const sendMock = game.guildContext.commandChannel.send;
+        const sendMock = testGame.guildContext.commandChannel.send;
         expect(sendMock).toHaveBeenCalledExactlyOnceWith("Living players:\nKyra Vivian Astrid Nero Asuka Luna Kiara Amadeus ???");
     });
 });

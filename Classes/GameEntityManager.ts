@@ -16,7 +16,7 @@ import type Prefab from "../Data/Prefab.ts";
 import type Puzzle from "../Data/Puzzle.ts";
 import type Status from "../Data/Status.ts";
 import type { GuildMember, TextChannel } from "discord.js";
-import { WhisperType } from "../Modules/enums.js";
+import { WhisperType } from "../Modules/enums.ts";
 
 /**
  * A set of functions to manage game entities.
@@ -295,6 +295,39 @@ export default abstract class GameEntityManager {
     }
 
     /**
+     * Updates references to a given player throughout the game.
+     * @param player
+     */
+    protected updatePlayerReferences(player: Player): void {
+        this.game.rooms.forEach(room => {
+            room.occupants.forEach((occupant, i) => {
+                if (occupant?.name === player.name)
+                    room.occupants[i] = player;
+            });
+        });
+        this.game.fixtures.forEach(fixture => {
+            if (fixture.hidingSpot) {
+                fixture.hidingSpot.occupants.forEach((occupant, i) => {
+                    if (occupant?.name === player.name)
+                        fixture.hidingSpot.occupants[i] = player;
+                });
+            }
+        });
+        this.game.whispers.forEach(whisper => {
+            if (whisper.players.has(player.name))
+                whisper.players.set(player.name, player);
+        });
+        this.game.parties.forEach(party => {
+            if (party.leader?.name === player.name)
+                party.leader = player;
+            if (party.followers.has(player.name))
+                party.followers.set(player.name, player);
+            if (party.members.has(player.name))
+                party.members.set(player.name, player);
+        });
+    }
+
+    /**
      * Updates references to a given flag throughout the game.
      * @param flag
      */
@@ -332,7 +365,7 @@ export default abstract class GameEntityManager {
         this.game.whispers.set(whisper.id, whisper);
         this.game.whispers.delete(oldId);
         whisper.channelName = whisper.id.substring(0, 100);
-        whisper.channel.edit({ name: whisper.channelName });
+        if (whisper.channel) whisper.channel.edit({ name: whisper.channelName })?.catch();
     }
 
     /**
@@ -359,26 +392,27 @@ export default abstract class GameEntityManager {
      * @returns The created channel.
      */
     async #createWhisperChannel(whisper: Whisper): Promise<TextChannel> {
-        return new Promise(resolve => {
-            this.game.guildContext.guild.channels.create({
+        return new Promise(async resolve => {
+            const channel = await this.game.guildContext.guild.channels.create({
                 name: whisper.channelName,
                 type: ChannelType.GuildText,
                 parent: this.game.guildContext.whisperCategoryId
-            }).then(channel => {
-                whisper.players.forEach(player => {
+            }).catch(error => console.error(`Couldn't create whisper channel with name "${whisper?.channelName}".`, error));
+            if (channel) {
+                for (const player of whisper.players.values()) {
                     const noChannel = player.isNPC
                         || player.isHidden() && player.getBehaviorAttributeStatusEffects("no channel").length > 1
                         || !player.isHidden() && player.hasBehaviorAttribute("no channel")
                         || !player.canHear();
                     if (!noChannel) {
-                        channel.permissionOverwrites.create(player.id, {
+                        await channel.permissionOverwrites.create(player.id, {
                             ViewChannel: true,
                             ReadMessageHistory: true
                         });
                     }
-                });
+                }
                 resolve(channel);
-            }).catch();
+            }
         });
     }
 

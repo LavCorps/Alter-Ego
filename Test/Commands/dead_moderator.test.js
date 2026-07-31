@@ -10,7 +10,7 @@ import { createMockModerator } from "../__mocks__/utility.ts";
 
 describe("dead_moderator command", () => {
     beforeAll(async () => {
-        if (!game.inProgress) await game.entityLoader.loadAll();
+        if (!testGame.inProgress) await testGame.entityLoader.loadAll();
         // @ts-expect-error
         moderator = createMockModerator();
     });
@@ -22,11 +22,11 @@ describe("dead_moderator command", () => {
 
     test("with dead players", async () => {
         // @ts-ignore
-        await dead_moderator.execute(game, createMockMessage(), "dead", [], moderator);
-        sendQueuedMessages(game);
+        await dead_moderator.execute(testGame, createMockMessage(), "dead", [], moderator);
+        sendQueuedMessages(testGame);
         /** @type {import('vitest').Mock} */
         // @ts-ignore
-        const sendMock = game.guildContext.commandChannel.send;
+        const sendMock = testGame.guildContext.commandChannel.send;
         expect(sendMock).toHaveBeenCalledExactlyOnceWith("Dead players:\nEvad Wu");
     });
 });

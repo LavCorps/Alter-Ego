@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+// SPDX-FileCopyrightText: 2026 Ms. VBLANK <alteregomolly@pm.me>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -6,10 +7,10 @@ import { Collection, GuildMember, type TextChannel } from "discord.js";
 import type { Duration } from "luxon";
 import type Interactable from "../Classes/Interactables/Interactable.ts";
 import Timer from "../Classes/Timer.ts";
-import { MessageDisplayType, WhisperType } from "../Modules/enums.js";
+import { MessageDisplayType, WhisperType } from "../Modules/enums.ts";
 import * as itemManager from "../Modules/itemManager.ts";
 import { itemIdentifierMatches } from "../Modules/matchers.ts";
-import { capitalizeFirstLetter, generateListString, makeCopyable } from "../Modules/helpers.ts";
+import { capitalizeFirstLetter, generateListString, makeCopyable, round } from "../Modules/helpers.ts";
 import type Action from "./Action.ts";
 import CureAction from "./Actions/CureAction.ts";
 import DieAction from "./Actions/DieAction.ts";
@@ -520,14 +521,23 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
     }
 
     /**
-     * Returns a custom ID for this player.
+     * Returns the args for an ActionDirective that only needs to be able to look up this Player.
+     * @returns [name]
+     */
+    getGeneralActionDirectiveArgs(): string[] {
+        return [this.name];
+    }
+
+    /**
+     * Returns the args for the Inspect ActionDirective for this Player.
+     * @returns ["P", name]
      */
     getInspectActionDirectiveArgs(): string[] {
         return ["P", this.name];
     }
 
     /**
-     * Returns a custom ID for the given crafting recipe.
+     * Returns the args for the Craft ActionDirective for the given crafting recipe.
      * @param item1 - The first item in the player's hands.
      * @param item2 - The second item in the player's hands.
      * @param recipe - The crafting recipe satisfied by these items.
@@ -545,7 +555,7 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
     }
 
     /**
-     * Returns a custom ID for the given uncraftable recipe.
+     * Returns the args for the Craft ActionDirective for the given uncraftable recipe.
      * @param item - The sole item in the player's hands.
      * @param recipe - The uncraftable recipe satisfied by this item.
      */
@@ -701,6 +711,19 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
      */
     isFollowing(player: Player): boolean {
         return this.#followedPlayerName !== "" && this.#followedPlayerName === player.name;
+    }
+
+    /**
+     * Returns true if following the given player would create an endless loop of followers.
+     * @param player - The first player in the chain.
+     */
+    wouldCreateFollowingLoop(player: Player): boolean {
+        let nextFollowedPlayer = player.followedPlayer;
+        while (nextFollowedPlayer) {
+            if (nextFollowedPlayer.name === this.name) return true;
+            nextFollowedPlayer = nextFollowedPlayer.followedPlayer;
+        }
+        return false;
     }
 
     /**
@@ -1046,6 +1069,13 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
     }
 
     /**
+     * Returns true if the player has the `can move freely` behavior attribute or the free movement role.
+     */
+    canMoveFreely(): boolean {
+        return this.hasBehaviorAttribute("can move freely") || this.getGame().guildContext.hasFreeMovementRole(this.member);
+    }
+
+    /**
      * Returns true if the player doesn't have the `no sight` behavior attribute.
      */
     canSee(): boolean {
@@ -1175,7 +1205,7 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
      * Calculates the player's maximum carry weight in kilograms.
      */
     getMaxCarryWeight(): number {
-        return Math.floor(1.783 * Math.pow(this.strength, 2) - 2 * this.strength + 22);
+        return round(1.783 * Math.pow(this.strength, 2) - 2 * this.strength + 22);
     }
 
     /**
@@ -1237,7 +1267,7 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
 
     override getContainedItemsWeight(): number {
         const containedItems = this.inventory.map(equipmentSlot => equipmentSlot.equippedItem).filter(item => item !== null);
-        return containedItems.reduce((total, item) => total + (!isNaN(item.quantity) ? item.quantity * item.weight : 0), 0);
+        return round(containedItems.reduce((total, item) => total + (!isNaN(item.quantity) ? item.quantity * item.weight : 0), 0));
     }
 
     /**
@@ -1246,10 +1276,10 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
      * @param item - The inventory item to use.
      * @param target - The player the inventory item is to be used on. Defaults to the player using it.
      */
-    use(item: InventoryItem, target: Player = this): void {
+    async use(item: InventoryItem, target: Player = this): Promise<void> {
         for (let effect of item.prefab.effects) {
             const inflictAction = new InflictAction(this.getGame(), undefined, target, target.location, true);
-            inflictAction.performInflict(effect, true, true, true, item);
+            await inflictAction.performInflict(effect, true, true, true, item);
         }
         for (let cure of item.prefab.cures) {
             const cureAction = new CureAction(this.getGame(), undefined, target, target.location, true);
@@ -1748,7 +1778,7 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
         const whisperRemovalMessage = this.getGame().notificationGenerator.generateDieNotification(this, false);
         await this.removeFromWhispers(whisperRemovalMessage, action);
         const hidingSpot = this.getGame().entityFinder.getFixture(this.hidingSpot, this.location.id)?.hidingSpot ?? undefined;
-        if (hidingSpot) await hidingSpot.removePlayer(this, action);
+        if (hidingSpot) await hidingSpot.removePlayers(this, action);
         // Update various data.
         this.alive = false;
         this.location = null;
@@ -1777,7 +1807,7 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
     async removeFromWhispers(narration: string, action?: Action, removeFromParty: boolean = true): Promise<void> {
         for (const whisper of this.getGame().whispers.values()) {
             if (whisper.players.has(this.name) && (removeFromParty || whisper.type !== WhisperType.PARTY))
-                await whisper.removePlayer(this, narration, action);
+                await whisper.removePlayers(this, narration, action);
         }
     }
 

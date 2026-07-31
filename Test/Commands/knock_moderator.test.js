@@ -11,13 +11,13 @@ import { createMockModerator } from '../__mocks__/utility.ts';
 
 describe('knock_moderator command', () => {
     beforeAll(async () => {
-        if (!game.inProgress) await game.entityLoader.loadAll();
+        if (!testGame.inProgress) await testGame.entityLoader.loadAll();
         // @ts-expect-error
         moderator = createMockModerator();
     });
 
     afterEach(async () => {
-        clearQueue(game);
+        clearQueue(testGame);
         vi.resetAllMocks();
     });
 
@@ -27,9 +27,9 @@ describe('knock_moderator command', () => {
     let moderator;
 
     test('with valid exit', async () => {
-        const player = game.entityFinder.getPlayer("Kyra");
-        const room = game.entityFinder.getRoom("suite-9");
-        const exit = game.entityFinder.getExit(room, "DOOR");
+        const player = testGame.entityFinder.getPlayer("Kyra");
+        const room = testGame.entityFinder.getRoom("suite-9");
+        const exit = testGame.entityFinder.getExit(room, "DOOR");
         /** @type {KnockAction} */
         let context;
         const original = KnockAction.prototype.performKnock;
@@ -39,7 +39,7 @@ describe('knock_moderator command', () => {
             return original.apply(this, args);
         });
         // @ts-ignore
-        await knock_moderator.execute(game, createMockMessage(), "knock", ["kyra", "door"], moderator);
+        await knock_moderator.execute(testGame, createMockMessage(), "knock", ["kyra", "door"], moderator);
         expect(context.player.name).toBe(player.name);
         expect(spy).toBeInvokedWith(exit);
     });
@@ -55,8 +55,8 @@ describe('knock_moderator command', () => {
         const message = createMockMessage();
         const author = message.author;
         // @ts-ignore
-        await knock_moderator.execute(game, message, "knock", ["kyra", "invalid"], moderator);
-        await sendQueuedMessages(game);
+        await knock_moderator.execute(testGame, message, "knock", ["kyra", "invalid"], moderator);
+        await sendQueuedMessages(testGame);
         expect(spy).not.toHaveBeenCalled();
         expect(context).toBeUndefined();
         expect(author.send).toBeInvokedWith(`Couldn't find exit "INVALID" in the room.`);

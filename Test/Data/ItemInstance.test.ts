@@ -4,12 +4,12 @@
 
 describe('ItemInstance test', () => {
     beforeAll(async () => {
-        if (!game.inProgress) await game.entityLoader.loadAll(true, false);
+        if (!testGame.inProgress) await testGame.entityLoader.loadAll(true, false);
     });
 
     describe('proceduralSelections test', () => {
         test('RoomItem CAPSULE proceduralSelections', () => {
-            const entity = game.entityFinder.getRoomItem('CAPSULE', 'video-room', 'Fixture', 'FLOOR');
+            const entity = testGame.entityFinder.getRoomItem('CAPSULE', 'video-room', 'Fixture', 'FLOOR');
             const expected = new Map<string, string>([
                 ["color", "blue"],
                 ["species", "tortide"],
@@ -23,7 +23,7 @@ describe('ItemInstance test', () => {
         });
 
         test('RoomItem DEPLETED CAPSULE proceduralSelections', () => {
-            const entity = game.entityFinder.getRoomItem('DEPLETED CAPSULE', 'video-room', 'Fixture', 'FLOOR');
+            const entity = testGame.entityFinder.getRoomItem('DEPLETED CAPSULE', 'video-room', 'Fixture', 'FLOOR');
             const expected = new Map<string, string>([
                 ["species", "loamander"]
             ]);
@@ -35,7 +35,7 @@ describe('ItemInstance test', () => {
         });
 
         test('RoomItem WET CLAY POT proceduralSelections', () => {
-            const entity = game.entityFinder.getRoomItem('WET CLAY POT', 'video-room', 'Fixture', 'KILN 1');
+            const entity = testGame.entityFinder.getRoomItem('WET CLAY POT', 'video-room', 'Fixture', 'KILN 1');
             const expected = new Map<string, string>([
                 ["base color", "white"],
                 ["quality", "decent"]
@@ -48,7 +48,7 @@ describe('ItemInstance test', () => {
         });
 
         test('RoomItem GLAZED CLAY POT proceduralSelections', () => {
-            const entity = game.entityFinder.getRoomItem('GLAZED CLAY POT 1', 'video-room', 'Fixture', 'KILN 2');
+            const entity = testGame.entityFinder.getRoomItem('GLAZED CLAY POT 1', 'video-room', 'Fixture', 'KILN 2');
             const expected = new Map<string, string>([
                 ["base color", "obscured"],
                 ["quality", "excellent"],
@@ -65,7 +65,7 @@ describe('ItemInstance test', () => {
         });
 
         test('InventoryItem CAPSULE proceduralSelections 1', () => {
-            const entity = game.entityFinder.getInventoryItem('CAPSULE', 'Nero', undefined, 'RIGHT HAND');
+            const entity = testGame.entityFinder.getInventoryItem('CAPSULE', 'Nero', undefined, 'RIGHT HAND');
             const expected = new Map<string, string>([
                 ["color", "blue"],
                 ["species", "tortide"],
@@ -79,7 +79,7 @@ describe('ItemInstance test', () => {
         });
 
         test('InventoryItem CAPSULE proceduralSelections 2', () => {
-            const entity = game.entityFinder.getInventoryItem('CAPSULE', 'Nero', undefined, 'LEFT HAND');
+            const entity = testGame.entityFinder.getInventoryItem('CAPSULE', 'Nero', undefined, 'LEFT HAND');
             const expected = new Map<string, string>([
                 ["color", "black"],
                 ["species", "lavazard"],
@@ -93,7 +93,7 @@ describe('ItemInstance test', () => {
         });
 
         test('InventoryItem FIRED CLAY POT proceduralSelections', () => {
-            const entity = game.entityFinder.getInventoryItem('FIRED CLAY POT 91', '???', undefined, 'RIGHT HAND');
+            const entity = testGame.entityFinder.getInventoryItem('FIRED CLAY POT 91', '???', undefined, 'RIGHT HAND');
             const expected = new Map<string, string>([
                 ["base color", "red"],
                 ["quality", "excellent"]
@@ -106,7 +106,7 @@ describe('ItemInstance test', () => {
         });
 
         test('InventoryItem GLAZE proceduralSelections', () => {
-            const entity = game.entityFinder.getInventoryItem('GLAZE', '???', undefined, 'LEFT HAND');
+            const entity = testGame.entityFinder.getInventoryItem('GLAZE', '???', undefined, 'LEFT HAND');
             const expected = new Map<string, string>([
                 ["glaze color", "light blue"],
                 ["base color", "obscured"],

@@ -8,7 +8,7 @@ import { clearQueue } from '../../Modules/messageHandler.ts';
 
 describe('help_eligible command', () => {
     afterEach(async () => {
-        clearQueue(game);
+        clearQueue(testGame);
         vi.resetAllMocks();
     });
 

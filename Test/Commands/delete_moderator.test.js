@@ -9,7 +9,7 @@ import { createMockMessage } from "../__mocks__/libs/discord.js";
 
 describe('delete_moderator command', () => {
     afterEach(async () => {
-        clearQueue(game);
+        clearQueue(testGame);
         vi.resetAllMocks();
     });
 

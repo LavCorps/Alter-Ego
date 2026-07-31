@@ -6,7 +6,7 @@ import type Game from "../Data/Game.ts";
 import "vitest";
 
 declare global {
-    var game: Game;
+    var testGame: Game;
 }
 
 interface CustomMatchers<R = unknown> {

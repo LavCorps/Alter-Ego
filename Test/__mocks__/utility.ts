@@ -21,11 +21,11 @@ export function createDisableStatus(player: Player, disabledCommand: string): St
         "",
         "",
         1,
-        game,
+        testGame,
     );
 }
 
 export function createMockModerator(member = createMockMember()): Moderator {
     // @ts-expect-error
-    return new Moderator(member.id, member, game)
+    return new Moderator(member.id, member, testGame)
 }

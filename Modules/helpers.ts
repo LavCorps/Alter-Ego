@@ -1,7 +1,23 @@
+// SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+// SPDX-FileCopyrightText: 2026 Ms. VBLANK <alteregomolly@pm.me>
+//
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
 import ItemInstance from '../Data/ItemInstance.ts';
 import { Duration } from 'luxon';
 import type Player from '../Data/Player.ts';
 import type { DurationObjectUnits } from 'luxon';
+
+/**
+ * Rounds the given value to a specified number of decimal places.
+ * @param value - The number to round.
+ * @param decimalPlaces - The number of decimal places to keep. If not provided, the number will be rounded to 3 decimal places.
+ */
+export function round(value: number, decimalPlaces: number = 3): number {
+    if (isNaN(value)) return value;
+    const multiplier = Math.pow(10, decimalPlaces);
+    return Math.round(value * multiplier) / multiplier;
+}
 
 /**
  * Divides two numbers, throwing an error if the denominator is zero.
@@ -32,7 +48,7 @@ export function clamp(value: number, min: number, max: number): number {
  * @returns A random number between min and max, inclusive.
  */
 export function getRandomNumber(min: number, max: number): number {
-	return Math.floor(Math.random() * (max - min + 1)) + min;
+    return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
 /**
@@ -41,7 +57,7 @@ export function getRandomNumber(min: number, max: number): number {
  * @returns A randomly chosen entry from possibilities.
  */
 export function getRandomString(possibilities: string[] = []): string {
-	return possibilities[Math.floor(Math.random() * possibilities.length)];
+    return possibilities[Math.floor(Math.random() * possibilities.length)];
 }
 
 /**
@@ -49,9 +65,9 @@ export function getRandomString(possibilities: string[] = []): string {
  * @param chance - The denominator of the probability. Defaults to 100. If this is 100, returns true 1/100th of the time.
  */
 export function doWithChance(chance = 100): boolean {
-	if (typeof chance !== 'number' || chance <= 0) return false;
-	if (chance <= 1) return true;
-	return Math.floor(Math.random() * chance) === 0;
+    if (typeof chance !== 'number' || chance <= 0) return false;
+    if (chance <= 1) return true;
+    return Math.floor(Math.random() * chance) === 0;
 }
 
 /**
@@ -62,11 +78,11 @@ export function doWithChance(chance = 100): boolean {
  * @param statusDivisor - The number that the base chance will be divided by if the player has the given status effect. For example, if the base chance is 100, and this is 5, the new chance will be 1/20.
  */
 export function doWithChanceModifiedByPlayerStatus(baseChance = 100, player: Player, statusId: string, statusDivisor: number): boolean {
-	if (typeof baseChance !== 'number' || baseChance <= 0) return false;
-	if (!player || !statusId || typeof statusDivisor !== 'number') return false;
-	let chance = baseChance;
-	if (player.hasStatus(statusId)) chance /= statusDivisor;
-	return doWithChance(chance);
+    if (typeof baseChance !== 'number' || baseChance <= 0) return false;
+    if (!player || !statusId || typeof statusDivisor !== 'number') return false;
+    let chance = baseChance;
+    if (player.hasStatus(statusId)) chance /= statusDivisor;
+    return doWithChance(chance);
 }
 
 /**
@@ -74,13 +90,13 @@ export function doWithChanceModifiedByPlayerStatus(baseChance = 100, player: Pla
  * @param players - A list of players.
  */
 export function sortPlayersByDisplayName(players: Player[]) {
-	players.sort((a, b) => {
-		const nameA = a.displayName.toLowerCase();
-		const nameB = b.displayName.toLowerCase();
-		if (nameA < nameB) return -1;
-		if (nameA > nameB) return 1;
-		return 0;
-	});
+    players.sort((a, b) => {
+        const nameA = a.displayName.toLowerCase();
+        const nameB = b.displayName.toLowerCase();
+        if (nameA < nameB) return -1;
+        if (nameA > nameB) return 1;
+        return 0;
+    });
 }
 
 /**
@@ -88,9 +104,9 @@ export function sortPlayersByDisplayName(players: Player[]) {
  * @param players - A list of players.
  */
 export function generatePlayerListString(players: Player[]) {
-	sortPlayersByDisplayName(players);
-	const playerList = players.map(player => player.displayName);
-	return generateListString(playerList);
+    sortPlayersByDisplayName(players);
+    const playerList = players.map(player => player.displayName);
+    return generateListString(playerList);
 }
 
 /**
@@ -98,16 +114,16 @@ export function generatePlayerListString(players: Player[]) {
  * @param list
  */
 export function generateListString(list: string[]): string {
-	let listString = "";
-	if (list.length === 1) listString = list[0];
-	else if (list.length === 2)
-		listString += `${list[0]} and ${list[1]}`;
-	else if (list.length >= 3) {
-		for (let i = 0; i < list.length - 1; i++)
-			listString += `${list[i]}, `;
-		listString += `and ${list[list.length - 1]}`;
-	}
-	return listString;
+    let listString = "";
+    if (list.length === 1) listString = list[0];
+    else if (list.length === 2)
+        listString += `${list[0]} and ${list[1]}`;
+    else if (list.length >= 3) {
+        for (let i = 0; i < list.length - 1; i++)
+            listString += `${list[i]}, `;
+        listString += `and ${list[list.length - 1]}`;
+    }
+    return listString;
 }
 
 /**
@@ -125,11 +141,11 @@ export function makeCopyable(string: string): string {
  * @returns A copy of the list of items, sorted alphabetically by prefab ID.
  */
 export function getSortedItems<T extends ItemInstance>(items: T[]): T[] {
-	return items.toSorted(function (a, b) {
-		if (a.prefab.id < b.prefab.id) return -1;
-		if (a.prefab.id > b.prefab.id) return 1;
-		return 0;
-	});
+    return items.toSorted(function (a, b) {
+        if (a.prefab.id < b.prefab.id) return -1;
+        if (a.prefab.id > b.prefab.id) return 1;
+        return 0;
+    });
 }
 
 /**
@@ -137,7 +153,7 @@ export function getSortedItems<T extends ItemInstance>(items: T[]): T[] {
  * @param items - A list of room items.
  */
 export function getSortedItemsString<T extends ItemInstance>(items: T[]): string {
-	return getSortedItems(items).map(item => item.prefab.id).join(',');
+    return getSortedItems(items).map(item => item.prefab.id).join(',');
 }
 
 /**
@@ -145,10 +161,10 @@ export function getSortedItemsString<T extends ItemInstance>(items: T[]): string
  * @param string
  */
 export function capitalizeFirstLetter(string: string): string {
-	if (string.length === 0) return string;
-	const uppercaseFirstLetter = string.charAt(0).toLocaleUpperCase();
-	const remainingString = string.length > 1 ? string.substring(1) : '';
-	return `${uppercaseFirstLetter}${remainingString}`;
+    if (string.length === 0) return string;
+    const uppercaseFirstLetter = string.charAt(0).toLocaleUpperCase();
+    const remainingString = string.length > 1 ? string.substring(1) : '';
+    return `${uppercaseFirstLetter}${remainingString}`;
 }
 
 /**
@@ -168,7 +184,7 @@ export function lowercaseFirstLetter(string: string): string {
  * @param string
  */
 export function endsWithPunctuation(string: string): boolean {
-	return !!string.match(/[.!?][_*~|`]*$/);
+    return !!string.match(/[.!?][_*~|`]*$/);
 }
 
 /**
@@ -176,39 +192,39 @@ export function endsWithPunctuation(string: string): boolean {
  * @param durationString - An integer and a unit. Acceptable units: y, M, w, d, h, m, s.
  * @returns A duration object.
  */
-export function parseDuration(durationString: string): Duration<true>|Duration<false> {
-	let durationInt = parseInt(durationString.substring(0, durationString.length - 1));
-	let durationUnit = durationString.charAt(durationString.length - 1);
-	let durationInput: import("luxon").DurationLikeObject = {};
-	if (durationString) {
-		switch (durationUnit) {
-			case 'y':
-				durationInput.years = durationInt;
-				break;
-			case 'M':
-				durationInput.months = durationInt;
-				break;
-			case 'w':
-				durationInput.weeks = durationInt;
-				break;
-			case 'd':
-				durationInput.days = durationInt;
-				break;
-			case 'h':
-				durationInput.hours = durationInt;
-				break;
-			case 'm':
-				durationInput.minutes = durationInt;
-				break;
-			case 's':
-				durationInput.seconds = durationInt;
-				break;
-			default:
-				return Duration.invalid("created with duration string using invalid unit", `"${durationUnit}" is an invalid unit`);
-		}
-	} else return Duration.invalid("created with duration string using invalid duration string", `"${durationString}" is not a valid duration string`);
-	if (!isFinite(durationInt)) return Duration.invalid("created with duration string using invalid period", `"${durationInt}" is not a valid duration period`);
-	return Duration.fromObject(durationInput);
+export function parseDuration(durationString: string): Duration<true> | Duration<false> {
+    let durationInt = parseInt(durationString.substring(0, durationString.length - 1));
+    let durationUnit = durationString.charAt(durationString.length - 1);
+    let durationInput: import("luxon").DurationLikeObject = {};
+    if (durationString) {
+        switch (durationUnit) {
+            case 'y':
+                durationInput.years = durationInt;
+                break;
+            case 'M':
+                durationInput.months = durationInt;
+                break;
+            case 'w':
+                durationInput.weeks = durationInt;
+                break;
+            case 'd':
+                durationInput.days = durationInt;
+                break;
+            case 'h':
+                durationInput.hours = durationInt;
+                break;
+            case 'm':
+                durationInput.minutes = durationInt;
+                break;
+            case 's':
+                durationInput.seconds = durationInt;
+                break;
+            default:
+                return Duration.invalid("created with duration string using invalid unit", `"${durationUnit}" is an invalid unit`);
+        }
+    } else return Duration.invalid("created with duration string using invalid duration string", `"${durationString}" is not a valid duration string`);
+    if (!isFinite(durationInt)) return Duration.invalid("created with duration string using invalid period", `"${durationInt}" is not a valid duration period`);
+    return Duration.fromObject(durationInput);
 }
 
 /**
@@ -217,20 +233,20 @@ export function parseDuration(durationString: string): Duration<true>|Duration<f
  * @returns The input object to pass into the duration constructor.
  */
 export function convertTimeStringToDurationUnits(timeString: string): DurationObjectUnits | undefined {
-	const timeRegex = /^(?<days>\d+)? ?(?<hours>\d{2}):(?<minutes>\d{2}):(?<seconds>\d{2})$/;
-	const timeMatch = timeString.match(timeRegex);
-	if (timeMatch?.groups) {
-		const daysValue = timeMatch.groups.days ? parseInt(timeMatch.groups.days) : 0;
-		const hoursValue = timeMatch.groups.hours ? parseInt(timeMatch.groups.hours) : 0;
-		const minutesValue = timeMatch.groups.minutes ? parseInt(timeMatch.groups.minutes) : 0;
-		const secondsValue = timeMatch.groups.seconds ? parseInt(timeMatch.groups.seconds) : 0;
-		return {
-			days: daysValue,
-			hours: hoursValue,
-			minutes: minutesValue,
-			seconds: secondsValue
-		};
-	}
+    const timeRegex = /^(?<days>\d+)? ?(?<hours>\d{2}):(?<minutes>\d{2}):(?<seconds>\d{2})$/;
+    const timeMatch = timeString.match(timeRegex);
+    if (timeMatch?.groups) {
+        const daysValue = timeMatch.groups.days ? parseInt(timeMatch.groups.days) : 0;
+        const hoursValue = timeMatch.groups.hours ? parseInt(timeMatch.groups.hours) : 0;
+        const minutesValue = timeMatch.groups.minutes ? parseInt(timeMatch.groups.minutes) : 0;
+        const secondsValue = timeMatch.groups.seconds ? parseInt(timeMatch.groups.seconds) : 0;
+        return {
+            days: daysValue,
+            hours: hoursValue,
+            minutes: minutesValue,
+            seconds: secondsValue
+        };
+    }
 }
 
 /**
@@ -239,7 +255,7 @@ export function convertTimeStringToDurationUnits(timeString: string): DurationOb
  * @returns Whether or not the input object is a valid luxon duration object.
  */
 export function validateDuration(input: unknown): boolean {
-	return Duration.isDuration(input) && input.isValid;
+    return Duration.isDuration(input) && input.isValid;
 }
 
 /**
@@ -250,15 +266,15 @@ export function validateDuration(input: unknown): boolean {
  * @returns An array of pages, where each page is an array of items from the original array.
  */
 export function addPages<T>(pages: T[][], array: T[], pageSize = 5): void {
-	let pageNo = pages.length;
-	if (pages[pageNo] && pages[pageNo].length > 0) pageNo++;
-	// Divide the fields into pages. Split them up by type.
-	for (let i = 0; i < array.length; i++) {
-		// Divide the menu into groups of pageSize.
-		if (i % pageSize === 0) {
-			pages.push([]);
-			if (i !== 0) pageNo++;
-		}
-		pages[pageNo].push(array[i]);
-	}
+    let pageNo = pages.length;
+    if (pages[pageNo] && pages[pageNo].length > 0) pageNo++;
+    // Divide the fields into pages. Split them up by type.
+    for (let i = 0; i < array.length; i++) {
+        // Divide the menu into groups of pageSize.
+        if (i % pageSize === 0) {
+            pages.push([]);
+            if (i !== 0) pageNo++;
+        }
+        pages[pageNo].push(array[i]);
+    }
 }

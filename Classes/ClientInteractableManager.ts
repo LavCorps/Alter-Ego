@@ -1,4 +1,5 @@
 // SPDX-FileCopyrightText: 2019 Alter Ego Contributors
+// SPDX-FileCopyrightText: 2026 LavCorps <lavcorps@protonmail.com>
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -19,11 +20,17 @@ import InventoryItem from "../Data/InventoryItem.ts";
 import ItemInstance from "../Data/ItemInstance.ts";
 import type Exit from "../Data/Exit.ts";
 import Moderator from "../Data/Moderator.ts";
-import Recipe from "../Data/Recipe.ts";
 import Player from "../Data/Player.ts";
+import Puzzle from "../Data/Puzzle.ts";
+import Recipe from "../Data/Recipe.ts";
 import RoomItem from "../Data/RoomItem.ts";
 import ActionDirective from "./ActionDirective.ts";
 import QueueMoveAction from "../Data/Actions/QueueMoveAction.ts";
+import FollowAction from "../Data/Actions/FollowAction.ts";
+import LeadAction from "../Data/Actions/LeadAction.ts";
+import DismissAction from "../Data/Actions/DismissAction.ts";
+import DisbandPartyAction from "../Data/Actions/DisbandPartyAction.ts";
+import ViewPartyAction from "../Data/Actions/ViewPartyAction.ts";
 import StopAction from "../Data/Actions/StopAction.ts";
 import InspectAction from "../Data/Actions/InspectAction.ts";
 import TakeAction from "../Data/Actions/TakeAction.ts";
@@ -35,8 +42,10 @@ import UnequipAction from "../Data/Actions/UnequipAction.ts";
 import CraftAction from "../Data/Actions/CraftAction.ts";
 import UncraftAction from "../Data/Actions/UncraftAction.ts";
 import UseAction from "../Data/Actions/UseAction.ts";
+import InventoryAction from "../Data/Actions/InventoryAction.ts";
 import ActivateAction from "../Data/Actions/ActivateAction.ts";
 import DeactivateAction from "../Data/Actions/DeactivateAction.ts";
+import AttemptAction from "../Data/Actions/AttemptAction.ts";
 import InstantiateInventoryItemAction from "../Data/Actions/InstantiateInventoryItemAction.ts";
 import InstantiateRoomItemAction from "../Data/Actions/InstantiateRoomItemAction.ts";
 import DestroyInventoryItemAction from "../Data/Actions/DestroyInventoryItemAction.ts";
@@ -44,8 +53,10 @@ import DestroyRoomItemAction from "../Data/Actions/DestroyRoomItemAction.ts";
 import FindAction from "../Data/Actions/FindAction.ts";
 import ViewAction, { type EntityField } from "../Data/Actions/ViewAction.ts";
 import { removeInteractablesFromMessage } from "../Modules/messageHandler.ts";
-import { ActionPriority } from "../Modules/enums.js";
+import { ActionPriority } from "../Modules/enums.ts";
 import { capitalizeFirstLetter, getSortedItems } from "../Modules/helpers.ts";
+import HideAction from "../Data/Actions/HideAction.ts";
+import EmergeAction from "../Data/Actions/EmergeAction.ts";
 
 class InteractableOptions<T extends Action> {
     actionDirective: ActionDirective<T>;
@@ -60,16 +71,6 @@ class InteractableOptions<T extends Action> {
         this.description = description;
         this.respondWithModal = respondWithModal;
     }
-}
-
-/**
- * A message with Interactables on it that has been cached for tracking.
- */
-interface InteractableMessage {
-    /** The ID of the channel the message is in. */
-    channelId: Snowflake;
-    /** The ID of the message. */
-    messageId: Snowflake;
 }
 
 type ButtonOrStringSelectMenuInteractable = ButtonInteractable | StringSelectMenuInteractable;
@@ -94,7 +95,7 @@ export default class ClientInteractableManager {
     /**
      * A cache of messages with Interactables, indexed by message ID. This is used to keep track of which messages have interactables on them, so that we can disable those interactables when they're no longer valid.
      */
-    readonly #interactableMessageCache: Collection<InteractableMessage, string[]>;
+    readonly #interactableMessageCache: Collection<SentMessage, string[]>;
     /**
      * The maximum number of Interactable messages to keep in the cache at once. If the cache exceeds this size, the oldest message will be removed.
      */
@@ -102,7 +103,7 @@ export default class ClientInteractableManager {
     /**
      * The maximum amount of time that interactables are valid for.
      */
-    readonly interactableValidTime = 5 * 60 * 1000;
+    readonly #interactableValidTime = 5 * 60 * 1000;
 
     /**
      * @param game - The game this belongs to.
@@ -126,11 +127,11 @@ export default class ClientInteractableManager {
      * Interactables are valid for 5 minutes after being added. They are automatically removed from the cache after this time.
      * @param interactable
      */
-    addInteractable(interactable: Interactable) {
+    #addInteractable(interactable: Interactable) {
         if (this.#interactableCache.size >= this.#interactableCacheSizeLimit)
-            this.disableInteractable(this.#interactableCache.firstKey());
+            this.#disableInteractable(this.#interactableCache.firstKey());
         if (this.#interactableCache.has(interactable.customId))
-            this.disableInteractable(interactable.customId);
+            this.#disableInteractable(interactable.customId);
         this.#interactableCache.set(interactable.customId, interactable);
     }
 
@@ -138,7 +139,7 @@ export default class ClientInteractableManager {
      * Disables an interactable and removes it from the cache by its custom ID.
      * @param customId
      */
-    disableInteractable(customId: string) {
+    #disableInteractable(customId: string) {
         const interactable = this.#interactableCache.get(customId);
         if (interactable) {
             this.#interactableCache.delete(customId);
@@ -154,35 +155,25 @@ export default class ClientInteractableManager {
     addInteractableMessage(channelId: string, messageId: string, interactableCustomIds: string[]) {
         const key = { channelId: channelId, messageId: messageId };
         if (this.#interactableMessageCache.size >= this.#interactableMessageCacheSizeLimit)
-            this.disableInteractableMessage(this.#interactableMessageCache.firstKey());
+            this.#disableInteractableMessage(this.#interactableMessageCache.firstKey());
         this.#interactableMessageCache.set(key, interactableCustomIds);
-        setTimeout(() => this.disableInteractableMessage(key), this.interactableValidTime);
+        setTimeout(() => this.#disableInteractableMessage(key), this.#interactableValidTime);
     }
 
     /**
      * Disables all interactables associated with a message and removes the message from the cache.
      * @param interactableMessage - The message with interactables on it to disable.
      */
-    async disableInteractableMessage(interactableMessage: InteractableMessage) {
-        const message = await this.#getInteractableMessage(interactableMessage);
-        if (message) removeInteractablesFromMessage(message);
+    async #disableInteractableMessage(interactableMessage: SentMessage) {
+        const message = await this.#game.clientContext.getSentMessage(interactableMessage);
+        if (message) removeInteractablesFromMessage(this.#game, message);
         const interactableCustomIds = this.#interactableMessageCache.get(interactableMessage);
         if (interactableCustomIds) {
             for (const customId of interactableCustomIds) {
-                this.disableInteractable(customId);
+                this.#disableInteractable(customId);
             }
             this.#interactableMessageCache.delete(interactableMessage);
         }
-    }
-
-    /**
-     * Fetches a message from Discord by its channel ID and message ID, and returns it if it exists.
-     * @param interactableMessage - The message to fetch, represented by its channel ID and message ID.
-     */
-    async #getInteractableMessage(interactableMessage: InteractableMessage) {
-        const channel = await this.#game.clientContext.client.channels.fetch(interactableMessage.channelId);
-        if (!channel.isTextBased()) return;
-        return await channel.messages.fetch(interactableMessage.messageId);
     }
 
     /**
@@ -192,7 +183,7 @@ export default class ClientInteractableManager {
      * @param player - The player this action directive is being created for.
      * @param user - The user this action directive is being created for. This is used to generate a unique custom ID for the directive, preventing conflicts with directives created for other users with the same action and arguments.
      */
-    #createActionDirective<T extends Action>(actionClass: { new(...args: any[]): T }, args: any[], player: Player, user: User): ActionDirective<T> {
+    #createActionDirective<T extends Action>(actionClass: Constructor<T>, args: any[], player: Player, user: User): ActionDirective<T> {
         return new ActionDirective(actionClass.prototype, player, args, user);
     }
 
@@ -204,7 +195,7 @@ export default class ClientInteractableManager {
      */
     #createButtonInteractable<T extends Action>(buttonOptions: InteractableOptions<T>, style: ButtonStyle, priority: number): ButtonInteractable {
         const button = new ButtonInteractable(buttonOptions.actionDirective, buttonOptions.buttonLabel, style, priority, buttonOptions.respondWithModal);
-        this.addInteractable(button);
+        this.#addInteractable(button);
         return button;
     }
 
@@ -235,12 +226,12 @@ export default class ClientInteractableManager {
             const actionDirective = selectMenuOption.actionDirective;
             if (menuOptions.has(actionDirective.customId)) continue;
             const option = new StringSelectMenuOptionInteractable(actionDirective, selectMenuOption.stringSelectLabel, actionDirective.customId, selectMenuOption.description, 0, selectMenuOption.respondWithModal);
-            this.addInteractable(option);
+            this.#addInteractable(option);
             menuOptions.set(actionDirective.customId, option);
         }
         if (menuOptions.size === 0) return [];
         const menu = new StringSelectMenuInteractable(actionDirective, menuOptions.map(menuOption => menuOption), placeholder, priority);
-        this.addInteractable(menu);
+        this.#addInteractable(menu);
         return [menu];
     }
 
@@ -252,9 +243,9 @@ export default class ClientInteractableManager {
      */
     createPaginationInteractables(action: Action, prevPageCallback: (interaction: BotInteraction) => void, nextPageCallback: (interaction: BotInteraction) => void) {
         const pagePrevButton = new PagePrevInteractable(`${action.id} Prev Page`, prevPageCallback);
-        this.addInteractable(pagePrevButton);
+        this.#addInteractable(pagePrevButton);
         const pageNextButton = new PageNextInteractable(`${action.id} Next Page`, nextPageCallback);
-        this.addInteractable(pageNextButton);
+        this.#addInteractable(pageNextButton);
         return [pagePrevButton, pageNextButton];
     }
 
@@ -283,15 +274,127 @@ export default class ClientInteractableManager {
     }
 
     /**
-     * Creates a StopAction interactable and adds it to the cache.
+     * Creates a FollowAction interactable and adds it to the cache.
+     * @param leader - The player to follow.
      * @param player - The player these interactables are being created for.
      * @param user - The user these interactables are being created for. Defaults to the given player.
      */
-    createStopActionInteractable(player: Player, user: User = player): ButtonInteractable[] {
+    private createFollowActionInteractable(leader: Player, player: Player, user: User = player): ButtonInteractable[] {
+        if (!player.canUseCommand("follow") || player.followedPlayer) return [];
+        if (player.isMoving || player.speed <= 0) return [];
+        if (player.isHidden() && !player.isHiddenWith(leader)) return [];
+        if (player.isFollowing(leader)) return [];
+        if (leader.isFollowing(player) || player.wouldCreateFollowingLoop(leader)) return [];
+        const actionDirective = this.#createActionDirective(FollowAction, leader.getGeneralActionDirectiveArgs(), player, user);
+        const interactableOptions = new InteractableOptions(actionDirective, `Follow ${leader.displayName}`);
+        return [this.#createButtonInteractable(interactableOptions, ButtonStyle.Primary, ActionPriority.FOLLOW)];
+    }
+
+    /**
+     * Creates a LeadAction interactable and adds it to the cache.
+     * @param follower - The player to lead.
+     * @param player - The player these interactables are being created for.
+     * @param user - The user these interactables are being created for. Defaults to the given player.
+     */
+    private createLeadActionInteractable(follower: Player, player: Player, user: User = player): ButtonInteractable[] {
+        if (!player.canUseCommand("lead") || player.followedPlayer) return [];
+        if (player.isHidden() && !player.isHiddenWith(follower)) return [];
+        if (!follower.isFollowing(player) || follower.ledPlayers.length !== 0) return [];
+        if (player.isLeading(follower)) return [];
+        const actionDirective = this.#createActionDirective(LeadAction, follower.getGeneralActionDirectiveArgs(), player, user);
+        const interactableOptions = new InteractableOptions(actionDirective, `Lead ${follower.displayName}`);
+        return [this.#createButtonInteractable(interactableOptions, ButtonStyle.Success, ActionPriority.LEAD)];
+    }
+
+    /**
+     * Creates Interactables for a list of dismissable players and adds them to the cache.
+     * @param followers - A collection of followers that can be dismissed.
+     * @param player - The player these interactables are being created for.
+     * @param user - The user these interactables are being created for. Defaults to the given player.
+     */
+    private createDismissActionInteractables(followers: Collection<string, Player>, player: Player, user: User = player): StringSelectMenuInteractable[] {
+        if (!player.canUseCommand("dismiss")) return [];
+        const interactableOptions: InteractableOptions<DismissAction>[] = [];
+        for (const follower of followers.values()) {
+            const actionDirective = this.#createActionDirective(DismissAction, follower.getGeneralActionDirectiveArgs(), player, user);
+            const userIsModerator = !(user instanceof Player);
+            const displayName = userIsModerator ? player.party?.getMemberDisplayName(follower) ?? follower.displayName : follower.name;
+            const label = `Dismiss ${displayName}`;
+            interactableOptions.push(new InteractableOptions(actionDirective, label, label));
+        }
+        const actionDirective = this.#createActionDirective(DismissAction, ["DismissAction Menu"], player, user);
+        return this.#createStringSelectMenuInteractable(actionDirective, interactableOptions, "Dismiss", ActionPriority.DISMISS);
+    }
+
+    /**
+     * Creates a DisbandPartyAction interactable and adds it to the cache.
+     * @param player - The player these interactables are being created for.
+     * @param user - The user these interactables are being created for. Defaults to the given player.
+     */
+    private createDisbandPartyActionInteractables(player: Player, user: User = player): ButtonInteractable[] {
+        if (!player.canUseCommand("disband")) return [];
+        if (!player.party) return [];
+        const actionDirective = this.#createActionDirective(DisbandPartyAction, [], player, user);
+        const interactableOptions = new InteractableOptions(actionDirective, `Disband Party`);
+        return [this.#createButtonInteractable(interactableOptions, ButtonStyle.Danger, ActionPriority.DISBAND)];
+    }
+
+    /**
+     * Creates a ViewPartyAction interactable and adds it to the cache.
+     * @param player - The player these interactables are being created for.
+     * @param user - The user these interactables are being created for. Defaults to the given player.
+     */
+    private createViewPartyActionInteractable(player: Player, user: User = player): ButtonInteractable[] {
+        if (!player.canUseCommand("party")) return [];
+        if (!player.party && !player.followedPlayer) return [];
+        const actionDirective = this.#createActionDirective(ViewPartyAction, [], player, user);
+        const interactableOptions = new InteractableOptions(actionDirective, `View Party`);
+        return [this.#createButtonInteractable(interactableOptions, ButtonStyle.Secondary, ActionPriority.VIEW_PARTY)];
+    }
+
+    /**
+     * Creates a StopAction interactable and adds it to the cache.
+     * @param player - The player these interactables are being created for.
+     * @param user - The user these interactables are being created for. Defaults to the given player.
+     * @param label - The label to display in the interactable. Defaults to "Stop".
+     */
+    createStopActionInteractable(player: Player, user: User = player, label: string = "Stop"): ButtonInteractable[] {
         if (!player.canUseCommand("stop")) return [];
         const actionDirective = this.#createActionDirective(StopAction, [], player, user);
-        const interactableOptions = new InteractableOptions(actionDirective, `Stop`);
+        const interactableOptions = new InteractableOptions(actionDirective, label);
         return [this.#createButtonInteractable(interactableOptions, ButtonStyle.Danger, ActionPriority.STOP)];
+    }
+
+    /**
+     * Creates a HideAction interactable and adds it to the cache.
+     * @param fixture - The fixture these interactables are being created for.
+     * @param player - The player these interactables are being created for.
+     * @param user - The user these interactables are being created for. Defaults to the given player.
+     * @param label - The label to display in the interactable. Defaults to "Hide".
+     */
+    createHideActionInteractable(fixture: Fixture, player: Player, user: User = player): ButtonInteractable[] {
+        if (!player.canUseCommand("hide")) return [];
+        if (fixture.hidingSpotCapacity === 0 || !fixture.hidingSpot) return [];
+        if (player.isHidden()) return [];
+        const actionDirective = this.#createActionDirective(HideAction, fixture.getGeneralActionDirectiveArgs(), player, user);
+        const interactableOptions = new InteractableOptions(actionDirective, "Hide");
+        return [this.#createButtonInteractable(interactableOptions, ButtonStyle.Secondary, ActionPriority.HIDE)];
+    }
+
+    /**
+     * Creates an EmergeAction interactable and adds it to the cache.
+     * @param fixture - The fixture these interactables are being created for.
+     * @param player - The player these interactables are being created for.
+     * @param user - The user these interactables are being created for. Defaults to the given player.
+     * @param label - The label to display in the interactable. Defaults to "Emerge".
+     */
+    createEmergeActionInteractable(fixture: Fixture, player: Player, user: User = player): ButtonInteractable[] {
+        if (!player.canUseCommand("hide")) return [];
+        if (fixture.hidingSpotCapacity === 0 || !fixture.hidingSpot) return [];
+        if (!player.isHidden() || player.hidingSpot !== fixture.name) return [];
+        const actionDirective = this.#createActionDirective(EmergeAction, fixture.getGeneralActionDirectiveArgs(), player, user);
+        const interactableOptions = new InteractableOptions(actionDirective, "Emerge");
+        return [this.#createButtonInteractable(interactableOptions, ButtonStyle.Secondary, ActionPriority.EMERGE)];
     }
 
     /**
@@ -305,10 +408,16 @@ export default class ClientInteractableManager {
         const interactableOptions: InteractableOptions<InspectAction>[] = [];
         for (const entity of entities) {
             const actionDirective = this.#createActionDirective(InspectAction, entity.getInspectActionDirectiveArgs(), player, user);
-            const label = entity instanceof Player ? entity.displayName : entity.name;
-            const containerString = entity instanceof ItemInstance && entity.container ?
-                entity.container instanceof ItemInstance && entity.container.inventory.size > 1 ?
-                    ` ${entity.container.getPreposition()} ${entity.slot} of ${entity.container.name}`
+            const label = entity instanceof Player
+                ? player.party && player.party.hasMember(entity)
+                    ? player.party.getMemberDisplayName(entity)
+                    : player.isFollowing(entity)
+                        ? player.followedPlayerDisplayName
+                        : entity.displayName
+                : entity.name;
+            const containerString = entity instanceof ItemInstance && entity.container
+                ? entity.container instanceof ItemInstance && entity.container.inventory.size > 1
+                    ? ` ${entity.container.getPreposition()} ${entity.slot} of ${entity.container.name}`
                     : ` ${entity.container.getPreposition()} ${entity.container.name}`
                 : "";
             const description = `Inspect ${label}${containerString}`;
@@ -324,7 +433,7 @@ export default class ClientInteractableManager {
      * @param player - The player these interactables are being created for.
      * @param user - The user these interactables are being created for. Defaults to the given player.
      */
-    createTakeActionInteractable(entities: RoomItem[], player: Player, user: User = player): ButtonOrStringSelectMenuInteractable[] {
+    private createTakeActionInteractable(entities: RoomItem[], player: Player, user: User = player): ButtonOrStringSelectMenuInteractable[] {
         if (!player.canUseCommand("take")) return [];
         const interactableOptions: InteractableOptions<TakeAction>[] = [];
         for (const entity of entities) {
@@ -351,7 +460,7 @@ export default class ClientInteractableManager {
      * @param container - The fixture or room item the player is dropping the items into.
      * @param user - The user these interactables are being created for. Defaults to the given player.
      */
-    createDropActionInteractables(entities: InventoryItem[], player: Player, container: RoomItemContainer, user: User = player): ButtonOrStringSelectMenuInteractable[] {
+    private createDropActionInteractables(entities: InventoryItem[], player: Player, container: RoomItemContainer, user: User = player): ButtonOrStringSelectMenuInteractable[] {
         if (!player.canUseCommand("drop")) return [];
         const interactableOptions: InteractableOptions<DropAction>[] = [];
         for (const entity of entities) {
@@ -389,7 +498,7 @@ export default class ClientInteractableManager {
      * @param viableContainers - A map of viable stash containers to the inventory slots the item can be stashed into. This is used to determine which stash options to create for each item.
      * @param user - The user these interactables are being created for. Defaults to the given player.
      */
-    createStashActionInteractables(entities: InventoryItem[], player: Player, viableContainers: Map<InventoryItem, string[]>, user: User = player): ButtonOrStringSelectMenuInteractable[] {
+    private createStashActionInteractables(entities: InventoryItem[], player: Player, viableContainers: Map<InventoryItem, string[]>, user: User = player): ButtonOrStringSelectMenuInteractable[] {
         if (!player.canUseCommand("stash")) return [];
         const interactableOptions: InteractableOptions<StashAction>[] = [];
         for (const entity of entities) {
@@ -420,7 +529,7 @@ export default class ClientInteractableManager {
      * @param player - The player these interactables are being created for.
      * @param user - The user these interactables are being created for. Defaults to the given player.
      */
-    createUnstashActionInteractables(entities: InventoryItem[], player: Player, user: User = player): ButtonOrStringSelectMenuInteractable[] {
+    private createUnstashActionInteractables(entities: InventoryItem[], player: Player, user: User = player): ButtonOrStringSelectMenuInteractable[] {
         if (!player.canUseCommand("unstash")) return [];
         const interactableOptions: InteractableOptions<UnstashAction>[] = [];
         for (const entity of entities) {
@@ -447,7 +556,7 @@ export default class ClientInteractableManager {
      * @param player - The player these interactables are being created for.
      * @param user - The user these interactables are being created for. Defaults to the given player.
      */
-    createEquipActionInteractables(equippableItems: Map<InventoryItem, string[]>, player: Player, user: User = player): ButtonOrStringSelectMenuInteractable[] {
+    private createEquipActionInteractables(equippableItems: Map<InventoryItem, string[]>, player: Player, user: User = player): ButtonOrStringSelectMenuInteractable[] {
         if (!player.canUseCommand("equip")) return [];
         const interactableOptions: InteractableOptions<EquipAction>[] = [];
         for (const [heldItem, equipmentSlots] of equippableItems.entries()) {
@@ -474,7 +583,7 @@ export default class ClientInteractableManager {
      * @param player - The player these interactables are being created for.
      * @param user - The user these interactables are being created for. Defaults to the given player.
      */
-    createUnequipActionInteractables(unequippableItems: InventoryItem[], player: Player, user: User = player): StringSelectMenuInteractable[] {
+    private createUnequipActionInteractables(unequippableItems: InventoryItem[], player: Player, user: User = player): StringSelectMenuInteractable[] {
         if (!player.canUseCommand("unequip")) return [];
         const interactableOptions: InteractableOptions<UnequipAction>[] = [];
         for (const item of unequippableItems) {
@@ -491,7 +600,7 @@ export default class ClientInteractableManager {
      * @param player - The player these interactables are being created for.
      * @param user - The user these interactables are being created for. Defaults to the given player.
      */
-    createCraftActionInteractables(recipe: Recipe, player: Player, user: User = player): ButtonInteractable[] {
+    private createCraftActionInteractables(recipe: Recipe, player: Player, user: User = player): ButtonInteractable[] {
         if (!player.canUseCommand("craft")) return [];
         const heldItems = getSortedItems(this.#game.entityFinder.getPlayerHands(player).filter(hand => hand.equippedItem !== null).map(hand => hand.equippedItem));
         const actionDirective = this.#createActionDirective(CraftAction, player.getCraftActionDirectiveArgs(heldItems[0], heldItems[1], recipe), player, user);
@@ -505,7 +614,7 @@ export default class ClientInteractableManager {
      * @param player - The player these interactables are being created for.
      * @param user - The user these interactables are being created for. Defaults to the given player.
      */
-    createUncraftActionInteractables(recipe: Recipe, player: Player, user: User = player): ButtonInteractable[] {
+    private createUncraftActionInteractables(recipe: Recipe, player: Player, user: User = player): ButtonInteractable[] {
         if (!player.canUseCommand("uncraft")) return [];
         const heldItems = getSortedItems(this.#game.entityFinder.getPlayerHands(player).filter(hand => hand.equippedItem !== null).map(hand => hand.equippedItem));
         const actionDirective = this.#createActionDirective(UncraftAction, player.getUncraftActionDirectiveArgs(heldItems[0], recipe), player, user);
@@ -519,7 +628,7 @@ export default class ClientInteractableManager {
      * @param player - The player these interactables are being created for.
      * @param user - The user these interactables are being created for. Defaults to the given player.
      */
-    createUseActionInteractables(usableItems: InventoryItem[], player: Player, user: User = player): StringSelectMenuInteractable[] {
+    private createUseActionInteractables(usableItems: InventoryItem[], player: Player, user: User = player): StringSelectMenuInteractable[] {
         if (!player.canUseCommand("use")) return [];
         const interactableOptions: InteractableOptions<UseAction>[] = [];
         for (const item of usableItems) {
@@ -534,12 +643,24 @@ export default class ClientInteractableManager {
     }
 
     /**
+     * Creates an InventoryAction interactable and adds it to the cache.
+     * @param player - The player these interactables are being created for.
+     * @param user - The user these interactables are being created for. Defaults to the given player.
+     */
+    private createInventoryActionInteractable(player: Player, user: User = player): ButtonInteractable[] {
+        if (!player.canUseCommand("inventory")) return [];
+        const actionDirective = this.#createActionDirective(InventoryAction, [], player, user);
+        const interactableOptions = new InteractableOptions(actionDirective, `View Inventory`);
+        return [this.#createButtonInteractable(interactableOptions, ButtonStyle.Secondary, ActionPriority.VIEW_INVENTORY)];
+    }
+
+    /**
      * Creates Interactables for an activatable fixture and adds them to the cache.
      * @param fixture - The fixture that can be activated.
      * @param player - The player these interactables are being created for.
      * @param user - The user these interactables are being created for. Defaults to the given player.
      */
-    createActivateInteractables(fixture: Fixture, player: Player, user: User = player): ButtonInteractable[] {
+    private createActivateActionInteractables(fixture: Fixture, player: Player, user: User = player): ButtonInteractable[] {
         if (!player.canUseCommand("use")) return [];
         const actionDirective = this.#createActionDirective(ActivateAction, fixture.getActivateOrDeactivateActionDirectiveArgs(true), player, user);
         const interactableOptions = new InteractableOptions(actionDirective, `Activate ${fixture.name}`);
@@ -552,11 +673,106 @@ export default class ClientInteractableManager {
      * @param player - The player these interactables are being created for.
      * @param user - The user these interactables are being created for. Defaults to the given player.
      */
-    createDeactivateInteractables(fixture: Fixture, player: Player, user: User = player): ButtonInteractable[] {
+    private createDeactivateActionInteractables(fixture: Fixture, player: Player, user: User = player): ButtonInteractable[] {
         if (!player.canUseCommand("use")) return [];
         const actionDirective = this.#createActionDirective(DeactivateAction, fixture.getActivateOrDeactivateActionDirectiveArgs(true), player, user);
         const interactableOptions = new InteractableOptions(actionDirective, `Deactivate ${fixture.name}`);
         return [this.#createButtonInteractable(interactableOptions, ButtonStyle.Secondary, ActionPriority.DEACTIVATE)];
+    }
+
+    /**
+     * Creates Button Interactables for an attemptable puzzle and adds them to the cache.
+     * @param puzzle - The puzzle that can be attempted.
+     * @param player - The player these interactables are being created for.
+     * @param user - The user these interactables are being created for. Defaults to the given player.
+     * @param respondWithModal - Whether or not to respond to the input with a modal to gather additional input. Optional. Defaults to false.
+     * @param solved - Whether or not to consider the puzzle solved or not. Optional. If not provided, the puzzle's actual solved state will be used.
+     */
+    private createSimpleAttemptActionInteractables(puzzle: Puzzle, player: Player, user: User = player, respondWithModal: boolean = false, solved?: boolean): ButtonInteractable[] {
+        if (!player.canUseCommand("use")) return [];
+        const actionDirective = this.#createActionDirective(AttemptAction, puzzle.getAttemptActionDirectiveArgs(solved), player, user);
+        const suffix = respondWithModal ? `…` : ``;
+        const label = `${capitalizeFirstLetter(puzzle.getAttemptVerb(solved))} ${puzzle.getDisplayName()}${suffix}`;
+        const interactableOptions = new InteractableOptions(actionDirective, label, undefined, undefined, respondWithModal);
+        return [this.#createButtonInteractable(interactableOptions, ButtonStyle.Primary, ActionPriority.ATTEMPT)];
+    }
+
+    /**
+     * Creates String Select Menu Interactables for a puzzle attemptable with an item and adds them to the cache.
+     * @param puzzle - The puzzle that can be attempted.
+     * @param items - The inventory items the puzzle can be attempted with.
+     * @param player - The player these interactables are being created for.
+     * @param user - The user these interactables are being created for. Defaults to the given player.
+     * @param respondWithModal - Whether or not to respond to the input with a modal to gather additional input. Optional. Defaults to false.
+     * @param solved - Whether or not to consider the puzzle solved or not. Optional. If not provided, the puzzle's actual solved state will be used.
+     */
+    private createAttemptActionWithItemInteractables(puzzle: Puzzle, items: InventoryItem[], player: Player, user: User = player, respondWithModal: boolean = false, solved?: boolean): StringSelectMenuInteractable[] {
+        if (!player.canUseCommand("use")) return [];
+        const interactableOptions: InteractableOptions<AttemptAction>[] = [];
+        const puzzleName = puzzle.getDisplayName();
+        const verb = `${capitalizeFirstLetter(puzzle.getAttemptVerb(solved))}`;
+        const preposition = `${puzzle.getAttemptWithItemPreposition(solved)}`;
+        for (const item of items) {
+            const actionDirective = this.#createActionDirective(AttemptAction, puzzle.getAttemptActionDirectiveArgs(solved, item), player, user);
+            const suffix = respondWithModal ? `…` : ``;
+            const label = `${item.name}${suffix}`;
+            let description: string;
+            if (preposition === "with")
+                description = `${verb} ${puzzleName} ${preposition} ${item.name}${suffix}`;
+            else description = `${verb} ${item.name} ${preposition} ${puzzleName}${suffix}`;
+            interactableOptions.push(new InteractableOptions(actionDirective, description, label, description, respondWithModal));
+        }
+        const actionDirective = this.#createActionDirective(AttemptAction, ["AttemptAction Menu"], player, user);
+        return this.#createStringSelectMenuInteractable(actionDirective, interactableOptions, verb, ActionPriority.ATTEMPT);
+    }
+
+    /**
+     * Creates String Select Menu Interactables for a puzzle with a small, set number of possible solutions, all of which are known to the player.
+     * @param puzzle - The puzzle that can be attempted.
+     * @param solutions - The solutions the player can choose from.
+     * @param player - The player these interactables are being created for.
+     * @param user - The user these interactables are being created for. Defaults to the given player.
+     * @param solved - Whether or not to consider the puzzle solved or not. Optional. If not provided, the puzzle's actual solved state will be used.
+     */
+    private createStringSelectAttemptActionInteractables(puzzle: Puzzle, solutions: string[], player: Player, user: User = player, solved?: boolean): StringSelectMenuInteractable[] {
+        if (!player.canUseCommand("use")) return [];
+        const interactableOptions: InteractableOptions<AttemptAction>[] = [];
+        const puzzleName = puzzle.getDisplayName();
+        const verb = `${capitalizeFirstLetter(puzzle.getAttemptVerb(solved))}`;
+        const preposition = `${puzzle.getAttemptWithItemPreposition(solved)}`;
+        for (const solution of solutions) {
+            const targetPlayer = this.#game.entityFinder.getLivingPlayer(solution);
+            const actionDirective = this.#createActionDirective(AttemptAction, puzzle.getAttemptActionDirectiveArgs(solved, undefined, solution, targetPlayer?.displayName), player, user);
+            const label = `${targetPlayer ? targetPlayer.displayName : solution}`;
+            const description = `${verb} ${puzzleName} ${preposition} ${label}`;
+            interactableOptions.push(new InteractableOptions(actionDirective, description, label, description));
+        }
+        const actionDirective = this.#createActionDirective(AttemptAction, ["AttemptAction Menu"], player, user);
+        return this.#createStringSelectMenuInteractable(actionDirective, interactableOptions, verb, ActionPriority.ATTEMPT);
+    }
+
+    /**
+     * Creates a modal interactable for a list of args and adds it to the cache.
+     * This should only be called as a followup to one of the createAttemptActionInteractables methods to get the remaining required information.
+     * This should just be the solution to attempt the Puzzle with.
+     * @param args - An array of attempt action directive args. [name, location, type, item identifier, item containerName, item equipmentSlot, item proceduralSelectionsString, password, getAttemptVerb() (command), name (input), targetPlayer displayName]
+     * @param player - The player these interactables are being created for.
+     * @param user - The user these interactables are being created for.
+     */
+    createAttemptActionModalInteractable(args: ReturnType<typeof Puzzle.prototype.getAttemptActionDirectiveArgs>, interactable: Interactable, player: Player, user: User): ModalInteractable {
+        const puzzle = this.#game.entityFinder.getPuzzle(args[0], args[1], args[2]);
+        const puzzleName = puzzle?.getDisplayName() ?? args[0];
+        let title = interactable instanceof StringSelectMenuOptionInteractable
+            ? interactable.description
+            : interactable instanceof ButtonInteractable
+                ? interactable.label
+                : `${capitalizeFirstLetter(args[8])} ${puzzleName}`;
+        if (title.endsWith(`…`)) title = title.substring(0, title.lastIndexOf(`…`));
+        const inputs: TextInputInteractable[] = [new TextInputInteractable("Attempt Solution", title)];
+        const modalActionDirective = this.#createActionDirective(AttemptAction, args.concat(["Modal"]), player, user);
+        const modal = new ModalInteractable(modalActionDirective, title, inputs, ActionPriority.ATTEMPT);
+        this.#addInteractable(modal);
+        return modal;
     }
 
     /**
@@ -616,7 +832,7 @@ export default class ClientInteractableManager {
         const modalActionDirective = this.#createActionDirective(InstantiateInventoryItemAction, args.concat(["Modal"]), player, user);
         const description = containerIdentifier ? `Instantiate to ${inventorySlotId} of ${player.name}'s ${containerIdentifier}` : `Instantiate to ${player.name}'s ${equipmentSlotId}`;
         const modal = new ModalInteractable(modalActionDirective, "Instantiate Inventory Item", inputs, ActionPriority.INSTANTIATE, description);
-        this.addInteractable(modal);
+        this.#addInteractable(modal);
         return modal;
     }
 
@@ -678,7 +894,7 @@ export default class ClientInteractableManager {
         const modalActionDirective = this.#createActionDirective(InstantiateRoomItemAction, args.concat(["Modal"]), undefined, user);
         const description = `Instantiate ${preposition} ${containerPhrase} at ${locationDisplayName}`;
         const modal = new ModalInteractable(modalActionDirective, "Instantiate Room Item", inputs, ActionPriority.INSTANTIATE, description);
-        this.addInteractable(modal);
+        this.#addInteractable(modal);
         return modal;
     }
 
@@ -773,7 +989,7 @@ export default class ClientInteractableManager {
      * @param container - The container to search in.
      * @param user - The user these interactables are being created for.
      */
-    createFindContainedItemsActionInteractables(container: RoomItemContainer | InventoryItem, user: User): ButtonOrStringSelectMenuInteractable[] {
+    private createFindContainedItemsActionInteractables(container: RoomItemContainer | InventoryItem, user: User): ButtonOrStringSelectMenuInteractable[] {
         const interactableOptions: InteractableOptions<FindAction>[] = [];
         let inventorySlotIDs: string[] = [undefined];
         if ((container instanceof RoomItem || container instanceof InventoryItem) && container.inventory.size > 1) {
@@ -805,7 +1021,7 @@ export default class ClientInteractableManager {
      * @param user - The user these interactables are being created for.
      * @returns An array of button interactables, if the number of fields is less than or equal to 5. Otherwise, returns an array containing one string select menu interactable.
      */
-    createViewFieldActionInteractables<T extends PersistentGameEntity>(entity: T, fields: EntityField<T>[], user: User): ButtonOrStringSelectMenuInteractable[] {
+    private createViewFieldActionInteractables<T extends PersistentGameEntity>(entity: T, fields: EntityField<T>[], user: User): ButtonOrStringSelectMenuInteractable[] {
         const interactableOptions: InteractableOptions<ViewAction>[] = [];
         for (const field of fields) {
             const actionDirective = this.#createActionDirective(ViewAction, [entity.getEntityType(), entity.row, field], undefined, user);
@@ -825,7 +1041,7 @@ export default class ClientInteractableManager {
      * @param entities - A list of entities to view.
      * @param user - The user these interactables are being created for.
      */
-    createViewActionInteractables(entities: PersistentGameEntity[], user: User): StringSelectMenuInteractable[] {
+    private createViewActionInteractables(entities: PersistentGameEntity[], user: User): StringSelectMenuInteractable[] {
         const interactableOptions: InteractableOptions<ViewAction>[] = [];
         for (const entity of entities) {
             const actionDirective = this.#createActionDirective(ViewAction, [entity.getEntityType(), entity.row], undefined, user);
@@ -838,6 +1054,95 @@ export default class ClientInteractableManager {
         }
         const actionDirective = this.#createActionDirective(ViewAction, ["ViewAction Menu"], undefined, user);
         return this.#createStringSelectMenuInteractable(actionDirective, interactableOptions, "View Entity", ActionPriority.VIEW);
+    }
+
+    /**
+     * Generates an array of inspect interactables based on the party members or followed players the player is currently able to inspect.
+     * This will only produce one string select menu interactable.
+     * @param player - The player these interactables are being created for.
+     * @param user - The user these interactables are being created for. Defaults to the given player.
+     */
+    getInspectPartyMembersInteractables(player: Player, user: User = player): Interactable[] {
+        let interactables: Interactable[] = [];
+        const players = player.party
+            ? player.party.members.filter(member => member.name !== player.name).map(player => player)
+            : player.followedPlayer
+                ? [player.followedPlayer]
+                : [];
+        const filteredMembers = players.filter(player => player.location.id === player.location.id && (!player.isHidden() || player.isHiddenWith(player)));
+        if (filteredMembers.length > 0)
+            interactables = interactables.concat(this.createInspectActionInteractable(filteredMembers, player, user));
+        return interactables;
+    }
+
+    /**
+     * Generates an array of follow interactables based on who the player is currently able to follow. This will only produce one follow interactable.
+     * @param leader - The player to follow.
+     * @param player - The player these interactables are being created for.
+     * @param user - The user these interactables are being created for. Defaults to the given player.
+     */
+    getFollowInteractables(leader: Player, player: Player, user: User = player): Interactable[] {
+        return this.createFollowActionInteractable(leader, player, user);
+    }
+
+    /**
+     * Generates an array of lead interactables based on who the player is currently able to lead. This will only produce one lead interactable.
+     * @param follower - The player to lead.
+     * @param player - The player who can perform a lead action.
+     * @param user - The user these interactables are being created for. Defaults to the given player.
+     */
+    getLeadInteractables(follower: Player, player: Player, user: User = player): Interactable[] {
+        return this.createLeadActionInteractable(follower, player, user);
+    }
+
+    /**
+     * Generates an array of dismiss interactables based on the followers the player is currently able to dismiss.
+     * These will only generate if the player's party has more than one follower.
+     * @param player - The player who can perform a dismiss action.
+     * @param user - The user these interactables are being created for. Defaults to the given player.
+     */
+    getDismissInteractables(player: Player, user: User = player): Interactable[] {
+        let interactables: Interactable[] = [];
+        if (player.party && player.party.hasLeader(player) && player.party.followers.size > 1)
+            interactables = interactables.concat(this.createDismissActionInteractables(player.party.followers, player, user));
+        return interactables;
+    }
+
+    /**
+     * Generates an array of disband party interactables if the player is the leader of a party.
+     * @param player - The player who can perform a disband party action.
+     * @param user - The user these interactables are being created for. Defaults to the given player.
+     */
+    getDisbandPartyInteractables(player: Player, user: User = player): Interactable[] {
+        let interactables: Interactable[] = [];
+        if (player.party && player.party.hasLeader(player))
+            interactables = interactables.concat(this.createDisbandPartyActionInteractables(player, user));
+        return interactables;
+    }
+
+    /**
+     * Generates an array of view party interactables for the given player. This will only produce one view party interactable.
+     * @param player - The player who can perform a view party action.
+     * @param user - The user these interactables are being created for. Defaults to the given player.
+     */
+    getViewPartyInteractables(player: Player, user: User = player): Interactable[] {
+        return this.createViewPartyActionInteractable(player, user);
+    }
+
+    /**
+     * Generates an array of stop interactables for the given player. This will only produce one stop interactable.
+     * @param player - The player who can perform a stop action.
+     * @param user - The user these interactables are being created for. Defaults to the given player.
+     */
+    getStopFollowingInteractables(player: Player, user: User = player): Interactable[] {
+        let interactables: Interactable[] = [];
+        if (player.followedPlayer) {
+            const userIsModerator = !(user instanceof Player);
+            const displayName = userIsModerator ? player.followedPlayer.name : player.followedPlayerDisplayName;
+            const label = `Stop Following ${displayName}`;
+            interactables = interactables.concat(this.createStopActionInteractable(player, user, label));
+        }
+        return interactables;
     }
 
     /**
@@ -920,13 +1225,13 @@ export default class ClientInteractableManager {
      * Generates an array of unstash interactables based on what the player is currently able to unstash.
      * @param player - The player who can perform an unstash action.
      * @param user - The user these interactables are being created for. Defaults to the given player.
+     * @param freeHand - The player's free hand which can unstash an inventory item. Defaults to their first free hand, if they have one.
      */
-    getUnstashInteractables(player: Player, user: User = player): Interactable[] {
+    getUnstashInteractables(player: Player, user: User = player, freeHand: EquipmentSlot = this.#game.entityFinder.getPlayerFreeHand(player)): Interactable[] {
         let interactables: Interactable[] = [];
         const playerItems = this.#game.entityFinder.getInventoryItems(undefined, player.name);
-        const playerFreeHand = this.#game.entityFinder.getPlayerFreeHand(player);
         const playerContainerItems = playerItems.filter(item => item.inventory.size > 0);
-        if (playerFreeHand && playerContainerItems.length > 0) {
+        if (freeHand && playerContainerItems.length > 0) {
             const stashedItems = playerItems.filter(item => item.container !== null);
             if (stashedItems.length > 0) {
                 interactables = interactables.concat(this.createUnstashActionInteractables(stashedItems, player, user));
@@ -967,14 +1272,14 @@ export default class ClientInteractableManager {
      * Generates an array of unequip interactables based on what the player is currently able to unequip.
      * @param player - The player who can perform an unequip action.
      * @param user - The user these interactables are being created for. Defaults to the given player.
+     * @param freeHand - The player's free hand which can unequip an inventory item. Defaults to their first free hand, if they have one.
      */
-    getUnequipInteractables(player: Player, user: User = player): Interactable[] {
+    getUnequipInteractables(player: Player, user: User = player, freeHand: EquipmentSlot = this.#game.entityFinder.getPlayerFreeHand(player)): Interactable[] {
         let interactables: Interactable[] = [];
-        const playerFreeHand = this.#game.entityFinder.getPlayerFreeHand(player);
         const handSlotIDs = this.#game.entityFinder.getPlayerHands(player).map(hand => hand.id);
         let unequippableItems = player.inventory.filter(equipmentSlot => !handSlotIDs.includes(equipmentSlot.id) && equipmentSlot.equippedItem !== null).map(equipmentSlot => equipmentSlot.equippedItem!);
         unequippableItems = unequippableItems.filter(item => item.prefab.equippable);
-        if (playerFreeHand && unequippableItems.length > 0) {
+        if (freeHand && unequippableItems.length > 0) {
             interactables = interactables.concat(this.createUnequipActionInteractables(unequippableItems, player, user));
         }
         return interactables;
@@ -1036,6 +1341,15 @@ export default class ClientInteractableManager {
     }
 
     /**
+     * Generates an array of inventory interactables for the given player. This will only produce one inventory interactable.
+     * @param player - The player who can perform an inventory action.
+     * @param user - The user these interactables are being created for. Defaults to the given player.
+     */
+    getInventoryInteractables(player: Player, user: User = player): Interactable[] {
+        return this.createInventoryActionInteractable(player, user);
+    }
+
+    /**
      * Generates an array of activate or deactivate interactables for a given fixture. Usually this is just one interactable.
      * @param fixture - The fixture the player can activate or deactivate.
      * @param player - The player who can perform an activate or deactivate action.
@@ -1048,9 +1362,81 @@ export default class ClientInteractableManager {
         const matchingPuzzle = this.#game.entityFinder.getPuzzle(fixture.name, fixture.location.id);
         if (fixture.recipeTag !== "" && !matchingPuzzle && (fixture.activatable || user instanceof Moderator)) {
             if (activated)
-                interactables = interactables.concat(this.createDeactivateInteractables(fixture, player, user));
+                interactables = interactables.concat(this.createDeactivateActionInteractables(fixture, player, user));
             else
-                interactables = interactables.concat(this.createActivateInteractables(fixture, player, user));
+                interactables = interactables.concat(this.createActivateActionInteractables(fixture, player, user));
+        }
+        return interactables;
+    }
+
+    /**
+     * Generates an array of attempt interactables for a given list of puzzles. What kind of interactables are returned depends on each Puzzle's type.
+     * @param puzzles - An array of puzzles the player can attempt.
+     * @param player - The player who can perform an attempt action.
+     * @param user - The user these interactables are being created for. Defaults to the given player.
+     */
+    getAttemptInteractables(puzzles: Puzzle[], player: Player, user: User = player): Interactable[] {
+        let interactables: Interactable[] = [];
+        const playerHandIDs = new Set(this.#game.entityFinder.getPlayerHands(player).map(hand => hand.id));
+        // The player's held items and stashed items.
+        const inventoryItems = player.getContainedItems().filter(item => item.container !== null || playerHandIDs.has(item.equipmentSlot));
+        // We should only create one string select menu. If more than one is created, we need to get rid of all of them.
+        let deleteStringSelectMenus = false;
+        for (const puzzle of puzzles) {
+            if (puzzle.requiresMod) continue;
+            const matchingFixture = this.#game.entityFinder.getFixture(puzzle.name, puzzle.location.id);
+            if (matchingFixture && matchingFixture.recipeTag !== "") continue;
+            // Check if we can make the player select a single item from their inventory to attempt the puzzle with.
+            const itemSolutions = puzzle.solutions.filter(solution => solution.startsWith("Item:") || solution.startsWith("InventoryItem:") || solution.startsWith("Prefab:"));
+            const noMultiItemSolutions = itemSolutions.every(solution => !solution.includes("+"));
+            const puzzleRequiresOneItem = puzzle.requirementsStrings.filter(requirement => requirement.type === "Prefab").length === 1 || itemSolutions.length > 0 && noMultiItemSolutions;
+            const playerCanSelectItem = puzzleRequiresOneItem && inventoryItems.length > 0;
+            if (Puzzle.SimpleInteractTypes.has(puzzle.type) || puzzle.type.endsWith("probability")) {
+                if (playerCanSelectItem)
+                    interactables = interactables.concat(this.createAttemptActionWithItemInteractables(puzzle, inventoryItems, player, user));
+                else interactables = interactables.concat(this.createSimpleAttemptActionInteractables(puzzle, player, user));
+            }
+            else if (Puzzle.SelectInteractTypes.has(puzzle.type)) {
+                let solutions: string[] = [];
+                if (puzzle.type === "room player")
+                    solutions = this.#game.entityFinder.getLivingPlayers(undefined, undefined, player.location.id, player.hidingSpot).map(player => player.name);
+                else
+                    solutions = puzzle.solutions.filter(solution => !solution.startsWith("Item:") && !solution.startsWith("InventoryItem:") && !solution.startsWith("Prefab:"));
+                if (!puzzle.solved || puzzle.type === "switch") {
+                    if (solutions.length <= StringSelectMenuInteractable.OPTION_LIMIT)
+                        interactables = interactables.concat(this.createStringSelectAttemptActionInteractables(puzzle, solutions, player, user));
+                    else interactables = interactables.concat(this.createSimpleAttemptActionInteractables(puzzle, player, user, true));
+                }
+            }
+            else if (Puzzle.TextInputInteractTypes.has(puzzle.type)) {
+                if (!puzzle.solved && playerCanSelectItem)
+                    interactables = interactables.concat(this.createAttemptActionWithItemInteractables(puzzle, inventoryItems, player, user, true));
+                else if (!puzzle.solved || puzzle.type === "password")
+                    interactables = interactables.concat(this.createSimpleAttemptActionInteractables(puzzle, player, user, true));
+                else interactables = interactables.concat(this.createSimpleAttemptActionInteractables(puzzle, player, user));
+            }
+            else if (Puzzle.MixedInteractTypes.has(puzzle.type)) {
+                if (playerCanSelectItem && !puzzle.solved && (puzzle.type === "key lock" || puzzle.type === "media"))
+                    interactables = interactables.concat(this.createAttemptActionWithItemInteractables(puzzle, inventoryItems, player, user));
+                if (puzzle.type === "channels" || puzzle.type === "option") {
+                    if (playerCanSelectItem)
+                        interactables = interactables.concat(this.createAttemptActionWithItemInteractables(puzzle, inventoryItems, player, user, true, false));
+                    else interactables = interactables.concat(this.createSimpleAttemptActionInteractables(puzzle, player, user, true, false));
+                }
+                // All of these puzzle types can be attempted plainly if they're solved, regardless of solved state. Provide a button to do so.
+                if (puzzle.solved)
+                    interactables = interactables.concat(this.createSimpleAttemptActionInteractables(puzzle, player, user));
+            }
+            // Before we move onto the next puzzle, check if there's more than one string select menu.
+            if (!deleteStringSelectMenus)
+                deleteStringSelectMenus = interactables.filter(interactable => interactable instanceof StringSelectMenuInteractable).length > 1;
+        }
+        if (deleteStringSelectMenus) {
+            interactables = interactables.filter(interactable => {
+                const interactableIsStringSelectMenu = interactable instanceof StringSelectMenuInteractable;
+                if (interactableIsStringSelectMenu) this.#disableInteractable(interactable.customId);
+                return !interactableIsStringSelectMenu;
+            });
         }
         return interactables;
     }

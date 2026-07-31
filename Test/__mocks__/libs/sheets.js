@@ -3,8 +3,8 @@ import { readFileSync } from "fs";
 const dataMap = new Map();
 
 /**
- * @param {string} sheetrange 
- * @param {string[][]} values 
+ * @param {string} sheetrange
+ * @param {string[][]} values
  */
 export function __setMock(sheetrange, values) {
 	dataMap.set(sheetrange, values);
@@ -53,7 +53,7 @@ export async function updateSheetValues(sheetrange, data, spreadsheetId) {
 
 /**
  * Updates the values of the spreadsheet for multiple sheetranges.
- * @param {ValueRange[]} data - The ranges to update and the values to replace them with. 
+ * @param {ValueRange[]} data - The ranges to update and the values to replace them with.
  * @param {string} spreadsheetId - The ID of the spreadsheet to update.
  * @returns {Promise<any>} {@link https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets.values/batchUpdate#response-body}
  */
@@ -62,7 +62,7 @@ export async function batchUpdateSheetValues(data, spreadsheetId) {
 }
 
 /**
- * 
+ *
  * @param {object[]} requests - An array of {@link https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/request#Request|Requests}.
  * @param {string} spreadsheetId - The ID of the spreadsheet to update.
  * @returns {Promise<any>} {@link https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/batchUpdate#response-body}
@@ -82,35 +82,35 @@ export async function appendRowsToSheet(sheetrange, data, spreadsheetId) {
 	return { status: 'mocked' };
 }
 
-/** 
+/**
  * Gets the file name to load from based on the sheetrange.
  * @param {string} sheetrange - The range to append rows to in {@link https://developers.google.com/workspace/sheets/api/guides/concepts#cell|A1 notation}.
 */
 function getGameDataFileName(sheetrange) {
 	switch (sheetrange) {
-		case game.constants.roomSheetDataCells:
+		case testGame.constants.roomSheetDataCells:
 			return "rooms.json";
-		case game.constants.fixtureSheetDataCells:
+		case testGame.constants.fixtureSheetDataCells:
 			return "fixtures.json";
-		case game.constants.prefabSheetDataCells:
+		case testGame.constants.prefabSheetDataCells:
 			return "prefabs.json";
-		case game.constants.recipeSheetDataCells:
+		case testGame.constants.recipeSheetDataCells:
 			return "recipes.json";
-		case game.constants.roomItemSheetDataCells:
+		case testGame.constants.roomItemSheetDataCells:
 			return "roomitems.json";
-		case game.constants.puzzleSheetDataCells:
+		case testGame.constants.puzzleSheetDataCells:
 			return "puzzles.json";
-		case game.constants.eventSheetDataCells:
+		case testGame.constants.eventSheetDataCells:
 			return "events.json";
-		case game.constants.statusSheetDataCells:
+		case testGame.constants.statusSheetDataCells:
 			return "statuseffects.json";
-		case game.constants.playerSheetDataCells:
+		case testGame.constants.playerSheetDataCells:
 			return "players.json";
-		case game.constants.inventorySheetDataCells:
+		case testGame.constants.inventorySheetDataCells:
 			return "inventoryitems.json";
-		case game.constants.gestureSheetDataCells:
+		case testGame.constants.gestureSheetDataCells:
 			return "gestures.json";
-		case game.constants.flagSheetDataCells:
+		case testGame.constants.flagSheetDataCells:
 			return "flags.json";
 	}
 }

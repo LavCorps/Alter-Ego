@@ -97,14 +97,14 @@ beforeAll(() => {
     );
 
     // Initialize game.
-    const game = new Game(guildContext, DEFAULT_GAME_SETTINGS);
+    const testGame = new Game(guildContext, DEFAULT_GAME_SETTINGS);
     // Create ClientContext singleton and attach to game.
-    ClientContext.Instance(client, game);
-    game.setClientContext();
+    ClientContext.Instance(client, testGame);
+    testGame.setClientContext();
     // Ensure presence update doesn't throw during tests.
     try { ClientContext.instance.updatePresence(); } catch (e) { }
-    globalThis.game = game;
-    game.messageQueue.manual = true;
+    globalThis.testGame = testGame;
+    testGame.messageQueue.manual = true;
 });
 
 afterEach(() => {
