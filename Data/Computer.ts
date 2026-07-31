@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { LuaState } from "lua-state"
+import { LuaEngine, LuaFactory } from 'wasmoon';
 import GameEntity from "./GameEntity.ts";
 import type Room from "./Room.ts";
 import type Fixture from "./Fixture.ts";
@@ -17,6 +17,10 @@ export type ComputerField =
  * Represents an interactable entity embodying a fully-featured Lua VM.
  */
 export default class Computer extends GameEntity implements PersistentGameEntity {
+    /**
+     * The factory for producing Lua states.
+     */
+    private static factory = new LuaFactory();
     /**
      * The name of the computer.
      */
@@ -40,7 +44,7 @@ export default class Computer extends GameEntity implements PersistentGameEntity
     /**
      * The description of the puzzle when a player attempts to solve it while all of the requirements are not met.
      */
-    readonly state: LuaState;
+    state: LuaEngine | undefined;
 
     /**
      * @param name - The name of the puzzle.
@@ -56,7 +60,17 @@ export default class Computer extends GameEntity implements PersistentGameEntity
         this.location = null;
         this.parentFixtureName = parentFixtureName;
         this.parentFixture = null;
-        this.state = new LuaState();
+        const self = this;
+        Computer.factory.createEngine().then((engine) => self.state = engine, (reason) => console.error(`Failed to initialize Computer: ${reason}`));
+    }
+
+    async execute<T extends unknown>(code: string): Promise<T | Error> {
+        try {
+            const result: T = await this.state.doString(code);
+            return result;
+        } catch (error: unknown) {
+            return new Error(String(error));
+        }
     }
 
     /** Gets the entity's location. */
