@@ -10,7 +10,10 @@
     "createLocalFiles": "node Test/createLocalFiles.ts",
     "test": "vitest run",
     "test:watch": "vitest --watch",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
+    "compile": "tsc"
   },
   "repository": {
     "type": "git",
@@ -41,6 +44,8 @@
     "@types/luxon": "^3.7.1",
     "@types/node": "24.10.1",
     "@vitest/coverage-v8": "4.1.9",
+    "oxlint": "^1.75.0",
+    "oxlint-tsgolint": "^7.0.2001",
     "typescript": "^7.0.2",
     "vitest": "4.1.9"
   }
