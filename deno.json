@@ -1,4 +1,5 @@
 {
+  "$schema": "https://github.com/denoland/deno/raw/refs/heads/main/cli/schemas/config-file.v1.json",
   "nodeModulesDir": "auto",
   "compilerOptions": {
     "lib": ["esnext", "dom"],
@@ -19,7 +20,17 @@
     "indentWidth": 4,
     "semiColons": true,
     "singleQuote": true,
-    "proseWrap": "preserve"
+    "proseWrap": "preserve",
+    "newLineKind": "lf",
+    "trailingCommas": "onlyMultiLine",
+    "nextControlFlowPosition": "nextLine",
+    "useBraces": "preferNone",
+    "useEditorConfig": true,
+    "operatorPosition": "nextLine",
+    "sortNamedImports": "caseInsensitive",
+    "bracePosition": "sameLineUnlessHanging",
+    "spaceAround": true,
+    "spaceSurroundingProperties": true
   },
   "lint": {
     "exclude": ["coverage/", "book/", "Test/", "node_modules/"]
