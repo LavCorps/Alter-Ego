@@ -1,0 +1,41 @@
+{
+  "nodeModulesDir": "auto",
+  "compilerOptions": {
+    "lib": ["esnext", "dom"],
+    "checkJs": true,
+    "strict": false,
+    "noImplicitOverride": true,
+    "types": ["node"]
+  },
+  "tasks": {
+    "start": "deno run -P bot.js",
+    "run": "deno run -P bot.js",
+    "createLocalFiles": "deno run -A Test/createLocalFiles.ts"
+  },
+  "fmt": {
+    "exclude": ["coverage/", "book/", "Test/", "node_modules/"],
+    "useTabs": false,
+    "lineWidth": 120,
+    "indentWidth": 4,
+    "semiColons": true,
+    "singleQuote": true,
+    "proseWrap": "preserve"
+  },
+  "lint": {
+    "exclude": ["coverage/", "book/", "Test/", "node_modules/"]
+  },
+  "minimumDependencyAge": "P7D",
+  "permissions": {
+    "default": {
+      "env": true,
+      "net": true,
+      "sys": true,
+      "read": {
+        "allow": ["./Classes/", "./Commands", "./Configs", "./Data", "./Modules", "./.env", "./package.json"]
+      },
+      "write": {
+        "allow": ["./Configs"]
+      }
+    }
+  }
+}
