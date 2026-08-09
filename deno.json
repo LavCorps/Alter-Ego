@@ -29,8 +29,10 @@
     "operatorPosition": "nextLine",
     "sortNamedImports": "caseInsensitive",
     "bracePosition": "sameLineUnlessHanging",
-    "spaceAround": true,
-    "spaceSurroundingProperties": true
+    "spaceAround": false,
+    "spaceSurroundingProperties": true,
+    "quoteProps": "preserve",
+    "singleBodyPosition": "nextLine"
   },
   "lint": {
     "exclude": ["coverage/", "book/", "Test/", "node_modules/"]
