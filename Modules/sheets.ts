@@ -31,7 +31,7 @@ const sheets = google.sheets({ version: 'v4' });
  * @param spreadsheetId - The ID of the spreadsheet to read.
  * @returns The values of the specified range in {@link https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets.values#ValueRange|ValueRange} format.
  */
-export function getSheetValues(sheetRange: SheetRange, spreadsheetId: string): Promise<ValueRange> {
+export async function getSheetValues(sheetRange: SheetRange, spreadsheetId: string): Promise<ValueRange> {
     const request: GetSheetValuesRequest = {
         // The ID of the spreadsheet to retrieve data from.
         spreadsheetId: spreadsheetId,
@@ -52,11 +52,8 @@ export function getSheetValues(sheetRange: SheetRange, spreadsheetId: string): P
         auth: authorize(),
     };
 
-    return new Promise((resolve, reject) => {
-        sheets.spreadsheets.values.get(request).then(response => {
-            resolve({ range: response.data.range, majorDimension: response.data.majorDimension, values: response.data.values });
-        }).catch(err => reject(err));
-    });
+    const response = await sheets.spreadsheets.values.get(request)
+    return { range: response.data.range, majorDimension: response.data.majorDimension, values: response.data.values };
 }
 
 /**
@@ -65,7 +62,7 @@ export function getSheetValues(sheetRange: SheetRange, spreadsheetId: string): P
  * @param spreadsheetId - The ID of the spreadsheet to read.
  * @returns The specified range in the {@link https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets#Spreadsheet|Spreadsheet}.
  */
-export function getSheetWithProperties(sheetRange: SheetRange, spreadsheetId: string): Promise<Spreadsheet> {
+export async function getSheetWithProperties(sheetRange: SheetRange, spreadsheetId: string): Promise<Spreadsheet> {
     const request: GetSheetRequest = {
         spreadsheetId: spreadsheetId,
 
@@ -76,11 +73,7 @@ export function getSheetWithProperties(sheetRange: SheetRange, spreadsheetId: st
         auth: authorize(),
     };
 
-    return new Promise((resolve, reject) => {
-        sheets.spreadsheets.get(request).then(response => {
-            resolve(response);
-        }).catch(err => reject(err));
-    });
+    return await sheets.spreadsheets.get(request);
 }
 
 /**
@@ -90,7 +83,7 @@ export function getSheetWithProperties(sheetRange: SheetRange, spreadsheetId: st
  * @param spreadsheetId - The ID of the spreadsheet to update.
  * @returns An {@link https://developers.google.com/workspace/sheets/api/reference/rest/v4/UpdateValuesResponse|UpdateValuesResponse}.
  */
-export function updateSheetValues(sheetRange: SheetRange, data: string[][], spreadsheetId: string): Promise<UpdateSheetValuesResponse> {
+export async function updateSheetValues(sheetRange: SheetRange, data: string[][], spreadsheetId: string): Promise<UpdateSheetValuesResponse> {
     const request: UpdateSheetValuesRequest = {
         spreadsheetId: spreadsheetId,
 
@@ -105,11 +98,7 @@ export function updateSheetValues(sheetRange: SheetRange, data: string[][], spre
         auth: authorize(),
     };
 
-    return new Promise((resolve, reject) => {
-        sheets.spreadsheets.values.update(request).then(response => {
-            resolve(response);
-        }).catch(err => reject(err));
-    });
+    return await sheets.spreadsheets.values.update(request);
 }
 
 /**
@@ -118,7 +107,7 @@ export function updateSheetValues(sheetRange: SheetRange, data: string[][], spre
  * @param spreadsheetId - The ID of the spreadsheet to update.
  * @returns A {@link https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets.values/batchUpdate#response-body|BatchUpdateSheetValuesResponse}.
  */
-export function batchUpdateSheetValues(data: ValueRange[], spreadsheetId: string): Promise<BatchUpdateSheetValuesResponse> {
+export async function batchUpdateSheetValues(data: ValueRange[], spreadsheetId: string): Promise<BatchUpdateSheetValuesResponse> {
     const request: BatchUpdateSheetValuesRequest = {
         spreadsheetId: spreadsheetId,
 
@@ -131,11 +120,7 @@ export function batchUpdateSheetValues(data: ValueRange[], spreadsheetId: string
         auth: authorize()
     };
 
-    return new Promise((resolve, reject) => {
-        sheets.spreadsheets.values.batchUpdate(request).then(response => {
-            resolve(response);
-        }).catch(err => reject(err));
-    });
+    return await sheets.spreadsheets.values.batchUpdate(request);
 }
 
 /**
@@ -144,7 +129,7 @@ export function batchUpdateSheetValues(data: ValueRange[], spreadsheetId: string
  * @param spreadsheetId - The ID of the spreadsheet to update.
  * @returns A {@link https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets/batchUpdate#response-body|BatchUpdateSheetResponse}.
  */
-export function batchUpdateSheet(requests: Request[], spreadsheetId: string): Promise<BatchUpdateSheetResponse> {
+export async function batchUpdateSheet(requests: Request[], spreadsheetId: string): Promise<BatchUpdateSheetResponse> {
     const request: BatchUpdateSheetRequest = {
         spreadsheetId: spreadsheetId,
 
@@ -158,11 +143,7 @@ export function batchUpdateSheet(requests: Request[], spreadsheetId: string): Pr
         auth: authorize()
     };
 
-    return new Promise((resolve, reject) => {
-        sheets.spreadsheets.batchUpdate(request).then(response => {
-            resolve(response);
-        }).catch(err => reject(err));
-    });
+    return await sheets.spreadsheets.batchUpdate(request);
 }
 
 /**
@@ -173,7 +154,7 @@ export function batchUpdateSheet(requests: Request[], spreadsheetId: string): Pr
  * @param overwrite - Whether or not to overwrite existing values at the end of the range. Defaults to false.
  * @returns An {@link https://developers.google.com/workspace/sheets/api/reference/rest/v4/spreadsheets.values/append#response-body|AppendSheetValuesResponse}.
  */
-export function appendRowsToSheet(sheetRange: SheetRange, data: string[][], spreadsheetId: string, overwrite: boolean = false): Promise<AppendSheetValuesResponse> {
+export async function appendRowsToSheet(sheetRange: SheetRange, data: string[][], spreadsheetId: string, overwrite: boolean = false): Promise<AppendSheetValuesResponse> {
     // Google Sheets attempts to detect the table of existing data, and if there are any gaps,
     // it determines that to be where to append data. So, we need to extract only the first column in the range.
     // This ensures that rows will always be appended starting in the first column.
@@ -195,11 +176,7 @@ export function appendRowsToSheet(sheetRange: SheetRange, data: string[][], spre
         auth: authorize()
     };
 
-    return new Promise((resolve, reject) => {
-        sheets.spreadsheets.values.append(request).then(response => {
-            resolve(response);
-        }).catch(err => reject(err));
-    });
+    return await sheets.spreadsheets.values.append(request);
 }
 
 function authorize(): JWT {
