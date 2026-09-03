@@ -30,6 +30,7 @@ import { getErrorMessage, addToErrors, errorHasCode } from '../Modules/errorHand
 import { parsePrefabPossibleNames } from '../Modules/stringDataExtractor.ts';
 import { ChannelType, Collection, type TextChannel, type GuildMember } from 'discord.js';
 import { Duration } from 'luxon';
+import Elevator from '../Data/Elevator.ts';
 
 /**
  * A set of functions to load and validate GameEntities.
@@ -482,25 +483,39 @@ export default class GameEntityLoader extends GameEntityManager {
                         }
                     }
                 }
-                let tags: string[] = sheet[roomRow][columnRoomTags] ? sheet[roomRow][columnRoomTags].trim().split(',') : [];
-                for (let i = 0; i < tags.length; i++)
-                    tags[i] = tags[i].trim();
-                const room = new Room(
-                    id,
-                    sheet[roomRow][columnRoomDisplayName] ? sheet[roomRow][columnRoomDisplayName].trim() : "",
-                    channel && channel.type === ChannelType.GuildText ? channel : null,
-                    new Set(tags),
-                    sheet[roomRow][columnRoomIconUrl] ? sheet[roomRow][columnRoomIconUrl].trim() : "",
-                    exits,
-                    sheet[roomRow][columnExitDescription] ? sheet[roomRow][columnExitDescription].trim() : "",
-                    roomRow + 2,
-                    this.game
+                const tags: Set<string> = new Set(
+                    sheet[roomRow][columnRoomTags] ? sheet[roomRow][columnRoomTags].trim().split(',').map(tag => tag.trim()) : []
                 );
+                const room = tags.has("elevator")
+                    ? new Room(
+                          id,
+                          sheet[roomRow][columnRoomDisplayName] ? sheet[roomRow][columnRoomDisplayName].trim() : "",
+                          channel && channel.type === ChannelType.GuildText ? channel : null,
+                          new Set(tags),
+                          sheet[roomRow][columnRoomIconUrl] ? sheet[roomRow][columnRoomIconUrl].trim() : "",
+                          exits,
+                          sheet[roomRow][columnExitDescription] ? sheet[roomRow][columnExitDescription].trim() : "",
+                          roomRow + 2,
+                          this.game,
+                      )
+                    : new Elevator(
+                          id,
+                          sheet[roomRow][columnRoomDisplayName] ? sheet[roomRow][columnRoomDisplayName].trim() : "",
+                          channel && channel.type === ChannelType.GuildText ? channel : null,
+                          new Set(tags),
+                          sheet[roomRow][columnRoomIconUrl] ? sheet[roomRow][columnRoomIconUrl].trim() : "",
+                          exits,
+                          sheet[roomRow][columnExitDescription] ? sheet[roomRow][columnExitDescription].trim() : "",
+                          roomRow + 2,
+                          this.game,
+                      );
                 if (this.game.entityFinder.getRoom(room.id)) {
                     errors.push(new Error(`Couldn't load room on row ${room.row}. Another room with the same ID already exists.`));
                     continue;
                 }
                 this.game.rooms.set(room.id, room);
+                if (tags.has("elevator"))
+                    this.game.elevators.set(room.id, room);
             }
             // Now go through and make the dest for each exit an actual Room object.
             this.game.rooms.forEach(room => {

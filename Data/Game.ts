@@ -25,6 +25,7 @@ import Event from "./Event.ts";
 import type Fixture from "./Fixture.ts";
 import type Flag from "./Flag.ts";
 import Die from "./Die.ts";
+import type Elevator from "./Elevator.ts";
 import type Gesture from "./Gesture.ts";
 import type InventoryItem from "./InventoryItem.ts";
 import type Moderator from "./Moderator.ts";
@@ -129,6 +130,10 @@ export default class Game {
      * A collection of all rooms in the game. The key for each room is its id.
      */
     rooms: Collection<string, Room>;
+    /**
+     * A collection of all elevators in the game. The key for each elevator is its id.
+     */
+    elevators: Collection<string, Elevator>;
     /**
      * An array of all fixtures in the game. Deprecated. Use fixtures instead.
      * @deprecated
@@ -254,6 +259,7 @@ export default class Game {
         this.editMode = false;
         this.loadedEntitiesWithErrors = new Set();
         this.rooms = new Collection();
+        this.elevators = new Collection();
         this.objects = [];
         this.fixtures = [];
         this.prefabs = new Collection();

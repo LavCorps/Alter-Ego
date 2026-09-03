@@ -8,8 +8,4 @@ import Room, { type RoomField } from "./Room.ts";
 /**
  * Represents an elevator in the game.
  */
-export default class Elevator extends Room implements PersistentGameEntity<RoomField> {
-    override getEntityType(): string {
-        return "Elevator";
-    }
-}
+export default class Elevator extends Room implements PersistentGameEntity<RoomField> { }
