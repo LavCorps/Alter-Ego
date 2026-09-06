@@ -7,6 +7,7 @@ import { loadPlayerDefaults } from '../Modules/settingsLoader.ts';
 
 /** @import Moderator from '../Data/Moderator.ts' */
 /** @import GameSettings from '../Classes/GameSettings.ts' */
+/** @import { DMChannel } from 'discord.js' */
 
 /** @type {CommandConfig} */
 export const config = {
@@ -57,8 +58,8 @@ export async function execute(game, message, command, args, moderator) {
     const playerName = Player.generateValidName(member.displayName);
     if (!playerName || playerName === "")
         return game.communicationHandler.reply(message, `<@${member.id}>'s username consists entirely of invalid characters. Please set their nickname first, preferably without any spaces or special characters.`);
-    /** @type {Messageable} */
-    let notificationChannel;
+    /** @type {DMChannel | null} */
+    let notificationChannel = null;
     try {
         notificationChannel = await game.guildContext.createDM(member);
     } catch (error) { console.error(error); }

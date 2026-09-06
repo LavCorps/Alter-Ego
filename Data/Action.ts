@@ -1,4 +1,4 @@
-import { randomUUID } from "crypto";
+import { randomUUID, type UUID } from "crypto";
 import type Game from "./Game.ts";
 import GameConstruct from "./GameConstruct.ts";
 import type Interactable from "../Classes/Interactables/Interactable.ts";
@@ -15,7 +15,7 @@ export default abstract class Action extends GameConstruct {
 	/**
 	 * The unique ID of this action.
 	 */
-    readonly id: string;
+    readonly id: UUID;
 	/**
 	 * The message that initiated the action.
 	 */

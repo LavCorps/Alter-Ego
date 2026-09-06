@@ -19,6 +19,11 @@ import * as messageHandler from "../Modules/messageHandler.ts";
 import { capitalizeFirstLetter } from "../Modules/helpers.ts";
 import { Collection } from "discord.js";
 import type { Attachment, Embed, EmbedBuilder, Message, Snowflake, TextChannel } from "discord.js";
+import type SayAction from "../Data/Actions/SayAction.ts";
+import type GestureAction from "../Data/Actions/GestureAction.ts";
+import type NarrateAction from "../Data/Actions/NarrateAction.ts";
+import type MonologAction from "../Data/Actions/MonologAction.ts";
+import type { UUID } from "crypto";
 
 /**
  * A dialog message that has been mirrored in a spectate channel.
@@ -41,11 +46,19 @@ export default class GameCommunicationHandler {
     /**
      * A cache of recently-performed actions. This is used to ensure that actions are communicated only once in any given channel.
      */
-    readonly #actionCache: Collection<string, Action>;
+    readonly #actionCache: Collection<UUID, Action>;
     /**
      * The maximum size of the actionCache.
      */
-    readonly #actionCacheSizeLimit = 20;
+    readonly #actionCacheSizeLimit = 50;
+    /**
+     * A cache of action UUIDs mapped to arrays of messages. This is used to ensure that Alter Ego can keep track of the resulting messages from an Action.
+     */
+    readonly #actionMessageCache: Collection<UUID, UserMessage[]>;
+    /**
+     * The maximum size of the actionCache.
+     */
+    readonly #actionMessageCacheSizeLimit = 50;
     /**
      * A collection of mirrored dialog messages to allow edits to dialog messages to be reflected in spectate channels.
      * The key is the ID of the original message that's being mirrored.
@@ -72,6 +85,14 @@ export default class GameCommunicationHandler {
         return this.#actionCache;
     }
 
+    pushActionMessageCache(id: UUID, message: UserMessage) {
+        if (this.#actionMessageCache.size >= this.#actionMessageCacheSizeLimit && !this.#actionMessageCache.has(id))
+            this.#actionCache.delete(this.#actionCache.firstKey()!);
+        if (!this.#actionMessageCache.has(id))
+            this.#actionMessageCache.set(id, []);
+        this.#actionMessageCache.get(id).push(message);
+    }
+
     /**
      * Adds an action to the cache. If the cache is at maximum capacity, removes the oldest one.
      * @param action - The action to cache.
@@ -80,6 +101,7 @@ export default class GameCommunicationHandler {
         if (this.#actionCache.size >= this.#actionCacheSizeLimit)
             this.#actionCache.delete(this.#actionCache.firstKey()!);
         this.#actionCache.set(action.id, action);
+        this.pushActionMessageCache(action.id, action.message);
     }
 
     /**
@@ -174,9 +196,9 @@ export default class GameCommunicationHandler {
      * @param attachments - The attachments to send. Optional.
      * @param interactables - An array of interactables.
      */
-    sendMessageToPlayer(player: Player, messageText: string, mirrorInSpectateChannel: boolean = true, messageType: MessageDisplayType = MessageDisplayType.PLAIN_TEXT, attachments?: Collection<string, Attachment>, interactables: Interactable[] = []) {
+    sendMessageToPlayer(player: Player, messageText: string, mirrorInSpectateChannel: boolean = true, messageType: MessageDisplayType = MessageDisplayType.PLAIN_TEXT, attachments?: Collection<string, Attachment>, interactables: Interactable[] = [], action?: Action) {
         if (messageText !== "")
-            messageHandler.sendNotification(player, messageText, messageType, mirrorInSpectateChannel, attachments, interactables)
+            messageHandler.sendNotification(player, messageText, messageType, mirrorInSpectateChannel, attachments, interactables, action)
     }
 
     /**

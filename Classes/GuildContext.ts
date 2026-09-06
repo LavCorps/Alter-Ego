@@ -7,6 +7,7 @@
 import {
     type CategoryChannelResolvable,
     ChannelType,
+    DMChannel,
     type Guild,
     type GuildBasedChannel,
     type GuildMember,
@@ -157,7 +158,7 @@ export default class GuildContext {
      * Creates a direct message channel with the given user.
      * @param user - The user to create a DM channel with. Can be a guild member or a Discord user.
      */
-    async createDM(user: GuildMember | User): Promise<Messageable> {
+    async createDM(user: GuildMember | User): Promise<DMChannel> {
         return await user.createDM();
     }
 

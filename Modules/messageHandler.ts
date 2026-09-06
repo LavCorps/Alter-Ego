@@ -32,6 +32,7 @@ import type Player from '../Data/Player.ts';
 import type Whisper from '../Data/Whisper.ts';
 import type Interactable from '../Classes/Interactables/Interactable.ts';
 import type Command from '../Classes/Command.ts';
+import type Action from '../Data/Action.ts';
 
 /**
  * Processes a message sent in a guild during a game and directs it to the relevant handlers.
@@ -116,7 +117,8 @@ export function sendNarrationToRoom(
     messageDisplayType: MessageDisplayType,
     addSpectate: boolean = true,
     player: Player = null,
-    webhookUsername: string = narration.narratorDisplayName
+    webhookUsername: string = narration.narratorDisplayName,
+    action?: Action
 ): void {
     if (messageText !== "") {
         const files = narration.attachments.map(attachment => attachment.url);
@@ -221,7 +223,8 @@ export function sendNotification(
     messageDisplayType: MessageDisplayType,
     addSpectate: boolean = true,
     attachments: Collection<string, Attachment> = new Collection(),
-    interactables: Interactable[] = []
+    interactables: Interactable[] = [],
+    action?: Action
 ): void {
     const files = attachments.map(attachment => attachment.url);
 
@@ -234,6 +237,8 @@ export function sendNotification(
                     );
                     if (message && interactables.length > 0)
                         player.getGame().clientContext.interactableManager.addInteractableMessage(player.notificationChannel.id, message.id, interactables.map(interactable => interactable.customId));
+                    if (message && action)
+                        player.getGame().communicationHandler.pushActionMessageCache(action.id, message as UserMessage);
                 },
                 destination: player.notificationChannel.id
             },

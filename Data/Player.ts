@@ -3,7 +3,7 @@
 //
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-import { Collection, GuildMember, type TextChannel } from "discord.js";
+import { Collection, DMChannel, GuildMember, type TextChannel } from "discord.js";
 import type { Duration } from "luxon";
 import type Interactable from "../Classes/Interactables/Interactable.ts";
 import Timer from "../Classes/Timer.ts";
@@ -254,7 +254,7 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
     /**
      * The channel where notifications to the player will be sent. If the player is an NPC, this will be null.
      */
-    notificationChannel: Messageable | null;
+    notificationChannel: DMChannel | null;
     /**
      * The spectate channel of the player.
      */
@@ -352,7 +352,7 @@ export default class Player extends RecipeProcessor implements PersistentGameEnt
         id: string, member: GuildMember | null, name: string, title: string, pronounString: string,
         originalVoiceString: string, stats: Stats, alive: boolean, locationDisplayName: string, hidingSpot: string,
         statusDisplays: StatusDisplay[], description: string, inventory: Collection<string, EquipmentSlot>,
-        notificationChannel: Messageable | null, spectateChannel: TextChannel | null, row: number, game: Game) {
+        notificationChannel: DMChannel | null, spectateChannel: TextChannel | null, row: number, game: Game) {
         super(game, row, description);
         this.id = id;
         this.member = member;

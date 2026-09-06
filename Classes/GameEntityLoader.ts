@@ -28,7 +28,7 @@ import { getSheetValues } from '../Modules/sheets.ts';
 import { round, convertTimeStringToDurationUnits, parseDuration, validateDuration } from '../Modules/helpers.ts';
 import { getErrorMessage, addToErrors, errorHasCode } from '../Modules/errorHandler.ts';
 import { parsePrefabPossibleNames } from '../Modules/stringDataExtractor.ts';
-import { ChannelType, Collection, type TextChannel, type GuildMember } from 'discord.js';
+import { ChannelType, Collection, type TextChannel, type GuildMember, DMChannel } from 'discord.js';
 import { Duration } from 'luxon';
 
 /**
@@ -1821,7 +1821,7 @@ export default class GameEntityLoader extends GameEntityManager {
                     statusDisplays[i] = { id: statusId, timeRemaining: timeRemaining };
                 });
                 let member: GuildMember = null;
-                let notificationChannel: Messageable = null;
+                let notificationChannel: DMChannel | null = null;
                 let spectateChannel: TextChannel = null;
                 if (sheet[row][columnTitle] !== "NPC") {
                     try {
