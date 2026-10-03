@@ -48,7 +48,7 @@ export default class DialogQueue extends StackQueue<UserMessage> {
 
         while (this.size() > 0) {
             const message = this.dequeue();
-            if (message.channel.type !== ChannelType.GuildText) continue;
+            if (!message.inGuild()) continue;
             const isInWhisperChannel = message.channel.parentId === this.game.guildContext.whisperCategoryId;
             const isInAnnouncementChannel = message.channel.id === this.game.guildContext.announcementChannel.id;
             const isInRoomChannel = this.game.guildContext.roomCategories.includes(message.channel.parentId);
