@@ -23,7 +23,7 @@
   },
   "homepage": "https://github.com/MsVBLANK/Alter-Ego",
   "engines": {
-    "node": ">=24.14.1"
+    "node": ">=24.22.1"
   },
   "types": "dist/bot.d.ts",
   "dependencies": {
