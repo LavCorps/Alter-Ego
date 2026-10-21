@@ -18,6 +18,10 @@ This project does **not** adhere to [Semantic Versioning](https://semver.org/spe
 - Bumped the minimum Node version to address the eMudhra intermediate CA compromise.
 - Updated vulnerable dependencies.
 
+## Addendum
+
+Want help with Alter Ego? We have a new support server on Discord! [You can join it here](https://discord.gg/zdfnyu8A6w).
+
 # [v2.0.3] - 2026-08-04
 
 ## Fixed
