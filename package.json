@@ -40,8 +40,8 @@
     "@tsconfig/node24": "^24.0.4",
     "@types/luxon": "^3.7.1",
     "@types/node": "24.10.1",
-    "@vitest/coverage-v8": "4.1.9",
+    "@vitest/coverage-v8": "4.1.11",
     "typescript": "5.9.3",
-    "vitest": "4.1.9"
+    "vitest": "4.1.11"
   }
 }
