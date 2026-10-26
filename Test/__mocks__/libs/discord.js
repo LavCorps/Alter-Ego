@@ -240,7 +240,7 @@ export function createMockClient() {
  * @param {*} param0
  * @returns {UserMessage}
  */
-export function createMockMessage({ content = '', member = createMockMember(), author = createMockUser(), channel = null, webhookId, client, components = [], flags = 0 } = {}) {
+export function createMockMessage({ content = '', member = createMockMember(), author = createMockUser(), channel = null, webhookId, client, components = [], flags = 0, inGuild = true } = {}) {
     const { Collection } = require('discord.js');
     const messageChannel = channel || createMockChannel();
     if (messageChannel && messageChannel.parent) messageChannel.parentId = messageChannel.parent.id;
@@ -257,6 +257,8 @@ export function createMockMessage({ content = '', member = createMockMember(), a
         member,
         author,
         channel: messageChannel,
+        // @ts-ignore
+        inGuild: vi.fn(() => inGuild),
         reply: vi.fn(async (text) => createMockMessage({ content: text, channel: messageChannel })),
         // @ts-ignore
         react: vi.fn(async () => ({})),
